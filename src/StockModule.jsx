@@ -28,6 +28,9 @@ function ProductCard({ product, onPriceUpdate, onStockUpdate, onCrearBulto, addT
   const stockRef = useRef(null);
 
   const status = getStockStatus(product.stock, product.min_stock);
+  const profit = product.price - (product.cost_price || 0);
+  const marginPercent = product.cost_price > 0 && product.price > 0 ? Math.round((profit / product.price) * 100) : 0;
+  const marginColor = marginPercent > 20 ? 'var(--accent-success)' : marginPercent > 10 ? 'var(--accent-warning)' : 'var(--accent-danger)';
 
   const handlePriceClick = () => {
     setPriceVal(product.price.toString());
@@ -162,6 +165,21 @@ function ProductCard({ product, onPriceUpdate, onStockUpdate, onCrearBulto, addT
             ${product.price.toLocaleString('es-AR')}
             <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginLeft: '6px', display: 'block', marginTop: '2px' }}>✎ clic para editar</span>
           </div>
+        )}
+      </div>
+
+      {/* Costo y Margen */}
+      <div style={{ textAlign: 'center', minWidth: '150px', padding: '0 8px' }}>
+        {product.cost_price > 0 && (
+          <>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Costo y Ganancia</div>
+            <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '2px' }}>
+              Costo: <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--text-primary)' }}>${product.cost_price.toLocaleString('es-AR')}</span>
+            </div>
+            <div style={{ fontSize: '0.9rem', color: marginColor }}>
+              Ganancia: <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700 }}>${profit.toLocaleString('es-AR')}</span> ({marginPercent}%)
+            </div>
+          </>
         )}
       </div>
 
@@ -410,6 +428,7 @@ export default function StockModule({ serverUrl, onProductsUpdated, addToast, pr
   const [filter, setFilter] = useState('all'); // all | low | empty
   const [showNewModal, setShowNewModal] = useState(false);
   const [showBatchModal, setShowBatchModal] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(50);
   const [creatingVirtualFor, setCreatingVirtualFor] = useState(null);
   const searchRef = useRef(null);
 
@@ -639,7 +658,7 @@ export default function StockModule({ serverUrl, onProductsUpdated, addToast, pr
           </div>
         )}
 
-        {!loading && filteredProducts.map(product => (
+        {!loading && filteredProducts.slice(0, visibleCount).map(product => (
           <ProductCard
             key={product.id}
             product={product}
@@ -649,6 +668,23 @@ export default function StockModule({ serverUrl, onProductsUpdated, addToast, pr
             addToast={addToast}
           />
         ))}
+
+        {!loading && visibleCount < filteredProducts.length && (
+          <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', padding: '16px' }}>
+            <button
+              onClick={() => setVisibleCount(prev => prev + 50)}
+              style={{ padding: '12px 32px', background: 'var(--bg-card)', border: '1px solid var(--accent-primary)', borderRadius: '8px', color: 'var(--accent-primary)', fontWeight: 700, fontSize: '1rem', cursor: 'pointer' }}
+            >
+              Ver más (+50)
+            </button>
+            <button
+              onClick={() => setVisibleCount(filteredProducts.length)}
+              style={{ padding: '12px 32px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '1rem', cursor: 'pointer' }}
+            >
+              Ver todos ({filteredProducts.length})
+            </button>
+          </div>
+        )}
       </div>
 
       {showNewModal && (

@@ -179,6 +179,11 @@ async def init_db():
             await db.execute("ALTER TABLE products ADD COLUMN last_purchase_date TEXT")
         except:
             pass
+
+        try:
+            await db.execute("ALTER TABLE sales ADD COLUMN reverted INTEGER DEFAULT 0")
+        except:
+            pass
             
         await db.commit()
 
@@ -734,6 +739,20 @@ async def today_sales():
             return row_to_dict(row, cur.description)
 
 
+@app.get("/api/sales", summary="Listar ventas")
+async def list_sales(limit: int = Query(50)):
+    async with aiosqlite.connect(DB_PATH) as db:
+        async with db.execute("""
+            SELECT s.*, COALESCE(s.reverted, 0) as reverted,
+                   COALESCE(s.cobrado, 0) as cobrado
+            FROM sales s
+            ORDER BY s.timestamp DESC
+            LIMIT ?
+        """, (limit,)) as cur:
+            rows = await cur.fetchall()
+            return [row_to_dict(r, cur.description) for r in rows]
+
+
 # ─────────────────────────────────────────────────────────────
 # MOVEMENTS ENDPOINT (auditoría)
 # ─────────────────────────────────────────────────────────────
@@ -756,8 +775,9 @@ async def list_fiados():
     async with aiosqlite.connect(DB_PATH) as db:
         async with db.execute("""
             SELECT id, fiado_name, total, timestamp,
-                   CASE WHEN cobrado IS NULL THEN 0 ELSE cobrado END as cobrado
-            FROM sales WHERE is_fiado=1
+                   CASE WHEN cobrado IS NULL THEN 0 ELSE cobrado END as cobrado,
+                   COALESCE(reverted, 0) as reverted
+            FROM sales WHERE is_fiado=1 AND (reverted IS NULL OR reverted = 0)
             ORDER BY timestamp DESC
         """) as cur:
             rows = await cur.fetchall()
@@ -772,6 +792,44 @@ async def cobrar_fiado(sale_id: int):
         )
         await db.commit()
     return {"success": True}
+
+
+@app.patch("/api/sales/{sale_id}/revert", summary="Anular venta y revertir stock")
+async def revert_sale(sale_id: int):
+    async with db_write_lock:
+        async with aiosqlite.connect(DB_PATH) as db:
+            await db.execute("BEGIN IMMEDIATE")
+            try:
+                cur = await db.execute("SELECT id, reverted FROM sales WHERE id=?", (sale_id,))
+                sale = await cur.fetchone()
+                if not sale:
+                    raise HTTPException(status_code=404, detail="Venta no encontrada")
+                if sale[1] == 1:
+                    raise HTTPException(status_code=400, detail="La venta ya fue anulada")
+
+                async with db.execute("SELECT product_id, quantity FROM sale_items WHERE sale_id=?", (sale_id,)) as cur:
+                    items = await cur.fetchall()
+
+                for item in items:
+                    product_id, quantity = item
+                    await db.execute(
+                        "UPDATE products SET stock = stock + ? WHERE id=?",
+                        (quantity, product_id)
+                    )
+                    await db.execute(
+                        "INSERT INTO stock_movements (product_id, movement_type, quantity, reason, operator) VALUES (?,?,?,?,?)",
+                        (product_id, "entrada", quantity, f"Reversión Venta #{sale_id}", "Sistema")
+                    )
+
+                await db.execute("UPDATE sales SET reverted=1 WHERE id=?", (sale_id,))
+                await db.commit()
+                return {"success": True}
+            except HTTPException:
+                await db.rollback()
+                raise
+            except Exception as e:
+                await db.rollback()
+                raise HTTPException(status_code=500, detail=str(e))
 
 
 # ─────────────────────────────────────────────────────────────

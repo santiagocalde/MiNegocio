@@ -46,6 +46,8 @@ function App() {
   const [search, setSearch] = useState('');
   const [isCharging, setIsCharging] = useState(false);
   const [payment, setPayment] = useState('');
+  const [adjustedTotal, setAdjustedTotal] = useState(null);
+  const [editingTotal, setEditingTotal] = useState(false);
   const [flash, setFlash] = useState(false);
   const [pendingSync, setPendingSync] = useState(0); // Ventas pendientes de sincronizar
   const [todaySalesTotal, setTodaySalesTotal] = useState(0); // Total ventas del día
@@ -72,6 +74,8 @@ function App() {
   const [showLogs, setShowLogs] = useState(false);
   const [sysLogs, setSysLogs] = useState([]);
   const [toasts, setToasts] = useState([]);
+  const [showResumen, setShowResumen] = useState(false);
+  const [resumenData, setResumenData] = useState(null);
 
   const addToast = (message, type = 'success') => {
     const id = Date.now();
@@ -198,7 +202,7 @@ function App() {
 
       if (e.key === 'Escape') {
         if (search.trim() !== '') setSearch('');
-        setIsCharging(false); setIsClosingCaja(false); setIsCancelConfirm(false); setIsFiadoOpen(false); setPayment(''); setCountedCash(''); setFiadoName('');
+        setIsCharging(false); setIsClosingCaja(false); setIsCancelConfirm(false); setIsFiadoOpen(false); setPayment(''); setCountedCash(''); setFiadoName(''); setAdjustedTotal(null); setEditingTotal(false);
         return;
       }
       if (isCharging || isClosingCaja || isCancelConfirm || isFiadoOpen) return;
@@ -226,7 +230,8 @@ function App() {
   };
 
   const { discount, total, subtotal, iva } = calculateTotals();
-  const change = payment ? parseInt(payment) - total : 0;
+  const effectiveTotal = adjustedTotal ?? total;
+  const change = payment ? parseInt(payment) - effectiveTotal : 0;
 
   const handleUnpack = async (productId) => {
     try {
@@ -372,8 +377,8 @@ function App() {
 
   const confirmCharge = async () => {
     const saleCart = [...cart];
-    const saleTotal = total;
-    const salePayment = parseFloat(payment) || total;
+    const saleTotal = adjustedTotal ?? total;
+    const salePayment = parseFloat(payment) || saleTotal;
     const saleChange = change < 0 ? 0 : change;
     // Registrar venta en backend (Outbox Pattern)
     const salePayload = {
@@ -413,6 +418,8 @@ function App() {
     setCart([]);
     setIsCharging(false);
     setPayment('');
+    setAdjustedTotal(null);
+    setEditingTotal(false);
     // Confirmación visual 2s
     setSaleConfirm(true);
     setTimeout(() => setSaleConfirm(false), 2500);
@@ -444,7 +451,7 @@ function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           turn_id: currentTurnId,
-          total,
+          total: adjustedTotal ?? total,
           payment: 0,
           change_given: 0,
           operator: currentOperator?.name || 'Sistema',
@@ -572,11 +579,9 @@ function App() {
             </div>
           )}
 
-          {currentOperator?.role === 'admin' && (
-            <div className="nav-item" style={{ border: '1px solid rgba(239, 68, 68, 0.3)' }} onClick={() => setIsClosingCaja(true)}>
-              🔒 Cerrar Turno
-            </div>
-          )}
+          <div className="nav-item" style={{ border: '1px solid rgba(239, 68, 68, 0.3)' }} onClick={() => setIsClosingCaja(true)}>
+            🔒 Cerrar Turno
+          </div>
         </nav>
       </aside>
 
@@ -607,6 +612,21 @@ function App() {
                 ⏳ {pendingSync} venta{pendingSync !== 1 ? 's' : ''} pendiente{pendingSync !== 1 ? 's' : ''}
               </span>
             )}
+            <button
+              onClick={async () => {
+                try {
+                  const res = await fetch(`${SERVER_URL}/sales/today`);
+                  const data = await res.json();
+                  setResumenData(data);
+                } catch {
+                  setResumenData({ total_vendido: 0, total_tickets: 0, total_fiado: 0 });
+                }
+                setShowResumen(true);
+              }}
+              style={{ background: 'transparent', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'var(--text-primary)', cursor: 'pointer', padding: '6px 14px', fontSize: '0.85rem', fontWeight: 600, marginRight: '12px' }}
+            >
+              📊 Exportar resumen
+            </button>
             <span className="sync-status online">
               <span className="dot"></span> Conectado
             </span>
@@ -656,7 +676,9 @@ function App() {
                       <span style={{ fontWeight: 600 }}>{p.name}</span>
                       <div style={{ display: 'flex', gap: '16px', color: 'var(--text-secondary)' }}>
                         <span>${p.price}</span>
-                        <span style={{ color: p.stock > 0 ? 'var(--accent-success)' : 'var(--accent-danger)' }}>Stock: {p.stock}</span>
+                        {currentOperator?.role === 'admin' && (
+                          <span style={{ color: p.stock > 0 ? 'var(--accent-success)' : 'var(--accent-danger)' }}>Stock: {p.stock}</span>
+                        )}
                       </div>
                     </button>
                   ))}
@@ -773,7 +795,7 @@ function App() {
                   onClick={() => setIsCharging(true)}
                   disabled={cart.length === 0}
                 >
-                  [F1] COBRAR - ${total.toLocaleString('es-AR')}
+                  [F1] COBRAR - ${(adjustedTotal ?? total).toLocaleString('es-AR')}
                 </button>
               </div>
               <div className="action-row-sub">
@@ -823,7 +845,47 @@ function App() {
         <div className="modal-overlay">
           <div className="modal-content">
             <h2 className="modal-title">PANTALLA DE COBRO</h2>
-            <div className="modal-amount" style={{ color: 'var(--text-primary)' }}>TOTAL A PAGAR: ${total.toLocaleString('es-AR')}</div>
+            {adjustedTotal !== null ? (
+              <div style={{ textAlign: 'center', marginBottom: '8px' }}>
+                <div style={{ fontSize: '1rem', color: 'var(--text-secondary)', textDecoration: 'line-through' }}>
+                  Total original: ${total.toLocaleString('es-AR')}
+                </div>
+                <div className="modal-amount" style={{ color: 'var(--accent-warning)' }}>
+                  TOTAL AJUSTADO: ${adjustedTotal.toLocaleString('es-AR')}
+                </div>
+              </div>
+            ) : (
+              <div className="modal-amount" style={{ color: 'var(--text-primary)' }}>TOTAL A PAGAR: ${total.toLocaleString('es-AR')}</div>
+            )}
+            <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+              {editingTotal ? (
+                <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', alignItems: 'center' }}>
+                  <input
+                    type="number"
+                    autoFocus
+                    defaultValue={adjustedTotal ?? total}
+                    id="ajuste-total-input"
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') {
+                        const val = parseFloat(e.target.value);
+                        if (!isNaN(val) && val > 0) setAdjustedTotal(val);
+                        setEditingTotal(false);
+                      }
+                      if (e.key === 'Escape') setEditingTotal(false);
+                    }}
+                    style={{ width: '180px', background: 'var(--bg-main)', border: '2px solid var(--accent-warning)', color: 'var(--text-primary)', borderRadius: '8px', padding: '12px', fontSize: '1.5rem', fontFamily: 'var(--font-mono)', textAlign: 'center', outline: 'none' }}
+                  />
+                  <button onClick={() => { const inp = document.getElementById('ajuste-total-input'); const val = parseFloat(inp?.value); if (!isNaN(val) && val > 0) setAdjustedTotal(val); setEditingTotal(false); }} style={{ background: 'rgba(34,197,94,0.15)', border: 'none', borderRadius: '6px', width: '40px', height: '40px', cursor: 'pointer', color: 'var(--accent-success)', fontWeight: 700 }}>✓</button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setEditingTotal(true)}
+                  style={{ background: 'transparent', border: '1px dashed var(--border-color)', borderRadius: '8px', padding: '8px 16px', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '0.9rem' }}
+                >
+                  ✏️ Ajustar total
+                </button>
+              )}
+            </div>
 
             <div className="input-group">
               <label>¿Cuánto pagó el cliente?</label>
@@ -836,8 +898,8 @@ function App() {
                 onKeyDown={e => { if (e.key === 'Enter' && change >= 0) confirmCharge(); }}
               />
               <div style={{ display: 'flex', gap: '8px', marginTop: '12px', flexWrap: 'wrap' }}>
-                <button type="button" onClick={() => setPayment(total)} style={{ flex: 1, padding: '12px', borderRadius: '8px', background: 'var(--bg-hover)', border: '1px solid var(--border-focus)', color: 'var(--text-primary)', cursor: 'pointer', fontWeight: 700 }}>Justo</button>
-                <button type="button" onClick={() => setPayment(Math.ceil(total / 1000) * 1000)} style={{ flex: 1, padding: '12px', borderRadius: '8px', background: 'var(--bg-hover)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', cursor: 'pointer', fontWeight: 600 }}>Próx. $1.000</button>
+                <button type="button" onClick={() => setPayment(adjustedTotal ?? total)} style={{ flex: 1, padding: '12px', borderRadius: '8px', background: 'var(--bg-hover)', border: '1px solid var(--border-focus)', color: 'var(--text-primary)', cursor: 'pointer', fontWeight: 700 }}>Justo</button>
+                <button type="button" onClick={() => setPayment(Math.ceil((adjustedTotal ?? total) / 1000) * 1000)} style={{ flex: 1, padding: '12px', borderRadius: '8px', background: 'var(--bg-hover)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', cursor: 'pointer', fontWeight: 600 }}>Próx. $1.000</button>
                 <button type="button" onClick={() => setPayment(5000)} style={{ flex: 1, padding: '12px', borderRadius: '8px', background: 'var(--bg-hover)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', cursor: 'pointer', fontWeight: 600 }}>$5.000</button>
                 <button type="button" onClick={() => setPayment(10000)} style={{ flex: 1, padding: '12px', borderRadius: '8px', background: 'var(--bg-hover)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', cursor: 'pointer', fontWeight: 600 }}>$10.000</button>
                 <button type="button" onClick={() => setPayment(20000)} style={{ flex: 1, padding: '12px', borderRadius: '8px', background: 'var(--bg-hover)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', cursor: 'pointer', fontWeight: 600 }}>$20.000</button>
@@ -854,7 +916,7 @@ function App() {
             )}
 
             <div className="modal-actions">
-              <button className="btn btn-modal-cancel" onClick={() => setIsCharging(false)}>Cancelar (Esc)</button>
+              <button className="btn btn-modal-cancel" onClick={() => { setIsCharging(false); setAdjustedTotal(null); setEditingTotal(false); }}>Cancelar (Esc)</button>
               <button className="btn btn-modal-confirm" onClick={confirmCharge} disabled={change < 0} style={{ opacity: change < 0 ? 0.5 : 1 }}>
                 Cerrar Venta (Enter)
               </button>
@@ -868,7 +930,7 @@ function App() {
         <div className="modal-overlay">
           <div className="modal-content">
             <h2 className="modal-title">Vender Fiado</h2>
-            <p style={{ textAlign: 'center', fontSize: '1.2rem', marginBottom: '16px' }}>Monto a anotar: <strong style={{ color: 'var(--accent-warning)', fontSize: '1.5rem' }}>${total.toLocaleString('es-AR')}</strong></p>
+            <p style={{ textAlign: 'center', fontSize: '1.2rem', marginBottom: '16px' }}>Monto a anotar: <strong style={{ color: 'var(--accent-warning)', fontSize: '1.5rem' }}>${(adjustedTotal ?? total).toLocaleString('es-AR')}</strong></p>
 
             <div className="input-group">
               <label>Nombre del cliente</label>
@@ -915,61 +977,94 @@ function App() {
         </div>
       )}
 
-      {/* Cierre Caja Modal (Idiota-Proof) */}
+      {/* Cierre Caja Modal */}
       {isClosingCaja && (
         <div className="modal-overlay">
-          <div className="modal-content" style={{ width: '500px' }}>
-            <h2 className="modal-title" style={{ color: 'var(--text-primary)' }}>Cierre de Turno</h2>
-            <p style={{ textAlign: 'center', color: 'var(--text-secondary)', marginBottom: '24px' }}>
-              Hoy el sistema registró ventas por:
-            </p>
-            <div className="modal-amount" style={{ color: 'var(--text-primary)' }}>${(todaySalesTotal || 0).toLocaleString('es-AR')}</div>
+          {currentOperator?.role === 'admin' ? (
+            <div className="modal-content" style={{ width: '500px' }}>
+              <h2 className="modal-title" style={{ color: 'var(--text-primary)' }}>Cierre de Turno</h2>
+              <p style={{ textAlign: 'center', color: 'var(--text-secondary)', marginBottom: '24px' }}>
+                Hoy el sistema registró ventas por:
+              </p>
+              <div className="modal-amount" style={{ color: 'var(--text-primary)' }}>${(todaySalesTotal || 0).toLocaleString('es-AR')}</div>
 
-            <div className="input-group">
-              <label style={{ fontSize: '1.1rem', color: 'var(--accent-primary)', fontWeight: 600 }}>¿Cuánto efectivo contaste en el cajón físico?</label>
-              <input
-                ref={cashRef}
-                type="number"
-                value={countedCash}
-                onChange={e => setCountedCash(e.target.value)}
-                autoFocus
-              />
-            </div>
-
-            <div className="input-group">
-              <label style={{ fontSize: '1.1rem', color: 'var(--text-secondary)' }}>Firma del Cierre (PIN 4 dígitos)</label>
-              <input
-                type="password"
-                value={closeCajaPin}
-                onChange={e => setCloseCajaPin(e.target.value.replace(/[^0-9]/g, '').slice(0, 4))}
-                placeholder="••••"
-              />
-            </div>
-
-            {countedCash && closeCajaPin.length === 4 && (
-              <div style={{ textAlign: 'center', marginBottom: '24px', padding: '16px', borderRadius: '12px', background: calculateCajaDiff() === 0 ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)' }}>
-                {calculateCajaDiff() === 0 ? (
-                  <span style={{ color: 'var(--accent-success)', fontWeight: 700, fontSize: '1.5rem' }}>✅ ¡Caja perfecta! No sobra ni falta.</span>
-                ) : (
-                  <div>
-                    <span style={{ color: 'var(--accent-danger)', fontWeight: 800, fontSize: '1.8rem' }}>
-                      {calculateCajaDiff() > 0 ? `Sobra $${calculateCajaDiff().toLocaleString('es-AR')}` : `Falta $${Math.abs(calculateCajaDiff()).toLocaleString('es-AR')}`}
-                    </span>
-                    <p style={{ color: 'var(--accent-danger)', marginTop: '8px', fontSize: '0.9rem' }}>
-                      Revisá los billetes o anotá el {calculateCajaDiff() > 0 ? 'sobrante' : 'faltante'} en las observaciones.
-                    </p>
-                  </div>
-                )}
+              <div className="input-group">
+                <label style={{ fontSize: '1.1rem', color: 'var(--accent-primary)', fontWeight: 600 }}>¿Cuánto efectivo contaste en el cajón físico?</label>
+                <input
+                  ref={cashRef}
+                  type="number"
+                  value={countedCash}
+                  onChange={e => setCountedCash(e.target.value)}
+                  autoFocus
+                />
               </div>
-            )}
 
-            <div className="modal-actions">
-              <button className="btn btn-modal-cancel" onClick={() => { setIsClosingCaja(false); setCountedCash(''); setCloseCajaPin(''); }}>Cancelar (Esc)</button>
-              <button className="btn btn-modal-confirm" style={{ background: 'var(--accent-danger)', opacity: !countedCash || closeCajaPin.length < 4 ? 0.5 : 1 }} onClick={confirmCloseTurn} disabled={!countedCash || closeCajaPin.length < 4}>
-                Confirmar y Reportar
-              </button>
+              <div className="input-group">
+                <label style={{ fontSize: '1.1rem', color: 'var(--text-secondary)' }}>Firma del Cierre (PIN 4 dígitos)</label>
+                <input
+                  type="password"
+                  value={closeCajaPin}
+                  onChange={e => setCloseCajaPin(e.target.value.replace(/[^0-9]/g, '').slice(0, 4))}
+                  placeholder="••••"
+                />
+              </div>
+
+              {countedCash && closeCajaPin.length === 4 && (
+                <div style={{ textAlign: 'center', marginBottom: '24px', padding: '16px', borderRadius: '12px', background: calculateCajaDiff() === 0 ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)' }}>
+                  {calculateCajaDiff() === 0 ? (
+                    <span style={{ color: 'var(--accent-success)', fontWeight: 700, fontSize: '1.5rem' }}>✅ ¡Caja perfecta! No sobra ni falta.</span>
+                  ) : (
+                    <div>
+                      <span style={{ color: 'var(--accent-danger)', fontWeight: 800, fontSize: '1.8rem' }}>
+                        {calculateCajaDiff() > 0 ? `Sobra $${calculateCajaDiff().toLocaleString('es-AR')}` : `Falta $${Math.abs(calculateCajaDiff()).toLocaleString('es-AR')}`}
+                      </span>
+                      <p style={{ color: 'var(--accent-danger)', marginTop: '8px', fontSize: '0.9rem' }}>
+                        Revisá los billetes o anotá el {calculateCajaDiff() > 0 ? 'sobrante' : 'faltante'} en las observaciones.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="modal-actions">
+                <button className="btn btn-modal-cancel" onClick={() => { setIsClosingCaja(false); setCountedCash(''); setCloseCajaPin(''); }}>Cancelar (Esc)</button>
+                <button className="btn btn-modal-confirm" style={{ background: 'var(--accent-danger)', opacity: !countedCash || closeCajaPin.length < 4 ? 0.5 : 1 }} onClick={confirmCloseTurn} disabled={!countedCash || closeCajaPin.length < 4}>
+                  Confirmar y Reportar
+                </button>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="modal-content" style={{ width: '400px', textAlign: 'center' }}>
+              <h2 className="modal-title" style={{ color: 'var(--text-primary)' }}>Cerrar mi Turno</h2>
+              <p style={{ color: 'var(--text-secondary)', marginBottom: '32px', fontSize: '1.1rem' }}>
+                {currentOperator?.name}, ¿estás seguro que querés cerrar tu turno?
+              </p>
+              <div className="modal-actions" style={{ justifyContent: 'center' }}>
+                <button className="btn btn-modal-cancel" onClick={() => setIsClosingCaja(false)}>Cancelar</button>
+                <button
+                  className="btn btn-modal-confirm"
+                  style={{ background: 'var(--accent-danger)' }}
+                  onClick={() => {
+                    fetch(`${SERVER_URL}/turns/${currentTurnId}/close`, {
+                      method: 'PATCH',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ sales_total: 0, counted_cash: 0, notes: '' }),
+                    }).catch(() => {});
+                    localStorage.removeItem('novastock_cart');
+                    setCart([]);
+                    setLastSale(null);
+                    setIsClosingCaja(false);
+                    setCountedCash('');
+                    setCloseCajaPin('');
+                    addToast('Turno cerrado correctamente. ¡Hasta la próxima!', 'success');
+                    setTimeout(() => window.print(), 200);
+                  }}
+                >
+                  Cerrar mi Turno
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -1120,6 +1215,41 @@ function App() {
             </div>
             <div className="modal-actions" style={{ marginTop: '24px' }}>
               <button className="btn btn-modal-confirm" onClick={() => setShowHelp(false)}>Cerrar (Esc)</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Resumen del día */}
+      {showResumen && (
+        <div className="modal-overlay" onClick={() => setShowResumen(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '450px' }}>
+            <h2 className="modal-title" style={{ fontSize: '1.5rem' }}>📊 Resumen del Día</h2>
+            {resumenData && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '16px 0' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 16px', background: 'var(--bg-main)', borderRadius: '8px' }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>Total Vendido</span>
+                  <span style={{ fontWeight: 800, fontSize: '1.5rem', fontFamily: 'var(--font-mono)', color: 'var(--accent-success)' }}>${(resumenData.total_vendido || 0).toLocaleString('es-AR')}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 16px', background: 'var(--bg-main)', borderRadius: '8px' }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>Cantidad de Tickets</span>
+                  <span style={{ fontWeight: 700, fontSize: '1.2rem' }}>{resumenData.total_tickets || 0}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 16px', background: 'var(--bg-main)', borderRadius: '8px' }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>Fiado</span>
+                  <span style={{ fontWeight: 700, fontSize: '1.2rem', color: 'var(--accent-warning)' }}>${(resumenData.total_fiado || 0).toLocaleString('es-AR')}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 16px', background: 'var(--bg-main)', borderRadius: '8px' }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>Efectivo en Caja</span>
+                  <span style={{ fontWeight: 700, fontSize: '1.2rem', color: 'var(--accent-primary)' }}>${((resumenData.total_vendido || 0) - (resumenData.total_fiado || 0)).toLocaleString('es-AR')}</span>
+                </div>
+              </div>
+            )}
+            <div className="modal-actions">
+              <button className="btn btn-modal-cancel" onClick={() => setShowResumen(false)}>Cerrar</button>
+              <button className="btn btn-modal-confirm" onClick={() => window.print()} style={{ background: 'var(--accent-primary)' }}>
+                🖨️ Imprimir reporte
+              </button>
             </div>
           </div>
         </div>

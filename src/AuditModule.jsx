@@ -5,9 +5,12 @@ export default function AuditModule({ serverUrl, addToast, products }) {
   const [filterType, setFilterType] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+  const [sales, setSales] = useState([]);
+  const [reverting, setReverting] = useState(null);
 
   useEffect(() => {
     fetchMovements();
+    fetchSales();
   }, []);
 
   const fetchMovements = async () => {
@@ -39,6 +42,34 @@ export default function AuditModule({ serverUrl, addToast, products }) {
       console.error(e);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchSales = async () => {
+    try {
+      const res = await fetch(`${serverUrl}/sales?limit=20`);
+      if (res.ok) {
+        const data = await res.json();
+        setSales(data);
+      }
+    } catch {}
+  };
+
+  const handleRevert = async (saleId) => {
+    setReverting(saleId);
+    try {
+      const res = await fetch(`${serverUrl}/sales/${saleId}/revert`, { method: 'PATCH' });
+      if (res.ok) {
+        if (addToast) addToast('Venta anulada y stock revertido correctamente.', 'success');
+        fetchSales();
+      } else {
+        const data = await res.json();
+        if (addToast) addToast(data.detail || 'Error al anular la venta.', 'error');
+      }
+    } catch {
+      if (addToast) addToast('No se pudo conectar con el servidor.', 'error');
+    } finally {
+      setReverting(null);
     }
   };
 
@@ -76,7 +107,7 @@ export default function AuditModule({ serverUrl, addToast, products }) {
   });
 
   return (
-    <div className="module-container" style={{ padding: '24px', display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+    <div className="module-container" style={{ padding: '24px', display: 'flex', flexDirection: 'column', height: '100%', overflow: 'auto' }}>
       <div className="module-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <div>
           <h1 style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '4px' }}>🔍 Módulo de Auditoría</h1>
@@ -148,7 +179,7 @@ export default function AuditModule({ serverUrl, addToast, products }) {
       </div>
 
       {/* Tabla */}
-      <div className="table-wrapper" style={{ flex: 1, overflowY: 'auto', borderRadius: '16px', background: 'var(--bg-card)', border: '1px solid var(--border-focus)' }}>
+      <div className="table-wrapper" style={{ borderRadius: '16px', background: 'var(--bg-card)', border: '1px solid var(--border-focus)' }}>
         {loading ? (
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px', color: 'var(--text-secondary)' }}>
             Cargando historial de auditoría...
@@ -204,6 +235,62 @@ export default function AuditModule({ serverUrl, addToast, products }) {
             </tbody>
           </table>
         )}
+      </div>
+
+      {/* Ventas recientes */}
+      <div style={{ marginTop: '24px' }}>
+        <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '12px' }}>🛒 Ventas Recientes</h3>
+        <div className="table-wrapper" style={{ borderRadius: '16px', background: 'var(--bg-card)', border: '1px solid var(--border-focus)' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+            <thead>
+              <tr style={{ borderBottom: '2px solid var(--border-focus)', color: 'var(--text-secondary)', fontSize: '0.85rem', textTransform: 'uppercase' }}>
+                <th style={{ padding: '16px 24px' }}>ID</th>
+                <th style={{ padding: '16px 24px' }}>Hora</th>
+                <th style={{ padding: '16px 24px' }}>Cliente</th>
+                <th style={{ padding: '16px 24px', textAlign: 'right' }}>Total</th>
+                <th style={{ padding: '16px 24px' }}>Estado</th>
+                <th style={{ padding: '16px 24px' }}>Acción</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sales.map(s => (
+                <tr key={s.id} style={{ borderBottom: '1px solid var(--border-focus)', opacity: s.reverted ? 0.5 : 1 }} className="table-row">
+                  <td style={{ padding: '16px 24px', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>#{s.id}</td>
+                  <td style={{ padding: '16px 24px', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                    {new Date(s.timestamp).toLocaleString('es-AR', { hour: '2-digit', minute: '2-digit' })}
+                  </td>
+                  <td style={{ padding: '16px 24px', fontWeight: 600 }}>{s.fiado_name || (s.is_fiado ? 'Fiado' : 'Mostrador')}</td>
+                  <td style={{ padding: '16px 24px', textAlign: 'right', fontWeight: 800, fontFamily: 'var(--font-mono)' }}>
+                    ${s.total.toLocaleString('es-AR')}
+                  </td>
+                  <td style={{ padding: '16px 24px' }}>
+                    {s.reverted ? (
+                      <span style={{ color: 'var(--accent-danger)', fontWeight: 600, fontSize: '0.85rem' }}>❌ Anulada</span>
+                    ) : (
+                      <span style={{ color: 'var(--accent-success)', fontWeight: 600, fontSize: '0.85rem' }}>✅ Activa</span>
+                    )}
+                  </td>
+                  <td style={{ padding: '16px 24px' }}>
+                    {!s.reverted && (
+                      <button
+                        onClick={() => handleRevert(s.id)}
+                        disabled={reverting === s.id}
+                        style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '6px', color: 'var(--accent-danger)', padding: '6px 12px', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem', opacity: reverting === s.id ? 0.6 : 1 }}
+                      >
+                        {reverting === s.id ? '...' : '↩️ Anular'}
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+              {sales.length === 0 && (
+                <tr>
+                  <td colSpan={6} style={{ padding: '24px', textAlign: 'center', color: 'var(--text-secondary)' }}>No hay ventas registradas.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

@@ -45,6 +45,7 @@ export default function PurchasesModule({ serverUrl, onProductsUpdated, addToast
   const [suppliers, setSuppliers] = useState([]);
   const [purchases, setPurchases] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const [showNewSupplierModal, setShowNewSupplierModal] = useState(false);
 
   // New Invoice State
@@ -149,6 +150,13 @@ export default function PurchasesModule({ serverUrl, onProductsUpdated, addToast
   };
 
   const cartTotal = cart.reduce((sum, item) => sum + (item.quantity * item.unit_cost), 0);
+
+  const filteredPurchases = purchases.filter(p => {
+    if (!searchTerm.trim()) return true;
+    const term = searchTerm.toLowerCase();
+    return (p.supplier_name && p.supplier_name.toLowerCase().includes(term)) ||
+           (p.invoice_number && p.invoice_number.toLowerCase().includes(term));
+  });
 
   const handleConfirmPurchase = async () => {
     if (cart.length === 0) return addToast ? addToast("Debe agregar productos a la factura.", "error") : null;
@@ -360,31 +368,48 @@ export default function PurchasesModule({ serverUrl, onProductsUpdated, addToast
         <div style={{ flex: 1, overflowY: 'auto', padding: '24px 32px' }}>
           {loading ? (
             <div style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '48px' }}>Cargando historial...</div>
-          ) : purchases.length === 0 ? (
-            <div style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '48px' }}>No hay compras registradas.</div>
           ) : (
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ borderBottom: '2px solid var(--border-color)', color: 'var(--text-secondary)' }}>
-                  <th style={{ padding: '16px', textAlign: 'left' }}>Fecha</th>
-                  <th style={{ padding: '16px', textAlign: 'left' }}>Proveedor</th>
-                  <th style={{ padding: '16px', textAlign: 'left' }}>N° Factura</th>
-                  <th style={{ padding: '16px', textAlign: 'right' }}>Total Costo</th>
-                </tr>
-              </thead>
-              <tbody>
-                {purchases.map(p => (
-                  <tr key={p.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                    <td style={{ padding: '16px' }}>{new Date(p.timestamp).toLocaleString('es-AR')}</td>
-                    <td style={{ padding: '16px', fontWeight: 600 }}>{p.supplier_name || 'Sin Proveedor'}</td>
-                    <td style={{ padding: '16px' }}>{p.invoice_number || '-'}</td>
-                    <td style={{ padding: '16px', textAlign: 'right', fontWeight: 800, fontFamily: 'var(--font-mono)', color: '#10B981' }}>
-                      ${p.total_cost.toLocaleString('es-AR')}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <>
+              <div style={{ display: 'flex', gap: '16px', alignItems: 'center', marginBottom: '20px' }}>
+                <div style={{ flex: 1, position: 'relative' }}>
+                  <input
+                    type="text"
+                    placeholder="Buscar por proveedor o factura..."
+                    onChange={e => setSearchTerm(e.target.value)}
+                    style={{ width: '100%', background: 'var(--bg-main)', border: '2px solid var(--border-color)', color: 'var(--text-primary)', padding: '12px 16px', borderRadius: '8px', fontSize: '1rem', outline: 'none' }}
+                  />
+                </div>
+                <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: 600 }}>
+                  {filteredPurchases.length} resultado{filteredPurchases.length !== 1 ? 's' : ''}
+                </span>
+              </div>
+              {filteredPurchases.length === 0 ? (
+                <div style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '48px' }}>No se encontraron compras con ese filtro.</div>
+              ) : (
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '2px solid var(--border-color)', color: 'var(--text-secondary)' }}>
+                      <th style={{ padding: '16px', textAlign: 'left' }}>Fecha</th>
+                      <th style={{ padding: '16px', textAlign: 'left' }}>Proveedor</th>
+                      <th style={{ padding: '16px', textAlign: 'left' }}>N° Factura</th>
+                      <th style={{ padding: '16px', textAlign: 'right' }}>Total Costo</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredPurchases.map(p => (
+                      <tr key={p.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                        <td style={{ padding: '16px' }}>{new Date(p.timestamp).toLocaleString('es-AR')}</td>
+                        <td style={{ padding: '16px', fontWeight: 600 }}>{p.supplier_name || 'Sin Proveedor'}</td>
+                        <td style={{ padding: '16px' }}>{p.invoice_number || '-'}</td>
+                        <td style={{ padding: '16px', textAlign: 'right', fontWeight: 800, fontFamily: 'var(--font-mono)', color: '#10B981' }}>
+                          ${p.total_cost.toLocaleString('es-AR')}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </>
           )}
         </div>
       )}
