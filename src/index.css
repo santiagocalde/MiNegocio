@@ -9,8 +9,8 @@
   --border-color: #334155;
   --border-focus: #3b82f6;
 
-  --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
+  --text-primary: #ffffff;
+  --text-secondary: #cbd5e1;
 
   --accent-primary: #3b82f6; 
   --accent-success: #22c55e; 
@@ -71,7 +71,7 @@ svg {
   color: var(--accent-primary);
 }
 .brand-text {
-  font-size: 1.25rem;
+  font-size: 1.5rem;
   font-weight: 800;
   letter-spacing: -0.5px;
 }
@@ -80,18 +80,34 @@ svg {
   display: flex;
   flex-direction: column;
   padding: 16px;
-  gap: 8px;
+  gap: 6px;
   flex: 1;
+}
+
+.nav-section-label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #64748b;
+  letter-spacing: 1.5px;
+  padding: 12px 16px 6px;
+  text-transform: uppercase;
+}
+
+.nav-separator {
+  height: 1px;
+  background: var(--border-color);
+  margin: 12px 16px;
 }
 
 .nav-item {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 16px;
+  padding: 18px 16px;
   border-radius: 8px;
   color: var(--text-secondary);
-  font-weight: 600;
+  font-weight: 700;
+  font-size: 1.1rem;
   cursor: pointer;
   transition: all 0.2s;
   border: 1px solid transparent;
@@ -125,7 +141,7 @@ svg {
   background-color: var(--bg-card);
 }
 .topbar-title {
-  font-size: 1.25rem;
+  font-size: 1.5rem;
   font-weight: 700;
 }
 .status-indicators {
@@ -136,12 +152,12 @@ svg {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 16px;
+  padding: 10px 20px;
   border-radius: 99px;
   background-color: rgba(34, 197, 94, 0.1);
   color: var(--accent-success);
-  font-size: 0.875rem;
-  font-weight: 600;
+  font-size: 1rem;
+  font-weight: 700;
   border: 1px solid rgba(34, 197, 94, 0.2);
 }
 .status-pill.warning {
@@ -201,9 +217,14 @@ svg {
   background: transparent;
   border: none;
   color: var(--text-primary);
-  font-size: 1.5rem;
-  font-weight: 500;
+  font-size: 1.75rem;
+  font-weight: 600;
   outline: none;
+}
+
+.search-bar input::placeholder {
+  color: #64748b;
+  font-weight: 400;
 }
 
 /* Cart List (Center) */
@@ -243,20 +264,20 @@ svg {
   border: 1px solid var(--border-color);
 }
 .item-title {
-  font-size: 1.5rem;
+  font-size: 1.75rem;
   font-weight: 700;
   display: block;
   margin-bottom: 4px;
 }
 .item-price-unit {
-  font-size: 1.1rem;
+  font-size: 1.25rem;
   color: var(--text-secondary);
 }
 .item-price {
   font-family: var(--font-mono);
-  font-size: 1.5rem;
+  font-size: 1.75rem;
   font-weight: 800;
-  min-width: 120px;
+  min-width: 140px;
   text-align: right;
 }
 .qty-controls {
@@ -271,9 +292,10 @@ svg {
   background: transparent;
   border: none;
   color: var(--text-primary);
-  width: 40px;
-  height: 40px;
-  font-size: 1.25rem;
+  width: 52px;
+  height: 52px;
+  font-size: 1.5rem;
+  font-weight: 800;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -284,9 +306,9 @@ svg {
 }
 .qty-val {
   font-family: var(--font-mono);
-  font-size: 1.1rem;
+  font-size: 1.5rem;
   font-weight: 700;
-  width: 40px;
+  width: 60px;
   text-align: center;
 }
 
@@ -321,7 +343,7 @@ svg {
 .cart-footer-row {
   display: flex;
   justify-content: space-between;
-  font-size: 1.1rem;
+  font-size: 1.25rem;
   color: var(--text-secondary);
   font-family: var(--font-mono);
 }
@@ -334,13 +356,13 @@ svg {
   border-top: 1px solid var(--border-color);
 }
 .cart-footer-total span:first-child {
-  font-size: 1.5rem;
+  font-size: 2rem;
   font-weight: 800;
   color: var(--text-primary);
 }
 .total-amount {
   font-family: var(--font-mono);
-  font-size: 3rem;
+  font-size: 3.5rem;
   font-weight: 800;
 }
 .total-amount.zero { color: var(--accent-muted); }
@@ -375,9 +397,9 @@ svg {
 .btn-primary-huge { 
   width: 100%;
   background-color: var(--accent-success); 
-  font-size: 2.5rem; 
-  padding: 32px;
-  border-radius: 12px;
+  font-size: 3rem; 
+  padding: 36px;
+  border-radius: 16px;
   box-shadow: 0 10px 15px -3px rgba(34, 197, 94, 0.3);
 }
 .btn-primary-huge:disabled {
@@ -385,9 +407,9 @@ svg {
   color: var(--accent-muted);
   box-shadow: none;
 }
-.btn-secondary { background-color: var(--bg-hover); color: var(--text-primary); flex: 1; font-size: 1.25rem;}
-.btn-warning { background-color: rgba(234, 179, 8, 0.1); color: var(--accent-warning); border: 1px solid rgba(234, 179, 8, 0.3); flex: 1; font-size: 1.25rem;}
-.btn-danger-small { background-color: transparent; color: var(--accent-danger); font-size: 1rem; padding: 8px 16px; align-self: flex-start; }
+.btn-secondary { background-color: var(--bg-hover); color: var(--text-primary); flex: 1; font-size: 1.5rem; font-weight: 700;}
+.btn-warning { background-color: rgba(234, 179, 8, 0.1); color: var(--accent-warning); border: 1px solid rgba(234, 179, 8, 0.3); flex: 1; font-size: 1.5rem; font-weight: 700;}
+.btn-danger-small { background-color: transparent; color: var(--accent-danger); font-size: 1.25rem; padding: 12px 24px; align-self: flex-start; font-weight: 700; }
 .btn-danger-small:hover { text-decoration: underline; }
 
 /* Modals */
@@ -411,14 +433,14 @@ svg {
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
 }
 .modal-title {
-  font-size: 2rem;
+  font-size: 2.25rem;
   font-weight: 800;
   text-align: center;
   margin-bottom: 24px;
 }
 .modal-amount {
   font-family: var(--font-mono);
-  font-size: 4rem;
+  font-size: 4.5rem;
   font-weight: 800;
   text-align: center;
   color: var(--text-primary);
@@ -429,7 +451,7 @@ svg {
 }
 .input-group label {
   display: block;
-  font-size: 1.25rem;
+  font-size: 1.5rem;
   font-weight: 600;
   margin-bottom: 12px;
   color: var(--text-secondary);
@@ -437,11 +459,11 @@ svg {
 .input-group input {
   width: 100%;
   background-color: var(--bg-main);
-  border: 2px solid var(--border-focus);
+  border: 3px solid var(--border-focus);
   color: var(--text-primary);
   padding: 24px;
   border-radius: 12px;
-  font-size: 2.5rem;
+  font-size: 3rem;
   font-family: var(--font-mono);
   text-align: center;
   outline: none;
@@ -455,14 +477,16 @@ svg {
   background-color: var(--bg-hover);
   color: var(--text-primary);
   padding: 24px;
-  font-size: 1.25rem;
+  font-size: 1.5rem;
+  font-weight: 700;
 }
 .btn-modal-confirm {
   flex: 2;
   background-color: var(--accent-success);
   color: white;
   padding: 24px;
-  font-size: 1.25rem;
+  font-size: 1.5rem;
+  font-weight: 800;
 }
 
 /* Print Styles — Ticket Térmico 80mm */

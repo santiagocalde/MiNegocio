@@ -16,12 +16,7 @@ export default function FiadoModule() {
         setFiados(data);
       }
     } catch {
-      // fallback mock offline
-      setFiados([
-        { id: 1, fiado_name: 'Doña María', total: 1580, timestamp: '2026-05-31 09:15:00', cobrado: false },
-        { id: 2, fiado_name: 'Don Pepe', total: 3200, timestamp: '2026-05-31 11:30:00', cobrado: false },
-        { id: 3, fiado_name: 'Carlitos (el del 4to)', total: 800, timestamp: '2026-05-30 18:00:00', cobrado: false },
-      ]);
+      setFiados([]);
     } finally {
       setLoading(false);
     }

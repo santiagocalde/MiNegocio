@@ -116,9 +116,9 @@ function ProductCard({ product, onPriceUpdate, onStockUpdate, onCrearBulto, addT
                   const data = await res.json();
                   if (addToast) addToast(data.detail || "Error al abrir el bulto.", "error");
                 }
-              } catch {
-                if (addToast) addToast("Error de conexión al abrir bulto.", "error");
-              }
+} catch {
+      if (addToast) addToast("No se pudo abrir el bulto. Verificá la conexión con el servidor.", "error");
+    }
             }} style={{ background: 'rgba(168, 85, 247, 0.1)', border: '1px solid rgba(168, 85, 247, 0.3)', borderRadius: '4px', color: '#A855F7', cursor: 'pointer', padding: '2px 8px', fontSize: '0.75rem', fontWeight: 600 }}>📦 Abrir Caja (Pasar a Sueltos)</button>
           )}
           {status === 'empty' && <span style={{ color: 'var(--accent-danger)', fontWeight: 700 }}>🔴 SE TERMINÓ</span>}
@@ -421,16 +421,7 @@ export default function StockModule({ serverUrl, onProductsUpdated, addToast, pr
       const data = await res.json();
       setProducts(Array.isArray(data) ? data : []);
     } catch {
-      // Fallback offline: productos mock si el servidor no responde
-      setProducts([
-        { id: 1, code: '7790895000997', name: 'Coca Cola 500ml', price: 1200, cost_price: 850, stock: 45, min_stock: 10, iva: '21%' },
-        { id: 2, code: '7790580402804', name: 'Alfajor Guaymallen', price: 400, cost_price: 250, stock: 120, min_stock: 20, iva: '21%' },
-        { id: 3, code: '7798765000012', name: 'Cerveza Quilmes 473ml', price: 1800, cost_price: 1200, stock: 3, min_stock: 12, iva: '21%' },
-        { id: 4, code: '7797654000098', name: 'Cerveza Heineken 473ml', price: 2200, cost_price: 1500, stock: 0, min_stock: 8, iva: '21%' },
-        { id: 5, code: '7796543000076', name: 'Leche La Serenísima 1L', price: 900, cost_price: 600, stock: 2, min_stock: 5, iva: '21%' },
-        { id: 6, code: '7799876543210', name: 'Chocolate Milka', price: 2100, cost_price: 1400, stock: 15, min_stock: 5, iva: '21%' },
-        { id: 7, code: '001', name: 'Gomitas Sueltas 100g', price: 800, cost_price: 500, stock: 999, min_stock: 50, iva: '21%' },
-      ]);
+      setProducts([]);
     } finally {
       setLoading(false);
     }
@@ -500,7 +491,7 @@ export default function StockModule({ serverUrl, onProductsUpdated, addToast, pr
         if (addToast) addToast("Error al crear. ¿El código ya existe?", "error");
       }
     } catch {
-      if (addToast) addToast("Error de conexión al crear el producto.", "error");
+      if (addToast) addToast("No se pudo crear el producto. Verificá la conexión con el servidor.", "error");
     }
   };
 
@@ -518,7 +509,7 @@ export default function StockModule({ serverUrl, onProductsUpdated, addToast, pr
         onProductsUpdated?.();
       }
     } catch {
-      if (addToast) addToast("Error de red.", "error");
+      if (addToast) addToast("No se pudieron actualizar los precios. Verificá la conexión con el servidor.", "error");
     }
   };
 

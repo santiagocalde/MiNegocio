@@ -94,7 +94,7 @@ export default function PurchasesModule({ serverUrl, onProductsUpdated, addToast
         setShowNewSupplierModal(false);
         if (addToast) addToast("Proveedor creado exitosamente.");
       } else {
-        if (addToast) addToast("Error del servidor al crear proveedor.", "error");
+        if (addToast) addToast("No se pudo crear el proveedor. ¿Ya existe uno con ese nombre?", "error");
       }
     } catch (e) {
       console.error(e);
@@ -182,11 +182,11 @@ export default function PurchasesModule({ serverUrl, onProductsUpdated, addToast
         onProductsUpdated?.();
         setActiveTab('history');
       } else {
-        if (addToast) addToast("Error del servidor al registrar compra.", "error");
+        if (addToast) addToast("No se pudo registrar la compra. Intentá de nuevo.", "error");
       }
     } catch (e) {
       console.error(e);
-      if (addToast) addToast("Error de red al registrar compra.", "error");
+      if (addToast) addToast("No se pudo registrar la compra. Verificá la conexión con el servidor.", "error");
     }
   };
 

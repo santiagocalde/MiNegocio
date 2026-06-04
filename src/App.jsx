@@ -54,7 +54,8 @@ function App() {
   const [isCharging, setIsCharging] = useState(false);
   const [payment, setPayment] = useState('');
   const [flash, setFlash] = useState(false);
-  const [pendingSync, setPendingSync] = useState(12); // Mock for offline sync
+  const [pendingSync, setPendingSync] = useState(0); // Ventas pendientes de sincronizar
+  const [todaySalesTotal, setTodaySalesTotal] = useState(0); // Total ventas del día
 
   // Modals
   const [isClosingCaja, setIsClosingCaja] = useState(false);
@@ -87,8 +88,6 @@ function App() {
     }, 4000);
   };
 
-  const MOCK_DAY_TOTAL = 15400;
-
   const searchRef = useRef(null);
   const paymentRef = useRef(null);
   const cashRef = useRef(null);
@@ -113,6 +112,11 @@ function App() {
       fetch(`${SERVER_URL}/stock-alerts`)
         .then(res => res.json())
         .then(alerts => { if (alerts.total > 0) setStockAlerts(alerts); })
+        .catch(() => { });
+      // Ventas del día para el cierre de caja
+      fetch(`${SERVER_URL}/sales/today`)
+        .then(res => res.json())
+        .then(data => setTodaySalesTotal(data.total_vendido || 0))
         .catch(() => { });
     }
   }, [isAuthenticated]);
@@ -165,7 +169,7 @@ function App() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(sale.payload),
           });
-          if (!res.ok) throw new Error("Fallo sync");
+          if (!res.ok) throw new Error("No se pudo enviar");
         } catch (e) {
           toKeep.push(sale); // Si falla, lo guardamos para el próximo intento
         }
@@ -215,38 +219,16 @@ function App() {
   }, [isAuthenticated, activeTab, cart, isCharging, isClosingCaja, isCancelConfirm, isFiadoOpen]);
 
   // ─────────────────────────────────────────────────────────────
-  // LÓGICA DE COMBOS AUTOMÁTICOS Y TOTALES
+  // CÁLCULO DE TOTALES
   // ─────────────────────────────────────────────────────────────
   const calculateTotals = () => {
-    let rawTotal = cart.reduce((acc, item) => acc + (item.price * item.qty), 0);
-    let discount = 0;
-
-    // DEMO COMBO: Alfajor + Gaseosa = Descuento de $300
-    // (Buscamos si hay al menos 1 alfajor y 1 gaseosa en el carrito)
-    const alfajores = cart.filter(i => i.name.toLowerCase().includes('alfajor')).reduce((sum, i) => sum + i.qty, 0);
-    const gaseosas = cart.filter(i => i.name.toLowerCase().includes('coca')).reduce((sum, i) => sum + i.qty, 0);
-
-    if (alfajores > 0 && gaseosas > 0) {
-      const combosCount = Math.min(alfajores, gaseosas);
-      discount += combosCount * 300; // $300 de descuento por cada par
-    }
-
-    // DEMO PROMOCIÓN: Llevando 3, pagás menos (Ej: Cerveza)
-    const cervezas = cart.filter(i => i.name.toLowerCase().includes('cerveza'));
-    cervezas.forEach(cerveza => {
-      if (cerveza.qty >= 3) {
-        const gruposDeTres = Math.floor(cerveza.qty / 3);
-        discount += gruposDeTres * 500; // $500 de descuento cada 3 cervezas
-      }
-    });
-
-    const total = rawTotal - discount;
+    const total = cart.reduce((acc, item) => acc + (item.price * item.qty), 0);
     const subtotal = total / 1.21;
     const iva = total - subtotal;
-    return { rawTotal, discount, total, subtotal, iva };
+    return { total, discount: 0, subtotal, iva };
   };
 
-  const { rawTotal, discount, total, subtotal, iva } = calculateTotals();
+  const { discount, total, subtotal, iva } = calculateTotals();
   const change = payment ? parseInt(payment) - total : 0;
 
   const handleUnpack = async (productId) => {
@@ -260,7 +242,7 @@ function App() {
         addToast(data.detail || "Error al abrir bulto", "error");
       }
     } catch {
-      addToast("Error de red", "error");
+      addToast("No hay conexión con el servidor. Verificá que NovaStock esté iniciado.", "error");
     }
   };
 
@@ -327,7 +309,7 @@ function App() {
         setFlash(true);
         setTimeout(() => setFlash(false), 300);
       } else {
-        addToast('Producto no encontrado', 'error');
+        addToast('No encontré ese producto. Escaneá el código o buscá por nombre.', 'error');
         playErrorBeep();
         setSearch('');
       }
@@ -395,7 +377,7 @@ function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(salePayload),
       });
-      if (!res.ok) throw new Error("Error HTTP");
+      if (!res.ok) throw new Error("Error al procesar la venta");
       const data = await res.json();
       setTicketNumber(data.id || ticketNumber + 1);
       fetchProductsDB();
@@ -430,7 +412,7 @@ function App() {
         body: JSON.stringify({ turn_id: currentTurnId, monto, motivo: egresoMotivo, operator: currentOperator?.name }),
       });
       addToast(`Retiro de efectivo registrado: $${monto}`, 'success');
-    } catch { addToast('Error de conexión al registrar egreso', 'error'); }
+    } catch { addToast('No se pudo registrar el retiro. Verificá la conexión con el servidor.', 'error'); }
     setShowEgreso(false);
     setEgresoMonto('');
     setEgresoMotivo('');
@@ -462,7 +444,7 @@ function App() {
 
   const calculateCajaDiff = () => {
     if (!countedCash) return null;
-    return parseInt(countedCash) - MOCK_DAY_TOTAL;
+    return parseInt(countedCash) - (todaySalesTotal || 0);
   };
 
   if (!isAuthenticated) {
@@ -504,15 +486,19 @@ function App() {
         </div>
 
         <nav className="nav-menu">
+          <div className="nav-section-label">MÓDULOS</div>
           <div className={`nav-item ${activeTab === 'ventas' ? 'active' : ''}`} onClick={() => setActiveTab('ventas')}>
             <Icons.ShoppingCart /> Ventas (Caja)
+          </div>
+          <div className={`nav-item ${activeTab === 'fiado' ? 'active' : ''}`} onClick={() => setActiveTab('fiado')}>
+            <Icons.Book /> Fiado (Libreta)
           </div>
           {currentOperator?.role === 'admin' && (
             <>
               <div className={`nav-item ${activeTab === 'inventario' ? 'active' : ''}`} onClick={() => setActiveTab('inventario')} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}><Icons.Box /> Stock</div>
                 {(emptyStockCount > 0 || lowStockCount > 0) && (
-                  <div style={{ background: emptyStockCount > 0 ? 'var(--accent-danger)' : 'var(--accent-warning)', color: emptyStockCount > 0 ? 'white' : 'black', padding: '2px 8px', borderRadius: '12px', fontSize: '0.85rem', fontWeight: 800 }}>
+                  <div style={{ background: emptyStockCount > 0 ? 'var(--accent-danger)' : 'var(--accent-warning)', color: emptyStockCount > 0 ? 'white' : 'black', padding: '4px 12px', borderRadius: '12px', fontSize: '1rem', fontWeight: 800 }}>
                     {emptyStockCount + lowStockCount}
                   </div>
                 )}
@@ -525,25 +511,26 @@ function App() {
               </div>
             </>
           )}
-          <div className={`nav-item ${activeTab === 'fiado' ? 'active' : ''}`} onClick={() => setActiveTab('fiado')}>
-            <Icons.Book /> Fiado (Libreta)
-          </div>
 
-          <div style={{ flex: 1 }}></div>
-
-          <div className="nav-item" style={{ background: 'rgba(234, 179, 8, 0.1)', color: 'var(--accent-warning)', border: '1px solid rgba(234, 179, 8, 0.2)' }} onClick={() => setShowEgreso(true)}>
-            💸 Retirar Efectivo
-          </div>
+          <div className="nav-separator"></div>
 
           {currentOperator?.role === 'admin' && (
-            <div className="nav-item" style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }} onClick={() => setShowConfig(true)}>
+            <div className="nav-item" style={{ border: '1px solid rgba(234, 179, 8, 0.3)' }} onClick={() => setShowEgreso(true)}>
+              💸 Retirar Efectivo
+            </div>
+          )}
+
+          {currentOperator?.role === 'admin' && (
+            <div className="nav-item" style={{ color: 'var(--text-secondary)' }} onClick={() => setShowConfig(true)}>
               ⚙️ Configurar negocio
             </div>
           )}
 
-          <div className="nav-item" style={{ background: 'rgba(239, 68, 68, 0.1)', color: 'var(--accent-danger)', border: '1px solid rgba(239, 68, 68, 0.2)' }} onClick={() => setIsClosingCaja(true)}>
-            Cerrar Turno
-          </div>
+          {currentOperator?.role === 'admin' && (
+            <div className="nav-item" style={{ border: '1px solid rgba(239, 68, 68, 0.3)' }} onClick={() => setIsClosingCaja(true)}>
+              🔒 Cerrar Turno
+            </div>
+          )}
         </nav>
       </aside>
 
@@ -747,8 +734,13 @@ function App() {
               </button>
             </div>
 
-            <div style={{ textAlign: 'center', marginTop: '8px', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-              Presioná <strong>F10</strong> para ver Ayuda / Atajos
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '12px', flexWrap: 'wrap' }}>
+              <span style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '8px 16px', color: 'var(--text-secondary)', fontSize: '1rem', fontWeight: 700 }}>F1 Cobrar</span>
+              <span style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '8px 16px', color: 'var(--text-secondary)', fontSize: '1rem', fontWeight: 700 }}>F2 Buscar</span>
+              <span style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '8px 16px', color: 'var(--text-secondary)', fontSize: '1rem', fontWeight: 700 }}>F4 Fiado</span>
+              <span style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '8px 16px', color: 'var(--text-secondary)', fontSize: '1rem', fontWeight: 700 }}>F10 Ayuda</span>
+              <span style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '8px 16px', color: 'var(--text-secondary)', fontSize: '1rem', fontWeight: 700 }}>F12 Anular</span>
+              <span style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '8px 16px', color: 'var(--text-secondary)', fontSize: '1rem', fontWeight: 700 }}>Esc Salir</span>
             </div>
 
           </div>
@@ -876,9 +868,9 @@ function App() {
           <div className="modal-content" style={{ width: '500px' }}>
             <h2 className="modal-title" style={{ color: 'var(--text-primary)' }}>Cierre de Turno</h2>
             <p style={{ textAlign: 'center', color: 'var(--text-secondary)', marginBottom: '24px' }}>
-              Hoy el sistema registró ventas en efectivo por:
+              Hoy el sistema registró ventas por:
             </p>
-            <div className="modal-amount" style={{ color: 'var(--text-primary)' }}>${MOCK_DAY_TOTAL.toLocaleString('es-AR')}</div>
+            <div className="modal-amount" style={{ color: 'var(--text-primary)' }}>${(todaySalesTotal || 0).toLocaleString('es-AR')}</div>
 
             <div className="input-group">
               <label style={{ fontSize: '1.1rem', color: 'var(--accent-primary)', fontWeight: 600 }}>¿Cuánto efectivo contaste en el cajón físico?</label>
@@ -955,9 +947,9 @@ function App() {
             operator: currentOperator?.name,
             opened_at: new Date().toISOString(),
             total_tickets: 0,
-            total_efectivo: MOCK_DAY_TOTAL,
+            total_efectivo: todaySalesTotal || 0,
             total_fiado: 0,
-            sales_total: MOCK_DAY_TOTAL,
+            sales_total: todaySalesTotal || 0,
             counted_cash: parseFloat(countedCash) || 0,
             top_products: [],
           }}
