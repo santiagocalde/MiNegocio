@@ -42,14 +42,7 @@ function App() {
   const [productsDB, setProductsDB] = useState([]);
 
   // POS State
-  const [cart, setCart] = useState(() => {
-    try {
-      const savedCart = localStorage.getItem('novastock_cart');
-      return savedCart ? JSON.parse(savedCart) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [cart, setCart] = useState([]);
   const [search, setSearch] = useState('');
   const [isCharging, setIsCharging] = useState(false);
   const [payment, setPayment] = useState('');
@@ -123,8 +116,10 @@ function App() {
 
   // Efecto: Guardar carrito en localStorage para prevenir pérdida en cortes
   useEffect(() => {
-    localStorage.setItem('novastock_cart', JSON.stringify(cart));
-  }, [cart]);
+    if (isAuthenticated) {
+      localStorage.setItem('novastock_cart', JSON.stringify(cart));
+    }
+  }, [cart, isAuthenticated]);
 
   // Efecto: Ping de estado y control de conexión
   useEffect(() => {
@@ -210,6 +205,7 @@ function App() {
 
       if (e.key === 'F1') { e.preventDefault(); if (cart.length > 0) setIsCharging(true); }
       if (e.key === 'F2') { e.preventDefault(); searchRef.current?.focus(); }
+      if (e.key === 'F3') { e.preventDefault(); if (cart.length > 0) { const lastId = cart[cart.length - 1].id; document.getElementById(`qty-input-${lastId}`)?.focus(); document.getElementById(`qty-input-${lastId}`)?.select(); } }
       if (e.key === 'F4') { e.preventDefault(); if (cart.length > 0) setIsFiadoOpen(true); }
       if (e.key === 'F8' || e.key === 'Delete' || e.key === 'Supr') { e.preventDefault(); if (cart.length > 0) { setCart(prev => prev.slice(0, -1)); addToast("Último producto quitado del carrito", "success"); playBeep(); } }
       if (e.key === 'F10') { e.preventDefault(); setShowHelp(prev => !prev); }
@@ -318,15 +314,32 @@ function App() {
   };
 
   const handleQuickAdd = (code, name, price) => {
-    // Busca si ya existe en la base de datos (por si el usuario lo creó formalmente)
     const dbProduct = productsDB.find(p => p.code === code);
-    const productToAdd = dbProduct || { id: code, code, name, price, stock: 999, min_stock: 0, iva: '21%' };
-
-    setCart(prev => {
-      const ex = prev.find(p => p.id === productToAdd.id);
-      if (ex) return prev.map(p => p.id === productToAdd.id ? { ...p, qty: p.qty + 1 } : p);
-      return [...prev, { ...productToAdd, qty: 1 }];
-    });
+    if (dbProduct) {
+      setCart(prev => {
+        const ex = prev.find(p => p.id === dbProduct.id);
+        if (ex) return prev.map(p => p.id === dbProduct.id ? { ...p, qty: p.qty + 1 } : p);
+        return [...prev, { ...dbProduct, qty: 1 }];
+      });
+    } else {
+      // Auto-crear producto virtual en DB para que sea editable después
+      fetch(`${SERVER_URL}/products`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, name, price, stock: 999, min_stock: 0, iva: '21%' }),
+      }).then(res => res.json()).then(newProduct => {
+        setCart(prev => [...prev, { ...newProduct, qty: 1 }]);
+        fetchProductsDB();
+      }).catch(() => {
+        // Offline: usar producto temporal
+        const temp = { id: code, code, name, price, stock: 999, min_stock: 0, iva: '21%' };
+        setCart(prev => {
+          const ex = prev.find(p => p.id === temp.id);
+          if (ex) return prev.map(p => p.id === temp.id ? { ...p, qty: p.qty + 1 } : p);
+          return [...prev, { ...temp, qty: 1 }];
+        });
+      });
+    }
     playBeep();
     setFlash(true);
     addToast(`${name} agregado al carrito`);
@@ -347,6 +360,10 @@ function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ operator: op.name }),
       }).then(r => r.json()).then(d => setCurrentTurnId(d.id)).catch(() => { });
+    } else if (val.length === 4) {
+      playErrorBeep();
+      addToast('PIN incorrecto. Probá de nuevo.', 'error');
+      setPin('');
     }
   };
 
@@ -446,6 +463,34 @@ function App() {
   const calculateCajaDiff = () => {
     if (!countedCash) return null;
     return parseInt(countedCash) - (todaySalesTotal || 0);
+  };
+
+  const confirmCloseTurn = () => {
+    if (closeCajaPin !== currentOperator?.pin) {
+      addToast('PIN incorrecto. No se puede cerrar el turno.', 'error');
+      playErrorBeep();
+      return;
+    }
+    if (!countedCash) return;
+    // Cerrar turno en backend
+    fetch(`${SERVER_URL}/turns/${currentTurnId}/close`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sales_total: todaySalesTotal || 0,
+        counted_cash: parseFloat(countedCash) || 0,
+        notes: '',
+      }),
+    }).catch(() => {});
+    // Limpiar carrito y localStorage
+    localStorage.removeItem('novastock_cart');
+    setCart([]);
+    setLastSale(null);
+    setIsClosingCaja(false);
+    setCountedCash('');
+    setCloseCajaPin('');
+    addToast('Turno cerrado correctamente. ¡Hasta la próxima!', 'success');
+    setTimeout(() => window.print(), 200);
   };
 
   if (!isAuthenticated) {
@@ -557,8 +602,13 @@ function App() {
                 💾 Último backup: {backendStatus.last_backup.split(' ')[1]}
               </span>
             )}
+            {pendingSync > 0 && (
+              <span className="status-pill warning" style={{ marginRight: '12px' }}>
+                ⏳ {pendingSync} venta{pendingSync !== 1 ? 's' : ''} pendiente{pendingSync !== 1 ? 's' : ''}
+              </span>
+            )}
             <span className="sync-status online">
-              <span className="dot"></span> Online (WAL Activo)
+              <span className="dot"></span> Conectado
             </span>
           </div>
         </header>
@@ -650,6 +700,7 @@ function App() {
                         <div className="qty-controls">
                           <button className="qty-btn" onClick={() => updateQty(item.id, -1)}>-</button>
                           <input 
+                            id={`qty-input-${item.id}`}
                             className="qty-val"
                             type="number" 
                             value={item.qty} 
@@ -914,7 +965,7 @@ function App() {
 
             <div className="modal-actions">
               <button className="btn btn-modal-cancel" onClick={() => { setIsClosingCaja(false); setCountedCash(''); setCloseCajaPin(''); }}>Cancelar (Esc)</button>
-              <button className="btn btn-modal-confirm" style={{ background: 'var(--accent-danger)', opacity: !countedCash || closeCajaPin.length < 4 ? 0.5 : 1 }} onClick={() => window.print()} disabled={!countedCash || closeCajaPin.length < 4}>
+              <button className="btn btn-modal-confirm" style={{ background: 'var(--accent-danger)', opacity: !countedCash || closeCajaPin.length < 4 ? 0.5 : 1 }} onClick={confirmCloseTurn} disabled={!countedCash || closeCajaPin.length < 4}>
                 Confirmar y Reportar
               </button>
             </div>
@@ -1044,20 +1095,49 @@ function App() {
           </div>
         </div>
       )}
+
+      {/* Modal de Ayuda (F10) */}
+      {showHelp && (
+        <div className="modal-overlay" onClick={() => setShowHelp(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px' }}>
+            <h2 className="modal-title" style={{ fontSize: '1.8rem' }}>⌨️ Atajos de Teclado</h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {[
+                { key: 'F1', label: 'Cobrar — Abre la pantalla de pago' },
+                { key: 'F2', label: 'Buscar — Enfoca el campo de búsqueda' },
+                { key: 'F3', label: 'Cantidad — Editar cantidad del último producto' },
+                { key: 'F4', label: 'Fiado — Registrar venta fiada' },
+                { key: 'F8 / Supr', label: 'Quitar — Elimina el último producto del carrito' },
+                { key: 'F10', label: 'Ayuda — Muestra esta pantalla' },
+                { key: 'F12', label: 'Anular — Vacía todo el carrito' },
+                { key: 'Esc', label: 'Salir — Cierra modales o limpia la búsqueda' },
+              ].map(s => (
+                <div key={s.key} style={{ display: 'flex', alignItems: 'center', gap: '16px', background: 'var(--bg-main)', borderRadius: '8px', padding: '12px 16px' }}>
+                  <span style={{ background: 'var(--accent-primary)', color: 'white', borderRadius: '6px', padding: '4px 12px', fontWeight: 800, fontSize: '1rem', minWidth: '80px', textAlign: 'center' }}>{s.key}</span>
+                  <span style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>{s.label}</span>
+                </div>
+              ))}
+            </div>
+            <div className="modal-actions" style={{ marginTop: '24px' }}>
+              <button className="btn btn-modal-confirm" onClick={() => setShowHelp(false)}>Cerrar (Esc)</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Toasts Container */}
-      <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', display: 'flex', flexDirection: 'column', gap: '16px', zIndex: 9999, pointerEvents: 'none' }}>
+      <div style={{ position: 'fixed', top: '24px', right: '24px', left: 'auto', transform: 'none', display: 'flex', flexDirection: 'column', gap: '12px', zIndex: 9999, pointerEvents: 'none', maxWidth: '500px' }}>
         {toasts.map(t => (
           <div key={t.id} style={{
             background: t.type === 'success' ? 'var(--accent-success)' : (t.type === 'error' ? 'var(--accent-danger)' : 'var(--bg-card)'),
             color: 'white',
-            padding: '24px 48px',
-            borderRadius: '16px',
+            padding: '20px 32px',
+            borderRadius: '12px',
             boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
             fontWeight: 700,
-            fontSize: '1.5rem',
-            textAlign: 'center',
-            animation: 'fadeInUp 0.3s ease',
-            minWidth: '400px',
+            fontSize: '1.25rem',
+            textAlign: 'left',
+            animation: 'slideInRight 0.3s ease',
             pointerEvents: 'auto'
           }}>
             {t.message}
