@@ -1,0 +1,67 @@
+# 🚀 Roadmap Fase 2: Escalamiento y Operaciones Complejas (NovaStock)
+
+Este documento define la hoja de ruta estratégica para evolucionar NovaStock desde un POS de misión crítica (Fase 1 completada) hacia un sistema completo de gestión de inventario, compras y telemetría en la nube para kioscos y minimercados.
+
+## 📊 Matriz de Prioridad y Ejecución
+
+| Módulo | Prioridad | Complejidad | Dependencias | Impacto |
+| :--- | :---: | :---: | :--- | :--- |
+| **Categorías** | ⚡ Alta | 🟢 Fácil | Ninguna | Foundation para Aumento Inteligente |
+| **Aumento Inteligente** | ⚡ Alta | 🟢 Fácil | Categorías | Operación diaria simplificada |
+| **Bultos vs Unidades** | ⚡ Alta | 🟡 Medio | Categorías | Resuelve dolor real #1 |
+| **Compras/Proveedores** | 🟡 Media | 🔴 Pesada | Bultos vs Unidades | Operación diaria eficiente |
+| **Sincronización Nube** | 🟡 Media | 🔴 Pesada | Ninguna (parallelizable) | Don Julio en el café |
+
+---
+
+## 🎯 ORDEN DE EJECUCIÓN 
+
+1. **Bloque 1 (Fundacional):** Categorías + Aumento Inteligente
+2. **Bloque 2 (Core):** Bultos vs Unidades
+3. **Bloque 3 (Operativo):** Compras / Proveedores
+4. **Bloque 4 (Valor Agregado):** Sincronización Nube
+
+---
+
+## 🚀 CHECKLIST DE IMPLEMENTACIÓN
+
+### [x] Bloque 1: Categorías y Aumentos
+- [x] `ALTER TABLE products` + `CREATE TABLE categories`
+- [x] Seedear categorías base (Golosinas, Bebidas, Almacén, Cigarrillos, etc.)
+- [x] Endpoints GET/POST/PUT/DELETE para categorías
+- [x] UI: Nueva pestaña/vista de gestión de categorías
+- [x] UI: Dropdown de categoría al crear/editar un producto
+- [x] Refactorizar modal de "Aumento Masivo" con 3 opciones (todo, por categoría, por rango de precio)
+- [x] Endpoint `POST /bulk-price-increase` que soporte filtrado por `category_id`
+- [x] Auditoría de aumentos masivos en `stock_movements`
+- [x] Testing: Validar migración de datos y cálculos de margen.
+
+### [x] Bloque 2: Bultos vs Unidades
+- [x] `ALTER TABLE products` (`parent_id`, `pack_size`, `is_virtual`)
+- [x] Lógica transaccional en Venta: si se vende un virtual (Bulto), descontar atómicamente `pack_size` del maestro (Unidad).
+- [x] Endpoints `POST /create-virtual` y `GET /stock-breakdown`
+- [x] UI: Indentación o diseño anidado de productos virtuales bajo su maestro en la grilla de Stock.
+- [x] UI: Modal específico para "Crear Bulto a partir de este producto"
+- [x] Testing: Vender un bulto y validar descuento en el maestro.
+
+### [x] Bloque 3: Compras y Proveedores
+- [x] `CREATE TABLE suppliers`, `purchases`, `purchase_items`
+- [x] Alterar `products` (`cost_price`, `last_purchase_date`)
+- [x] Endpoints CRUD `suppliers`
+- [x] Endpoints POST `create-purchase`, `add-item`, `confirm`
+- [x] Lógica transaccional: Al confirmar compra, actualizar stock, actualizar `cost_price` y registrar en auditoría.
+- [x] UI: Pestaña Proveedores y Pestaña Compras (Historial)
+- [x] UI: Carrito de ingreso de mercadería (optimizado para carga rápida de facturas)
+- [x] UI: Modal para revisar precios sugeridos (si el costo aumentó drásticamente, sugerir aumento de venta).
+- [x] Testing: Ciclo de vida completo de compra y validación de impacto en caja y stock.
+
+### [ ] Bloque 4: Sincronización Nube (Telemetría)
+- [ ] Setup Supabase o Postgres en AWS
+- [ ] Crear esquema en base de datos centralizada
+- [ ] Cron job asíncrono en FastAPI para *background sync*
+- [ ] Endpoint `POST /api/telemetry/sync` en Vercel
+- [ ] Dashboard Web en React para visualización remota (Login, Tarjetas de resumen, Gráficos)
+- [ ] Testing: Simular caída de internet, reconexión y validación de purgado/envío de datos.
+
+---
+*Documento vivo: Marcar con `[x]` a medida que se completen las tareas.*
