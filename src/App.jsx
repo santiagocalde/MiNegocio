@@ -211,12 +211,13 @@ function App() {
       if (e.key === 'F1') { e.preventDefault(); if (cart.length > 0) setIsCharging(true); }
       if (e.key === 'F2') { e.preventDefault(); searchRef.current?.focus(); }
       if (e.key === 'F4') { e.preventDefault(); if (cart.length > 0) setIsFiadoOpen(true); }
+      if (e.key === 'F8' || e.key === 'Delete' || e.key === 'Supr') { e.preventDefault(); if (cart.length > 0) { setCart(prev => prev.slice(0, -1)); addToast("Último producto quitado del carrito", "success"); playBeep(); } }
       if (e.key === 'F10') { e.preventDefault(); setShowHelp(prev => !prev); }
       if (e.key === 'F12') { e.preventDefault(); if (cart.length > 0) setIsCancelConfirm(true); }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isAuthenticated, activeTab, cart, isCharging, isClosingCaja, isCancelConfirm, isFiadoOpen]);
+  }, [isAuthenticated, activeTab, cart, isCharging, isClosingCaja, isCancelConfirm, isFiadoOpen, addToast]);
 
   // ─────────────────────────────────────────────────────────────
   // CÁLCULO DE TOTALES
@@ -738,6 +739,7 @@ function App() {
               <span style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '8px 16px', color: 'var(--text-secondary)', fontSize: '1rem', fontWeight: 700 }}>F1 Cobrar</span>
               <span style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '8px 16px', color: 'var(--text-secondary)', fontSize: '1rem', fontWeight: 700 }}>F2 Buscar</span>
               <span style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '8px 16px', color: 'var(--text-secondary)', fontSize: '1rem', fontWeight: 700 }}>F4 Fiado</span>
+              <span style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '8px 16px', color: 'var(--text-secondary)', fontSize: '1rem', fontWeight: 700 }}>F8 ⌫ Quitar</span>
               <span style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '8px 16px', color: 'var(--text-secondary)', fontSize: '1rem', fontWeight: 700 }}>F10 Ayuda</span>
               <span style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '8px 16px', color: 'var(--text-secondary)', fontSize: '1rem', fontWeight: 700 }}>F12 Anular</span>
               <span style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '8px 16px', color: 'var(--text-secondary)', fontSize: '1rem', fontWeight: 700 }}>Esc Salir</span>
