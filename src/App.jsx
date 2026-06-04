@@ -10,7 +10,7 @@ import PurchasesModule from './PurchasesModule.jsx';
 const SERVER_URL = 'http://localhost:8000/api';
 
 // Operadores del kiosco — cada uno con su PIN
-const OPERATORS = [
+const DEFAULT_OPERATORS = [
   { pin: '1234', name: 'Dueño', role: 'admin' },
   { pin: '4321', name: 'Juan (Turno Tarde)', role: 'employee' },
   { pin: '9999', name: 'María (Turno Mañana)', role: 'employee' },
@@ -46,11 +46,12 @@ function App() {
   const [search, setSearch] = useState('');
   const [isCharging, setIsCharging] = useState(false);
   const [payment, setPayment] = useState('');
-  const [adjustedTotal, setAdjustedTotal] = useState(null);
-  const [editingTotal, setEditingTotal] = useState(false);
-  const [flash, setFlash] = useState(false);
-  const [pendingSync, setPendingSync] = useState(0); // Ventas pendientes de sincronizar
-  const [todaySalesTotal, setTodaySalesTotal] = useState(0); // Total ventas del día
+  const [paymentMethod, setPaymentMethod] = useState('efectivo');
+  const [itemDiscounts, setItemDiscounts] = useState({});
+  const [discountInputActive, setDiscountInputActive] = useState(null);
+  const [clientCuit, setClientCuit] = useState('');
+  const [searchError, setSearchError] = useState(false);
+
 
   // Modals
   const [isClosingCaja, setIsClosingCaja] = useState(false);
@@ -76,6 +77,17 @@ function App() {
   const [toasts, setToasts] = useState([]);
   const [showResumen, setShowResumen] = useState(false);
   const [resumenData, setResumenData] = useState(null);
+  const [showPriceCheck, setShowPriceCheck] = useState(false);
+  const [priceCheckQuery, setPriceCheckQuery] = useState('');
+  const [priceCheckResults, setPriceCheckResults] = useState([]);
+  const [currentDateTime, setCurrentDateTime] = useState(new Date());
+  const [lastSaleId, setLastSaleId] = useState(null);
+  const [pendingSync, setPendingSync] = useState(0);
+  const [backupLoading, setBackupLoading] = useState(false);
+  const [showPendingModal, setShowPendingModal] = useState(false);
+  const [showCierres, setShowCierres] = useState(false);
+  const [cierresData, setCierresData] = useState([]);
+  const [operators, setOperators] = useState(DEFAULT_OPERATORS);
 
   const addToast = (message, type = 'success') => {
     const id = Date.now();
@@ -158,7 +170,10 @@ function App() {
       if (!pendingStr) return;
       let pending = [];
       try { pending = JSON.parse(pendingStr); } catch { return; }
-      if (pending.length === 0) return;
+      if (pending.length === 0) {
+        setPendingSync(0);
+        return;
+      }
 
       const toKeep = [];
       for (const sale of pending) {
@@ -170,20 +185,27 @@ function App() {
           });
           if (!res.ok) throw new Error("No se pudo enviar");
         } catch (e) {
-          toKeep.push(sale); // Si falla, lo guardamos para el próximo intento
+          toKeep.push(sale);
         }
       }
 
       localStorage.setItem('novastock_pending_sales', JSON.stringify(toKeep));
-      // Actualizamos el contador visual si hay fallos, o 0 si logramos mandar todo
-      // Ocultar contador pendiente por simplicidad o podríamos usar pendingSync (lo ignoramos por ahora para no recargar UI)
+      setPendingSync(toKeep.length);
     };
 
     if (isAuthenticated) {
-      syncInterval = setInterval(syncPendingSales, 15000); // Reintenta cada 15 segundos
+      syncInterval = setInterval(syncPendingSales, 15000);
       syncPendingSales();
     }
     return () => clearInterval(syncInterval);
+  }, [isAuthenticated]);
+
+  // Reloj en vivo para pantalla de login
+  useEffect(() => {
+    if (!isAuthenticated) {
+      const interval = setInterval(() => setCurrentDateTime(new Date()), 1000);
+      return () => clearInterval(interval);
+    }
   }, [isAuthenticated]);
 
   useEffect(() => {
@@ -202,7 +224,7 @@ function App() {
 
       if (e.key === 'Escape') {
         if (search.trim() !== '') setSearch('');
-        setIsCharging(false); setIsClosingCaja(false); setIsCancelConfirm(false); setIsFiadoOpen(false); setPayment(''); setCountedCash(''); setFiadoName(''); setAdjustedTotal(null); setEditingTotal(false);
+        setIsCharging(false); setIsClosingCaja(false); setIsCancelConfirm(false); setIsFiadoOpen(false); setPayment(''); setPaymentMethod('efectivo'); setClientCuit(''); setCountedCash(''); setFiadoName(''); setAdjustedTotal(null); setEditingTotal(false);
         return;
       }
       if (isCharging || isClosingCaja || isCancelConfirm || isFiadoOpen) return;
@@ -223,10 +245,12 @@ function App() {
   // CÁLCULO DE TOTALES
   // ─────────────────────────────────────────────────────────────
   const calculateTotals = () => {
-    const total = cart.reduce((acc, item) => acc + (item.price * item.qty), 0);
+    const rawTotal = cart.reduce((acc, item) => acc + (item.price * item.qty), 0);
+    const totalItemDiscount = Object.values(itemDiscounts).reduce((acc, d) => acc + (parseInt(d) || 0), 0);
+    const total = Math.max(0, rawTotal - totalItemDiscount);
     const subtotal = total / 1.21;
     const iva = total - subtotal;
-    return { total, discount: 0, subtotal, iva };
+    return { total, discount: totalItemDiscount, subtotal, iva };
   };
 
   const { discount, total, subtotal, iva } = calculateTotals();
@@ -311,8 +335,11 @@ function App() {
         setFlash(true);
         setTimeout(() => setFlash(false), 300);
       } else {
-        addToast('No encontré ese producto. Escaneá el código o buscá por nombre.', 'error');
+        addToast(`No encontré '${term}'. Escaneá de nuevo o buscá por nombre.`, 'error');
         playErrorBeep();
+        setSearchError(true);
+        searchRef.current?.focus();
+        setTimeout(() => setSearchError(false), 1000);
         setSearch('');
       }
     }
@@ -347,14 +374,14 @@ function App() {
     }
     playBeep();
     setFlash(true);
-    addToast(`${name} agregado al carrito`);
+    addToast(`✓ ${name} agregado. Presioná F8 si te equivocaste.`);
     setTimeout(() => setFlash(false), 300);
   };
 
   const handlePin = (e) => {
     const val = e.target.value.replace(/[^0-9]/g, '');
     if (val.length <= 4) setPin(val);
-    const op = OPERATORS.find(o => o.pin === val);
+    const op = operators.find(o => o.pin === val);
     if (op) {
       setCurrentOperator(op);
       setIsAuthenticated(true);
@@ -378,9 +405,8 @@ function App() {
   const confirmCharge = async () => {
     const saleCart = [...cart];
     const saleTotal = adjustedTotal ?? total;
-    const salePayment = parseFloat(payment) || saleTotal;
-    const saleChange = change < 0 ? 0 : change;
-    // Registrar venta en backend (Outbox Pattern)
+    const salePayment = paymentMethod === 'efectivo' ? (parseFloat(payment) || saleTotal) : saleTotal;
+    const saleChange = paymentMethod === 'efectivo' ? (change < 0 ? 0 : change) : 0;
     const salePayload = {
       turn_id: currentTurnId,
       total: saleTotal,
@@ -388,6 +414,8 @@ function App() {
       change_given: saleChange,
       operator: currentOperator?.name || 'Sistema',
       is_fiado: false,
+      payment_method: paymentMethod,
+      client_cuit: clientCuit,
       items: saleCart.map(i => ({ product_id: i.id, product_name: i.name, quantity: i.qty, unit_price: i.price })),
     };
 
@@ -403,6 +431,7 @@ function App() {
       if (!res.ok) throw new Error("Error al procesar la venta");
       const data = await res.json();
       setTicketNumber(data.id || ticketNumber + 1);
+      setLastSaleId(data.id);
       fetchProductsDB();
     } catch {
       // Si falla, Outbox pattern con idempotency key
@@ -418,13 +447,86 @@ function App() {
     setCart([]);
     setIsCharging(false);
     setPayment('');
+    setPaymentMethod('efectivo');
+    setClientCuit('');
     setAdjustedTotal(null);
     setEditingTotal(false);
+    setItemDiscounts({});
+    setDiscountInputActive(null);
     // Confirmación visual 2s
     setSaleConfirm(true);
     setTimeout(() => setSaleConfirm(false), 2500);
     // Imprimir ticket automáticamente
     setTimeout(() => window.print(), 100);
+  };
+
+  const handleBackup = async () => {
+    setBackupLoading(true);
+    try {
+      const res = await fetch(`${SERVER_URL}/backup`, { method: 'POST' });
+      if (res.ok) {
+        addToast(`Backup completado ${new Date().toLocaleTimeString('es-AR')}`, 'success');
+      } else {
+        addToast('No se pudo hacer el backup', 'error');
+      }
+    } catch {
+      addToast('No se pudo hacer el backup', 'error');
+    }
+    setBackupLoading(false);
+  };
+
+  const handleDevolucion = async () => {
+    if (!lastSaleId) return;
+    setSaleConfirm(false);
+    try {
+      const res = await fetch(`${SERVER_URL}/sales/${lastSaleId}/revert`, { method: 'PATCH' });
+      if (res.ok) {
+        addToast('Venta anulada. Stock revertido.', 'success');
+      } else {
+        addToast('Error al anular la venta.', 'error');
+      }
+    } catch {
+      addToast('No se pudo conectar con el servidor.', 'error');
+    }
+  };
+
+  const handleManualSync = async () => {
+    const pendingStr = localStorage.getItem('novastock_pending_sales');
+    if (!pendingStr) return;
+    let pending = [];
+    try { pending = JSON.parse(pendingStr); } catch { return; }
+    if (pending.length === 0) return;
+    const toKeep = [];
+    for (const sale of pending) {
+      try {
+        const res = await fetch(`${SERVER_URL}/sales?idempotency_key=${sale.idempotencyKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(sale.payload),
+        });
+        if (!res.ok) throw new Error("No se pudo enviar");
+      } catch (e) {
+        toKeep.push(sale);
+      }
+    }
+    localStorage.setItem('novastock_pending_sales', JSON.stringify(toKeep));
+    setPendingSync(toKeep.length);
+    if (toKeep.length === 0) {
+      setShowPendingModal(false);
+      addToast('Todas las ventas pendientes fueron sincronizadas.', 'success');
+    }
+  };
+
+  const getPendingData = () => {
+    try {
+      const str = localStorage.getItem('novastock_pending_sales');
+      if (!str) return { count: 0, total: 0 };
+      const data = JSON.parse(str);
+      const total = data.reduce((acc, s) => acc + (s.payload?.total || 0), 0);
+      return { count: data.length, total };
+    } catch {
+      return { count: 0, total: 0 };
+    }
   };
 
   const submitEgreso = async () => {
@@ -503,6 +605,9 @@ function App() {
   if (!isAuthenticated) {
     return (
       <div className="layout" style={{ justifyContent: 'center', alignItems: 'center', flexDirection: 'column' }}>
+        <div style={{ textAlign: 'center', marginBottom: '24px', color: 'var(--text-secondary)', fontSize: '1.1rem', fontWeight: 600 }}>
+          {currentDateTime.toLocaleDateString('es-AR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} — {currentDateTime.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
+        </div>
         <div className="brand-icon" style={{ width: 80, height: 80, marginBottom: 24 }}><Icons.Lock /></div>
         <h1 style={{ fontSize: '2rem', marginBottom: '8px' }}>NovaStock</h1>
         <p style={{ color: 'var(--text-secondary)', marginBottom: '8px' }}>Ingresá tu PIN para abrir turno</p>
@@ -522,6 +627,19 @@ function App() {
           }}
           placeholder="••••"
         />
+        <button
+          onClick={() => setShowPriceCheck(true)}
+          style={{
+            marginTop: '24px', background: 'transparent', border: '1px solid var(--border-color)',
+            borderRadius: '12px', padding: '12px 24px', color: 'var(--text-primary)',
+            cursor: 'pointer', fontSize: '1rem', fontWeight: 600,
+            transition: 'all 0.15s',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.background = 'var(--bg-hover)'; e.currentTarget.style.borderColor = 'var(--border-focus)'; }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'var(--border-color)'; }}
+        >
+          🔍 Consultar precio
+        </button>
       </div>
     );
   }
@@ -561,6 +679,9 @@ function App() {
               </div>
               <div className={`nav-item ${activeTab === 'auditoria' ? 'active' : ''}`} onClick={() => setActiveTab('auditoria')}>
                 🔍 Auditoría
+              </div>
+              <div className="nav-item" onClick={async () => { setShowCierres(true); try { const res = await fetch(`${SERVER_URL}/turns`); const data = await res.json(); setCierresData(Array.isArray(data) ? data : []); } catch { setCierresData([]); } }}>
+                📋 Cierres anteriores
               </div>
             </>
           )}
@@ -605,10 +726,13 @@ function App() {
             {backendStatus?.last_backup && (
               <span className="sync-status text-secondary" style={{ fontSize: '0.8rem', marginRight: '16px' }} title="El backup se hace automático cada 10 min">
                 💾 Último backup: {backendStatus.last_backup.split(' ')[1]}
+                <button onClick={handleBackup} disabled={backupLoading} style={{marginLeft:'12px', background:'rgba(255,255,255,0.1)', border:'1px solid var(--border-color)', borderRadius:'8px', color:'white', padding:'4px 12px', cursor:'pointer', fontSize:'0.8rem', fontWeight:600}}>
+                  {backupLoading ? 'Haciendo backup...' : '💾 Backup ahora'}
+                </button>
               </span>
             )}
             {pendingSync > 0 && (
-              <span className="status-pill warning" style={{ marginRight: '12px' }}>
+              <span className="status-pill warning" style={{ marginRight: '12px', cursor: 'pointer' }} onClick={() => setShowPendingModal(true)}>
                 ⏳ {pendingSync} venta{pendingSync !== 1 ? 's' : ''} pendiente{pendingSync !== 1 ? 's' : ''}
               </span>
             )}
@@ -637,7 +761,7 @@ function App() {
           <div className="pos-centered">
 
             {/* 1. INPUT (Arriba) */}
-            <div className={`search-bar ${flash ? 'flash' : ''}`} style={{ position: 'relative' }}>
+            <div className={`search-bar ${flash ? 'flash' : ''}`} style={{ position: 'relative', borderColor: searchError ? 'var(--accent-danger)' : undefined, borderWidth: searchError ? '2px' : undefined }}>
               <Icons.Search />
               <input
                 ref={searchRef}
@@ -741,6 +865,56 @@ function App() {
                             📦 Abrir Bulto
                           </button>
                         )}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <button
+                            onClick={() => setDiscountInputActive(discountInputActive === item.id ? null : item.id)}
+                            style={{
+                              background: itemDiscounts[item.id] ? 'rgba(34,197,94,0.15)' : 'transparent',
+                              border: '1px solid',
+                              borderColor: itemDiscounts[item.id] ? 'var(--accent-success)' : 'var(--border-color)',
+                              borderRadius: '6px', padding: '4px 8px', cursor: 'pointer', fontSize: '1rem',
+                              lineHeight: '1',
+                            }}
+                            title="Aplicar descuento"
+                          >
+                            🏷️
+                          </button>
+                          {discountInputActive === item.id && (
+                            <input
+                              type="number"
+                              value={itemDiscounts[item.id] || ''}
+                              onChange={e => setItemDiscounts(prev => ({ ...prev, [item.id]: e.target.value }))}
+                              onBlur={() => {
+                                if (!itemDiscounts[item.id] || parseInt(itemDiscounts[item.id]) <= 0) {
+                                  setItemDiscounts(prev => { const n = { ...prev }; delete n[item.id]; return n; });
+                                }
+                                setDiscountInputActive(null);
+                              }}
+                              onKeyDown={e => {
+                                if (e.key === 'Enter') {
+                                  if (!e.target.value || parseInt(e.target.value) <= 0) {
+                                    setItemDiscounts(prev => { const n = { ...prev }; delete n[item.id]; return n; });
+                                  }
+                                  setDiscountInputActive(null);
+                                }
+                                if (e.key === 'Escape') setDiscountInputActive(null);
+                              }}
+                              placeholder="$"
+                              style={{
+                                width: '60px', padding: '4px 8px', background: 'var(--bg-main)',
+                                border: '1px solid var(--accent-success)', borderRadius: '6px',
+                                color: 'var(--text-primary)', fontSize: '0.9rem', textAlign: 'center',
+                                fontFamily: 'var(--font-mono)', outline: 'none',
+                              }}
+                              autoFocus
+                            />
+                          )}
+                          {itemDiscounts[item.id] && discountInputActive !== item.id && (
+                            <span style={{ color: 'var(--accent-success)', fontSize: '0.8rem', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                              -${parseInt(itemDiscounts[item.id]).toLocaleString('es-AR')}
+                            </span>
+                          )}
+                        </div>
                         <div className="item-price">
                           ${(item.price * item.qty).toLocaleString('es-AR')}
                         </div>
@@ -784,6 +958,7 @@ function App() {
                 </div>
                 <h2 style={{ fontSize: '3rem', color: 'white', fontWeight: 800 }}>¡VENTA OK!</h2>
                 <p style={{ fontSize: '1.5rem', color: 'white', opacity: 0.9, marginTop: 16 }}>Imprimiendo ticket...</p>
+                <button style={{background:'rgba(255,255,255,0.2)', color:'white', border:'2px solid white', borderRadius:'12px', padding:'16px 32px', fontSize:'1.5rem', fontWeight:800, cursor:'pointer', marginTop:'24px'}} onClick={handleDevolucion}>↩️ Devolver producto</button>
               </div>
             )}
 
@@ -844,7 +1019,7 @@ function App() {
       {isCharging && (
         <div className="modal-overlay">
           <div className="modal-content">
-            <h2 className="modal-title">PANTALLA DE COBRO</h2>
+            <h2 className="modal-title">💳 Cobrar con {paymentMethod === 'efectivo' ? 'Efectivo' : paymentMethod === 'tarjeta' ? 'Tarjeta' : paymentMethod === 'mercadopago' ? 'Mercado Pago' : 'Transferencia'}</h2>
             {adjustedTotal !== null ? (
               <div style={{ textAlign: 'center', marginBottom: '8px' }}>
                 <div style={{ fontSize: '1rem', color: 'var(--text-secondary)', textDecoration: 'line-through' }}>
@@ -857,6 +1032,45 @@ function App() {
             ) : (
               <div className="modal-amount" style={{ color: 'var(--text-primary)' }}>TOTAL A PAGAR: ${total.toLocaleString('es-AR')}</div>
             )}
+
+            <div className="input-group">
+              <label>CUIT del cliente (opcional)</label>
+              <input
+                type="text"
+                value={clientCuit}
+                onChange={e => setClientCuit(e.target.value)}
+                placeholder="11-12345678-5"
+                style={{ fontSize: '1.2rem', fontFamily: 'var(--font-main)', textAlign: 'center' }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', justifyContent: 'center' }}>
+              {[
+                { key: 'efectivo', label: 'Efectivo' },
+                { key: 'tarjeta', label: 'Tarjeta' },
+                { key: 'mercadopago', label: 'Mercado Pago' },
+                { key: 'transferencia', label: 'Transferencia' },
+              ].map(m => (
+                <button
+                  key={m.key}
+                  onClick={() => {
+                    setPaymentMethod(m.key);
+                    if (m.key !== 'efectivo') setPayment(String(adjustedTotal ?? total));
+                  }}
+                  style={{
+                    padding: '10px 16px', borderRadius: '8px', border: '2px solid',
+                    borderColor: paymentMethod === m.key ? 'var(--accent-primary)' : 'var(--border-color)',
+                    background: paymentMethod === m.key ? 'rgba(59,130,246,0.15)' : 'transparent',
+                    color: paymentMethod === m.key ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                    fontWeight: paymentMethod === m.key ? 700 : 600,
+                    cursor: 'pointer', fontSize: '0.9rem', transition: 'all 0.15s',
+                  }}
+                >
+                  {m.key === 'efectivo' ? '💵' : m.key === 'tarjeta' ? '💳' : m.key === 'mercadopago' ? '🧉' : '🏦'} {m.label}
+                </button>
+              ))}
+            </div>
+
             <div style={{ textAlign: 'center', marginBottom: '16px' }}>
               {editingTotal ? (
                 <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', alignItems: 'center' }}>
@@ -887,26 +1101,28 @@ function App() {
               )}
             </div>
 
-            <div className="input-group">
-              <label>¿Cuánto pagó el cliente?</label>
-              <input
-                ref={paymentRef}
-                type="number"
-                value={payment}
-                onChange={e => setPayment(e.target.value)}
-                autoFocus
-                onKeyDown={e => { if (e.key === 'Enter' && change >= 0) confirmCharge(); }}
-              />
-              <div style={{ display: 'flex', gap: '8px', marginTop: '12px', flexWrap: 'wrap' }}>
-                <button type="button" onClick={() => setPayment(adjustedTotal ?? total)} style={{ flex: 1, padding: '12px', borderRadius: '8px', background: 'var(--bg-hover)', border: '1px solid var(--border-focus)', color: 'var(--text-primary)', cursor: 'pointer', fontWeight: 700 }}>Justo</button>
-                <button type="button" onClick={() => setPayment(Math.ceil((adjustedTotal ?? total) / 1000) * 1000)} style={{ flex: 1, padding: '12px', borderRadius: '8px', background: 'var(--bg-hover)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', cursor: 'pointer', fontWeight: 600 }}>Próx. $1.000</button>
-                <button type="button" onClick={() => setPayment(5000)} style={{ flex: 1, padding: '12px', borderRadius: '8px', background: 'var(--bg-hover)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', cursor: 'pointer', fontWeight: 600 }}>$5.000</button>
-                <button type="button" onClick={() => setPayment(10000)} style={{ flex: 1, padding: '12px', borderRadius: '8px', background: 'var(--bg-hover)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', cursor: 'pointer', fontWeight: 600 }}>$10.000</button>
-                <button type="button" onClick={() => setPayment(20000)} style={{ flex: 1, padding: '12px', borderRadius: '8px', background: 'var(--bg-hover)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', cursor: 'pointer', fontWeight: 600 }}>$20.000</button>
+            {paymentMethod === 'efectivo' && (
+              <div className="input-group">
+                <label>¿Cuánto pagó el cliente?</label>
+                <input
+                  ref={paymentRef}
+                  type="number"
+                  value={payment}
+                  onChange={e => setPayment(e.target.value)}
+                  autoFocus
+                  onKeyDown={e => { if (e.key === 'Enter' && change >= 0) confirmCharge(); }}
+                />
+                <div style={{ display: 'flex', gap: '8px', marginTop: '12px', flexWrap: 'wrap' }}>
+                  <button type="button" onClick={() => setPayment(adjustedTotal ?? total)} style={{ flex: 1, padding: '12px', borderRadius: '8px', background: 'var(--bg-hover)', border: '1px solid var(--border-focus)', color: 'var(--text-primary)', cursor: 'pointer', fontWeight: 700 }}>Justo</button>
+                  <button type="button" onClick={() => setPayment(Math.ceil((adjustedTotal ?? total) / 1000) * 1000)} style={{ flex: 1, padding: '12px', borderRadius: '8px', background: 'var(--bg-hover)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', cursor: 'pointer', fontWeight: 600 }}>Próx. $1.000</button>
+                  <button type="button" onClick={() => setPayment(5000)} style={{ flex: 1, padding: '12px', borderRadius: '8px', background: 'var(--bg-hover)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', cursor: 'pointer', fontWeight: 600 }}>$5.000</button>
+                  <button type="button" onClick={() => setPayment(10000)} style={{ flex: 1, padding: '12px', borderRadius: '8px', background: 'var(--bg-hover)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', cursor: 'pointer', fontWeight: 600 }}>$10.000</button>
+                  <button type="button" onClick={() => setPayment(20000)} style={{ flex: 1, padding: '12px', borderRadius: '8px', background: 'var(--bg-hover)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', cursor: 'pointer', fontWeight: 600 }}>$20.000</button>
+                </div>
               </div>
-            </div>
+            )}
 
-            {payment && (
+            {paymentMethod === 'efectivo' && payment && (
               <div style={{ textAlign: 'center', marginBottom: '24px' }}>
                 <span style={{ color: 'var(--text-secondary)', fontSize: '1.2rem' }}>VUELTO:</span>
                 <div style={{ fontSize: '3.5rem', fontWeight: 800, color: change < 0 ? 'var(--accent-danger)' : (change === 0 ? 'var(--accent-primary)' : 'var(--accent-success)'), fontFamily: 'var(--font-mono)' }}>
@@ -916,8 +1132,8 @@ function App() {
             )}
 
             <div className="modal-actions">
-              <button className="btn btn-modal-cancel" onClick={() => { setIsCharging(false); setAdjustedTotal(null); setEditingTotal(false); }}>Cancelar (Esc)</button>
-              <button className="btn btn-modal-confirm" onClick={confirmCharge} disabled={change < 0} style={{ opacity: change < 0 ? 0.5 : 1 }}>
+              <button className="btn btn-modal-cancel" onClick={() => { setIsCharging(false); setAdjustedTotal(null); setEditingTotal(false); setPaymentMethod('efectivo'); setClientCuit(''); }}>Cancelar (Esc)</button>
+              <button className="btn btn-modal-confirm" onClick={confirmCharge} disabled={paymentMethod === 'efectivo' && change < 0} style={{ opacity: paymentMethod === 'efectivo' && change < 0 ? 0.5 : 1 }}>
                 Cerrar Venta (Enter)
               </button>
             </div>
@@ -1109,6 +1325,8 @@ function App() {
         <ConfigModal
           onClose={() => setShowConfig(false)}
           onSave={(cfg) => { setBusinessConfig(cfg); setShowConfig(false); }}
+          operators={operators}
+          onOperatorsUpdate={setOperators}
         />
       )}
 
@@ -1251,6 +1469,167 @@ function App() {
                 🖨️ Imprimir reporte
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Consultar Precio (sin autenticación) */}
+      {showPriceCheck && (
+        <div className="modal-overlay" onClick={() => { setShowPriceCheck(false); setPriceCheckQuery(''); setPriceCheckResults([]); }}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px', maxHeight: '80vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            <h2 className="modal-title" style={{ fontSize: '1.5rem' }}>🔍 Consultar Precio</h2>
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+              <input
+                type="text"
+                value={priceCheckQuery}
+                onChange={e => setPriceCheckQuery(e.target.value)}
+                onKeyDown={async e => {
+                  if (e.key === 'Enter' && priceCheckQuery.trim()) {
+                    try {
+                      const res = await fetch(`${SERVER_URL}/products?q=${encodeURIComponent(priceCheckQuery.trim())}`);
+                      const data = await res.json();
+                      setPriceCheckResults(Array.isArray(data) ? data : []);
+                    } catch { setPriceCheckResults([]); }
+                  }
+                }}
+                placeholder="Buscá por nombre o código..."
+                autoFocus
+                style={{
+                  flex: 1, background: 'var(--bg-main)', border: '2px solid var(--border-focus)',
+                  color: 'var(--text-primary)', padding: '12px', borderRadius: '8px',
+                  fontSize: '1.1rem', outline: 'none',
+                }}
+              />
+              <button
+                onClick={async () => {
+                  if (!priceCheckQuery.trim()) return;
+                  try {
+                    const res = await fetch(`${SERVER_URL}/products?q=${encodeURIComponent(priceCheckQuery.trim())}`);
+                    const data = await res.json();
+                    setPriceCheckResults(Array.isArray(data) ? data : []);
+                  } catch { setPriceCheckResults([]); }
+                }}
+                style={{
+                  padding: '12px 20px', background: 'var(--accent-primary)', border: 'none',
+                  borderRadius: '8px', color: 'white', fontWeight: 700, cursor: 'pointer',
+                }}
+              >
+                Buscar
+              </button>
+            </div>
+            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {priceCheckResults.length === 0 ? (
+                <p style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '24px' }}>
+                  {priceCheckQuery ? 'Sin resultados' : 'Escribí un nombre o código y presioná Enter'}
+                </p>
+              ) : (
+                priceCheckResults.map(p => (
+                  <div key={p.id} style={{
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    padding: '12px 16px', background: 'var(--bg-main)', borderRadius: '8px',
+                  }}>
+                    <div>
+                      <div style={{ fontWeight: 700 }}>{p.name}</div>
+                      <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Código: {p.code}</div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: '1.5rem', fontWeight: 800, fontFamily: 'var(--font-mono)', color: 'var(--accent-success)' }}>
+                        ${p.price?.toLocaleString('es-AR')}
+                      </div>
+                      <div style={{ fontSize: '0.85rem', color: p.stock > 0 ? 'var(--text-secondary)' : 'var(--accent-danger)' }}>
+                        Stock: {p.stock}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+            <div className="modal-actions" style={{ marginTop: '16px' }}>
+              <button className="btn btn-modal-confirm" onClick={() => { setShowPriceCheck(false); setPriceCheckQuery(''); setPriceCheckResults([]); }}>
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Cierres Anteriores */}
+      {showCierres && (
+        <div className="modal-overlay" onClick={() => setShowCierres(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '800px', maxHeight: '80vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            <h2 className="modal-title" style={{ fontSize: '1.5rem' }}>📋 Cierres Anteriores</h2>
+            {cierresData.length === 0 ? (
+              <p style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '24px' }}>No hay cierres registrados.</p>
+            ) : (
+              <div style={{ flex: 1, overflowY: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '2px solid var(--border-focus)', color: 'var(--text-secondary)', fontSize: '0.8rem', textTransform: 'uppercase' }}>
+                      <th style={{ padding: '12px 16px' }}>Fecha</th>
+                      <th style={{ padding: '12px 16px' }}>Operador</th>
+                      <th style={{ padding: '12px 16px', textAlign: 'right' }}>Ventas</th>
+                      <th style={{ padding: '12px 16px', textAlign: 'right' }}>Contado</th>
+                      <th style={{ padding: '12px 16px', textAlign: 'right' }}>Diferencia</th>
+                      <th style={{ padding: '12px 16px' }}>Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {cierresData.map(t => {
+                      const diff = (t.counted_cash || 0) - (t.sales_total || 0);
+                      return (
+                        <tr key={t.id} style={{ borderBottom: '1px solid var(--border-focus)' }}>
+                          <td style={{ padding: '12px 16px', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{new Date(t.closed_at || t.opened_at).toLocaleString('es-AR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</td>
+                          <td style={{ padding: '12px 16px', fontWeight: 600 }}>{t.operator || '-'}</td>
+                          <td style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>${(t.sales_total || 0).toLocaleString('es-AR')}</td>
+                          <td style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>${(t.counted_cash || 0).toLocaleString('es-AR')}</td>
+                          <td style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 700, fontFamily: 'var(--font-mono)', color: diff === 0 ? 'var(--accent-success)' : 'var(--accent-danger)' }}>{diff === 0 ? '$0' : `${diff > 0 ? '+' : ''}$${diff.toLocaleString('es-AR')}`}</td>
+                          <td style={{ padding: '12px 16px' }}>
+                            <span style={{ background: diff === 0 ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)', color: diff === 0 ? 'var(--accent-success)' : 'var(--accent-danger)', padding: '4px 12px', borderRadius: '8px', fontWeight: 700, fontSize: '0.85rem' }}>
+                              {diff === 0 ? '✅ OK' : '❌ Diferencia'}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            <div className="modal-actions" style={{ marginTop: '16px' }}>
+              <button className="btn btn-modal-confirm" onClick={() => setShowCierres(false)}>Cerrar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Pendientes de Sincronización */}
+      {showPendingModal && (
+        <div className="modal-overlay" onClick={() => setShowPendingModal(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px' }}>
+            <h2 className="modal-title" style={{ fontSize: '1.5rem' }}>⏳ Ventas Pendientes</h2>
+            {(() => {
+              const data = getPendingData();
+              return (
+                <>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '16px 0' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 16px', background: 'var(--bg-main)', borderRadius: '8px' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>Cantidad</span>
+                      <span style={{ fontWeight: 800, fontSize: '1.5rem' }}>{data.count}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 16px', background: 'var(--bg-main)', borderRadius: '8px' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>Monto total</span>
+                      <span style={{ fontWeight: 800, fontSize: '1.5rem', fontFamily: 'var(--font-mono)', color: 'var(--accent-warning)' }}>${data.total.toLocaleString('es-AR')}</span>
+                    </div>
+                  </div>
+                  <div className="modal-actions">
+                    <button className="btn btn-modal-cancel" onClick={() => setShowPendingModal(false)}>Cerrar</button>
+                    <button className="btn btn-modal-confirm" onClick={handleManualSync} style={{ background: 'var(--accent-primary)' }}>
+                      Reintentar ahora
+                    </button>
+                  </div>
+                </>
+              );
+            })()}
           </div>
         </div>
       )}

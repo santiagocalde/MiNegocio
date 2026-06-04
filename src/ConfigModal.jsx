@@ -11,7 +11,7 @@ const FIELDS = [
   { key: 'mensaje_ticket', label: 'Mensaje final del ticket', placeholder: '¡Gracias por su compra!' },
 ];
 
-export default function ConfigModal({ onClose, onSave }) {
+export default function ConfigModal({ onClose, onSave, operators, onOperatorsUpdate }) {
   const [config, setConfig] = useState({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -103,6 +103,43 @@ Tel: ${config.telefono || '---'}
 ══════════════════════════════════════════
 CUIT: ${config.cuit || '---'}  ${config.condicion_iva || '---'}`}
               </pre>
+            </div>
+
+            {/* 👥 Operadores */}
+            <div style={{ marginTop: '24px', borderTop: '1px solid var(--border-color)', paddingTop: '20px' }}>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '16px', color: 'var(--text-primary)' }}>👥 Operadores</h3>
+              {operators && operators.map((op, i) => (
+                <div key={i} style={{ display: 'flex', gap: '12px', marginBottom: '12px', alignItems: 'center' }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '4px' }}>Nombre</label>
+                    <input
+                      type="text"
+                      value={op.name}
+                      onChange={e => {
+                        const nuevos = [...operators];
+                        nuevos[i] = { ...nuevos[i], name: e.target.value };
+                        onOperatorsUpdate(nuevos);
+                      }}
+                      style={inputStyle}
+                    />
+                  </div>
+                  <div style={{ width: '120px' }}>
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '4px' }}>PIN</label>
+                    <input
+                      type="text"
+                      maxLength={4}
+                      value={op.pin}
+                      onChange={e => {
+                        const nuevos = [...operators];
+                        nuevos[i] = { ...nuevos[i], pin: e.target.value.replace(/[^0-9]/g, '').slice(0, 4) };
+                        onOperatorsUpdate(nuevos);
+                      }}
+                      style={{ ...inputStyle, fontFamily: 'var(--font-mono)', textAlign: 'center' }}
+                    />
+                  </div>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>({op.role})</span>
+                </div>
+              ))}
             </div>
           </div>
         )}

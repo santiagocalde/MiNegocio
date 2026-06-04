@@ -18,7 +18,7 @@ function getStockStatus(stock, minStock) {
   return 'ok';
 }
 
-function ProductCard({ product, onPriceUpdate, onStockUpdate, onCrearBulto, addToast }) {
+function ProductCard({ product, onPriceUpdate, onStockUpdate, onCrearBulto, addToast, serverUrl }) {
   const [editingPrice, setEditingPrice] = useState(false);
   const [editingStock, setEditingStock] = useState(false);
   const [priceVal, setPriceVal] = useState(product.price.toString());
@@ -26,6 +26,9 @@ function ProductCard({ product, onPriceUpdate, onStockUpdate, onCrearBulto, addT
   const [saving, setSaving] = useState(false);
   const priceRef = useRef(null);
   const stockRef = useRef(null);
+  const [showPriceHistory, setShowPriceHistory] = useState(false);
+  const [priceHistory, setPriceHistory] = useState([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
 
   const status = getStockStatus(product.stock, product.min_stock);
   const profit = product.price - (product.cost_price || 0);
@@ -103,6 +106,7 @@ function ProductCard({ product, onPriceUpdate, onStockUpdate, onCrearBulto, addT
         </div>
         <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '12px' }}>
           <span>Código: {product.code}</span>
+          {product.iva && <span style={{ background: 'rgba(168, 85, 247, 0.15)', color: '#A855F7', padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, border: '1px solid rgba(168, 85, 247, 0.3)' }}>IVA {product.iva}</span>}
           {product.category_name && <span style={{ background: 'rgba(59, 130, 246, 0.15)', color: '#3B82F6', padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, border: '1px solid rgba(59, 130, 246, 0.2)' }}>{product.category_name}</span>}
           {product.is_virtual === 0 && (
             <button onClick={() => onCrearBulto(product)} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-color)', borderRadius: '4px', color: 'var(--text-primary)', cursor: 'pointer', padding: '2px 8px', fontSize: '0.75rem' }}>+ Crear Bulto</button>
@@ -131,7 +135,29 @@ function ProductCard({ product, onPriceUpdate, onStockUpdate, onCrearBulto, addT
 
       {/* PRECIO (editable al click) */}
       <div style={{ textAlign: 'center', minWidth: '130px' }}>
-        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Precio Venta</div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              Precio Venta
+              <button
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  setLoadingHistory(true);
+                  setShowPriceHistory(true);
+                  try {
+                    const res = await fetch(`${serverUrl}/movements`);
+                    const data = await res.json();
+                    const movements = Array.isArray(data) ? data : [];
+                    setPriceHistory(movements.filter(m => m.product_id === product.id && m.movement_type === 'price_change'));
+                  } catch {
+                    setPriceHistory([]);
+                  }
+                  setLoadingHistory(false);
+                }}
+                style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1rem', padding: '2px', color: 'var(--text-secondary)' }}
+                title="Ver historial de precios"
+              >
+                📈
+              </button>
+            </div>
         {editingPrice ? (
           <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
             <input
@@ -243,12 +269,46 @@ function ProductCard({ product, onPriceUpdate, onStockUpdate, onCrearBulto, addT
         )}
         <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '4px' }}>mín. {product.min_stock} u.</div>
       </div>
+      {showPriceHistory && (
+        <div className="modal-overlay" onClick={() => setShowPriceHistory(false)} style={{ zIndex: 200 }}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px', maxHeight: '60vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            <h2 className="modal-title" style={{ fontSize: '1.3rem' }}>📈 Historial de Precios</h2>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '16px', fontSize: '0.9rem' }}>{product.name}</p>
+            {loadingHistory ? (
+              <p style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '24px' }}>Cargando...</p>
+            ) : priceHistory.length === 0 ? (
+              <p style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '24px' }}>Sin cambios de precio registrados</p>
+            ) : (
+              <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {priceHistory.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).map((m, i) => (
+                  <div key={i} style={{ padding: '10px 12px', background: 'var(--bg-main)', borderRadius: '6px', fontSize: '0.85rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>
+                        {m.created_at ? new Date(m.created_at).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-'}
+                      </span>
+                      <span style={{ color: 'var(--text-secondary)' }}>Op: {m.operator || '-'}</span>
+                    </div>
+                    <div>
+                      <span style={{ color: 'var(--accent-danger)', fontWeight: 600 }}>${(m.old_value || m.old_price)?.toLocaleString('es-AR')}</span>
+                      <span style={{ color: 'var(--text-secondary)', margin: '0 8px' }}>→</span>
+                      <span style={{ color: 'var(--accent-success)', fontWeight: 600 }}>${(m.new_value || m.new_price)?.toLocaleString('es-AR')}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="modal-actions" style={{ marginTop: '16px' }}>
+              <button className="btn btn-modal-confirm" onClick={() => setShowPriceHistory(false)}>Cerrar</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 function NewProductModal({ onClose, onSave, categories }) {
-  const [formData, setFormData] = useState({ code: '', name: '', price: '', stock: '', min_stock: '5', category_id: '' });
+  const [formData, setFormData] = useState({ code: '', name: '', price: '', stock: '', min_stock: '5', category_id: '', iva: '21%' });
   const [saving, setSaving] = useState(false);
 
   const handleSubmit = async (e) => {
@@ -260,6 +320,7 @@ function NewProductModal({ onClose, onSave, categories }) {
       price: parseFloat(formData.price) || 0,
       stock: parseInt(formData.stock) || 0,
       min_stock: parseInt(formData.min_stock) || 5,
+      iva: formData.iva || '21%',
       category_id: formData.category_id ? parseInt(formData.category_id) : null,
     });
     setSaving(false);
@@ -298,6 +359,14 @@ function NewProductModal({ onClose, onSave, categories }) {
               <input required type="number" min="0" style={inputStyle} value={formData.stock} onChange={e => setFormData({ ...formData, stock: e.target.value })} placeholder="0" />
             </div>
           </div>
+
+          <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-secondary)' }}>IVA %</label>
+          <select style={inputStyle} value={formData.iva || '21%'} onChange={e => setFormData({ ...formData, iva: e.target.value })}>
+            <option value="21%">21%</option>
+            <option value="10.5%">10.5%</option>
+            <option value="27%">27%</option>
+            <option value="0%">0%</option>
+          </select>
 
           <div className="modal-actions" style={{ marginTop: '16px' }}>
             <button type="button" className="btn btn-modal-cancel" onClick={onClose}>Cancelar</button>
@@ -666,6 +735,7 @@ export default function StockModule({ serverUrl, onProductsUpdated, addToast, pr
             onStockUpdate={handleStockUpdate}
             onCrearBulto={setCreatingVirtualFor}
             addToast={addToast}
+            serverUrl={serverUrl}
           />
         ))}
 

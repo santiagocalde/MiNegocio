@@ -28,6 +28,10 @@ export default function FiadoModule() {
   const pendientes = fiados.filter(f => !f.cobrado);
   const cobrados = fiados.filter(f => f.cobrado);
 
+  const now = new Date();
+  const treintaDias = 30 * 24 * 60 * 60 * 1000;
+  const vencidos = pendientes.filter(f => now - new Date(f.timestamp) > treintaDias);
+
   const grouped = pendientes.reduce((acc, f) => {
     if (!acc[f.fiado_name]) acc[f.fiado_name] = [];
     acc[f.fiado_name].push(f);
@@ -78,6 +82,12 @@ export default function FiadoModule() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+      {vencidos.length > 0 && (
+        <div style={{ background: 'rgba(239,68,68,0.15)', border: '2px solid rgba(239,68,68,0.4)', borderRadius: '12px', padding: '16px 24px', margin: '16px 32px 0', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <span style={{ fontSize: '1.5rem' }}>🔴</span>
+          <span style={{ color: '#EF4444', fontWeight: 800, fontSize: '1.1rem' }}>{vencidos.length} fiado(s) tienen más de 30 días sin pagar</span>
+        </div>
+      )}
       <div style={{ padding: '24px 32px', borderBottom: '1px solid var(--border-color)', background: 'var(--bg-card)' }}>
         <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '8px' }}>📒 Libreta de Fiado</h2>
         <p style={{ color: 'var(--text-secondary)' }}>Agrupado por cliente</p>

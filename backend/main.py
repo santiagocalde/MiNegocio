@@ -184,6 +184,26 @@ async def init_db():
             await db.execute("ALTER TABLE sales ADD COLUMN reverted INTEGER DEFAULT 0")
         except:
             pass
+
+        try:
+            await db.execute("ALTER TABLE sales ADD COLUMN payment_method TEXT DEFAULT 'efectivo'")
+        except:
+            pass
+
+        try:
+            await db.execute("ALTER TABLE sales ADD COLUMN client_cuit TEXT DEFAULT ''")
+        except:
+            pass
+
+        try:
+            await db.execute("ALTER TABLE sale_items ADD COLUMN item_discount REAL DEFAULT 0")
+        except:
+            pass
+
+        try:
+            await db.execute("ALTER TABLE sales ADD COLUMN returned INTEGER DEFAULT 0")
+        except:
+            pass
             
         await db.commit()
 
@@ -384,6 +404,7 @@ class SaleItem(BaseModel):
     product_name: str
     quantity: int = Field(gt=0)
     unit_price: float = Field(gt=0)
+    item_discount: float = 0
 
 class SaleCreate(BaseModel):
     turn_id: Optional[int] = None
@@ -393,6 +414,8 @@ class SaleCreate(BaseModel):
     operator: str = "Sistema"
     is_fiado: bool = False
     fiado_name: Optional[str] = None
+    payment_method: str = "efectivo"
+    client_cuit: Optional[str] = None
     items: list[SaleItem] = []
 
 
@@ -430,6 +453,59 @@ async def health_check():
         "last_backup": last_backup,
         "timestamp": datetime.now().isoformat()
     }
+
+@app.post("/api/backup", summary="Forzar backup manual")
+async def trigger_backup():
+    import shutil, gzip, tempfile, sqlite3, glob
+    from datetime import datetime
+    import aiosqlite
+    import os
+
+    backup_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "backups")
+    os.makedirs(backup_dir, exist_ok=True)
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    backup_path_tmp = os.path.join(backup_dir, f"novastock_backup_tmp.db")
+    backup_path_gz = os.path.join(backup_dir, f"backup_{timestamp}.db.gz")
+
+    async with aiosqlite.connect(DB_PATH) as src, aiosqlite.connect(backup_path_tmp) as dst:
+        await src.backup(dst)
+
+    with open(backup_path_tmp, 'rb') as f_in:
+        with gzip.open(backup_path_gz, 'wb') as f_out:
+            shutil.copyfileobj(f_in, f_out)
+
+    is_valid = False
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".db") as tmp:
+        with gzip.open(backup_path_gz, 'rb') as gz:
+            tmp.write(gz.read())
+        tmp_path = tmp.name
+
+    try:
+        test_conn = sqlite3.connect(tmp_path)
+        cursor = test_conn.cursor()
+        cursor.execute("PRAGMA integrity_check")
+        result = cursor.fetchone()
+        test_conn.close()
+        if result[0] == "ok":
+            is_valid = True
+    except:
+        pass
+    finally:
+        os.remove(tmp_path)
+
+    if not is_valid:
+        os.remove(backup_path_gz)
+        return {"success": False, "message": "Backup corrupto"}
+
+    os.remove(backup_path_tmp)
+
+    backups = sorted(glob.glob(os.path.join(backup_dir, "*.db.gz")))
+    if len(backups) > 20:
+        for old in backups[:-20]:
+            os.remove(old)
+
+    return {"success": True, "backup_file": os.path.basename(backup_path_gz)}
 
 @app.get("/api/logs", summary="Obtener logs del sistema (para UI)")
 async def get_system_logs():
@@ -691,9 +767,10 @@ async def create_sale(body: SaleCreate, idempotency_key: Optional[str] = Query(N
             try:
                 # Insertar Venta
                 cur = await db.execute(
-                    "INSERT INTO sales (turn_id,total,payment,change_given,operator,is_fiado,fiado_name) VALUES (?,?,?,?,?,?,?)",
+                    "INSERT INTO sales (turn_id,total,payment,change_given,operator,is_fiado,fiado_name,payment_method,client_cuit) VALUES (?,?,?,?,?,?,?,?,?)",
                     (body.turn_id, body.total, body.payment, body.change_given,
-                     body.operator, 1 if body.is_fiado else 0, body.fiado_name)
+                     body.operator, 1 if body.is_fiado else 0, body.fiado_name,
+                     body.payment_method, body.client_cuit)
                 )
                 sale_id = cur.lastrowid
                 
@@ -703,8 +780,8 @@ async def create_sale(body: SaleCreate, idempotency_key: Optional[str] = Query(N
 
                 for item in body.items:
                     await db.execute(
-                        "INSERT INTO sale_items (sale_id,product_id,product_name,quantity,unit_price) VALUES (?,?,?,?,?)",
-                        (sale_id, item.product_id, item.product_name, item.quantity, item.unit_price)
+                        "INSERT INTO sale_items (sale_id,product_id,product_name,quantity,unit_price,item_discount) VALUES (?,?,?,?,?,?)",
+                        (sale_id, item.product_id, item.product_name, item.quantity, item.unit_price, item.item_discount)
                     )
                     # Descontar stock directamente al producto vendido (sea bulto o suelto)
                     await db.execute(
@@ -744,13 +821,22 @@ async def list_sales(limit: int = Query(50)):
     async with aiosqlite.connect(DB_PATH) as db:
         async with db.execute("""
             SELECT s.*, COALESCE(s.reverted, 0) as reverted,
-                   COALESCE(s.cobrado, 0) as cobrado
+                   COALESCE(s.cobrado, 0) as cobrado,
+                   COALESCE(SUM(si.item_discount), 0) as total_discount
             FROM sales s
+            LEFT JOIN sale_items si ON s.id = si.sale_id
+            GROUP BY s.id
             ORDER BY s.timestamp DESC
             LIMIT ?
         """, (limit,)) as cur:
             rows = await cur.fetchall()
-            return [row_to_dict(r, cur.description) for r in rows]
+            sales = [row_to_dict(r, cur.description) for r in rows]
+
+        for sale in sales:
+            async with db.execute("SELECT * FROM sale_items WHERE sale_id=?", (sale["id"],)) as cur:
+                sale["items"] = [row_to_dict(r, cur.description) for r in await cur.fetchall()]
+
+        return sales
 
 
 # ─────────────────────────────────────────────────────────────

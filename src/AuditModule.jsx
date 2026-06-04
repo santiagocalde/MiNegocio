@@ -56,6 +56,7 @@ export default function AuditModule({ serverUrl, addToast, products }) {
   };
 
   const handleRevert = async (saleId) => {
+    if (!confirm('¿Estás seguro de anular esta venta? El stock se revertirá.')) return;
     setReverting(saleId);
     try {
       const res = await fetch(`${serverUrl}/sales/${saleId}/revert`, { method: 'PATCH' });
