@@ -1,16 +1,19 @@
 import React, { useState, useEffect } from 'react';
 
+const Icons = {
+  Search: () => <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>,
+  Refresh: () => <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
+  Filter: () => <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+};
+
 export default function AuditModule({ serverUrl, addToast, products }) {
   const [movements, setMovements] = useState([]);
   const [filterType, setFilterType] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
-  const [sales, setSales] = useState([]);
-  const [reverting, setReverting] = useState(null);
 
   useEffect(() => {
     fetchMovements();
-    fetchSales();
   }, []);
 
   const fetchMovements = async () => {
@@ -27,7 +30,7 @@ export default function AuditModule({ serverUrl, addToast, products }) {
         id: `egr-${e.id}`,
         movement_type: 'egreso',
         timestamp: e.timestamp,
-        product_name: 'RETIRO EFECTIVO',
+        product_name: 'RETIRO EFECTIVO CAJA',
         quantity: e.monto,
         reason: e.motivo,
         operator: e.operator
@@ -39,63 +42,29 @@ export default function AuditModule({ serverUrl, addToast, products }) {
 
       setMovements(combined);
     } catch (e) {
-      console.error(e);
+      console.error('fetchMovements failed:', e);
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchSales = async () => {
-    try {
-      const res = await fetch(`${serverUrl}/sales?limit=20`);
-      if (res.ok) {
-        const data = await res.json();
-        setSales(data);
-      }
-    } catch {}
-  };
-
-  const handleRevert = async (saleId) => {
-    if (!confirm('¿Estás seguro de anular esta venta? El stock se revertirá.')) return;
-    setReverting(saleId);
-    try {
-      const res = await fetch(`${serverUrl}/sales/${saleId}/revert`, { method: 'PATCH' });
-      if (res.ok) {
-        if (addToast) addToast('Venta anulada y stock revertido correctamente.', 'success');
-        fetchSales();
-      } else {
-        const data = await res.json();
-        if (addToast) addToast(data.detail || 'Error al anular la venta.', 'error');
-      }
-    } catch {
-      if (addToast) addToast('No se pudo conectar con el servidor.', 'error');
-    } finally {
-      setReverting(null);
-    }
-  };
-
   const getBadgeStyle = (type) => {
     switch (type) {
-      case 'entrada':
-        return { background: 'rgba(16, 185, 129, 0.15)', color: '#10B981', border: '1px solid rgba(16, 185, 129, 0.2)' };
-      case 'salida':
-        return { background: 'rgba(239, 68, 68, 0.15)', color: '#EF4444', border: '1px solid rgba(239, 68, 68, 0.2)' };
-      case 'price_change':
-        return { background: 'rgba(59, 130, 246, 0.15)', color: '#3B82F6', border: '1px solid rgba(59, 130, 246, 0.2)' };
-      case 'egreso':
-        return { background: 'rgba(234, 179, 8, 0.15)', color: '#EAB308', border: '1px solid rgba(234, 179, 8, 0.2)' };
-      default:
-        return { background: 'rgba(245, 158, 11, 0.15)', color: '#F59E0B', border: '1px solid rgba(245, 158, 11, 0.2)' };
+      case 'entrada': return { background: 'rgba(16, 185, 129, 0.15)', color: '#10B981', border: '1px solid rgba(16, 185, 129, 0.3)' };
+      case 'salida': return { background: 'rgba(239, 68, 68, 0.15)', color: '#EF4444', border: '1px solid rgba(239, 68, 68, 0.3)' };
+      case 'price_change': return { background: 'rgba(59, 130, 246, 0.15)', color: '#3B82F6', border: '1px solid rgba(59, 130, 246, 0.3)' };
+      case 'egreso': return { background: 'rgba(234, 179, 8, 0.15)', color: '#EAB308', border: '1px solid rgba(234, 179, 8, 0.3)' };
+      default: return { background: 'rgba(255, 255, 255, 0.05)', color: 'var(--text-secondary)', border: '1px solid rgba(255,255,255,0.1)' };
     }
   };
 
   const translateType = (type) => {
     switch (type) {
-      case 'entrada': return '📥 Entrada Stock';
-      case 'salida': return '📤 Salida (Venta)';
-      case 'price_change': return '📈 Cambio Precio';
-      case 'egreso': return '💸 Egreso Caja';
-      default: return '⚙️ Ajuste';
+      case 'entrada': return 'Ingreso Stock';
+      case 'salida': return 'Venta';
+      case 'price_change': return 'Cambio Precio';
+      case 'egreso': return 'Retiro Caja';
+      default: return 'Ajuste';
     }
   };
 
@@ -108,189 +77,93 @@ export default function AuditModule({ serverUrl, addToast, products }) {
   });
 
   return (
-    <div className="module-container" style={{ padding: '24px', display: 'flex', flexDirection: 'column', height: '100%', overflow: 'auto' }}>
-      <div className="module-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+    <div style={{ padding: '32px 40px', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflowY: 'auto' }}>
+      
+      {/* HEADER COMPARTIDO */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', flexShrink: 0 }}>
         <div>
-          <h1 style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '4px' }}>🔍 Módulo de Auditoría</h1>
-          <p style={{ color: 'var(--text-secondary)' }}>Historial de movimientos de stock, cambios de precios y ajustes manuales.</p>
+          <h2 style={{ fontSize: '2rem', fontWeight: 800, margin: '0 0 4px 0', color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>Auditoría</h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: 0 }}>Historial de movimientos, cambios de precio y retiros de caja.</p>
         </div>
-        <button className="btn btn-primary" onClick={fetchMovements} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px' }}>
-          🔄 Actualizar
-        </button>
+        
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <button onClick={fetchMovements} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '10px 16px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', transition: 'all 0.2s' }}>
+            <Icons.Refresh /> Actualizar
+          </button>
+        </div>
       </div>
 
-      {/* Filtros */}
-      <div className="filters-bar" style={{ display: 'flex', gap: '16px', marginBottom: '20px', flexWrap: 'wrap' }}>
-        <select
-          value={filterType}
-          onChange={e => setFilterType(e.target.value)}
-          style={{
-            padding: '16px 20px',
-            borderRadius: '12px',
-            border: '2px solid var(--border-focus)',
-            background: 'var(--bg-card)',
-            color: 'var(--text-primary)',
-            fontSize: '1.2rem',
-            fontWeight: 700,
-            cursor: 'pointer'
-          }}
-        >
-          <option value="all">🔍 Todos los tipos</option>
-          <option value="entrada">📥 Entradas de Stock</option>
-          <option value="salida">📤 Salidas (Ventas)</option>
-          <option value="price_change">📈 Cambios de Precio</option>
-          <option value="ajuste">⚙️ Ajustes Manuales</option>
-          <option value="egreso">💸 Egresos de Caja</option>
-        </select>
-        <div style={{ flex: 1, minWidth: '250px', position: 'relative' }}>
-          <input
-            type="text"
+      {/* SEARCH BAR FULL WIDTH */}
+      <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexShrink: 0 }}>
+        <div style={{ width: '250px' }}>
+          <select
+            value={filterType}
+            onChange={e => setFilterType(e.target.value)}
+            style={{ width: '100%', background: 'var(--bg-main)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '12px 16px', borderRadius: '8px', fontSize: '0.95rem', outline: 'none', cursor: 'pointer' }}
+          >
+            <option value="all">Todos los movimientos</option>
+            <option value="entrada">Ingresos de Stock</option>
+            <option value="salida">Ventas (Salidas)</option>
+            <option value="price_change">Cambios de Precio</option>
+            <option value="egreso">Retiros de Caja</option>
+            <option value="ajuste">Ajustes Manuales</option>
+          </select>
+        </div>
+        <div style={{ flex: 1, position: 'relative' }}>
+          <span style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }}><Icons.Search /></span>
+          <input 
+            type="text" 
+            placeholder="Buscar por producto, motivo u operador..." 
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
-            placeholder="Buscar por producto, motivo u operador..."
-            className="search-input"
-            style={{
-              width: '100%',
-              padding: '16px 20px',
-              borderRadius: '12px',
-              border: '2px solid var(--border-focus)',
-              background: 'var(--bg-card)',
-              color: 'var(--text-primary)',
-              fontSize: '1.2rem'
-            }}
+            style={{ width: '100%', background: 'var(--bg-main)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '12px 16px 12px 48px', borderRadius: '8px', fontSize: '0.95rem', outline: 'none' }} 
           />
-          {searchTerm.trim().length > 0 && products && (
-            <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', zIndex: 100, marginTop: '4px', boxShadow: '0 4px 12px rgba(0,0,0,0.2)' }}>
-              {products.filter(p => p.code.startsWith(searchTerm) || p.name.toLowerCase().startsWith(searchTerm.toLowerCase())).slice(0, 5).map((p) => (
-                <button
-                  key={p.id}
-                  onClick={() => setSearchTerm(p.name)}
-                  style={{ display: 'flex', justifyContent: 'space-between', width: '100%', padding: '12px 16px', background: 'transparent', border: 'none', borderBottom: '1px solid var(--border-color)', color: 'var(--text-primary)', cursor: 'pointer', textAlign: 'left' }}
-                  onFocus={e => e.target.style.background = 'var(--bg-hover)'}
-                  onBlur={e => e.target.style.background = 'transparent'}
-                  onMouseEnter={e => e.target.style.background = 'var(--bg-hover)'}
-                  onMouseLeave={e => e.target.style.background = 'transparent'}
-                >
-                  <span style={{ fontWeight: 600 }}>{p.name}</span>
-                </button>
-              ))}
-            </div>
-          )}
         </div>
       </div>
 
-      {/* Tabla */}
-      <div className="table-wrapper" style={{ borderRadius: '16px', background: 'var(--bg-card)', border: '1px solid var(--border-focus)' }}>
-        {loading ? (
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px', color: 'var(--text-secondary)' }}>
-            Cargando historial de auditoría...
-          </div>
-        ) : filtered.length === 0 ? (
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px', color: 'var(--text-secondary)' }}>
-            No se encontraron movimientos registrados con los filtros aplicados.
-          </div>
-        ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-            <thead>
-              <tr style={{ borderBottom: '2px solid var(--border-focus)', color: 'var(--text-secondary)', fontSize: '0.85rem', textTransform: 'uppercase' }}>
-                <th style={{ padding: '16px 24px' }}>Tipo</th>
-                <th style={{ padding: '16px 24px' }}>Fecha</th>
-                <th style={{ padding: '16px 24px' }}>Producto</th>
-                <th style={{ padding: '16px 24px', textAlign: 'right' }}>Cant.</th>
-                <th style={{ padding: '16px 24px' }}>Detalles / Motivo</th>
-                <th style={{ padding: '16px 24px' }}>Operador</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map(m => (
-                <tr key={m.id} style={{ borderBottom: '1px solid var(--border-focus)', transition: 'background 0.2s' }} className="table-row">
-                  <td style={{ padding: '16px 24px' }}>
-                    <span style={{
-                      padding: '4px 10px',
-                      borderRadius: '8px',
-                      fontSize: '0.75rem',
-                      fontWeight: 700,
-                      textTransform: 'uppercase',
-                      ...getBadgeStyle(m.movement_type)
-                    }}>
+      {/* MAIN TABLE */}
+      <div style={{ flex: 1, background: 'var(--bg-card)', borderRadius: '16px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <div style={{ padding: '24px', borderBottom: '1px solid var(--border-color)' }}>
+          <h3 style={{ fontSize: '1.2rem', fontWeight: 700, margin: '0 0 4px 0', color: 'var(--text-primary)' }}>Registro de Actividad</h3>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>Listado cronológico de acciones en el sistema</p>
+        </div>
+
+        <div style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {filtered.map(m => (
+              <div key={m.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-main)', padding: '16px 24px', borderRadius: '12px', border: '1px solid var(--border-color)', transition: 'transform 0.2s' }} onMouseEnter={e => e.currentTarget.style.transform='translateX(4px)'} onMouseLeave={e => e.currentTarget.style.transform='none'}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '24px', flex: 1 }}>
+                  <div style={{ width: '120px' }}>
+                    <span style={{ padding: '6px 12px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', ...getBadgeStyle(m.movement_type) }}>
                       {translateType(m.movement_type)}
                     </span>
-                  </td>
-                  <td style={{ padding: '16px 24px', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                    {m.timestamp}
-                  </td>
-                  <td style={{ padding: '16px 24px', fontWeight: 600, color: 'var(--text-primary)' }}>
-                    {m.product_name}
-                  </td>
-                  <td style={{ padding: '16px 24px', textAlign: 'right', fontWeight: 700, color: m.movement_type === 'entrada' ? '#10B981' : (m.movement_type === 'salida' || m.movement_type === 'egreso' ? '#EF4444' : 'var(--text-secondary)') }}>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '1.05rem', marginBottom: '4px' }}>
+                      {m.product_name}
+                    </div>
+                    <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                      {new Date(m.timestamp).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' })} • Operador: {m.operator || 'Sistema'}
+                    </div>
+                  </div>
+                  <div style={{ flex: 1, color: 'var(--text-secondary)', fontSize: '0.85rem', padding: '0 16px' }}>
+                    {m.reason ? `Motivo: ${m.reason}` : ''}
+                  </div>
+                </div>
+                <div style={{ width: '150px', textAlign: 'right' }}>
+                  <span style={{ fontSize: '1.2rem', fontWeight: 800, fontFamily: 'var(--font-mono)', color: m.movement_type === 'entrada' ? '#10B981' : (m.movement_type === 'salida' || m.movement_type === 'egreso' ? '#EF4444' : 'var(--text-primary)') }}>
                     {m.movement_type === 'price_change' ? '-' : (m.movement_type === 'entrada' ? `+${m.quantity}` : (m.movement_type === 'egreso' ? `-$${m.quantity}` : `-${m.quantity}`))}
-                  </td>
-                  <td style={{ padding: '16px 24px', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                    {m.reason || '-'}
-                  </td>
-                  <td style={{ padding: '16px 24px', fontWeight: 500, color: 'var(--text-primary)' }}>
-                    {m.operator || 'Sistema'}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-
-      {/* Ventas recientes */}
-      <div style={{ marginTop: '24px' }}>
-        <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '12px' }}>🛒 Ventas Recientes</h3>
-        <div className="table-wrapper" style={{ borderRadius: '16px', background: 'var(--bg-card)', border: '1px solid var(--border-focus)' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-            <thead>
-              <tr style={{ borderBottom: '2px solid var(--border-focus)', color: 'var(--text-secondary)', fontSize: '0.85rem', textTransform: 'uppercase' }}>
-                <th style={{ padding: '16px 24px' }}>ID</th>
-                <th style={{ padding: '16px 24px' }}>Hora</th>
-                <th style={{ padding: '16px 24px' }}>Cliente</th>
-                <th style={{ padding: '16px 24px', textAlign: 'right' }}>Total</th>
-                <th style={{ padding: '16px 24px' }}>Estado</th>
-                <th style={{ padding: '16px 24px' }}>Acción</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sales.map(s => (
-                <tr key={s.id} style={{ borderBottom: '1px solid var(--border-focus)', opacity: s.reverted ? 0.5 : 1 }} className="table-row">
-                  <td style={{ padding: '16px 24px', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>#{s.id}</td>
-                  <td style={{ padding: '16px 24px', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                    {new Date(s.timestamp).toLocaleString('es-AR', { hour: '2-digit', minute: '2-digit' })}
-                  </td>
-                  <td style={{ padding: '16px 24px', fontWeight: 600 }}>{s.fiado_name || (s.is_fiado ? 'Fiado' : 'Mostrador')}</td>
-                  <td style={{ padding: '16px 24px', textAlign: 'right', fontWeight: 800, fontFamily: 'var(--font-mono)' }}>
-                    ${s.total.toLocaleString('es-AR')}
-                  </td>
-                  <td style={{ padding: '16px 24px' }}>
-                    {s.reverted ? (
-                      <span style={{ color: 'var(--accent-danger)', fontWeight: 600, fontSize: '0.85rem' }}>❌ Anulada</span>
-                    ) : (
-                      <span style={{ color: 'var(--accent-success)', fontWeight: 600, fontSize: '0.85rem' }}>✅ Activa</span>
-                    )}
-                  </td>
-                  <td style={{ padding: '16px 24px' }}>
-                    {!s.reverted && (
-                      <button
-                        onClick={() => handleRevert(s.id)}
-                        disabled={reverting === s.id}
-                        style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '6px', color: 'var(--accent-danger)', padding: '6px 12px', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem', opacity: reverting === s.id ? 0.6 : 1 }}
-                      >
-                        {reverting === s.id ? '...' : '↩️ Anular'}
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-              {sales.length === 0 && (
-                <tr>
-                  <td colSpan={6} style={{ padding: '24px', textAlign: 'center', color: 'var(--text-secondary)' }}>No hay ventas registradas.</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                  </span>
+                </div>
+              </div>
+            ))}
+            {filtered.length === 0 && !loading && (
+              <div style={{ textAlign: 'center', padding: '64px', color: 'var(--text-secondary)' }}>No hay movimientos registrados.</div>
+            )}
+            {loading && (
+              <div style={{ textAlign: 'center', padding: '64px', color: 'var(--text-secondary)' }}>Cargando actividad...</div>
+            )}
+          </div>
         </div>
       </div>
     </div>

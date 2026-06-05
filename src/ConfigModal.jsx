@@ -9,16 +9,18 @@ const FIELDS = [
   { key: 'condicion_iva',  label: 'Condición IVA',         placeholder: 'Monotributista', options: ['Monotributista', 'Responsable Inscripto', 'Exento', 'Consumidor Final'] },
   { key: 'numero_caja',    label: 'Nombre de la caja',     placeholder: 'CAJA 1' },
   { key: 'mensaje_ticket', label: 'Mensaje final del ticket', placeholder: '¡Gracias por su compra!' },
+  { key: 'iva_rate',       label: 'IVA % por defecto',     placeholder: '21', options: ['21', '10.5', '27', '0'] },
+  { key: 'mp_access_token',label: 'Access Token de Mercado Pago', placeholder: 'APP_USR-...' },
 ];
 
-export default function ConfigModal({ onClose, onSave, operators, onOperatorsUpdate }) {
+export default function ConfigModal({ onClose, onSave, operators, onOperatorsUpdate, serverUrl }) {
   const [config, setConfig] = useState({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    fetch('http://localhost:8000/api/config')
+    fetch(`${serverUrl}/config`)
       .then(r => r.json())
       .then(d => { setConfig(d); setLoading(false); })
       .catch(() => {
@@ -29,20 +31,26 @@ export default function ConfigModal({ onClose, onSave, operators, onOperatorsUpd
         });
         setLoading(false);
       });
-  }, []);
+  }, [serverUrl]);
 
   const handleSave = async () => {
     setSaving(true);
     try {
-      await fetch('http://localhost:8000/api/config', {
+      await fetch(`${serverUrl}/config`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(config),
       });
+      await fetch(`${serverUrl}/operators`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(operators),
+      });
       onSave?.(config);
+      onOperatorsUpdate(operators);
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
-    } catch { /* offline */ }
+    } catch { console.error('Error al guardar configuración u operadores'); }
     setSaving(false);
   };
 

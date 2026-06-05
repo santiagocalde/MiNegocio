@@ -30,7 +30,9 @@ function rAlign(label, value, width = 42) {
 }
 
 export default function TicketPrint({ cart, total, payment, change, operator, ticketNumber, config, isClosingShift, shiftData }) {
-  const subtotal = total / 1.21;
+  const ivaRate = parseFloat(config?.iva_rate) || 21;
+  const ivaMultiplier = 1 + ivaRate / 100;
+  const subtotal = total / ivaMultiplier;
   const iva = total - subtotal;
   const now = new Date();
   const fecha = now.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
@@ -70,7 +72,7 @@ export default function TicketPrint({ cart, total, payment, change, operator, ti
 ).join('\n')}
 {LINE}
 {rAlign('SUBTOTAL:', subtotal.toFixed(2))}
-{rAlign('IVA (21%):', iva.toFixed(2))}
+{rAlign(`IVA (${ivaRate}%):`, iva.toFixed(2))}
 {'Régimen de Transparencia Fiscal'}
 {LINE}
 {rAlign('*** TOTAL:', total)}
