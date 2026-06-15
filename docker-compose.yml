@@ -21,7 +21,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql://minegocio:$${PG_PASSWORD:-1234}@db:5432/minegocio
+      - DATABASE_URL=postgresql://minegocio:${PG_PASSWORD:-1234}@db:5432/minegocio
       - PG_HOST=db
       - PG_PORT=5432
       - PG_USER=minegocio
