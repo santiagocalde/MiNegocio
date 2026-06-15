@@ -1,4 +1,4 @@
-const SERVER_URL = 'http://localhost:8005/api';
+const SERVER_URL = import.meta.env.PROD ? '/api' : 'http://localhost:8005/api';
 
 function getToken() {
   return localStorage.getItem('saas_token');
