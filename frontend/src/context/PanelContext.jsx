@@ -54,7 +54,8 @@ export function PanelProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    if (auth.isAuthenticated && auth.currentTurnId) {
+    const isPreview = localStorage.getItem('saas_mode') === 'preview';
+    if (auth.isAuthenticated && auth.currentTurnId && !isPreview) {
       apiGet('/turns/active')
         .then(r => r.ok ? r.json() : null)
         .then(data => {

@@ -231,10 +231,8 @@ app.add_middleware(GZipMiddleware, minimum_size=1000)
 class TenantMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         path = request.url.path
-        # Rutas públicas (docs, preflight, auth login/register, etc.)
-        if request.method == "OPTIONS" or path.startswith("/api/auth") or path.startswith("/api/login") or path.startswith("/docs") or path.startswith("/openapi"):
-            return await call_next(request)
-            
+
+        # Extraer business_id del JWT siempre que este presente
         auth_header = request.headers.get("Authorization")
         b_id = None
         is_preview = False
@@ -250,6 +248,10 @@ class TenantMiddleware(BaseHTTPMiddleware):
                         business_id_ctx.set(b_id)
                 except Exception:
                     pass
+
+        # Rutas publicas (docs, preflight, auth login/register, etc.)
+        if request.method == "OPTIONS" or path.startswith("/api/auth") or path.startswith("/api/login") or path.startswith("/docs") or path.startswith("/openapi"):
+            return await call_next(request)
                 
         if SAAS_MODE and not b_id and not is_preview and path.startswith("/api/"):
             return JSONResponse(status_code=401, content={"detail": "Token JWT requerido en modo SaaS. Acceso denegado."})
@@ -711,9 +713,7 @@ async def check_billing_grace_period() -> None:
         await asyncio.sleep(60 * 60 * 6)
 
 from routers.auth import router as auth_router
-from routers.billing import router as billing_router
 app.include_router(auth_router)
-app.include_router(billing_router, prefix="/api/billing", tags=["Billing"])
 
 # ─────────────────────────────────────────────────────────────
 # INCLUSIÓN DE ROUTERS MODULARES
@@ -727,6 +727,8 @@ from routers.ai import router as ai_router
 from routers.promotions import router as promotions_router
 from routers.cashier import router as cashier_router
 from routers.reports import router as reports_router
+from routers.auth import router as auth_router
+from routers.billing import router as billing_router
 
 app.include_router(products_router)
 app.include_router(sales_router)
@@ -737,6 +739,8 @@ app.include_router(ai_router)
 app.include_router(promotions_router)
 app.include_router(cashier_router)
 app.include_router(reports_router)
+app.include_router(auth_router)
+app.include_router(billing_router)
 
 if __name__ == "__main__":
     import uvicorn
