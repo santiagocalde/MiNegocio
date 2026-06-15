@@ -366,9 +366,9 @@ async def init_pg() -> None:
             await conn.execute("""
                 INSERT INTO plans (slug, name, monthly_price, yearly_price, max_products, max_users, features, sort_order)
                 VALUES
-                ('simple', 'Simple', 20000, 200000, 3500, 2, '["Hasta 3.500 productos","Clientes y ventas","Soporta cortes de internet","Manejo de fiados","Facturacion ARCA (Opcional)","Lector laser e impresoras","Hasta 2 usuarios"]', 1),
-                ('pro', 'Pro', 30000, 300000, 7000, 5, '["Todo lo de Simple","Hasta 7.000 productos","Manejo de proveedores","Catalogo web online QR","Reportes de ventas detallados","Facturacion ARCA (Opcional)","Hasta 5 usuarios"]', 2),
-                ('ia', 'IA', 40000, 400000, 10000, 10, '["Todo lo de Pro","Hasta 10.000 productos","Escanner de facturas IA","Asesor de precios inteligente","Facturacion ARCA (Opcional)","Reportes de rentabilidad","Hasta 10 usuarios"]', 3)
+                ('simple', 'Simple', 20000, 200000, 3500, 2, '["Hasta 3.500 productos","Clientes y ventas","Soporta cortes de internet","Manejo de fiados","Lector laser e impresoras","Hasta 2 usuarios"]', 1),
+                ('pro', 'Pro', 30000, 300000, 7000, 5, '["Todo lo de Simple","Hasta 7.000 productos","Manejo de proveedores","Catalogo web online QR","Reportes de ventas detallados","Alta asistida en ARCA/AFIP","Hasta 5 usuarios"]', 2),
+                ('ia', 'IA', 40000, 400000, 10000, 10, '["Todo lo de Pro","Hasta 10.000 productos","Escanner de facturas IA","Asesor de precios inteligente","Alta asistida en ARCA/AFIP","Reportes inteligentes","Hasta 10 usuarios"]', 3)
             """)
 
         test_count = await conn.fetchval("SELECT COUNT(*) FROM testimonials")

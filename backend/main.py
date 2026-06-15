@@ -47,7 +47,8 @@ def _tenant_aware_connect(database, *args, **kwargs):
 aiosqlite.connect = _tenant_aware_connect
 
 
-load_dotenv()
+env_path = os.path.join(os.path.dirname(__file__), "..", ".env")
+load_dotenv(dotenv_path=env_path)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "data")
@@ -203,10 +204,12 @@ async def lifespan(app: FastAPI) -> None:
     
     task = asyncio.create_task(backup_task())
     grace_task = asyncio.create_task(check_billing_grace_period())
+    email_task = asyncio.create_task(check_trial_emails())
     logger.info("MiNegocio corriendo en http://localhost:8000")
     yield
     task.cancel()
     grace_task.cancel()
+    email_task.cancel()
     try:
         from db import close_pool
         await close_pool()
@@ -643,8 +646,41 @@ async def delete_operator(operator_id: int) -> dict:
 # ────────────────────────────────────────────────────────────
 # AUTH SAAS — REGISTRO Y LOGIN POR EMAIL (multi-tenant)
 # ────────────────────────────────────────────────────────────
-# BILLING GRACE PERIOD (Background Task)
 # ────────────────────────────────────────────────────────────
+# BACKGROUND TASKS
+# ────────────────────────────────────────────────────────────
+
+async def check_trial_emails() -> None:
+    """Envía emails de Resend cada 2 días y a los 7 días (expirado)."""
+    import asyncio
+    from services.email_service import send_trial_reminder
+    while True:
+        try:
+            if USE_PG:
+                from db_helpers import get_pg_pool
+                pool = await get_pg_pool()
+                async with pool.acquire() as conn:
+                    # Cada 2 días durante la prueba (Día 2, 4, 6)
+                    reminders_active = await conn.fetch("""
+                        SELECT id, email, business_name, 
+                        EXTRACT(DAY FROM (CURRENT_DATE - DATE(created_at))) as days_passed
+                        FROM businesses 
+                        WHERE plan = 'trial' 
+                        AND EXTRACT(DAY FROM (CURRENT_DATE - DATE(created_at))) IN (2, 4, 6)
+                    """)
+                    for b in reminders_active:
+                        days_left = 7 - int(b["days_passed"])
+                        await send_trial_reminder(b["email"], b["business_name"], days_left)
+
+                    # Expirados (Día 7)
+                    reminders_7d = await conn.fetch("SELECT id, email, business_name FROM businesses WHERE plan = 'trial' AND DATE(created_at) = CURRENT_DATE - INTERVAL '7 days'")
+                    for b in reminders_7d:
+                        await send_trial_reminder(b["email"], b["business_name"], 0)
+            logger.info("Tarea de emails de prueba completada.")
+        except Exception as e:
+            logger.error(f"Error en tarea de emails de prueba: {e}")
+        await asyncio.sleep(86400)
+
 async def check_billing_grace_period() -> None:
     import asyncio
     while True:
@@ -675,7 +711,9 @@ async def check_billing_grace_period() -> None:
         await asyncio.sleep(60 * 60 * 6)
 
 from routers.auth import router as auth_router
+from routers.billing import router as billing_router
 app.include_router(auth_router)
+app.include_router(billing_router, prefix="/api/billing", tags=["Billing"])
 
 # ─────────────────────────────────────────────────────────────
 # INCLUSIÓN DE ROUTERS MODULARES

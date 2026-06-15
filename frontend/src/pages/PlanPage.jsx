@@ -2,14 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { usePanelContext } from '../context/PanelContext';
 import { WHATSAPP_LINK } from '../utils/constants';
 import { Icons } from '../components/ui/Icons';
+import { apiPost } from '../services/apiClient';
 
 const FALLBACK_PLANS = [
-  { id: 'simple', name: 'Simple', monthly: 20000, yearly: 200000, desc: 'Todo lo necesario para arrancar.', popular: false, features: ['Hasta 3.500 productos', 'Clientes y ventas', 'Soporta cortes de internet', 'Manejo de fiados', 'Facturacion ARCA (Opcional)', 'Lector laser e impresoras', 'Hasta 2 usuarios'], cta: 'Probar gratis' },
-  { id: 'pro', name: 'Pro', monthly: 30000, yearly: 300000, desc: 'Para kioscos que crecen.', popular: true, features: ['Todo lo de Simple', 'Hasta 7.000 productos', 'Manejo de proveedores', 'Catalogo web online QR', 'Reportes de ventas detallados', 'Facturacion ARCA (Opcional)', 'Hasta 5 usuarios'], cta: 'Probar gratis' },
-  { id: 'ia', name: 'IA', monthly: 40000, yearly: 400000, desc: 'Automatizacion con inteligencia artificial.', popular: false, features: ['Todo lo de Pro', 'Hasta 10.000 productos', 'Escanner de facturas IA', 'Asesor de precios inteligente', 'Facturacion ARCA (Opcional)', 'Reportes de rentabilidad', 'Hasta 10 usuarios'], cta: 'Probar gratis' },
+  { id: 'simple', name: 'Simple', monthly: 20000, yearly: 200000, desc: 'Todo lo necesario para arrancar.', popular: false, features: ['Hasta 3.500 productos', 'Clientes y ventas', 'Soporta cortes de internet', 'Manejo de fiados', 'Lector laser e impresoras', 'Hasta 2 usuarios'], cta: 'Probar gratis' },
+  { id: 'pro', name: 'Pro', monthly: 30000, yearly: 300000, desc: 'Para kioscos que crecen.', popular: true, features: ['Todo lo de Simple', 'Hasta 7.000 productos', 'Manejo de proveedores', 'Catalogo web online QR', 'Reportes de ventas detallados', 'Alta asistida en ARCA/AFIP', 'Hasta 5 usuarios'], cta: 'Probar gratis' },
+  { id: 'ia', name: 'IA', monthly: 40000, yearly: 400000, desc: 'Automatizacion con inteligencia artificial.', popular: false, features: ['Todo lo de Pro', 'Hasta 10.000 productos', 'Escanner de facturas IA', 'Asesor de precios inteligente', 'Alta asistida en ARCA/AFIP', 'Reportes inteligentes', 'Hasta 10 usuarios'], cta: 'Probar gratis' },
 ];
 
-function PlanCard({ plan, isYearly, currentPlan }) {
+function PlanCard({ plan, isYearly, currentPlan, onSubscribe }) {
   const mainPrice = isYearly ? Math.round(plan.yearly / 12) : plan.monthly;
   const totalYearly = plan.yearly;
   const savings = plan.monthly * 12 - plan.yearly;
@@ -80,14 +81,14 @@ function PlanCard({ plan, isYearly, currentPlan }) {
           Plan Actual
         </button>
       ) : (
-        <a href={WHATSAPP_LINK(`Hola, quiero info sobre el plan ${plan.name} de MiNegocio.`)} target="_blank" rel="noopener noreferrer" style={{
+        <button onClick={() => onSubscribe(plan.id, isYearly)} style={{
           display: 'block', width: '100%', padding: '12px 0', borderRadius: 10, fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer', transition: 'all 0.2s', textAlign: 'center', textDecoration: 'none',
           background: plan.popular ? 'var(--gradient-primary)' : 'var(--bg-card)',
           color: '#fff',
           border: plan.popular ? 'none' : '1px solid var(--border-color)'
         }}>
           {plan.cta}
-        </a>
+        </button>
       )}
     </div>
   );
@@ -120,6 +121,19 @@ export default function PlanPage() {
   }, []);
 
   const activePlanId = currentPlan === 'trial' ? 'simple' : currentPlan;
+
+  const handleSubscribe = async (planId, isYearly) => {
+    try {
+      const response = await apiPost('/billing/subscribe', { plan_id: planId, is_yearly: isYearly });
+      if (response && response.init_point) {
+        window.location.href = response.init_point;
+      } else {
+        alert('Hubo un error al generar el link de pago.');
+      }
+    } catch (err) {
+      alert('Error de conexión con MercadoPago.');
+    }
+  };
 
   return (
     <div style={{ padding: '32px 40px', width: '100%', height: '100%', overflowY: 'auto', boxSizing: 'border-box', background: 'transparent', color: '#fff', fontFamily: 'var(--font-main)' }}>
@@ -155,7 +169,7 @@ export default function PlanPage() {
 
       <div style={{ maxWidth: 1000, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 32, alignItems: 'stretch', paddingBottom: 40 }}>
         {plans.map((plan) => (
-          <PlanCard key={plan.id} plan={plan} isYearly={isYearly} currentPlan={activePlanId} />
+          <PlanCard key={plan.id} plan={plan} isYearly={isYearly} currentPlan={activePlanId} onSubscribe={handleSubscribe} />
         ))}
       </div>
     </div>

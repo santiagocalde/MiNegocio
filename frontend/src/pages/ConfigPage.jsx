@@ -164,10 +164,34 @@ CUIT: ${config.cuit || '---'}  ${config.condicion_iva || '---'}`}
             </div>
 
             <div style={{ marginTop: '24px', borderTop: '1px solid var(--border-color)', paddingTop: '20px' }}>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '16px', color: 'var(--text-primary)' }}>Impresión</h3>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '16px', color: 'var(--text-primary)' }}><Icons.Settings /> Impresión</h3>
               <ConfigPrinting printConfig={printing.printConfig} setPrintConfig={printing.setPrintConfig}
                 qzConnected={printing.qzConnected} setQzConnected={printing.setQzConnected}
                 addToast={addToast} />
+            </div>
+
+            <div style={{ marginTop: '24px', borderTop: '1px solid var(--border-color)', paddingTop: '20px' }}>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '8px', color: 'var(--text-primary)' }}><Icons.Activity /> Facturación ARCA (AFIP)</h3>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '16px' }}>
+                Habilitar emisión automática de facturas electrónicas con CAE. Requiere validación manual de certificados.
+              </p>
+              
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <input 
+                  type="checkbox" 
+                  checked={false} 
+                  onChange={(e) => {
+                    e.preventDefault();
+                    if (window.confirm("🏛️ Configuración de ARCA Requerida\n\nPara emitir facturas legales, necesitamos dar de alta tus Certificados Digitales por seguridad. Este trámite debe ser configurado manualmente por Soporte.\n\n¿Contactar a Soporte por WhatsApp ahora?")) {
+                      window.open('https://wa.me/5491144276384?text=Hola,%20quiero%20habilitar%20la%20facturaci%C3%B3n%20con%20ARCA%20en%20mi%20cuenta', '_blank');
+                    }
+                  }} 
+                  style={{ cursor: 'pointer', width: '20px', height: '20px' }}
+                />
+                <span style={{ fontSize: '0.9rem', color: 'var(--text-primary)', fontWeight: 600 }}>
+                  Habilitar Facturación Electrónica ARCA
+                </span>
+              </div>
             </div>
           </div>
         )}
