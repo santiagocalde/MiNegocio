@@ -21,7 +21,7 @@
 │                                                             │
 │  ┌───────────────────────────────────────────────────────┐  │
 │  │         SQLite per-tenant (local/disco)                │  │
-│  │  Archivos:  novastock_{uuid}.db                        │  │
+│  │  Archivos:  minegocio_{uuid}.db                        │  │
 │  │  Tablas:  products, sales, stock, turns, operators,     │  │
 │  │           config, customers, suppliers, purchases,      │  │
 │  │           promotions, sucursales, egresos               │  │
@@ -39,7 +39,7 @@
 
 ### Registro
 1. Landing → `POST /api/auth/register` (email, password, business_name)
-2. Backend crea fila en `businesses` (PostgreSQL) + crea `novastock_{uuid}.db` (SQLite)
+2. Backend crea fila en `businesses` (PostgreSQL) + crea `minegocio_{uuid}.db` (SQLite)
 3. Plan por defecto: `trial`
 4. JWT emitido con `sub = business_id` (sin `plan` en claims)
 5. Frontend guarda token en localStorage
@@ -168,7 +168,7 @@
 - SSE `GET /api/events` para cambios en tiempo real
 
 ### Logs
-- Archivo: `backend/novastock.log` con rotacion
+- Archivo: `backend/minegocio.log` con rotacion
 - Niveles: INFO (normal), WARNING (errores recuperables), ERROR (fallos)
 - En produccion: enviar a archivo + stdout para Docker logs
 
@@ -194,7 +194,7 @@
 ### Estrategia de IDs
 - Cada business tiene un UUID generado por PostgreSQL (`gen_random_uuid()`)
 - El UUID es el `business_id` que identifica al tenant en todo el sistema
-- Las DBs SQLite se nombran `novastock_{uuid}.db`
+- Las DBs SQLite se nombran `minegocio_{uuid}.db`
 - El JWT contiene `sub = uuid` para identificar al tenant en cada request
 
 ### Privacidad

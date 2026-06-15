@@ -1,13 +1,13 @@
-# 🚨 Auditoría "Hater" Pre-Mortem a 30 Días (NovaStock SaaS)
+# 🚨 Auditoría "Hater" Pre-Mortem a 30 Días (MiNegocio SaaS)
 *Documento de la Verdad: Por qué nuestro MVP fallaría en el mundo real si lo lanzamos tal cual está hoy.*
 
 ---
 
-## 🌟 Análisis Comparativo (Cobrando.app vs NovaStock)
+## 🌟 Análisis Comparativo (Cobrando.app vs MiNegocio)
 
 **1. Onboarding y Creación de Cuenta (Falta)**
 * **Cobrando.app:** Tiene un asistente (Wizard) que pregunta si es Kiosco, Almacén o Indumentaria para pre-configurar el sistema.
-* **NovaStock:** Tenemos la pantalla de login/registro, pero nos falta el Asistente Inicial. Cuando el usuario entra por primera vez, el sistema está vacío. Deberíamos tener un paso que le cree las categorías básicas ("Bebidas", "Golosinas") automáticamente según su rubro.
+* **MiNegocio:** Tenemos la pantalla de login/registro, pero nos falta el Asistente Inicial. Cuando el usuario entra por primera vez, el sistema está vacío. Deberíamos tener un paso que le cree las categorías básicas ("Bebidas", "Golosinas") automáticamente según su rubro.
 
 **2. Cargar Productos (Incompleto - Cuello de botella)**
 * **El problema del Día 30:** Un kiosco promedio tiene 2.500 productos. Actualmente en StockModule.jsx, la única forma de cargar stock es uno por uno a mano.
@@ -15,7 +15,7 @@
 
 **3. Registro de Ventas y Medios de Pago (UI Desconectada)**
 * **Cobrando.app:** Te deja elegir si cobras en efectivo, MercadoPago o tarjeta.
-* **NovaStock:** En el backend, ya programamos el campo payment_method en la base de datos y la conexión a Mercado Pago. El Bug: En la interfaz del Cajero (POSApp.jsx), cuando aprietas F2 para cobrar, el modal solo te muestra un campo para poner el Efectivo. No le hemos puesto los botones grandes para elegir "Cobrar con MercadoPago" o "Tarjeta". Está programado atrás, pero oculto adelante.
+* **MiNegocio:** En el backend, ya programamos el campo payment_method en la base de datos y la conexión a Mercado Pago. El Bug: En la interfaz del Cajero (POSApp.jsx), cuando aprietas F2 para cobrar, el modal solo te muestra un campo para poner el Efectivo. No le hemos puesto los botones grandes para elegir "Cobrar con MercadoPago" o "Tarjeta". Está programado atrás, pero oculto adelante.
 
 **4. Gestión de Stock (Falta Inteligencia)**
 * **El problema del Día 30:** Después de un mes, Don Julio quiere saber qué cosas compró al pedo y no se venden.
@@ -23,7 +23,7 @@
 
 **5. Fiados y Cuentas Corrientes (🚨 BUG CRÍTICO DE LÓGICA)**
 * **Cobrando.app:** Tiene un historial completo del cliente. Si Juan debe $10.000, puede venir y decir "Te pago $3.000 hoy y el resto mañana".
-* **NovaStock (El Desastre):** Nuestro FiadoModule.jsx es extremadamente básico. En la base de datos, solo guardamos que la venta X se le fió a "Juan". El Bug: No programamos los pagos parciales. Si Juan debe $10.000, en nuestro sistema actual o te paga los 10.000 juntos, o no le puedes descontar la deuda. Necesitamos crear una tabla real de cuentas_corrientes en el backend para manejar entregas de plata parciales.
+* **MiNegocio (El Desastre):** Nuestro FiadoModule.jsx es extremadamente básico. En la base de datos, solo guardamos que la venta X se le fió a "Juan". El Bug: No programamos los pagos parciales. Si Juan debe $10.000, en nuestro sistema actual o te paga los 10.000 juntos, o no le puedes descontar la deuda. Necesitamos crear una tabla real de cuentas_corrientes en el backend para manejar entregas de plata parciales.
 
 **6. Reportes y Cierre de Caja (Incompleto)**
 * **El problema del Día 30:** El contador del negocio le pide un Excel a Don Julio para presentar los impuestos.
@@ -31,7 +31,7 @@
 
 **7. Facturación ARCA/AFIP (Totalmente Desconectado)**
 * **Cobrando.app:** Tiene una sección /facturacion para subir el CUIT y automatizar.
-* **NovaStock:** Yo te creé el archivo afip_service.py en el backend (el motor), pero en el frontend no hay ninguna pantalla donde Don Julio pueda subir su certificado .crt de AFIP, ni configurar su CUIT. Está el motor de la Ferrari, pero no le pusimos el volante.
+* **MiNegocio:** Yo te creé el archivo afip_service.py en el backend (el motor), pero en el frontend no hay ninguna pantalla donde Don Julio pueda subir su certificado .crt de AFIP, ni configurar su CUIT. Está el motor de la Ferrari, pero no le pusimos el volante.
 
 ---
 
@@ -142,8 +142,8 @@
 * **Solución:** Crear una Bóveda (Vault) en el Backend donde los certificados `.crt` y tokens se suban y nunca más se muestren completos en la UI.
 
 **24. Sincronización Multi-Pestaña**
-* **Problema:** Si abro NovaStock en dos pestañas, el backend no lo frena, pero el frontend puede desincronizar el `turn_id` si una pestaña quedó vieja.
-* **Solución:** Usar `BroadcastChannel('novastock-session')` para avisar entre pestañas que el turno cambió.
+* **Problema:** Si abro MiNegocio en dos pestañas, el backend no lo frena, pero el frontend puede desincronizar el `turn_id` si una pestaña quedó vieja.
+* **Solución:** Usar `BroadcastChannel('minegocio-session')` para avisar entre pestañas que el turno cambió.
 
 ---
 
@@ -173,7 +173,7 @@
 * **Solución:** Implementamos "Batching" y "Throttling" en la cola de sincronización Offline (mandando paquetes de 10 ventas cada 4 segundos).
 
 **30. [x] HECHO: Turnos Huérfanos por limpieza de Caché**
-* **Problema:** Si Don Julio le pasa el CCleaner a la compu o borra el historial de Chrome en mitad del día, se borra el `currentTurnId` del `localStorage`. Cuando vuelve a entrar a NovaStock, el sistema le obliga a abrir un "Turno Nuevo", rompiendo la caja del día en dos turnos separados que no cuadran.
+* **Problema:** Si Don Julio le pasa el CCleaner a la compu o borra el historial de Chrome en mitad del día, se borra el `currentTurnId` del `localStorage`. Cuando vuelve a entrar a MiNegocio, el sistema le obliga a abrir un "Turno Nuevo", rompiendo la caja del día en dos turnos separados que no cuadran.
 * **Solución:** El backend guarda el `active_shift_id`. Al hacer login o reiniciar la página sin caché, el Frontend pregunta a `/api/turns/active` y retoma el turno huérfano automáticamente sin crear uno nuevo.
 
 **31. [x] HECHO: El "Bache" del Faltante de Caja (Arrastre de Deuda)**
@@ -185,7 +185,7 @@
 * **Solución:** Motor de Promociones evaluado dinámicamente en el backend/frontend para calcular el subtotal correctamente de manera automática.
 
 **33. [x] HECHO: Vuelto en Cuenta (El problema de la falta de monedas)**
-* **Problema:** El total es $1.950, el cliente paga con $2.000. El kiosquero no tiene $50 pesos físicos. Tradicionalmente le da un caramelo. Pero un sistema premium como NovaStock SaaS debería retener el cliente.
+* **Problema:** El total es $1.950, el cliente paga con $2.000. El kiosquero no tiene $50 pesos físicos. Tradicionalmente le da un caramelo. Pero un sistema premium como MiNegocio SaaS debería retener el cliente.
 * **Solución:** Botón en el vuelto que diga "Acreditar vuelto a la cuenta del cliente". Esos $50 van al balance del cliente y se descuentan de su próxima compra solos. Fidelización pura.
 
 **34. [x] HECHO: Ilegalidad del Ticket Fiscal (Falta de CAE y QR)**

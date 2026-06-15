@@ -1,7 +1,7 @@
 # 🏪 M i N e g o c i o   P O S   —   Viaje a Producción
 
 ## Documento maestro de implementación por etapas
-### Proyecto: MiNegocio POS (ex-NovaStock)
+### Proyecto: MiNegocio POS (ex-MiNegocio)
 ### Objetivo: Deploy a producción con sistema funcional, seguro, estético y conectado
 
 ---
@@ -87,13 +87,13 @@ export const BUSINESS_EMAIL = 'upcodednow@gmail.com';
 
 ## 1.2 localStorage keys inconsistentes
 **Archivos:** useAuth.js, PanelLayout.jsx, Onboarding.jsx, PreviewPage.jsx, LandingPage.jsx, useBackend.js, useSales.js
-**Problema:** Se escriben `novastock_*` pero se limpian `minegocio_*` (llaves que nadie escribe).
+**Problema:** Se escriben `minegocio_*` pero se limpian `minegocio_*` (llaves que nadie escribe).
 **Solución:** Reemplazo global en 7 archivos:
-- `novastock_current_operator` → `minegocio_current_operator`
-- `novastock_current_turn_id` → `minegocio_current_turn_id`
-- `novastock_pending_sales` → `minegocio_pending_sales`
-- `novastock_inventario_cache` → `minegocio_inventario_cache`
-- `novastock_cart` → ELIMINAR (nunca usado, solo se remueve)
+- `minegocio_current_operator` → `minegocio_current_operator`
+- `minegocio_current_turn_id` → `minegocio_current_turn_id`
+- `minegocio_pending_sales` → `minegocio_pending_sales`
+- `minegocio_inventario_cache` → `minegocio_inventario_cache`
+- `minegocio_cart` → ELIMINAR (nunca usado, solo se remueve)
 
 ## 1.3 Aumento Masivo roto — path incorrecto
 **Archivos:** `StockModule.jsx:155`, `RecomendacionesModule.jsx:30`
@@ -574,15 +574,15 @@ Paleta:
 
 ---
 
-## 6.1 Nomenclatura: cero `novastock`, todo `minegocio`
+## 6.1 Nomenclatura: cero `minegocio`, todo `minegocio`
 Reemplazo global en TODOS los archivos del proyecto:
-- `novastock_current_operator` → `minegocio_current_operator`
-- `novastock_current_turn_id` → `minegocio_current_turn_id`
-- `novastock_pending_sales` → `minegocio_pending_sales`
-- `novastock_inventario_cache` → `minegocio_inventario_cache`
-- `NovaStock` → `MiNegocio` en logs, comentarios, títulos, README
-- `novastock.db` → `minegocio.db`
-- `novastock_*.db` → `minegocio_*.db`
+- `minegocio_current_operator` → `minegocio_current_operator`
+- `minegocio_current_turn_id` → `minegocio_current_turn_id`
+- `minegocio_pending_sales` → `minegocio_pending_sales`
+- `minegocio_inventario_cache` → `minegocio_inventario_cache`
+- `MiNegocio` → `MiNegocio` en logs, comentarios, títulos, README
+- `minegocio.db` → `minegocio.db`
+- `minegocio_*.db` → `minegocio_*.db`
 - `saas_token`, `saas_business`, `saas_mode` → mantener (son SaaS layer, no kiosco)
 
 ## 6.2 WhatsApp unificado

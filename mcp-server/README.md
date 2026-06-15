@@ -1,8 +1,8 @@
-# NovaStock MCP Server
+# MiNegocio MCP Server
 
 ## ¿Qué es?
 Un servidor MCP que permite a cualquier agente de IA (opencode, Claude, Codex) interactuar
-con el proyecto NovaStock de forma autónoma: buscar código, ejecutar builds, tests, etc.
+con el proyecto MiNegocio de forma autónoma: buscar código, ejecutar builds, tests, etc.
 
 ## Tools disponibles
 
@@ -62,7 +62,7 @@ En la config de Claude Desktop agregá:
 ```json
 {
   "mcpServers": {
-    "novastock": {
+    "minegocio": {
       "command": "python",
       "args": ["D:\\Codigo\\SoftwareKioscos\\mcp-server\\server.py"]
     }

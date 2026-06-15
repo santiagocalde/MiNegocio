@@ -1,10 +1,10 @@
 @echo off
-title NovaStock - Sistema de Ventas
+title MiNegocio - Sistema de Ventas
 color 0A
 
 echo.
 echo  ╔══════════════════════════════════════╗
-echo  ║         NOVASTOCK v1.0               ║
+echo  ║         MINEGOCIO v1.0               ║
 echo  ║    Sistema de Ventas - Kioscos       ║
 echo  ╚══════════════════════════════════════╝
 echo.
@@ -23,7 +23,7 @@ echo  Python encontrado. Iniciando backend...
 echo.
 
 :: Iniciar backend Python en background
-start "NovaStock Backend" /min cmd /c "title NovaStock Backend && cd /d "%~dp0backend" && python -m uvicorn main:app --host 0.0.0.0 --port 8005"
+start "MiNegocio Backend" /min cmd /c "title MiNegocio Backend && cd /d "%~dp0backend" && python -m uvicorn main:app --host 0.0.0.0 --port 8005"
 
 :: Esperar 5 segundos a que el servidor levante
 echo  Esperando 5 segundos para que el backend arranque...
@@ -54,14 +54,14 @@ if %ERRORLEVEL% NEQ 0 (
 echo.
 
 echo  PASO 2: Iniciando frontend...
-start "NovaStock Frontend" /min cmd /c "title NovaStock Frontend && cd /d "%~dp0frontend" && npm run dev"
+start "MiNegocio Frontend" /min cmd /c "title MiNegocio Frontend && cd /d "%~dp0frontend" && npm run dev"
 
 :: Esperar 5 segundos a que Vite compile
 timeout /t 5 /nobreak >nul
 
 echo.
 echo  ╔══════════════════════════════════════╗
-echo  ║  NovaStock abierto en el navegador   ║
+echo  ║  MiNegocio abierto en el navegador   ║
 echo  ║                                      ║
 echo  ║  API Backend: http://localhost:8005  ║
 echo  ║  Panel:       http://localhost:5175  ║
@@ -84,7 +84,7 @@ echo  ════════════════════════�
 echo.
 echo  Si el sistema no anda:
 echo    1. Cerra esta ventana (apaga todo)
-echo    2. Abri INICIAR_NOVASTOCK.bat de vuelta
+echo    2. Abri INICIAR_MINEGOCIO.bat de vuelta
 echo    3. Si persiste: abri cmd en backend\ y corre:
 echo       pip install fastapi uvicorn aiosqlite
 echo       python main.py

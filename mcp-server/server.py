@@ -13,7 +13,7 @@ BACKEND_DIR = os.path.join(PROJECT_ROOT, "backend")
 FRONTEND_DIR = os.path.join(PROJECT_ROOT, "frontend")
 IGNORE_DIRS = {"node_modules", ".git", "__pycache__", ".venv", "dist", ".pytest_cache"}
 
-server = Server("novastock-mcp")
+server = Server("minegocio-mcp")
 
 
 def _should_ignore(path):
@@ -43,7 +43,7 @@ async def handle_list_tools() -> list[types.Tool]:
     return [
         types.Tool(
             name="search",
-            description="Buscar archivos y contenido en el proyecto NovaStock",
+            description="Buscar archivos y contenido en el proyecto MiNegocio",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -74,7 +74,7 @@ async def handle_list_tools() -> list[types.Tool]:
         ),
         types.Tool(
             name="use_tool",
-            description="Ejecutar comandos del proyecto NovaStock (build, test, lint, etc.)",
+            description="Ejecutar comandos del proyecto MiNegocio (build, test, lint, etc.)",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -239,7 +239,7 @@ async def main():
             read_stream,
             write_stream,
             InitializationOptions(
-                server_name="novastock-mcp",
+                server_name="minegocio-mcp",
                 server_version="1.0.0",
                 capabilities=server.get_capabilities(
                     notification_options=NotificationOptions(),

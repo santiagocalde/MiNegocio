@@ -1,31 +1,46 @@
-# 🏪 NovaStock - Kiosco POS System
+# 🏪 MiNegocio App - Sistema SaaS B2B
 
-NovaStock es un sistema de Punto de Venta (POS) y gestión de inventario, diseñado para ser "a prueba de balas" en kioscos, despensas y minimercados argentinos. Construido para correr offline, en computadoras de bajos recursos, con un enfoque maníaco en la velocidad de cobro, la concurrencia segura y la prevención de pérdida de datos.
+MiNegocio App es un sistema de Punto de Venta (POS) y gestión de inventario, diseñado específicamente para ser intuitivo, a prueba de balas y operar de forma híbrida (Offline-first) para kioscos, despensas y comercios en Latinoamérica.
 
-## 🚀 Características Principales (Hardened para Producción)
-- **Offline-First Real:** Sin dependencias de la nube. Los datos viven en la PC del kiosco (SQLite WAL Mode), permitiendo facturar aunque no haya internet.
-- **Multicaja Seguro (Async Locks):** FastAPI gestiona de manera centralizada la base de datos local. Las peticiones concurrentes se manejan atómicamente (`BEGIN IMMEDIATE` + `asyncio.Lock`), evitando _race conditions_ entre cajas.
-- **Outbox Pattern & Idempotency Keys:** Si la red local (LAN) falla temporalmente, las ventas no se pierden. El frontend las guarda en `localStorage` con un UUID y las reintenta en segundo plano sin duplicar cobros.
-- **Backups Blindados (Integrity Checked):** Cada 10 minutos, el sistema genera un backup `.db.gz` comprimido. **Crucial:** Cada backup es descomprimido y validado al vuelo con `PRAGMA integrity_check` antes de guardarse. Si el disco está casi lleno, se suspenden inteligentemente.
-- **Aumentos Masivos:** Ideal para contextos inflacionarios. Botón de aumento porcentual que aplica a toda la base de datos de manera atómica con un solo clic.
+## 🚀 Arquitectura Técnica
 
-## 🛠️ Stack Tecnológico
-- **Frontend:** React 19 + Vite (UI reactiva e instantánea, despliegue estático).
-- **Backend:** Python 3.10+ + FastAPI (Manejo asíncrono, súper ligero).
-- **Base de Datos:** SQLite (`aiosqlite`) en modo WAL.
-- **Empaquetado:** Inno Setup (`.exe` instalador) para Windows 7/10.
+El sistema está construido con una arquitectura moderna diseñada para alta concurrencia y despliegue rápido:
 
-## 📁 Documentación Disponible
-- `RESUMEN_PROYECTO.md`: Detalles técnicos, funcionales y arquitectónicos del sistema.
-- `GUIA_USUARIO_NOVASTOCK.md`: Manual operativo no-técnico para imprimir y dejarle al dueño (Don Julio).
-- `STRESS_TEST_PROTOCOL.md`: Protocolo de QA exhaustivo para someter el sistema a estrés extremo (ráfagas paralelas sin delay) antes de certificar la instalación.
+### Frontend (React + Vite)
+- **Offline-First:** Uso de `localStorage` mediante patrón *Outbox* para guardar ventas de forma local si se corta internet. Sincronización automática cuando vuelve el Wi-Fi.
+- **Módulos Independientes:** Arquitectura basada en Features (POS, Catálogo, Historial, Fiados, Configuración).
+- **Diseño Moderno:** Tema "Ocean Dark" con animaciones y UX optimizado para lectores de códigos de barra (Zero-click checkout).
 
-## ⚡ Instalación y Uso Rápido
-1. Ejecuta el archivo `Instalar_NovaStock.exe` (Generado vía Inno Setup).
-2. El sistema se instalará en `C:\NovaStock` y creará los accesos directos.
-3. El servidor backend arrancará automáticamente.
-4. Abre el navegador web y accede a `http://localhost:8000`.
+### Backend (FastAPI + Python)
+- **Multi-Tenant:** Base de datos PostgreSQL para manejar cientos de kioscos, separando los datos lógicamente.
+- **Pagos Automáticos:** Integración oficial con MercadoPago (Suscripciones / Preapproval) y Webhooks para dar de alta cuentas de forma automatizada.
+- **Emails Automatizados:** Cron-jobs (`asyncio`) para mandar emails recordatorios usando la API de Resend (Día 2, 4, 6 y 7 de la prueba gratis).
+
+### Despliegue (Docker)
+Todo el sistema está dockerizado (`docker-compose.yml`) e incluye:
+- `db`: PostgreSQL 15.
+- `backend`: Uvicorn + FastAPI.
+- `frontend`: React SPA servido vía Nginx.
+
+## 🔧 Configuración para Desarrollo
+
+1. Clona el repositorio:
+```bash
+git clone https://github.com/santiagocalde/MiNegocio.git
+cd MiNegocio
+```
+
+2. Crea el archivo `.env` en la raíz (usa las credenciales de Producción de MP y Resend).
+
+3. Levanta el entorno con Docker:
+```bash
+docker-compose up --build -d
+```
+
+4. Accede a `http://localhost:8000` para el Backend y `http://localhost` para la App.
+
+## 💰 Modelo de Suscripción (SaaS)
+El sistema incluye Planes Gated (Simple, Pro, IA). El código incluye la restricción de features basado en la suscripción del negocio en la base de datos PostgreSQL.
 
 ---
-*Desarrollado para la realidad operativa del comercio minorista argentino.
-*Prueba de cambio - OpenCode*
+*Desarrollado con ❤️ para empoderar a los comercios locales.*

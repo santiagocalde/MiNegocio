@@ -1,9 +1,9 @@
 @echo off
-title NovaStock - Instalacion
+title MiNegocio - Instalacion
 color 0A
 echo.
 echo  ╔══════════════════════════════════════╗
-echo  ║       NOVASTOCK - INSTALACION        ║
+echo  ║       MINEGOCIO - INSTALACION        ║
 echo  ║    Sistema de Ventas para Kioscos    ║
 echo  ╚══════════════════════════════════════╝
 echo.
@@ -55,7 +55,7 @@ echo.
 echo  ╔══════════════════════════════════════╗
 echo  ║     INSTALACION COMPLETADA  ✓        ║
 echo  ║                                      ║
-echo  ║  Ahora ejecuta: INICIAR_NOVASTOCK.bat║
+echo  ║  Ahora ejecuta: INICIAR_MINEGOCIO.bat║
 echo  ╚══════════════════════════════════════╝
 echo.
 pause
