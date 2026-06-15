@@ -33,7 +33,7 @@ function AnimatedStat({ value, label, suffix = '', prefix = '', isLast }) {
 
 const DEFAULT_STATS = [
   { value: 20, label: 'Kioscos activos', suffix: '+' },
-  { value: 380, label: 'Ventas procesadas', prefix: '$', suffix: 'K' },
+  { value: 380, label: 'Ventas procesadas', prefix: '', suffix: 'K+' },
   { value: 98.7, label: 'Disponibilidad', suffix: '%' },
   { value: 4.9, label: 'Puntuacion', suffix: ' ★' },
 ];
@@ -48,7 +48,7 @@ export default function LandingSocialProof() {
       .then(data => {
         setStats([
           { value: data.kioscos_activos || 20, label: 'Kioscos activos', suffix: '+' },
-          { value: data.ventas_procesadas ? Math.round(data.ventas_procesadas / 1000) : 380, label: 'Ventas procesadas', prefix: '$', suffix: 'K' },
+          { value: data.ventas_procesadas ? Math.round(data.ventas_procesadas / 1000) : 380, label: 'Ventas procesadas', prefix: '', suffix: 'K+' },
           { value: data.disponibilidad || 98.7, label: 'Disponibilidad', suffix: '%' },
           { value: data.puntuacion || 4.9, label: 'Puntuacion', suffix: ' ★' },
         ]);

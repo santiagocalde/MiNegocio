@@ -38,12 +38,6 @@ export default function TopBar({ currentOperator, sucursales, currentSucursalId,
         )}
       </div>
       <div className="status-indicators" style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-        <button onClick={() => setShowTutorial(true)} style={{ background: 'transparent', color: 'var(--text-primary)', border: '1px solid var(--border-color)', padding: '10px 16px', borderRadius: '8px', fontSize: '0.95rem', cursor: 'pointer', fontWeight: 600, transition: 'all 0.2s' }} onMouseEnter={e=>e.target.style.background='rgba(255,255,255,0.05)'} onMouseLeave={e=>e.target.style.background='transparent'}>
-          Tutorial
-        </button>
-        <button onClick={toggleTheme} style={{ background: 'transparent', color: 'var(--text-primary)', border: '1px solid var(--border-color)', padding: '10px 16px', borderRadius: '8px', fontSize: '0.95rem', cursor: 'pointer', fontWeight: 600, transition: 'all 0.2s' }} onMouseEnter={e=>e.target.style.background='rgba(255,255,255,0.05)'} onMouseLeave={e=>e.target.style.background='transparent'}>
-          {themeDark ? '☀️ Claro' : '🌙 Oscuro'}
-        </button>
         <button onClick={() => setShowHelp?.(true)} style={{ background: 'transparent', color: 'var(--text-primary)', border: '1px solid var(--border-color)', padding: '10px 16px', borderRadius: '8px', fontSize: '0.95rem', cursor: 'pointer', fontWeight: 600, transition: 'all 0.2s' }} onMouseEnter={e=>e.target.style.background='rgba(255,255,255,0.05)'} onMouseLeave={e=>e.target.style.background='transparent'}>
           Ayuda
         </button>
