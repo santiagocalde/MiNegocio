@@ -21,7 +21,7 @@ export default function ForgotPasswordModal({ onClose }) {
     setLoading(true);
     setError('');
     try {
-      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8005';
+      const baseUrl = import.meta.env.PROD ? '' : 'http://localhost:8005';
       const res = await fetch(`${baseUrl}/api/auth/forgot-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

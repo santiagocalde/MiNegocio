@@ -85,7 +85,7 @@ export default function LandingPricing({ isYearly, setIsYearly, isLoggedIn, setC
   const [plans, setPlans] = useState(FALLBACK_PLANS);
 
   useEffect(() => {
-    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8005';
+    const baseUrl = import.meta.env.PROD ? '' : 'http://localhost:8005';
     fetch(`${baseUrl}/api/plans`)
       .then(res => res.ok ? res.json() : Promise.reject())
       .then(data => {

@@ -29,7 +29,7 @@ export default function ContactoPage() {
     setErrorMsg('');
     setLoading(true);
     try {
-      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8005';
+      const baseUrl = import.meta.env.PROD ? '' : 'http://localhost:8005';
       const res = await fetch(`${baseUrl}/api/send-contact-email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

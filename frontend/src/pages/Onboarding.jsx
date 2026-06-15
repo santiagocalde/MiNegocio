@@ -85,7 +85,7 @@ export default function Onboarding() {
     setRegisterLoading(true);
     setRegisterError('');
     try {
-      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8005';
+      const baseUrl = import.meta.env.PROD ? '' : 'http://localhost:8005';
       
       if (isLoggedIn) {
         const token = localStorage.getItem('saas_token');

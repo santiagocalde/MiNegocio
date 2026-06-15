@@ -19,7 +19,7 @@ export default function PublicCatalog() {
   const [isCartOpen, setIsCartOpen] = useState(false);
 
   useEffect(() => {
-    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8005';
+    const baseUrl = import.meta.env.PROD ? '' : 'http://localhost:8005';
     fetch(`${baseUrl}/api/catalogo?slug=${encodeURIComponent(slug || '')}`)
       .then(res => res.ok ? res.json() : Promise.reject())
       .then(data => {

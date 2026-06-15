@@ -42,7 +42,7 @@ export default function LandingSocialProof() {
   const [stats, setStats] = useState(DEFAULT_STATS);
 
   useEffect(() => {
-    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8005';
+    const baseUrl = import.meta.env.PROD ? '' : 'http://localhost:8005';
     fetch(`${baseUrl}/api/metrics`)
       .then(res => res.ok ? res.json() : Promise.reject())
       .then(data => {

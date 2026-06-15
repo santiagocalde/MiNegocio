@@ -55,7 +55,7 @@ export default function LandingPage() {
     setLoginLoading(true);
     setLoginError('');
     try {
-      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8005';
+      const baseUrl = import.meta.env.PROD ? '' : 'http://localhost:8005';
       const endpoint = `${baseUrl}/api/auth/${showLoginModal === 'register' ? 'register' : 'login'}`;
       const body = showLoginModal === 'register'
         ? { email: loginEmail, password: loginPassword, name: loginName || 'Usuario', business_name: 'Mi Negocio', business_type: 'kiosco' }
@@ -98,7 +98,7 @@ export default function LandingPage() {
     setContactLoading(true);
     setContactError('');
     try {
-      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8005';
+      const baseUrl = import.meta.env.PROD ? '' : 'http://localhost:8005';
       const res = await fetch(`${baseUrl}/api/send-contact-email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
