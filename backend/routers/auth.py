@@ -1,0 +1,427 @@
+import os
+import logging
+from datetime import datetime, timedelta, timezone
+from fastapi import APIRouter, HTTPException, Depends, Header, Request
+from pydantic import BaseModel, EmailStr, field_validator
+import bcrypt
+from jose import jwt, JWTError
+
+from db import get_pool
+from main import JWT_SECRET, JWT_ALGORITHM
+
+logger = logging.getLogger("NovaStock.Auth")
+router = APIRouter(prefix="/api/auth", tags=["Auth"])
+
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+auth_limiter = Limiter(key_func=get_remote_address)
+
+class BusinessCreate(BaseModel):
+    email: EmailStr
+    password: str
+    business_name: str = "Mi Negocio"
+    name: str = ""
+    phone: str = ""
+    business_type: str = "kiosco"
+    prior_pos: str = ""
+    needs_arca: str = ""
+    objective: str = ""
+
+    @field_validator("password")
+    @classmethod
+    def password_strength(cls, v: str) -> str:
+        if len(v) < 8:
+            raise ValueError("La contrasena debe tener al menos 8 caracteres")
+        if not any(c.isdigit() for c in v):
+            raise ValueError("La contrasena debe contener al menos 1 numero")
+        if not any(c.isupper() for c in v):
+            raise ValueError("La contrasena debe contener al menos 1 mayuscula")
+        return v
+
+class CompleteOnboarding(BaseModel):
+    business_name: str
+    phone: str
+    business_type: str
+    prior_pos: str
+    needs_arca: str
+    objective: str
+
+
+class BusinessLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str
+
+    @field_validator("new_password")
+    @classmethod
+    def password_strength(cls, v: str) -> str:
+        if len(v) < 8:
+            raise ValueError("La contrasena debe tener al menos 8 caracteres")
+        if not any(c.isdigit() for c in v):
+            raise ValueError("La contrasena debe contener al menos 1 numero")
+        if not any(c.isupper() for c in v):
+            raise ValueError("La contrasena debe contener al menos 1 mayuscula")
+        return v
+
+
+def create_reset_token(business_id: str, email: str) -> str:
+    expire = datetime.now(timezone.utc) + timedelta(hours=1)
+    return jwt.encode(
+        {"sub": business_id, "email": email, "type": "reset", "exp": expire},
+        JWT_SECRET,
+        algorithm=JWT_ALGORITHM,
+    )
+
+
+async def get_current_business(request: Request) -> dict | None:
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return None
+    token = auth_header.split(" ")[1]
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        if payload.get("type") != "access":
+            return None
+        return payload
+    except JWTError:
+        return None
+
+
+@router.post("/register", summary="Registro de nuevo comercio (SaaS)")
+@auth_limiter.limit("3/minute")
+async def auth_register(request: Request, body: BusinessCreate) -> dict:
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        existing = await conn.fetchrow(
+            "SELECT id FROM businesses WHERE email = $1",
+            body.email.lower().strip(),
+        )
+        if existing:
+            raise HTTPException(status_code=400, detail="El email ya esta registrado")
+
+        hashed_pw = bcrypt.hashpw(body.password.encode(), bcrypt.gensalt()).decode()
+
+        row = await conn.fetchrow(
+            """INSERT INTO businesses (email, password_hash, business_name, plan)
+               VALUES ($1, $2, $3, 'trial')
+               RETURNING id, email, business_name, plan, status""",
+            body.email.lower().strip(),
+            hashed_pw,
+            body.business_name.strip() or body.name.strip() or "Mi Kiosco",
+        )
+
+    biz_id, biz_email, biz_name, biz_plan, biz_status = row
+
+    from core.database import init_db as init_sqlite_db
+    import main
+    tenant_db_path = os.path.join(main.DATA_DIR, f"novastock_{biz_id}.db")
+    await init_sqlite_db(tenant_db_path, logging.getLogger("NovaStock"))
+
+    import random
+    default_pin = str(random.randint(1000, 9999))
+    hashed_pin = bcrypt.hashpw(default_pin.encode(), bcrypt.gensalt()).decode()
+
+    # Crear operador en SQLite (tenant local, para modo offline)
+    try:
+        async with aiosqlite.connect(tenant_db_path) as tenant_db:
+            await tenant_db.execute(
+                "INSERT INTO operators (name, pin, role) VALUES (?, ?, 'admin')",
+                (biz_name or "Dueño", hashed_pin)
+            )
+            await tenant_db.commit()
+    except Exception as e:
+        logging.getLogger("NovaStock.Auth").warning(f"No se pudo crear operador SQLite: {e}")
+
+    # Crear operador en PostgreSQL (para modo cloud)
+    try:
+        await conn.execute(
+            "INSERT INTO operators (business_id, name, pin, role) VALUES ($1, $2, $3, 'admin')",
+            biz_id, biz_name or "Dueño", hashed_pin
+        )
+    except Exception as e:
+        logging.getLogger("NovaStock.Auth").warning(f"No se pudo crear operador PG: {e}")
+
+    access_token = jwt.encode(
+        {"sub": biz_id, "email": biz_email, "type": "access",
+         "exp": datetime.now(timezone.utc) + timedelta(minutes=60)},
+        JWT_SECRET, algorithm=JWT_ALGORITHM,
+    )
+    refresh_token = jwt.encode(
+        {"sub": biz_id, "email": biz_email, "type": "refresh",
+         "exp": datetime.now(timezone.utc) + timedelta(days=7)},
+        JWT_SECRET, algorithm=JWT_ALGORITHM,
+    )
+    try:
+        await conn.execute(
+            "INSERT INTO auth_tokens (business_id, token, token_type, expires_at) VALUES ($1, $2, 'refresh', $3)",
+            biz_id, refresh_token, datetime.now(timezone.utc) + timedelta(days=7)
+        )
+    except Exception:
+        pass
+
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "token_type": "bearer",
+        "operator_pin": default_pin,
+        "business": {
+            "id": biz_id,
+            "email": biz_email,
+            "business_name": biz_name,
+            "plan": biz_plan,
+            "status": biz_status,
+        },
+    }
+
+@router.post("/complete-onboarding", summary="Completar onboarding del comercio")
+async def complete_onboarding(body: CompleteOnboarding, business: dict = Depends(get_current_business)) -> dict:
+    if not business:
+        raise HTTPException(status_code=401, detail="No autenticado.")
+    
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        await conn.execute(
+            "UPDATE businesses SET business_name = $1 WHERE id = $2",
+            body.business_name.strip(), business["sub"]
+        )
+    
+    import main
+    import aiosqlite
+    tenant_db_path = os.path.join(main.DATA_DIR, f"novastock_{business['sub']}.db")
+    async with aiosqlite.connect(tenant_db_path) as db:
+        for k, v in [("phone", body.phone), ("business_type", body.business_type), ("prior_pos", body.prior_pos), ("needs_arca", body.needs_arca), ("objective", body.objective)]:
+            await db.execute("INSERT INTO business_config (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", (k, str(v)))
+        await db.commit()
+    
+    return {"success": True}
+
+
+
+
+@router.post("/login", summary="Login por email para SaaS")
+@auth_limiter.limit("5/minute")
+async def auth_login(request: Request, body: BusinessLogin) -> dict:
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            "SELECT id, email, business_name, plan, status, password_hash FROM businesses WHERE email = $1",
+            body.email.lower().strip(),
+        )
+    if not row:
+        raise HTTPException(status_code=401, detail="Email o contrasena incorrectos")
+    biz_id, biz_email, biz_name, biz_plan, biz_status, pw_hash = row
+
+    if not bcrypt.checkpw(body.password.encode(), pw_hash.encode()):
+        raise HTTPException(status_code=401, detail="Email o contrasena incorrectos")
+    if biz_status == "suspended":
+        raise HTTPException(status_code=403, detail="Cuenta suspendida. Contacta a soporte.")
+
+    access_token = jwt.encode(
+        {"sub": biz_id, "email": biz_email, "type": "access",
+         "exp": datetime.now(timezone.utc) + timedelta(minutes=60)},
+        JWT_SECRET, algorithm=JWT_ALGORITHM,
+    )
+    refresh_token = jwt.encode(
+        {"sub": biz_id, "email": biz_email, "type": "refresh",
+         "exp": datetime.now(timezone.utc) + timedelta(days=7)},
+        JWT_SECRET, algorithm=JWT_ALGORITHM,
+    )
+    try:
+        await conn.execute(
+            "INSERT INTO auth_tokens (business_id, token, token_type, expires_at) VALUES ($1, $2, 'refresh', $3)",
+            biz_id, refresh_token, datetime.now(timezone.utc) + timedelta(days=7)
+        )
+    except Exception:
+        pass
+
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "token_type": "bearer",
+        "business": {
+            "id": biz_id, "email": biz_email,
+            "business_name": biz_name, "plan": biz_plan, "status": biz_status,
+        },
+    }
+
+
+@router.post("/refresh", summary="Renovar access token")
+@auth_limiter.limit("10/minute")
+async def auth_refresh(request: Request, authorization: str = Header(None)) -> dict:
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Refresh token requerido")
+    token = authorization.split(" ")[1]
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        if payload.get("type") != "refresh":
+            raise HTTPException(status_code=401, detail="Token invalido")
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Refresh token expirado")
+
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        token_row = await conn.fetchrow(
+            "SELECT business_id, expires_at FROM auth_tokens WHERE token = $1 AND token_type = 'refresh'",
+            token,
+        )
+        if not token_row:
+            raise HTTPException(status_code=401, detail="Token revocado o no encontrado")
+        if token_row["expires_at"] < datetime.now(timezone.utc):
+            raise HTTPException(status_code=401, detail="Refresh token expirado")
+
+        row = await conn.fetchrow(
+            "SELECT id, email, plan, status FROM businesses WHERE id = $1",
+            payload["sub"],
+        )
+        if not row:
+            raise HTTPException(status_code=404, detail="Comercio no encontrado")
+        biz_id, biz_email, biz_plan, biz_status = row
+        if biz_status == "suspended":
+            raise HTTPException(status_code=403, detail="Cuenta suspendida.")
+
+        new_access = jwt.encode(
+            {"sub": biz_id, "email": biz_email, "type": "access",
+             "exp": datetime.now(timezone.utc) + timedelta(minutes=60)},
+            JWT_SECRET, algorithm=JWT_ALGORITHM,
+        )
+        new_refresh = jwt.encode(
+            {"sub": biz_id, "email": biz_email, "type": "refresh",
+             "exp": datetime.now(timezone.utc) + timedelta(days=7)},
+            JWT_SECRET, algorithm=JWT_ALGORITHM,
+        )
+        await conn.execute(
+            "DELETE FROM auth_tokens WHERE token = $1",
+            token,
+        )
+        await conn.execute(
+            "INSERT INTO auth_tokens (business_id, token, token_type, expires_at) VALUES ($1, $2, 'refresh', $3)",
+            biz_id, new_refresh, datetime.now(timezone.utc) + timedelta(days=7)
+        )
+
+    return {"access_token": new_access, "refresh_token": new_refresh, "token_type": "bearer"}
+
+
+@router.get("/me", summary="Datos del comercio autenticado")
+async def auth_me(business: dict = Depends(get_current_business)) -> dict:
+    if not business:
+        raise HTTPException(status_code=401, detail="No autenticado.")
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            "SELECT id, email, business_name, plan, plan_end_date, status, created_at FROM businesses WHERE id = $1",
+            business["sub"],
+        )
+    if not row:
+        raise HTTPException(status_code=404, detail="Comercio no encontrado")
+    return {
+        "id": row["id"], "email": row["email"],
+        "business_name": row["business_name"], "plan": row["plan"],
+        "plan_end_date": str(row["plan_end_date"]) if row["plan_end_date"] else None,
+        "status": row["status"], "created_at": str(row["created_at"]),
+    }
+
+
+@router.post("/logout", summary="Invalidar refresh token")
+async def auth_logout(authorization: str = Header(None)) -> dict:
+    if not authorization or not authorization.startswith("Bearer "):
+        return {"message": "Sesion cerrada"}
+    token = authorization.split(" ")[1]
+    try:
+        pool = await get_pool()
+        async with pool.acquire() as conn:
+            await conn.execute(
+                "DELETE FROM auth_tokens WHERE token = $1",
+                token,
+            )
+    except Exception:
+        pass
+    return {"message": "Sesion cerrada correctamente"}
+
+
+@router.post("/forgot-password", summary="Solicitar recuperacion de contrasena")
+@auth_limiter.limit("3/15minutes")
+async def forgot_password(request: Request, body: ForgotPasswordRequest) -> dict:
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            "SELECT id, email, business_name FROM businesses WHERE email = $1",
+            body.email.lower().strip(),
+        )
+
+        if row:
+            reset_token = create_reset_token(row["id"], row["email"])
+            await conn.execute(
+                "UPDATE businesses SET reset_token = $1, reset_token_expires = $2, updated_at = now() WHERE id = $3",
+                reset_token,
+                datetime.now(timezone.utc) + timedelta(hours=1),
+                row["id"],
+            )
+            logger.info(f"Token de reset generado para {row['email']}")
+
+            resend_key = os.getenv("RESEND_API_KEY", "")
+            if resend_key:
+                try:
+                    import httpx
+                    reset_url = f"https://minegocio.com/reset-password?token={reset_token}"
+                    async with httpx.AsyncClient(timeout=10) as client:
+                        await client.post(
+                            "https://api.resend.com/emails",
+                            headers={"Authorization": f"Bearer {resend_key}", "Content-Type": "application/json"},
+                            json={
+                                "from": "MiNegocio <no-reply@minegocio.com>",
+                                "to": [row["email"]],
+                                "subject": "Recupera tu contrasena de MiNegocio",
+                                "html": f'<p>Hola {row["business_name"]},</p><p>Hace clic en el enlace para restablecer tu contrasena:</p><p><a href="{reset_url}">{reset_url}</a></p><p>Este enlace expira en 1 hora.</p>'
+                            }
+                        )
+                    logger.info(f"Email de reset enviado a {row['email']}")
+                except Exception as e:
+                    logger.error(f"No se pudo enviar email de reset: {e}")
+            else:
+                logger.info("RESEND_API_KEY no configurada. Token de reset solo en logs.")
+
+    return {"message": "Si el email existe, recibiras instrucciones para restablecer tu contrasena."}
+
+
+@router.post("/reset-password", summary="Restablecer contrasena con token")
+@auth_limiter.limit("3/15minutes")
+async def reset_password(request: Request, body: ResetPasswordRequest) -> dict:
+    try:
+        payload = jwt.decode(body.token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        if payload.get("type") != "reset":
+            raise HTTPException(status_code=400, detail="Token invalido")
+    except JWTError:
+        raise HTTPException(status_code=400, detail="Token invalido o expirado")
+
+    biz_id = payload["sub"]
+
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            "SELECT reset_token, reset_token_expires FROM businesses WHERE id = $1",
+            biz_id,
+        )
+        if not row:
+            raise HTTPException(status_code=404, detail="Comercio no encontrado")
+
+        if row["reset_token"] != body.token:
+            raise HTTPException(status_code=400, detail="Token invalido o ya utilizado")
+
+        if row["reset_token_expires"] and row["reset_token_expires"] < datetime.now(timezone.utc):
+            raise HTTPException(status_code=400, detail="El token expiro. Solicita uno nuevo.")
+
+        hashed_pw = bcrypt.hashpw(body.new_password.encode(), bcrypt.gensalt()).decode()
+        await conn.execute(
+            "UPDATE businesses SET password_hash = $1, reset_token = NULL, reset_token_expires = NULL, updated_at = now() WHERE id = $2",
+            hashed_pw, biz_id,
+        )
+
+    return {"message": "Contrasena restablecida correctamente. Ya podes iniciar sesion."}

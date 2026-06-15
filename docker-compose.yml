@@ -1,0 +1,49 @@
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: minegocio
+      POSTGRES_PASSWORD: ${PG_PASSWORD:-1234}
+      POSTGRES_DB: minegocio
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U minegocio -d minegocio"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://minegocio:$${PG_PASSWORD:-1234}@db:5432/minegocio
+      - PG_HOST=db
+      - PG_PORT=5432
+      - PG_USER=minegocio
+      - PG_PASSWORD=${PG_PASSWORD:-1234}
+      - PG_DATABASE=minegocio
+      - JWT_SECRET=${JWT_SECRET:-cambiar-esta-clave-en-produccion-2026}
+      - MP_ACCESS_TOKEN=${MP_ACCESS_TOKEN:-}
+      - MP_COLLECTOR_ID=${MP_COLLECTOR_ID:-}
+      - RESEND_API_KEY=${RESEND_API_KEY:-}
+      - APP_ENV=${APP_ENV:-development}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  pgdata:

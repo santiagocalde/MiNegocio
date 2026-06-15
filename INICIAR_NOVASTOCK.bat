@@ -23,7 +23,7 @@ echo  Python encontrado. Iniciando backend...
 echo.
 
 :: Iniciar backend Python en background
-start "NovaStock Backend" /min cmd /c "title NovaStock Backend && cd /d "%~dp0backend" && python main.py"
+start "NovaStock Backend" /min cmd /c "title NovaStock Backend && cd /d "%~dp0backend" && python -m uvicorn main:app --host 0.0.0.0 --port 8005"
 
 :: Esperar 5 segundos a que el servidor levante
 echo  Esperando 5 segundos para que el backend arranque...
@@ -31,13 +31,13 @@ timeout /t 5 /nobreak >nul
 
 :: Verificar que el backend responda
 echo  Verificando conexion con el backend...
-powershell -Command "try { $r = Invoke-WebRequest -Uri 'http://localhost:8000/api/health' -UseBasicParsing -TimeoutSec 3; if ($r.StatusCode -eq 200) { exit 0 } else { exit 1 } } catch { exit 1 }"
+powershell -Command "try { $r = Invoke-WebRequest -Uri 'http://localhost:8005/api/health' -UseBasicParsing -TimeoutSec 3; if ($r.StatusCode -eq 200) { exit 0 } else { exit 1 } } catch { exit 1 }"
 if %ERRORLEVEL% NEQ 0 (
     echo.
-    echo  ADVERTENCIA: El backend no responde en http://localhost:8000
+    echo  ADVERTENCIA: El backend no responde en http://localhost:8005
     echo  Posibles causas:
     echo    - Python no tiene las dependencias (fastapi, uvicorn, aiosqlite)
-    echo    - El puerto 8000 esta ocupado por otro programa
+    echo    - El puerto 8005 esta ocupado por otro programa
     echo    - La base de datos (.db) esta corrupta
     echo.
     echo  Solucion rapida:
@@ -54,7 +54,7 @@ if %ERRORLEVEL% NEQ 0 (
 echo.
 
 echo  PASO 2: Iniciando frontend...
-start "NovaStock Frontend" /min cmd /c "title NovaStock Frontend && cd /d "%~dp0" && npm run dev"
+start "NovaStock Frontend" /min cmd /c "title NovaStock Frontend && cd /d "%~dp0frontend" && npm run dev"
 
 :: Esperar 5 segundos a que Vite compile
 timeout /t 5 /nobreak >nul
@@ -63,19 +63,19 @@ echo.
 echo  ╔══════════════════════════════════════╗
 echo  ║  NovaStock abierto en el navegador   ║
 echo  ║                                      ║
-echo  ║  API Backend: http://localhost:8000  ║
-echo  ║  Panel:       http://localhost:5173  ║
+echo  ║  API Backend: http://localhost:8005  ║
+echo  ║  Panel:       http://localhost:5175  ║
 echo  ║                                      ║
 echo  ║  SI NO SE ABRE SOLO:                ║
 echo  ║  Abri el navegador y anda a         ║
-echo  ║  http://localhost:5173              ║
+echo  ║  http://localhost:5175              ║
 echo  ║                                      ║
 echo  ║  [X] Cerrar esta ventana = apagar    ║
 echo  ╚══════════════════════════════════════╝
 echo.
 
 :: Abrir el navegador
-start http://localhost:5173
+start http://localhost:5175
 
 echo.
 echo  ══════════════════════════════════════════
