@@ -1,5 +1,6 @@
 import os
 import logging
+import aiosqlite
 from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, HTTPException, Depends, Header, Request
 from pydantic import BaseModel, EmailStr, field_validator
@@ -150,12 +151,12 @@ async def auth_register(request: Request, body: BusinessCreate) -> dict:
         logging.getLogger("NovaStock.Auth").warning(f"No se pudo crear operador PG: {e}")
 
     access_token = jwt.encode(
-        {"sub": biz_id, "email": biz_email, "type": "access",
+        {"sub": str(biz_id), "email": biz_email, "type": "access",
          "exp": datetime.now(timezone.utc) + timedelta(minutes=60)},
         JWT_SECRET, algorithm=JWT_ALGORITHM,
     )
     refresh_token = jwt.encode(
-        {"sub": biz_id, "email": biz_email, "type": "refresh",
+        {"sub": str(biz_id), "email": biz_email, "type": "refresh",
          "exp": datetime.now(timezone.utc) + timedelta(days=7)},
         JWT_SECRET, algorithm=JWT_ALGORITHM,
     )
@@ -225,12 +226,12 @@ async def auth_login(request: Request, body: BusinessLogin) -> dict:
         raise HTTPException(status_code=403, detail="Cuenta suspendida. Contacta a soporte.")
 
     access_token = jwt.encode(
-        {"sub": biz_id, "email": biz_email, "type": "access",
+        {"sub": str(biz_id), "email": biz_email, "type": "access",
          "exp": datetime.now(timezone.utc) + timedelta(minutes=60)},
         JWT_SECRET, algorithm=JWT_ALGORITHM,
     )
     refresh_token = jwt.encode(
-        {"sub": biz_id, "email": biz_email, "type": "refresh",
+        {"sub": str(biz_id), "email": biz_email, "type": "refresh",
          "exp": datetime.now(timezone.utc) + timedelta(days=7)},
         JWT_SECRET, algorithm=JWT_ALGORITHM,
     )
@@ -288,12 +289,12 @@ async def auth_refresh(request: Request, authorization: str = Header(None)) -> d
             raise HTTPException(status_code=403, detail="Cuenta suspendida.")
 
         new_access = jwt.encode(
-            {"sub": biz_id, "email": biz_email, "type": "access",
+            {"sub": str(biz_id), "email": biz_email, "type": "access",
              "exp": datetime.now(timezone.utc) + timedelta(minutes=60)},
             JWT_SECRET, algorithm=JWT_ALGORITHM,
         )
         new_refresh = jwt.encode(
-            {"sub": biz_id, "email": biz_email, "type": "refresh",
+            {"sub": str(biz_id), "email": biz_email, "type": "refresh",
              "exp": datetime.now(timezone.utc) + timedelta(days=7)},
             JWT_SECRET, algorithm=JWT_ALGORITHM,
         )
