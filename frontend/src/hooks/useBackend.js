@@ -208,6 +208,7 @@ export default function useBackend(currentOperator, currentTurnId, currentSucurs
       if (bc) bc.close();
       window.removeEventListener('focus', handleFocus);
     };
+  }, [fetchProductsDB, currentSucursalId]);
 
   useEffect(() => {
     const checkRealHealth = async () => {
