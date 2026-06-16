@@ -68,14 +68,23 @@ export default function LandingPage() {
       });
 
       if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.detail || 'Error de autenticación');
+        let errStr = 'Error de autenticación';
+        try {
+          const data = await res.json();
+          if (data.detail) {
+            errStr = Array.isArray(data.detail) ? data.detail[0].msg : data.detail;
+          }
+        } catch (e) {
+          errStr = `Error del servidor (${res.status})`;
+        }
+        throw new Error(errStr);
       }
 
       const data = await res.json();
       localStorage.setItem('saas_token', data.access_token);
       if (data.refresh_token) localStorage.setItem('saas_refresh_token', data.refresh_token);
       localStorage.setItem('saas_business', JSON.stringify(data.business));
+      if (data.operator_pin) localStorage.setItem('minegocio_onboarding_pin', data.operator_pin);
       
       if (showLoginModal === 'register') {
         setIsLoggedIn(true);

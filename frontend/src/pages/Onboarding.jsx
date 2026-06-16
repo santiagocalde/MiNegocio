@@ -110,6 +110,7 @@ export default function Onboarding() {
         const biz = JSON.parse(localStorage.getItem('saas_business') || '{}');
         biz.business_name = formData.negocio;
         localStorage.setItem('saas_business', JSON.stringify(biz));
+        localStorage.setItem('minegocio_current_operator', JSON.stringify({ name: formData.nombre || 'Dueño', role: 'admin' }));
         localStorage.removeItem('minegocio_onboarding_pending');
         window.location.href = '/panel';
       } else {
@@ -131,19 +132,26 @@ export default function Onboarding() {
         });
 
         if (!res.ok) {
-          const data = await res.json().catch(() => ({}));
-          throw new Error(data.detail || 'Error al crear la cuenta');
+          let errStr = 'Error al crear la cuenta';
+          try {
+            const data = await res.json();
+            if (data.detail) {
+              errStr = Array.isArray(data.detail) ? data.detail[0].msg : data.detail;
+            }
+          } catch (e) {
+            errStr = `Error del servidor (${res.status})`;
+          }
+          throw new Error(errStr);
         }
 
         const data = await res.json();
         localStorage.setItem('saas_token', data.access_token);
         if (data.refresh_token) localStorage.setItem('saas_refresh_token', data.refresh_token);
         localStorage.setItem('saas_business', JSON.stringify(data.business));
-        localStorage.setItem('minegocio_current_operator', formData.nombre || 'Dueño');
+        localStorage.setItem('minegocio_current_operator', JSON.stringify({ name: formData.nombre || 'Dueño', role: 'admin' }));
         if (data.operator_pin) {
           localStorage.setItem('minegocio_onboarding_pin', data.operator_pin);
         }
-        localStorage.setItem('minegocio_current_turn_id', data.business?.id ? `turn-${Date.now()}` : 'demo-turn-123');
         localStorage.removeItem('saas_mode');
         localStorage.removeItem('minegocio_onboarding_pending');
 
