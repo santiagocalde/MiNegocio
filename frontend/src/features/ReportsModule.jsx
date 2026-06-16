@@ -18,6 +18,7 @@ export default function ReportsModule() {
   const [dateTo, setDateTo] = useState('');
   
   const [loading, setLoading] = useState(false);
+  const [fetchError, setFetchError] = useState('');
   const [salesData, setSalesData] = useState([]);
   const [summary, setSummary] = useState({ totalVentas: 0, ingresos: 0, metodoUsado: 'Efectivo', pctEfectivo: 0, productoPopular: '...', pctProducto: 0 });
   const [searchQuery, setSearchQuery] = useState('');
@@ -77,7 +78,10 @@ export default function ReportsModule() {
           pctProducto: bestProductoCount 
         });
       }
-    } catch {
+      setFetchError('');
+    } catch(err) {
+      console.error('Reports fetch error:', err);
+      setFetchError(`Error al cargar: ${err?.message || 'desconocido'}`);
       setSalesData([]);
     }
     if (!silent) setLoading(false);
@@ -118,8 +122,18 @@ export default function ReportsModule() {
             <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600, paddingLeft: '4px' }}>Fecha hasta</label>
             <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '0 16px', borderRadius: '8px', outline: 'none', fontFamily: 'var(--font-mono)', fontSize: '0.85rem', height: '42px', fontWeight: 600 }} />
           </div>
+
+          <button onClick={() => fetchReports()} disabled={loading} title="Actualizar" style={{ height: '42px', padding: '0 14px', background: 'var(--accent-primary)', border: 'none', borderRadius: '8px', color: 'white', cursor: loading ? 'wait' : 'pointer', fontSize: '1.1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            🔄
+          </button>
         </div>
       </div>
+
+      {fetchError && (
+        <div style={{ marginBottom: '16px', padding: '12px 16px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '8px', color: 'var(--accent-danger)', fontSize: '0.9rem', flexShrink: 0 }}>
+          ⚠️ {fetchError} — verificá tu conexión o que el servidor esté activo.
+        </div>
+      )}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px', flexShrink: 0 }}>
         <div style={{ background: 'var(--bg-card)', borderRadius: '12px', padding: '20px', border: '1px solid var(--border-color)', position: 'relative' }}>
