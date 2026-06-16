@@ -6,19 +6,19 @@ export default function LandingHero({ isLoggedIn, goPanel, goOnboard }) {
   return (
     <section style={{
       minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      padding: '160px 24px 24px', textAlign: 'center', position: 'relative', overflow: 'hidden'
+      padding: '120px 16px 24px', textAlign: 'center', position: 'relative', overflow: 'hidden'
     }}>
       <div style={{ maxWidth: 1200, margin: '0 auto', position: 'relative', zIndex: 1 }}>
         <Reveal delay={1}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 16px', background: 'rgba(20,187,166, 0.1)', border: '1px solid rgba(20,187,166, 0.2)', borderRadius: 100, marginBottom: 32, fontSize: '0.85rem', fontWeight: 600, color: 'var(--lp-primary)', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 16px', background: 'rgba(20,187,166, 0.1)', border: '1px solid rgba(20,187,166, 0.2)', borderRadius: 100, marginBottom: 32, fontSize: '0.75rem', fontWeight: 600, color: 'var(--lp-primary)', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
             <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: 'var(--lp-primary)', boxShadow: '0 0 10px var(--lp-primary)' }}></span>
             EL SISTEMA DE KIOSCOS #1 DE ARGENTINA
           </div>
           <h1 style={{
             fontFamily: '"Inter", "SF Pro Display", -apple-system, BlinkMacSystemFont, var(--lp-font-display), sans-serif',
-            fontSize: 'clamp(4rem, 8.5vw, 6.5rem)',
+            fontSize: 'clamp(2.5rem, 8.5vw, 6.5rem)',
             lineHeight: 1.15,
-            letterSpacing: '-3px',
+            letterSpacing: '-2px',
             fontWeight: 800,
             marginBottom: 24,
             paddingTop: '0.05em',
@@ -27,13 +27,13 @@ export default function LandingHero({ isLoggedIn, goPanel, goOnboard }) {
             color: '#ffffff'
           }}>
             ¿Seguís usando<br />
-            <span className="lp-gradient-text" style={{ fontStyle: 'italic', paddingRight: '15px' }}>hoja y lápiz?</span>
+            <span className="lp-gradient-text" style={{ fontStyle: 'italic', paddingRight: '5px' }}>hoja y lápiz?</span>
           </h1>
         </Reveal>
         <Reveal delay={2}>
           <p style={{
             fontFamily: '"Inter", "SF Pro Display", -apple-system, BlinkMacSystemFont, var(--lp-font-display), sans-serif',
-            fontSize: 'clamp(1.5rem, 3vw, 2.2rem)',
+            fontSize: 'clamp(1.2rem, 5vw, 2.2rem)',
             color: 'var(--lp-text)',
             letterSpacing: '-1px',
             marginBottom: 32,

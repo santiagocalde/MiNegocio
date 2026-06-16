@@ -65,7 +65,7 @@ export default function LandingNav({
           </div>
         </div>
 
-        <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', gap: 12, alignItems: 'center' }}>
+        <div className="nav-actions" style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', gap: 12, alignItems: 'center' }}>
           {isLoggedIn ? (
             <div style={{ position: 'relative' }} onMouseLeave={() => setShowUserMenu(false)}>
               <button onClick={() => setShowUserMenu(!showUserMenu)} className="lp-btn lp-btn--ghost" style={{ padding: '6px 16px', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>

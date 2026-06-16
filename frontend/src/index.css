@@ -942,12 +942,14 @@ details[open] summary .faq-chevron { transform: rotate(45deg); }
 @media (max-width: 768px) {
   .hero-layout { grid-template-columns: 1fr !important; text-align: center; }
   .nav-links { display: none !important; }
+  .nav-actions { display: none !important; }
   .nav-mobile-toggle { display: block !important; }
   .nav-mobile-menu { display: flex !important; }
   .lp-orb { display: none; }
   .speed-timer { font-size: 1.5rem; }
   .hater-table { font-size: 0.75rem; }
   .hater-table th, .hater-table td { padding: 8px 10px; }
+  .lp-section { padding: 60px 16px !important; }
 }
 
 /* ── Page Transitions ──────────────────────────────────────── */
