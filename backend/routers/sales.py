@@ -24,8 +24,7 @@ async def _get_db():
 
 
 def _biz_id():
-    import contextvars
-    return contextvars.ContextVar("business_id_ctx").get() if hasattr(main, 'business_id_ctx') else None
+    return main.business_id_ctx.get() if hasattr(main, 'business_id_ctx') else None
 
 
 def _sqlite_now():
@@ -48,7 +47,7 @@ PLACEHOLDER = "$1" if USE_PG else "?"
 # ────────────────────────────────────────────────────────────
 @router.post("/api/turns", status_code=201, summary="Abrir turno")
 async def open_turn(body: TurnOpen) -> dict:
-    b_id = body.business_id if hasattr(body, 'business_id') else None
+    b_id = _biz_id()
     now = _now()
     if USE_PG:
         from db_helpers import get_pg_pool
@@ -194,7 +193,7 @@ async def close_turn(turn_id: int, body: TurnClose) -> dict:
 
 
 @router.get("/api/turns", summary="Historial de turnos")
-async def list_turns(limit: int = 30) -> dict:
+async def list_turns(limit: int = 30) -> list:
     b_id = _biz_id()
     if USE_PG:
         from db_helpers import get_pg_pool
@@ -219,7 +218,7 @@ async def list_turns(limit: int = 30) -> dict:
 @router.post("/api/sales", status_code=201, summary="Registrar venta")
 async def create_sale(body: SaleCreate, idempotency_key: Optional[str] = Query(None)) -> dict:
     effective_key = idempotency_key or str(uuid.uuid4())
-    b_id = body.business_id if hasattr(body, 'business_id') else None
+    b_id = _biz_id()
 
     if USE_PG:
         from db_helpers import get_pg_pool
@@ -241,7 +240,7 @@ async def create_sale(body: SaleCreate, idempotency_key: Optional[str] = Query(N
                 is_split = len(body.payments) > 0
                 primary_method = 'split' if is_split else body.payment_method
                 primary_payment = round(sum(p.amount for p in body.payments), 2) if is_split else round(body.payment, 2)
-                total_sale = round(db_total, 2)
+                total_sale = round(body.total, 2) if body.total else round(primary_payment, 2)
                 change_sale = round(body.change_given, 2)
 
                 row = await conn.fetchrow(
@@ -360,35 +359,35 @@ async def create_sale(body: SaleCreate, idempotency_key: Optional[str] = Query(N
                 db_price = round(prod[1], 2)
                 db_total_sql += db_price * item.quantity
 
-                    await db.execute(
-                        "INSERT INTO sale_items (sale_id,product_id,product_name,quantity,unit_price,item_discount) VALUES (?,?,?,?,?,?)",
-                        (sale_id, item.product_id, item.product_name, item.quantity, item.unit_price, item.item_discount)
-                    )
+                await db.execute(
+                    "INSERT INTO sale_items (sale_id,product_id,product_name,quantity,unit_price,item_discount) VALUES (?,?,?,?,?,?)",
+                    (sale_id, item.product_id, item.product_name, item.quantity, item.unit_price, item.item_discount)
+                )
 
-                    p_stock, p_is_virtual, p_parent_id, p_pack_size = prod
-                    if p_is_virtual == 1 and p_parent_id:
-                        real_qty = item.quantity * (p_pack_size or 1)
-                        result = await db.execute(
-                            "UPDATE products SET stock = stock - ? WHERE id = ? AND stock >= ?",
-                            (real_qty, p_parent_id, real_qty)
-                        )
-                        if result.rowcount == 0:
-                            raise HTTPException(400, detail=f"Stock insuficiente de {item.product_name} (Pack Virtual)")
-                        await db.execute(
-                            "INSERT INTO stock_movements (product_id, movement_type, quantity, reason, operator) VALUES (?,?,?,?,?)",
-                            (p_parent_id, "salida", real_qty, f"Venta #{sale_id} (Pack Virtual)", body.operator)
-                        )
-                    else:
-                        result = await db.execute(
-                            "UPDATE products SET stock = stock - ? WHERE id = ? AND stock >= ?",
-                            (item.quantity, item.product_id, item.quantity)
-                        )
-                        if result.rowcount == 0:
-                            raise HTTPException(400, detail=f"Stock insuficiente de {item.product_name}")
-                        await db.execute(
-                            "INSERT INTO stock_movements (product_id, movement_type, quantity, reason, operator) VALUES (?,?,?,?,?)",
-                            (item.product_id, "salida", item.quantity, f"Venta #{sale_id}", body.operator)
-                        )
+                p_stock, p_is_virtual, p_parent_id, p_pack_size = prod
+                if p_is_virtual == 1 and p_parent_id:
+                    real_qty = item.quantity * (p_pack_size or 1)
+                    result = await db.execute(
+                        "UPDATE products SET stock = stock - ? WHERE id = ? AND stock >= ?",
+                        (real_qty, p_parent_id, real_qty)
+                    )
+                    if result.rowcount == 0:
+                        raise HTTPException(400, detail=f"Stock insuficiente de {item.product_name} (Pack Virtual)")
+                    await db.execute(
+                        "INSERT INTO stock_movements (product_id, movement_type, quantity, reason, operator) VALUES (?,?,?,?,?)",
+                        (p_parent_id, "salida", real_qty, f"Venta #{sale_id} (Pack Virtual)", body.operator)
+                    )
+                else:
+                    result = await db.execute(
+                        "UPDATE products SET stock = stock - ? WHERE id = ? AND stock >= ?",
+                        (item.quantity, item.product_id, item.quantity)
+                    )
+                    if result.rowcount == 0:
+                        raise HTTPException(400, detail=f"Stock insuficiente de {item.product_name}")
+                    await db.execute(
+                        "INSERT INTO stock_movements (product_id, movement_type, quantity, reason, operator) VALUES (?,?,?,?,?)",
+                        (item.product_id, "salida", item.quantity, f"Venta #{sale_id}", body.operator)
+                    )
 
                 if body.is_fiado and body.fiado_name:
                     cur_c = await db.execute("SELECT id FROM customers WHERE name = ?", (body.fiado_name,))
@@ -457,7 +456,7 @@ async def today_sales(sucursal_id: Optional[int] = Query(None)) -> dict:
 
 
 @router.get("/api/sales", summary="Listar ventas con filtros")
-async def list_sales(limit: int = Query(50), date_from: Optional[str] = Query(None), date_to: Optional[str] = Query(None), sucursal_id: Optional[int] = Query(None)) -> dict:
+async def list_sales(limit: int = Query(50), date_from: Optional[str] = Query(None), date_to: Optional[str] = Query(None), sucursal_id: Optional[int] = Query(None)) -> list:
     b_id = _biz_id()
     if USE_PG:
         from db_helpers import get_pg_pool
@@ -465,8 +464,8 @@ async def list_sales(limit: int = Query(50), date_from: Optional[str] = Query(No
         params = [b_id]
         clauses = ["s.business_id = $1"]
         n = 2
-        if date_from: clauses.append(f"date(s.timestamp) >= ${n}"); params.append(date_from); n += 1
-        if date_to: clauses.append(f"date(s.timestamp) <= ${n}"); params.append(date_to); n += 1
+        if date_from: clauses.append(f"date(s.timestamp) >= ${n}::date"); params.append(date_from); n += 1
+        if date_to: clauses.append(f"date(s.timestamp) <= ${n}::date"); params.append(date_to); n += 1
         if sucursal_id: clauses.append(f"s.sucursal_id = ${n}"); params.append(sucursal_id); n += 1
         where = " AND ".join(clauses)
         params.append(limit)
@@ -517,7 +516,7 @@ async def turn_detail(turn_id: int) -> dict:
 
 
 @router.get("/api/customers", summary="Listar clientes con cuentas corrientes")
-async def list_customers(q: Optional[str] = Query(None)) -> dict:
+async def list_customers(q: Optional[str] = Query(None)) -> list:
     b_id = _biz_id()
     if USE_PG:
         from db_helpers import get_pg_pool
@@ -543,7 +542,7 @@ async def list_customers(q: Optional[str] = Query(None)) -> dict:
 
 
 @router.get("/api/customers/{customer_id}/transactions", summary="Transacciones de cliente")
-async def customer_transactions(customer_id: int) -> dict:
+async def customer_transactions(customer_id: int) -> list:
     if USE_PG:
         from db_helpers import get_pg_pool
         pool = await get_pg_pool()
