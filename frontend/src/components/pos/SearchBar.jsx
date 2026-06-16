@@ -1,10 +1,12 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Icons } from '../ui/Icons';
+import AddAmountModal from './AddAmountModal';
 
 export default function SearchBar({
   search, setSearch, searchRef, searchError, flash,
   productsDB, handleQuickAdd, setShowPriceCheck, addToast, handleEmptyEnter
 }) {
+  const [showAddAmountModal, setShowAddAmountModal] = useState(false);
   const autocomplete = useMemo(() => {
     if (!search.trim() || !productsDB) return [];
     return productsDB
@@ -27,7 +29,7 @@ export default function SearchBar({
           <button onClick={() => addToast('Debes conectar una balanza compatible.', 'info')} style={{ background: 'var(--bg-hover)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', padding: '8px 12px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }} onMouseEnter={e => e.target.style.background='rgba(255,255,255,0.1)'} onMouseLeave={e => e.target.style.background='var(--bg-hover)'}>
             Balanza
           </button>
-          <button onClick={() => handleQuickAdd('VIRTUAL', 'Producto Manual', 100, {})} style={{ background: 'var(--bg-hover)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', padding: '8px 12px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }} onMouseEnter={e => e.target.style.background='rgba(255,255,255,0.1)'} onMouseLeave={e => e.target.style.background='var(--bg-hover)'}>
+          <button onClick={() => setShowAddAmountModal(true)} style={{ background: 'var(--bg-hover)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', padding: '8px 12px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }} onMouseEnter={e => e.target.style.background='rgba(255,255,255,0.1)'} onMouseLeave={e => e.target.style.background='var(--bg-hover)'}>
             Agregar Monto
           </button>
         </div>
@@ -117,6 +119,7 @@ export default function SearchBar({
           </div>
         )}
       </div>
+      <AddAmountModal show={showAddAmountModal} setShow={setShowAddAmountModal} handleQuickAdd={handleQuickAdd} />
     </div>
   );
 }
