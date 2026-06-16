@@ -4,6 +4,7 @@ import { usePanelContext } from '../context/PanelContext';
 import { apiGet, apiPost } from '../services/apiClient';
 import { SkeletonTable } from '../components/ui/Skeleton';
 import EmptyState from '../components/ui/EmptyState';
+import FeatureGate from '../components/ui/FeatureGate';
 
 const Icons = {
   Truck: () => <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 14V6h8v8m-8 0a2 2 0 100 4 2 2 0 000-4zm8 0a2 2 0 100 4 2 2 0 000-4zm-8-8h8m0 0l3 3v5h-3m-8-8H4v8h4" /></svg>,
@@ -12,7 +13,10 @@ const Icons = {
 
 export default function ProveedoresModule() {
   const navigate = useNavigate();
-  const { addToast } = usePanelContext();
+  const { addToast, backend } = usePanelContext();
+  const currentPlan = backend.businessConfig?.plan || 'trial';
+  const PLAN_WEIGHT = { trial: 0, simple: 1, pro: 2, ia: 3 };
+  const isLocked = PLAN_WEIGHT[currentPlan] < PLAN_WEIGHT['simple'];
   const [proveedores, setProveedores] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -31,7 +35,7 @@ export default function ProveedoresModule() {
         return res.json(); 
       })
       .then(data => setProveedores(Array.isArray(data) ? data : []))
-      .catch(() => { setProveedores([]); setError(false); })
+      .catch(() => { setProveedores([]); setError(true); })
       .finally(() => setLoading(false));
   };
 
@@ -59,6 +63,7 @@ export default function ProveedoresModule() {
   };
 
   return (
+    <FeatureGate isLocked={isLocked} requiredPlan="Simple">
     <div style={{ padding: '32px 40px', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px', flexShrink: 0 }}>
         <div>
@@ -91,7 +96,7 @@ export default function ProveedoresModule() {
                      </div>
                      <div style={{ width: '200px', display: 'flex', alignItems: 'center', gap: '16px' }}>
                         <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Deuda:</span>
-                        <span style={{ fontSize: '1.2rem', fontWeight: 800, color: p.debt > 0 ? 'var(--accent-danger)' : 'var(--accent-success)', fontFamily: 'var(--font-mono)' }}>${p.debt.toLocaleString('es-AR')}</span>
+                        <span style={{ fontSize: '1.2rem', fontWeight: 800, color: (p.debt ?? 0) > 0 ? 'var(--accent-danger)' : 'var(--accent-success)', fontFamily: 'var(--font-mono)' }}>${(p.debt ?? 0).toLocaleString('es-AR')}</span>
                      </div>
                   </div>
                    <div style={{ display: 'flex', gap: '12px' }}>
@@ -137,7 +142,7 @@ export default function ProveedoresModule() {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(30,58,95,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div style={{ background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '32px', width: '400px', boxShadow: '0 10px 25px rgba(30,58,95,0.5)' }}>
             <h2 style={{ fontSize: '1.5rem', fontWeight: 800, margin: '0 0 8px 0', color: 'var(--text-primary)' }}>Abonar a {showAbonar.name}</h2>
-            <p style={{ color: 'var(--text-secondary)', marginBottom: '24px', fontSize: '0.9rem' }}>Deuda actual: ${showAbonar.debt.toLocaleString('es-AR')}</p>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '24px', fontSize: '0.9rem' }}>Deuda actual: ${(showAbonar.debt ?? 0).toLocaleString('es-AR')}</p>
             <div style={{ marginBottom: '16px' }}>
               <label style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '6px', fontWeight: 600 }}>Monto ($)</label>
               <input type="number" value={abonarMonto} onChange={e => setAbonarMonto(e.target.value)} autoFocus
@@ -174,5 +179,6 @@ export default function ProveedoresModule() {
         </div>
       )}
     </div>
+    </FeatureGate>
   );
 }

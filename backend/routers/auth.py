@@ -99,6 +99,8 @@ async def get_current_business(request: Request) -> dict | None:
 @router.post("/register", summary="Registro de nuevo comercio (SaaS)")
 @auth_limiter.limit("3/minute")
 async def auth_register(request: Request, body: BusinessCreate) -> dict:
+    import random
+
     pool = await get_pool()
     async with pool.acquire() as conn:
         existing = await conn.fetchrow(
@@ -118,17 +120,38 @@ async def auth_register(request: Request, body: BusinessCreate) -> dict:
             hashed_pw,
             body.business_name.strip() or body.name.strip() or "Mi Kiosco",
         )
+        biz_id, biz_email, biz_name, biz_plan, biz_status = row
 
-    biz_id, biz_email, biz_name, biz_plan, biz_status = row
+        default_pin = str(random.randint(1000, 9999))
+        hashed_pin = bcrypt.hashpw(default_pin.encode(), bcrypt.gensalt()).decode()
 
+        # Crear operador en PostgreSQL (modo cloud) — DENTRO del async with
+        await conn.execute(
+            "INSERT INTO operators (business_id, name, pin, role) VALUES ($1, $2, $3, 'admin')",
+            biz_id, biz_name or "Dueño", hashed_pin
+        )
+
+        access_token = jwt.encode(
+            {"sub": str(biz_id), "email": biz_email, "type": "access",
+             "exp": datetime.now(timezone.utc) + timedelta(minutes=60)},
+            JWT_SECRET, algorithm=JWT_ALGORITHM,
+        )
+        refresh_token = jwt.encode(
+            {"sub": str(biz_id), "email": biz_email, "type": "refresh",
+             "exp": datetime.now(timezone.utc) + timedelta(days=7)},
+            JWT_SECRET, algorithm=JWT_ALGORITHM,
+        )
+
+        await conn.execute(
+            "INSERT INTO auth_tokens (business_id, token, token_type, expires_at) VALUES ($1, $2, 'refresh', $3)",
+            biz_id, refresh_token, datetime.now(timezone.utc) + timedelta(days=7)
+        )
+
+    # — Fuera de la conexión PG: inicializar SQLite tenant —
     from core.database import init_db as init_sqlite_db
     import main
     tenant_db_path = os.path.join(main.DATA_DIR, f"novastock_{biz_id}.db")
     await init_sqlite_db(tenant_db_path, logging.getLogger("NovaStock"))
-
-    import random
-    default_pin = str(random.randint(1000, 9999))
-    hashed_pin = bcrypt.hashpw(default_pin.encode(), bcrypt.gensalt()).decode()
 
     # Crear operador en SQLite (tenant local, para modo offline)
     try:
@@ -140,33 +163,6 @@ async def auth_register(request: Request, body: BusinessCreate) -> dict:
             await tenant_db.commit()
     except Exception as e:
         logging.getLogger("NovaStock.Auth").warning(f"No se pudo crear operador SQLite: {e}")
-
-    # Crear operador en PostgreSQL (para modo cloud)
-    try:
-        await conn.execute(
-            "INSERT INTO operators (business_id, name, pin, role) VALUES ($1, $2, $3, 'admin')",
-            biz_id, biz_name or "Dueño", hashed_pin
-        )
-    except Exception as e:
-        logging.getLogger("NovaStock.Auth").warning(f"No se pudo crear operador PG: {e}")
-
-    access_token = jwt.encode(
-        {"sub": str(biz_id), "email": biz_email, "type": "access",
-         "exp": datetime.now(timezone.utc) + timedelta(minutes=60)},
-        JWT_SECRET, algorithm=JWT_ALGORITHM,
-    )
-    refresh_token = jwt.encode(
-        {"sub": str(biz_id), "email": biz_email, "type": "refresh",
-         "exp": datetime.now(timezone.utc) + timedelta(days=7)},
-        JWT_SECRET, algorithm=JWT_ALGORITHM,
-    )
-    try:
-        await conn.execute(
-            "INSERT INTO auth_tokens (business_id, token, token_type, expires_at) VALUES ($1, $2, 'refresh', $3)",
-            biz_id, refresh_token, datetime.now(timezone.utc) + timedelta(days=7)
-        )
-    except Exception:
-        pass
 
     return {
         "access_token": access_token,

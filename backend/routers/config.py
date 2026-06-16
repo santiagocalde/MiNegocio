@@ -61,7 +61,7 @@ async def update_config(data: dict) -> dict:
 
 
 @router.get("/api/sucursales", summary="Listar sucursales")
-async def list_sucursales() -> dict:
+async def list_sucursales() -> list:
     if USE_PG:
         from db_helpers import get_pg_pool
         pool = await get_pg_pool()

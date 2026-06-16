@@ -12,7 +12,7 @@ function PendingSyncModal({ showPendingModal, setShowPendingModal, getPendingDat
           <h2 className="modal-title" style={{ fontSize: '1.5rem' }}>⏳ Ventas pendientes de enviar al servidor</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '16px 0' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 16px', background: 'var(--bg-main)', borderRadius: '8px' }}><span> Cantidad</span><span style={{ fontWeight: 800, fontSize: '1.5rem' }}>{data.count}</span></div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 16px', background: 'var(--bg-main)', borderRadius: '8px' }}><span> Monto total</span><span style={{ fontWeight: 800, fontSize: '1.5rem', fontFamily: 'var(--font-mono)', color: 'var(--accent-warning)' }}>${data.total.toLocaleString('es-AR')}</span></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 16px', background: 'var(--bg-main)', borderRadius: '8px' }}><span> Monto total</span>             <span style={{ fontWeight: 800, fontSize: '1.5rem', fontFamily: 'var(--font-mono)', color: 'var(--accent-warning)' }}>${(data.total || 0).toLocaleString('es-AR')}</span></div>
           </div>
           <div className="modal-actions">
             <button className="btn btn-danger-small" onClick={() => setShowConfirm(true)} style={{ marginRight: '12px' }}>🗑️ Borrar pendientes</button>

@@ -54,7 +54,7 @@ export default function ReportsModule() {
         let totalItems = 0;
         data.forEach(s => {
           metodos[s.payment_method] = (metodos[s.payment_method] || 0) + 1;
-          if (s.items) s.items.forEach(i => {
+          if (s.items && Array.isArray(s.items)) s.items.forEach(i => {
             productos[i.product_name] = (productos[i.product_name] || 0) + i.quantity;
             totalItems += i.quantity;
           });
@@ -72,7 +72,7 @@ export default function ReportsModule() {
         setSummary({ 
           totalVentas: data.length, 
           ingresos, 
-          metodoUsado: bestMetodo === 'mercadopago' ? 'Mercado Pago' : bestMetodo === 'tarjeta' ? 'Tarjeta' : bestMetodo === 'transferencia' ? 'Transferencia' : 'Efectivo', 
+          metodoUsado: bestMetodo === 'mercadopago' ? 'Mercado Pago' : bestMetodo === 'tarjeta' ? 'Tarjeta' : bestMetodo === 'transferencia' ? 'Transferencia' : (bestMetodo || 'Efectivo'), 
           pctEfectivo, 
           productoPopular: bestProducto, 
           pctProducto: bestProductoCount 

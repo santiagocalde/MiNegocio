@@ -42,7 +42,7 @@ export default function PanelLayout() {
         sucursal_id: 1,
         initial_cash: parseFloat(initialCajaMonto) || 0
       });
-    } catch {}
+    } catch { addToast('Error al abrir la caja. Reintentá.', 'error'); }
     setShowInitialCaja(false);
     setShowCreatePassword(true);
   };
@@ -63,7 +63,7 @@ export default function PanelLayout() {
       await apiPut('/operators', [
         { name: opName, pin: newPassword, role: 'admin' }
       ]);
-    } catch {}
+    } catch { addToast('Error al guardar la contraseña. Reintentá.', 'error'); }
     setShowCreatePassword(false);
     addToast('Configuracion completada! Bienvenido.', 'success');
   };
@@ -178,7 +178,7 @@ export default function PanelLayout() {
       {/* MODALES DE PRIMER INGRESO (ONBOARDING) */}
       {showInitialCaja && (
         <div className="modal-overlay" style={{ background: 'rgba(30,58,95,0.8)', backdropFilter: 'blur(10px)', zIndex: 99999 }}>
-          <div className="lp-glass" style={{ maxWidth: 450, width: '100%', margin: '0 20px', animation: 'scaleIn 0.3s ease-out', padding: 48, borderRadius: 24, textAlign: 'center', background: 'rgba(30,58,95,0.95)', border: '1px solid rgba(255,255,255,0.1)' }}>
+          <div className="lp-glass" style={{ maxWidth: 450, width: '100%', margin: '0 20px', animation: 'scaleIn 0.3s ease-out', padding: 48, borderRadius: 24, textAlign: 'center', background: 'rgba(15,23,42,0.97)', border: '1px solid rgba(255,255,255,0.15)' }}>
             <h2 style={{ fontSize: '1.8rem', fontWeight: 800, color: '#fff', marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
                <Icons.Box style={{ color: 'var(--lp-primary)' }} /> Abrir mi caja
             </h2>
@@ -196,7 +196,7 @@ export default function PanelLayout() {
 
       {showCreatePassword && (
         <div className="modal-overlay" style={{ background: 'rgba(30,58,95,0.8)', backdropFilter: 'blur(10px)', zIndex: 99999 }}>
-          <div className="lp-glass" style={{ maxWidth: 450, width: '100%', margin: '0 20px', animation: 'scaleIn 0.3s ease-out', padding: 48, borderRadius: 24, textAlign: 'center', background: 'rgba(30,58,95,0.95)', border: '1px solid rgba(255,255,255,0.1)' }}>
+          <div className="lp-glass" style={{ maxWidth: 450, width: '100%', margin: '0 20px', animation: 'scaleIn 0.3s ease-out', padding: 48, borderRadius: 24, textAlign: 'center', background: 'rgba(15,23,42,0.97)', border: '1px solid rgba(255,255,255,0.15)' }}>
             <h2 style={{ fontSize: '1.8rem', fontWeight: 800, color: '#fff', marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
                <Icons.User style={{ color: 'var(--lp-primary)' }} /> Crear Contraseña
             </h2>

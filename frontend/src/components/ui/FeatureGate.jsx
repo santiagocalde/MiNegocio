@@ -23,7 +23,7 @@ export default function FeatureGate({ isLocked, requiredPlan, children }) {
             Función Exclusiva
           </h2>
           <p style={{ color: 'var(--text-secondary)', marginBottom: '32px', fontSize: '0.95rem', lineHeight: 1.5 }}>
-            Esta pantalla pertenece al plan <strong style={{ color: 'var(--text-primary)' }}>{requiredPlan.toUpperCase()}</strong>. Actualizá tu plan para desbloquear esta y otras herramientas avanzadas.
+            Esta pantalla pertenece al plan <strong style={{ color: 'var(--text-primary)' }}>{(requiredPlan || 'Superior').toUpperCase()}</strong>. Actualizá tu plan para desbloquear esta y otras herramientas avanzadas.
           </p>
           <button 
             onClick={() => navigate('/panel/plan')}

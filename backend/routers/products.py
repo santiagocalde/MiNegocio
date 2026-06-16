@@ -61,7 +61,7 @@ async def list_products(q: Optional[str] = Query(None), limit: int = Query(500),
 
 
 @router.get("/api/products/dead-stock", summary="Productos sin rotacion")
-async def get_dead_stock(days: int = 30) -> dict:
+async def get_dead_stock(days: int = 30) -> list:
     b_id = _biz_id()
     if USE_PG:
         from db_helpers import get_pg_pool
@@ -85,7 +85,7 @@ async def get_dead_stock(days: int = 30) -> dict:
 
 
 @router.get("/api/products/price-suggestions", summary="Sugerencias de precio")
-async def price_suggestions(threshold_pct: float = Query(15.0), category_id: Optional[int] = Query(None)) -> dict:
+async def price_suggestions(threshold_pct: float = Query(15.0), category_id: Optional[int] = Query(None)) -> list:
     b_id = _biz_id()
     if USE_PG:
         from db_helpers import get_pg_pool
@@ -409,7 +409,7 @@ async def create_audit_log(body: dict) -> dict:
 
 
 @router.get("/api/audit", summary="Listar auditoria")
-async def get_audit_logs(limit: int = Query(100)) -> dict:
+async def get_audit_logs(limit: int = Query(100)) -> list:
     b_id = _biz_id()
     if USE_PG:
         from db_helpers import get_pg_pool

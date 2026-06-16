@@ -132,8 +132,8 @@ export default function ChargeModal({
                     setMpLoading(true); setMpPaymentStatus('pending');
                     try {
                       const res = await apiPost('/mercadopago/create-payment', { total: effectiveTotal, description: `Venta` });
-                      if (res.ok) { const data = await res.json(); setMpQrData(data.qr_data); if(data.intent_id) setMpIntentId(data.intent_id); }
-                    } catch {} setMpLoading(false);
+                      if (res.ok) { const data = await res.json(); setMpQrData(data.qr_data); if(data.intent_id) setMpIntentId(data.intent_id); } else { addToast?.('Error al generar QR de MercadoPago.', 'error'); }
+                    } catch { addToast?.('Error de conexión con MercadoPago.', 'error'); } setMpLoading(false);
                   }} style={{ background: '#009EE3', color: 'white', border: 'none', padding: '16px 32px', borderRadius: '12px', fontSize: '1.1rem', fontWeight: 800, cursor: 'pointer' }}>Generar QR Oficial MP</button>
                 )}
               </div>

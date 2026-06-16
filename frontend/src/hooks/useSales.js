@@ -44,7 +44,7 @@ export default function useSales(cart, effectiveTotal, payment, paymentMethod, u
     processingRef.current = true;
     setIsProcessing(true);
     const saleCart = [...cart];
-    const saleTotal = adjustedTotal ?? (cart.reduce((acc, item) => acc + (item.price * item.qty), 0));
+    const saleTotal = effectiveTotal ?? (cart.reduce((acc, item) => acc + (item.price * item.qty), 0));
     const effectivePayments = useSplitPayment
       ? splitPayments.filter(p => p.method && parseFloat(p.amount) > 0).map(p => ({ method: p.method, amount: parseFloat(p.amount) }))
       : [{ method: paymentMethod, amount: paymentMethod === 'efectivo' ? (parseFloat(payment) || saleTotal) : saleTotal }];
@@ -96,17 +96,17 @@ export default function useSales(cart, effectiveTotal, payment, paymentMethod, u
     processingRef.current = false;
 
     localStorage.removeItem('minegocio_cart');
-    setLastSale({ cart: saleCart, total: saleTotal, payment: salePayment, change: saleChange, tipoFactura: emitirFactura ? tipoFactura : 'C', afip: afipResponse });
+    setLastSale({ cart: saleCart, total: saleTotal, payment: salePayment, change: saleChange, tipoFactura: emitirFactura ? tipoFactura : 'C', afip: afipResponse, paymentMethod: useSplitPayment ? 'split' : paymentMethod });
     clearCart();
     setIsCharging(false);
     setSaleConfirm(true);
     setTimeout(() => setSaleConfirm(false), 2500);
     return { saleCart, saleTotal, salePayment, saleChange, afipResponse, effectivePayments };
-  }, [isProcessing, cart, adjustedTotal, useSplitPayment, splitPayments, paymentMethod, payment, currentTurnId, currentOperator, clientCuit, emitirFactura, tipoFactura, vueltoEnCuenta, clienteVuelto, clearCart, setTicketNumber]);
+  }, [isProcessing, cart, adjustedTotal, effectiveTotal, useSplitPayment, splitPayments, paymentMethod, payment, currentTurnId, currentOperator, clientCuit, emitirFactura, tipoFactura, vueltoEnCuenta, clienteVuelto, clearCart, setTicketNumber]);
 
   const confirmFiado = useCallback(async () => {
     if (!fiadoName) return;
-    const saleTotal = adjustedTotal ?? (cart.reduce((acc, item) => acc + (item.price * item.qty), 0));
+    const saleTotal = effectiveTotal ?? (cart.reduce((acc, item) => acc + (item.price * item.qty), 0));
     const salePayload = {
       turn_id: currentTurnId,
       total: saleTotal,
@@ -136,7 +136,7 @@ export default function useSales(cart, effectiveTotal, payment, paymentMethod, u
     clearCart();
     setIsFiadoOpen(false);
     setFiadoName('');
-  }, [fiadoName, adjustedTotal, cart, currentTurnId, currentOperator, addToast, clearCart]);
+  }, [fiadoName, adjustedTotal, effectiveTotal, cart, currentTurnId, currentOperator, addToast, clearCart]);
 
   return {
     isCharging, setIsCharging,

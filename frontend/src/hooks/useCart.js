@@ -83,7 +83,7 @@ export default function useCart(productsDB, ivaRate) {
   const totals = useMemo(() => calculateTotals(), [calculateTotals]);
   const { rawTotal, total, subtotal, iva, discount } = totals;
   const effectiveTotal = adjustedTotal ?? total;
-  const change = payment ? parseFloat(payment) - effectiveTotal : 0;
+  const change = (payment != null && payment !== '') ? parseFloat(payment) - effectiveTotal : 0;
 
   return {
     cart, setCart,

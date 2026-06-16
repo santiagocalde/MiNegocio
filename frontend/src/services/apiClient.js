@@ -1,7 +1,14 @@
 const SERVER_URL = import.meta.env.PROD ? '/api' : 'http://localhost:8005/api';
+const FETCH_TIMEOUT = 15000;
 
 function getToken() {
   return localStorage.getItem('saas_token');
+}
+
+function fetchWithTimeout(url, options = {}) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT);
+  return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(timeout));
 }
 
 let isRefreshing = false;
@@ -17,7 +24,7 @@ async function tryRefreshToken() {
   isRefreshing = true;
   refreshPromise = (async () => {
     try {
-      const res = await fetch(`${SERVER_URL}/auth/refresh`, {
+      const res = await fetchWithTimeout(`${SERVER_URL}/auth/refresh`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${refreshToken}`, 'Content-Type': 'application/json' },
       });
@@ -40,7 +47,7 @@ async function request(method, path, body) {
   const token = getToken();
   const headers = { 'Content-Type': 'application/json' };
   if (token) headers['Authorization'] = `Bearer ${token}`;
-  const res = await fetch(`${SERVER_URL}${path}`, {
+  const res = await fetchWithTimeout(`${SERVER_URL}${path}`, {
     method,
     headers,
     body: body ? JSON.stringify(body) : undefined,
@@ -51,7 +58,7 @@ async function request(method, path, body) {
       const newToken = getToken();
       if (newToken && newToken !== token) {
         headers['Authorization'] = `Bearer ${newToken}`;
-        return fetch(`${SERVER_URL}${path}`, { method, headers, body: body ? JSON.stringify(body) : undefined });
+        return fetchWithTimeout(`${SERVER_URL}${path}`, { method, headers, body: body ? JSON.stringify(body) : undefined });
       }
     }
   }

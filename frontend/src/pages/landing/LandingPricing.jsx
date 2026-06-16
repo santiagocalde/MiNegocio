@@ -7,9 +7,9 @@ const Svg = {
 };
 
 const FALLBACK_PLANS = [
-  { id: 'simple', name: 'Simple', monthly: 20000, yearly: 200000, desc: 'Todo lo necesario para arrancar.', popular: false, features: ['Hasta 3.500 productos', 'Clientes y ventas', 'Soporta cortes de internet', 'Manejo de fiados', 'Lector laser e impresoras', 'Hasta 2 usuarios'], cta: 'Probar gratis' },
-  { id: 'pro', name: 'Pro', monthly: 30000, yearly: 300000, desc: 'Para kioscos que crecen.', popular: true, features: ['Todo lo de Simple', 'Hasta 7.000 productos', 'Manejo de proveedores', 'Catalogo web online QR', 'Reportes de ventas detallados', 'Alta asistida en ARCA/AFIP', 'Hasta 5 usuarios'], cta: 'Probar gratis' },
-  { id: 'ia', name: 'IA', monthly: 40000, yearly: 400000, desc: 'Automatizacion con inteligencia artificial.', popular: false, features: ['Todo lo de Pro', 'Hasta 10.000 productos', 'Escanner de facturas IA', 'Asesor de precios inteligente', 'Alta asistida en ARCA/AFIP', 'Reportes inteligentes', 'Hasta 10 usuarios'], cta: 'Probar gratis' },
+  { id: 'simple', name: 'Simple', monthly: 20000, yearly: 200000, desc: 'Todo lo necesario para arrancar.', popular: false, features: ['Hasta 3.500 productos', 'Clientes y ventas', 'Soporta cortes de internet', 'Manejo de fiados', 'Lector laser e impresoras', 'Hasta 2 usuarios'], cta: 'Adquirir' },
+  { id: 'pro', name: 'Pro', monthly: 30000, yearly: 300000, desc: 'Para kioscos que crecen.', popular: true, features: ['Todo lo de Simple', 'Hasta 7.000 productos', 'Manejo de proveedores', 'Catalogo web online QR', 'Reportes de ventas detallados', 'Alta asistida en ARCA/AFIP', 'Hasta 5 usuarios'], cta: 'Adquirir' },
+  { id: 'ia', name: 'IA', monthly: 40000, yearly: 400000, desc: 'Automatizacion con inteligencia artificial.', popular: false, features: ['Todo lo de Pro', 'Hasta 10.000 productos', 'Escanner de facturas IA', 'Asesor de precios inteligente', 'Alta asistida en ARCA/AFIP', 'Reportes inteligentes', 'Hasta 10 usuarios'], cta: 'Adquirir' },
 ];
 
 function PlanCard({ plan, isYearly, onCta, isLoggedIn }) {
@@ -98,7 +98,7 @@ export default function LandingPricing({ isYearly, setIsYearly, isLoggedIn, setC
             desc: p.desc,
             popular: p.popular || false,
             features: p.features || [],
-            cta: 'Probar gratis',
+            cta: 'Adquirir',
           }));
           setPlans(mapped);
         }

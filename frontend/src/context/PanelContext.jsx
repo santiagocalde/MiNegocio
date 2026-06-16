@@ -44,13 +44,23 @@ export function PanelProvider({ children }) {
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
+    const timeout = setTimeout(() => {
+      if (!cancelled) setNeedsSetup(false);
+    }, 5000);
     apiGet('/setup/status')
-      .then(r => r.json())
+      .then(r => r.ok ? r.json() : null)
       .then(d => {
-        setNeedsSetup(d.needs_setup);
-        if (d.business_name) setBusinessName(d.business_name);
+        if (!cancelled && d) {
+          setNeedsSetup(d.needs_setup);
+          if (d.business_name) setBusinessName(d.business_name);
+        } else if (!cancelled) {
+          setNeedsSetup(false);
+        }
       })
-      .catch(() => setNeedsSetup(false));
+      .catch(() => { if (!cancelled) setNeedsSetup(false); })
+      .finally(() => clearTimeout(timeout));
+    return () => { cancelled = true; clearTimeout(timeout); };
   }, []);
 
   useEffect(() => {
@@ -70,7 +80,7 @@ export function PanelProvider({ children }) {
             localStorage.setItem('minegocio_current_turn_id', String(data.id));
           }
         })
-        .catch(() => {});
+        .catch(() => { addToast('Error al validar turno. Reintentá.', 'error'); });
     }
   }, [auth.isAuthenticated]);
 
@@ -108,7 +118,7 @@ export function PanelProvider({ children }) {
             {currentDateTime.toLocaleString('es-AR')}
             <button onClick={() => { localStorage.removeItem('saas_token'); localStorage.removeItem('saas_mode'); auth.setIsSaaSAuthenticated(false); }} style={{ marginLeft: 12, background: 'transparent', border: '1px solid var(--border-color)', borderRadius: 6, padding: '4px 12px', color: 'var(--text-secondary)', cursor: 'pointer' }}>Salir</button>
           </div>
-          <div className="brand-icon" style={{ width: 80, height: 80, marginBottom: 24 }}><Icons.Lock /></div>
+          <div className="brand-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 80, height: 80, marginBottom: 24 }}><Icons.Lock /></div>
           <h1 style={{ fontSize: '2rem', marginBottom: '8px' }}>{businessName}</h1>
           <p style={{ color: 'var(--text-secondary)', marginBottom: '8px' }}>Ingresa tu PIN para abrir turno</p>
           {(() => {
@@ -125,13 +135,13 @@ export function PanelProvider({ children }) {
             return null;
           })()}
           <form onSubmit={auth.handlePin} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
-            <input type="password" value={auth.pin} onChange={e => auth.setPin(e.target.value.replace(/[^0-9]/g, '').slice(0, 4))} placeholder="••••" style={{ width: 120, textAlign: 'center', fontSize: '2rem', letterSpacing: '8px', padding: '12px', background: 'var(--bg-card)', border: '2px solid var(--border-color)', borderRadius: 12, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)', outline: 'none' }} autoFocus />
+            <input type="password" value={auth.pin} onChange={e => auth.setPin(e.target.value.replace(/[^0-9]/g, '').slice(0, 4))} placeholder="••••" style={{ width: 160, textAlign: 'center', fontSize: '2rem', letterSpacing: '8px', padding: '12px', background: 'var(--bg-card)', border: '2px solid var(--border-color)', borderRadius: 12, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)', outline: 'none' }} autoFocus />
             <button type="submit" style={{ background: 'var(--gradient-primary)', border: 'none', color: 'white', padding: '12px 48px', borderRadius: 12, fontSize: '1rem', fontWeight: 700, cursor: 'pointer', marginTop: 8 }}>Abrir Turno</button>
           </form>
         </div>
       );
     }
-    window.location.href = '/?login=true';
+    window.location.href = '/';
     return null;
   }
 

@@ -196,12 +196,12 @@ export default function PurchasesModule() {
     } catch (e) { console.error(e) }
   };
 
-  let quickAddCounter = Date.now();
+  const quickAddCounter = useRef(Date.now());
   const handleQuickAddNew = () => {
     const name = searchQuery.trim();
     if (!name) return;
-    quickAddCounter += 1;
-    setCart([{ product_id: quickAddCounter, product_name: name, quantity: 1, unit_cost: 0 }, ...cart]);
+    quickAddCounter.current += 1;
+    setCart([{ product_id: quickAddCounter.current, product_name: name, quantity: 1, unit_cost: 0 }, ...cart]);
     setSearchQuery('');
     setShowQuickAdd(false);
     searchInputRef.current?.focus();
@@ -223,7 +223,7 @@ export default function PurchasesModule() {
 
   const handleConfirmPurchase = async () => {
     if (cart.length === 0) return addToast?.("Debe agregar productos a la factura.", "error");
-    if (!selectedSupplier) return addToast?.("Debe seleccionar un proveedor.", "error");
+    if (!selectedSupplier || isNaN(parseInt(selectedSupplier))) return addToast?.("Debe seleccionar un proveedor válido.", "error");
 
     try {
       const payload = {
@@ -373,7 +373,7 @@ export default function PurchasesModule() {
                   
                   {(searchQuery.trim().length > 0 && globalProductsDB) || showQuickAdd ? (
                     <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', zIndex: 100, marginTop: '8px', boxShadow: '0 4px 12px rgba(30,58,95,0.5)' }}>
-                      {!showQuickAdd && globalProductsDB && globalProductsDB.filter(p => p.code.startsWith(searchQuery) || p.name.toLowerCase().startsWith(searchQuery.toLowerCase())).slice(0, 5).map((p) => (
+                      {!showQuickAdd && globalProductsDB && globalProductsDB.filter(p => String(p.code || '').toUpperCase().startsWith(searchQuery.toUpperCase()) || p.name.toLowerCase().startsWith(searchQuery.toLowerCase())).slice(0, 5).map((p) => (
                         <button key={p.id} type="button" onClick={() => { setSearchQuery(p.code); setTimeout(() => handleProductSearch(), 50); }} style={{ display: 'flex', justifyContent: 'space-between', width: '100%', padding: '12px 16px', background: 'transparent', border: 'none', borderBottom: '1px solid rgba(255,255,255,0.05)', color: 'var(--text-primary)', cursor: 'pointer', textAlign: 'left', transition: 'background 0.15s' }} onFocus={e => e.target.style.background = 'var(--bg-hover)'} onBlur={e => e.target.style.background = 'transparent'} onMouseEnter={e => e.target.style.background = 'var(--bg-hover)'} onMouseLeave={e => e.target.style.background = 'transparent'}>
                           <span style={{ fontWeight: 600 }}>{p.name}</span><span style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>{p.code}</span>
                         </button>

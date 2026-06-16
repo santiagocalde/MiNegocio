@@ -3,7 +3,7 @@ from pydantic import BaseModel
 import httpx
 import os
 import logging
-from db_helpers import get_pool
+from db import get_pool
 from jose import jwt
 
 router = APIRouter()

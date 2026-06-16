@@ -30,8 +30,8 @@ function rAlign(label, value, width = 42) {
   return label + ' '.repeat(pad) + v;
 }
 
-export default function TicketPrint({ cart, total, payment, change, operator, ticketNumber, config, isClosingShift, shiftData, tipoFactura, afip }) {
-  const ivaRate = parseFloat(config?.iva_rate) || 21;
+export default function TicketPrint({ cart, total, payment, change, operator, ticketNumber, config, isClosingShift, shiftData, tipoFactura, afip, paymentMethod }) {
+  const ivaRate = parseFloat(config?.iva_rate) ?? 21;
   const ivaMultiplier = 1 + ivaRate / 100;
   const subtotal = total / ivaMultiplier;
   const iva = total - subtotal;
@@ -100,7 +100,7 @@ export default function TicketPrint({ cart, total, payment, change, operator, ti
 )}
 {rAlign('*** TOTAL:', total)}
 {LINE}
-{rAlign('EFECTIVO:', payment)}
+{rAlign(`${(paymentMethod || 'EFECTIVO').toUpperCase()}:`, payment)}
 {rAlign('VUELTO:', change >= 0 ? change : 0)}
 {LINE}
 {center(mensaje)}

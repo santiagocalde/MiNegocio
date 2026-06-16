@@ -62,6 +62,10 @@ export default function FiadoModule() {
 
   const handleAbonar = async () => {
     if (!abonoAmount || isNaN(abonoAmount) || Number(abonoAmount) <= 0) return;
+    if (Number(abonoAmount) > abonoModal.balance) {
+      addToast?.('El abono no puede superar la deuda.', 'error');
+      return;
+    }
     try {
       const res = await apiPost(`/customers/${abonoModal.id}/pay`, { amount: Number(abonoAmount), operator: 'Cajero' });
       if (res.ok) {
@@ -154,7 +158,7 @@ export default function FiadoModule() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
                   <div style={{ textAlign: 'right' }}>
                     <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', textTransform: 'uppercase', marginBottom: '2px' }}>Saldo Deudor</div>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '1.4rem', fontWeight: 800, color: 'var(--accent-warning)' }}>${c.balance.toLocaleString('es-AR')}</div>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '1.4rem', fontWeight: 800, color: 'var(--accent-warning)' }}>${(c.balance ?? 0).toLocaleString('es-AR')}</div>
                   </div>
                   <button
                     onClick={(e) => { e.stopPropagation(); setAbonoModal(c); }}
@@ -208,7 +212,7 @@ export default function FiadoModule() {
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(11, 19, 43, 0.8)', backdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
           <div style={{ background: 'var(--bg-card)', padding: '32px', borderRadius: '24px', width: '400px', border: '1px solid var(--border-color)' }}>
             <h3 style={{ margin: '0 0 8px 0', fontSize: '1.5rem', color: 'var(--text-primary)' }}>Recibir Pago</h3>
-            <p style={{ color: 'var(--text-secondary)', marginBottom: '24px' }}>Cliente: <strong>{abonoModal.name}</strong><br/>Deuda Total: <strong style={{color: 'var(--accent-warning)'}}>${abonoModal.balance.toLocaleString('es-AR')}</strong></p>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '24px' }}>Cliente: <strong>{abonoModal.name}</strong><br/>Deuda Total: <strong style={{color: 'var(--accent-warning)'}}>${(abonoModal.balance ?? 0).toLocaleString('es-AR')}</strong></p>
             
             <div style={{ marginBottom: '24px' }}>
               <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Monto que entrega ($)</label>

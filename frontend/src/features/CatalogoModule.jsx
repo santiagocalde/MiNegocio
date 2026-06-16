@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { usePanelContext } from '../context/PanelContext';
 import { apiGet, apiPut } from '../services/apiClient';
 import { SkeletonCard } from '../components/ui/Skeleton';
+import FeatureGate from '../components/ui/FeatureGate';
 
 const Icons = {
   Check: () => <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/></svg>,
@@ -11,11 +12,15 @@ const Icons = {
 };
 
 export default function CatalogoModule() {
-  const { addToast } = usePanelContext();
+  const { addToast, backend } = usePanelContext();
+  const currentPlan = backend.businessConfig?.plan || 'trial';
+  const PLAN_WEIGHT = { trial: 0, simple: 1, pro: 2, ia: 3 };
+  const isLocked = PLAN_WEIGHT[currentPlan] < PLAN_WEIGHT['pro'];
   const [isActive, setIsActive] = useState(false);
   const [storeName, setStoreName] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
   const [slug, setSlug] = useState('');
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     apiGet('/config').then(r => r.ok && r.json()).then(data => {
@@ -36,18 +41,20 @@ export default function CatalogoModule() {
         catalogo_activo: isActive,
       });
       if (res.ok) {
-        if (addToast) addToast('Configuraci&oacute;n guardada correctamente.', 'success');
+        if (addToast) addToast('Configuración guardada correctamente.', 'success');
       } else {
-        if (addToast) addToast('Error al guardar configuraci&oacute;n.', 'error');
+        if (addToast) addToast('Error al guardar configuración.', 'error');
       }
     } catch {
-      if (addToast) addToast('Error de conexi&oacute;n.', 'error');
+      if (addToast) addToast('Error de conexión.', 'error');
     }
   };
 
   const toggleCatalogo = async () => {
+    if (saving) return;
     const newVal = !isActive;
     setIsActive(newVal);
+    setSaving(true);
     try {
       const res = await apiPut('/config', {
         name: storeName,
@@ -62,11 +69,12 @@ export default function CatalogoModule() {
       }
     } catch {
       setIsActive(!newVal);
-      if (addToast) addToast('Error de conexi&oacute;n.', 'error');
-    }
+      if (addToast) addToast('Error de conexión.', 'error');
+    } finally { setSaving(false); }
   };
 
   return (
+    <FeatureGate isLocked={isLocked} requiredPlan="Pro">
     <div style={{ padding: '32px 40px', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px', flexShrink: 0 }}>
         <div>
@@ -86,13 +94,13 @@ export default function CatalogoModule() {
                  <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{isActive ? 'Tu catálogo está público y aceptando pedidos.' : 'El catálogo está desactivado.'}</p>
                </div>
              </div>
-              <button onClick={toggleCatalogo} style={{ background: isActive ? 'var(--accent-danger)' : 'var(--accent-success)', color: 'white', border: 'none', padding: '12px 24px', borderRadius: '8px', fontWeight: 800, fontSize: '1rem', cursor: 'pointer', transition: 'all 0.15s', boxShadow: '0 4px 12px rgba(30,58,95,0.2)' }}>
-                {isActive ? 'Desactivar Catálogo' : 'Activar Catálogo'}
+              <button onClick={toggleCatalogo} disabled={saving} style={{ background: isActive ? 'var(--accent-danger)' : 'var(--accent-success)', color: 'white', border: 'none', padding: '12px 24px', borderRadius: '8px', fontWeight: 800, fontSize: '1rem', cursor: saving ? 'not-allowed' : 'pointer', transition: 'all 0.15s', boxShadow: '0 4px 12px rgba(30,58,95,0.2)', opacity: saving ? 0.7 : 1 }}>
+                {saving ? '...' : (isActive ? 'Desactivar Catálogo' : 'Activar Catálogo')}
               </button>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-             <h3 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>Configuraci&oacute;n de la Tienda</h3>
+             <h3 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>Configuración de la Tienda</h3>
              
              <div className="input-group">
                <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: 600 }}>Nombre de la Tienda</label>
@@ -114,8 +122,8 @@ export default function CatalogoModule() {
            <div style={{ background: 'var(--bg-main)', borderRadius: '16px', padding: '24px', border: '1px solid var(--accent-primary)', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
               <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: 'var(--gradient-primary)' }}></div>
               <div style={{ color: 'var(--accent-primary)', marginBottom: '16px', display: 'flex', justifyContent: 'center' }}><Icons.Store /></div>
-              <h3 style={{ margin: '0 0 8px 0', fontSize: '1.2rem', color: 'var(--text-primary)' }}>Tu Enlace &Uacute;nico</h3>
-              <p style={{ margin: '0 0 24px 0', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Compart&iacute; este link en Instagram, WhatsApp o Facebook.</p>
+              <h3 style={{ margin: '0 0 8px 0', fontSize: '1.2rem', color: 'var(--text-primary)' }}>Tu Enlace Único</h3>
+              <p style={{ margin: '0 0 24px 0', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Compartí este link en Instagram, WhatsApp o Facebook.</p>
               
                <div style={{ background: 'rgba(255,255,255,0.05)', padding: '16px', borderRadius: '8px', fontFamily: 'var(--font-mono)', fontSize: '0.9rem', color: 'var(--accent-primary)', marginBottom: '16px', border: '1px dashed rgba(20,187,166, 0.3)' }}>
                   {window.location.origin}/t/{slug || 'mikiosco'}
@@ -133,5 +141,6 @@ export default function CatalogoModule() {
         </div>
       </div>
     </div>
+    </FeatureGate>
   );
 }

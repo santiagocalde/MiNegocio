@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePanelContext } from '../context/PanelContext';
 import { apiGet, apiPost, apiPut, apiDelete } from '../services/apiClient';
@@ -95,6 +95,7 @@ export default function PromotionModule() {
     setShowModal(true);
   };
 
+  const searchTimer = useRef(null);
   const handleProductSearch = async (q) => {
     setProductQuery(q);
     if (!q.trim()) {
@@ -102,14 +103,17 @@ export default function PromotionModule() {
       setShowProductDropdown(false);
       return;
     }
-    try {
-      const res = await apiGet(`/products?q=${encodeURIComponent(q)}`);
-      if (res.ok) {
-        const data = await res.json();
-        setProductResults(Array.isArray(data) ? data : []);
-        setShowProductDropdown(true);
-      }
-    } catch (e) { console.error(e) }
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    searchTimer.current = setTimeout(async () => {
+      try {
+        const res = await apiGet(`/products?q=${encodeURIComponent(q)}`);
+        if (res.ok) {
+          const data = await res.json();
+          setProductResults(Array.isArray(data) ? data : []);
+          setShowProductDropdown(true);
+        }
+      } catch (e) { console.error(e) }
+    }, 300);
   };
 
   const handleAddCondition = (product) => {
@@ -141,7 +145,10 @@ export default function PromotionModule() {
   };
 
   const handleSave = async () => {
-    if (!form.name.trim()) return;
+    if (!form.name.trim()) return addToast('El nombre es obligatorio.', 'error');
+    if (form.conditions.length === 0) return addToast('Agregá al menos un producto a la promoción.', 'error');
+    if (form.type === 'combo' && (!form.combo_price || parseFloat(form.combo_price) <= 0)) return addToast('El precio del combo debe ser mayor a $0.', 'error');
+    if (form.type === 'discount' && (!form.discount_percent || parseFloat(form.discount_percent) <= 0 || parseFloat(form.discount_percent) > 100)) return addToast('El descuento debe ser entre 1% y 100%.', 'error');
     const payload = {
       name: form.name,
       description: form.description,

@@ -529,28 +529,56 @@ async def _ensure_open_turn(operator: str):
 # ── Gestión de operadores ─────────────────────────────────────
 @app.get("/api/operators", summary="Listar operadores")
 async def list_operators() -> list:
-    async with aiosqlite.connect(DB_PATH) as db:
-        async with db.execute("SELECT id, name, role FROM operators") as cur:
-            rows = await cur.fetchall()
-            return [row_to_dict(r, cur.description) for r in rows]
+    if USE_PG:
+        from db_helpers import get_pg_pool
+        pool = await get_pg_pool()
+        async with pool.acquire() as conn:
+            b_id = business_id_ctx.get()
+            rows = await conn.fetch(
+                "SELECT id, name, role FROM operators WHERE business_id = $1 ORDER BY name",
+                b_id
+            )
+            return [dict(r) for r in rows]
+    else:
+        async with aiosqlite.connect(DB_PATH) as db:
+            async with db.execute("SELECT id, name, role FROM operators") as cur:
+                rows = await cur.fetchall()
+                return [row_to_dict(r, cur.description) for r in rows]
 
 @app.put("/api/operators", summary="Reemplazar todos los operadores")
 async def update_operators(data: list[dict]) -> dict:
-    async with aiosqlite.connect(DB_PATH) as db:
-        await db.execute("DELETE FROM operators")
-        for op in data:
-            plain_pin = str(op.get("pin", ""))
-            # Hashear si no es ya un hash bcrypt
-            if plain_pin and not plain_pin.startswith("$2b$"):
-                pin_to_store = bcrypt.hashpw(plain_pin.encode(), bcrypt.gensalt()).decode()
-            else:
-                pin_to_store = plain_pin
-            await db.execute(
-                "INSERT INTO operators (name, pin, role) VALUES (?,?,?)",
-                (op.get("name", ""), pin_to_store, op.get("role", "employee"))
-            )
-        await db.commit()
-    return {"success": True}
+    if USE_PG:
+        from db_helpers import get_pg_pool
+        pool = await get_pg_pool()
+        async with pool.acquire() as conn:
+            b_id = business_id_ctx.get()
+            await conn.execute("DELETE FROM operators WHERE business_id = $1", b_id)
+            for op in data:
+                plain_pin = str(op.get("pin", ""))
+                if plain_pin and not plain_pin.startswith("$2b$"):
+                    pin_to_store = bcrypt.hashpw(plain_pin.encode(), bcrypt.gensalt()).decode()
+                else:
+                    pin_to_store = plain_pin
+                await conn.execute(
+                    "INSERT INTO operators (business_id, name, pin, role) VALUES ($1,$2,$3,$4)",
+                    b_id, op.get("name", ""), pin_to_store, op.get("role", "employee")
+                )
+        return {"success": True}
+    else:
+        async with aiosqlite.connect(DB_PATH) as db:
+            await db.execute("DELETE FROM operators")
+            for op in data:
+                plain_pin = str(op.get("pin", ""))
+                if plain_pin and not plain_pin.startswith("$2b$"):
+                    pin_to_store = bcrypt.hashpw(plain_pin.encode(), bcrypt.gensalt()).decode()
+                else:
+                    pin_to_store = plain_pin
+                await db.execute(
+                    "INSERT INTO operators (name, pin, role) VALUES (?,?,?)",
+                    (op.get("name", ""), pin_to_store, op.get("role", "employee"))
+                )
+            await db.commit()
+        return {"success": True}
 
 
 @app.post("/api/operators", summary="Crear operador individual")
@@ -712,9 +740,6 @@ async def check_billing_grace_period() -> None:
             logger.error(f"Error en grace period task: {e}")
         await asyncio.sleep(60 * 60 * 6)
 
-from routers.auth import router as auth_router
-app.include_router(auth_router)
-
 # ─────────────────────────────────────────────────────────────
 # INCLUSIÓN DE ROUTERS MODULARES
 # ─────────────────────────────────────────────────────────────
@@ -740,7 +765,7 @@ app.include_router(promotions_router)
 app.include_router(cashier_router)
 app.include_router(reports_router)
 app.include_router(auth_router)
-app.include_router(billing_router)
+app.include_router(billing_router, prefix="/api/billing")
 
 if __name__ == "__main__":
     import uvicorn

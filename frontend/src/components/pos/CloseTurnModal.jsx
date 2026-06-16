@@ -44,7 +44,10 @@ export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, curren
     <div className="modal-overlay"><div className="modal-content" style={{ width: '500px' }}>
       <h2 className="modal-title" style={{ color: 'var(--text-primary)' }}>Cierre de Turno</h2>
       {currentOperator?.role === 'admin' && (
-        <p style={{ textAlign: 'center', color: 'var(--text-secondary)', marginBottom: '8px' }}>Hoy el sistema registro ventas por: <div className="modal-amount" style={{ color: 'var(--text-primary)', marginBottom: '24px' }}>${(todaySalesTotal || 0).toLocaleString('es-AR')}</div></p>
+        <>
+        <p style={{ textAlign: 'center', color: 'var(--text-secondary)', marginBottom: '8px' }}>Hoy el sistema registró ventas por:</p>
+        <div className="modal-amount" style={{ color: 'var(--text-primary)', marginBottom: '24px', textAlign: 'center' }}>${(todaySalesTotal || 0).toLocaleString('es-AR')}</div>
+        </>
       )}
       {currentOperator?.role !== 'admin' && (
         <div style={{ background: 'rgba(20,187,166, 0.1)', padding: '16px', borderRadius: '8px', marginBottom: '24px', textAlign: 'center' }}>

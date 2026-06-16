@@ -20,8 +20,8 @@ const NAV_ITEMS = [
     category: 'CATÁLOGO',
     items: [
       { label: 'Inventario', path: '/panel/inventario', icon: 'Box', roles: ['admin', 'manager'] },
-      { label: 'Catálogo Web', path: '/panel/catalogo-web', icon: 'Edit', roles: ['admin', 'manager'] },
-      { label: 'Proveedores', path: '/panel/proveedores', icon: 'Truck', roles: ['admin', 'manager'] },
+      { label: 'Catálogo Web', path: '/panel/catalogo-web', icon: 'Edit', roles: ['admin', 'manager'], minPlan: 'pro' },
+      { label: 'Proveedores', path: '/panel/proveedores', icon: 'Truck', roles: ['admin', 'manager'], minPlan: 'simple' },
     ],
   },
   {
@@ -90,7 +90,10 @@ export default function Sidebar({
       <nav className="nav-menu" style={{ overflowY: 'auto', flex: 1 }}>
         {NAV_ITEMS.map((section) => {
           if (section.roles && !section.roles.includes(role)) return null;
-          const items = section.items;
+          const items = section.items.filter(item => {
+            if (item.roles && !item.roles.includes(role)) return false;
+            return true;
+          });
 
           if (items.length === 0) return null;
 
@@ -107,14 +110,13 @@ export default function Sidebar({
                     style={{
                       ...(item.label === 'Punto de Venta' ? { fontSize: '0.9rem', padding: '10px 14px', marginBottom: '4px' } : {}),
                       opacity: isLocked ? 0.5 : 1,
-                      cursor: isLocked ? 'pointer' : 'pointer'
+                      cursor: isLocked ? 'not-allowed' : 'pointer'
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1 }}>
                       {ICON_MAP[item.icon] ? React.createElement(ICON_MAP[item.icon], item.label === 'Punto de Venta' ? { style: { width: 22, height: 22 } } : {}) : <span style={{ width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icons.File /></span>}
                       {item.label}
                     </div>
-                    {isLocked && <Icons.Lock style={{ width: 14, height: 14, color: 'var(--text-secondary)', flexShrink: 0 }} />}
                   </div>
                 );
               })}

@@ -13,7 +13,7 @@ def _biz_id():
 
 
 @router.get("/api/movements", summary="Listar movimientos de stock")
-async def list_movements(limit: int = 100) -> dict:
+async def list_movements(limit: int = 100) -> list:
     if USE_PG:
         b_id = _biz_id()
         from db_helpers import get_pg_pool
@@ -32,7 +32,7 @@ async def list_movements(limit: int = 100) -> dict:
 
 
 @router.get("/api/sales/fiado", summary="Listar ventas fiadas pendientes")
-async def list_fiados() -> dict:
+async def list_fiados() -> list:
     if USE_PG:
         b_id = _biz_id()
         from db_helpers import get_pg_pool
@@ -194,7 +194,7 @@ async def create_egreso(body: dict) -> dict:
 
 
 @router.get("/api/egresos", summary="Listar egresos")
-async def list_egresos(turn_id: Optional[int] = Query(None)) -> dict:
+async def list_egresos(turn_id: Optional[int] = Query(None)) -> list:
     if USE_PG:
         b_id = _biz_id()
         from db_helpers import get_pg_pool
@@ -216,7 +216,7 @@ async def list_egresos(turn_id: Optional[int] = Query(None)) -> dict:
 
 
 @router.get("/api/suppliers", summary="Listar proveedores")
-async def list_suppliers() -> dict:
+async def list_suppliers() -> list:
     if USE_PG:
         b_id = _biz_id()
         from db_helpers import get_pg_pool
@@ -315,7 +315,7 @@ async def create_purchase(body: dict) -> dict:
 
 
 @router.get("/api/purchases", summary="Listar compras")
-async def list_purchases(limit: int = 50) -> dict:
+async def list_purchases(limit: int = 50) -> list:
     if USE_PG:
         b_id = _biz_id()
         from db_helpers import get_pg_pool

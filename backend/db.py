@@ -334,8 +334,10 @@ async def init_pg() -> None:
                 mp_collector_id TEXT,
                 catalogo_activo INTEGER DEFAULT 0,
                 catalogo_slug   TEXT,
-                catalogo_whatsapp TEXT
+                catalogo_whatsapp TEXT,
+                print_config    TEXT
             );
+            ALTER TABLE business_config ADD COLUMN IF NOT EXISTS print_config TEXT;
 
             CREATE TABLE IF NOT EXISTS audit_log (
                 id              SERIAL PRIMARY KEY,

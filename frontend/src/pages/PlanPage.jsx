@@ -125,8 +125,9 @@ export default function PlanPage() {
   const handleSubscribe = async (planId, isYearly) => {
     try {
       const response = await apiPost('/billing/subscribe', { plan_id: planId, is_yearly: isYearly });
-      if (response && response.init_point) {
-        window.location.href = response.init_point;
+      const data = await response.json();
+      if (data && data.init_point) {
+        window.location.href = data.init_point;
       } else {
         alert('Hubo un error al generar el link de pago.');
       }

@@ -31,7 +31,8 @@ services:
       - MP_ACCESS_TOKEN=${MP_ACCESS_TOKEN:-}
       - MP_COLLECTOR_ID=${MP_COLLECTOR_ID:-}
       - RESEND_API_KEY=${RESEND_API_KEY:-}
-      - APP_ENV=${APP_ENV:-development}
+      - APP_ENV=${APP_ENV:-production}
+      - SAAS_MODE=true
     depends_on:
       db:
         condition: service_healthy

@@ -27,9 +27,10 @@ export default function UsuariosModule() {
     setShowModal(true);
   };
 
-  const openEdit = (idx) => {
-    setEditIndex(idx);
-    const u = usuarios[idx];
+  const openEdit = (sortedIdx) => {
+    const u = sortedUsuarios[sortedIdx];
+    const originalIdx = usuarios.findIndex(orig => orig.name === u.name && orig.role === u.role);
+    setEditIndex(originalIdx >= 0 ? originalIdx : sortedIdx);
     setForm({ name: u.name, pin: '', role: u.role });
     setShowModal(true);
   };
