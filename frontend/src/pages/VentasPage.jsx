@@ -41,32 +41,12 @@ export default function VentasPage() {
 
   useEffect(() => {
     const handleGlobalKeyDown = (e) => {
-      if (e.key === 'F8') { e.preventDefault(); searchRef.current?.focus(); }
-      if (e.key === 'F9') { e.preventDefault(); if (cart.cart.length > 0) sales.setIsCharging(true); }
-      if (e.key === 'F4') { e.preventDefault(); sales.setIsFiadoOpen(true); }
-      if (e.key === 'F7' || e.key === 'Delete') { e.preventDefault(); cart.setCart(prev => prev.slice(0, -1)); }
-      if (e.key === 'F6') { e.preventDefault(); backend.setShowHelp(true); }
-      if (e.key === 'F10') { e.preventDefault(); if (cart.cart.length > 0) cart.setIsCancelConfirm(true); }
+      if (e.key === 'Delete') { e.preventDefault(); cart.setCart(prev => prev.slice(0, -1)); }
       if (e.key === 'Escape') { cart.setSearch(''); }
     };
     window.addEventListener('keydown', handleGlobalKeyDown);
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
   }, [cart.cart.length]);
-
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === 'F3') {
-        e.preventDefault();
-        if (cart.cart.length > 0) {
-          const lastId = cart.cart[cart.cart.length - 1].id;
-          document.getElementById(`qty-input-${lastId}`)?.focus();
-          document.getElementById(`qty-input-${lastId}`)?.select();
-        }
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [cart.cart]);
 
   useEffect(() => {
     if (!backend.mpIntentId || backend.mpPaymentStatus === 'approved') return;
@@ -122,7 +102,7 @@ export default function VentasPage() {
           mpPaymentUrl={backend.mpPaymentUrl} setMpPaymentUrl={backend.setMpPaymentUrl}
           mpLoading={backend.mpLoading} setMpLoading={backend.setMpLoading}
           mpPaymentStatus={backend.mpPaymentStatus} setMpPaymentStatus={backend.setMpPaymentStatus}
-          setMpIntentId={backend.setMpIntentId}
+          setMpIntentId={backend.setMpIntentId} handleQuickAdd={cart.handleQuickAdd}
           businessConfig={backend.businessConfig} addToast={addToast}
           currentOperator={auth.currentOperator} promotionSavings={promos.promotionSavings} />
       </div>

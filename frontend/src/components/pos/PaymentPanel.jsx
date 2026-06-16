@@ -18,8 +18,26 @@ export default function PaymentPanel({
   mpQrData, setMpQrData, mpPaymentUrl, setMpPaymentUrl,
   mpLoading, setMpLoading, mpPaymentStatus, setMpPaymentStatus, setMpIntentId,
   businessConfig, addToast, currentOperator,
-  promotionSavings
+  promotionSavings,
+  handleQuickAdd
 }) {
+  const defaultQuickButtons = [
+    { id: 1, name: 'Carga SUBE', price: 1000 },
+    { id: 2, name: 'Saldo Virtual', price: 500 },
+    { id: 3, name: 'Agua Hervida', price: 100 },
+    { id: 4, name: 'Fotocopias', price: 50 },
+    { id: 5, name: 'Impresiones', price: 80 },
+    { id: 6, name: 'Varios', price: 100 }
+  ];
+  const [quickButtons, setQuickButtons] = React.useState(() => {
+    try { const saved = localStorage.getItem('minegocio_quick_buttons'); return saved ? JSON.parse(saved) : defaultQuickButtons; } catch { return defaultQuickButtons; }
+  });
+  const [isEditingQuick, setIsEditingQuick] = React.useState(false);
+
+  const saveQuickButtons = (newBtns) => {
+    setQuickButtons(newBtns);
+    localStorage.setItem('minegocio_quick_buttons', JSON.stringify(newBtns));
+  };
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
       <div style={{ background: 'var(--bg-card)', padding: '16px 20px', borderRadius: '12px', border: '1px solid var(--border-color)', minHeight: '144px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
@@ -68,7 +86,7 @@ export default function PaymentPanel({
           disabled={cart.length === 0 || isProcessing}
           style={{ width: '100%', background: 'var(--gradient-primary)', color: 'white', border: 'none', padding: '18px 16px', borderRadius: '12px', fontSize: '1.1rem', fontWeight: 800, cursor: cart.length === 0 ? 'not-allowed' : 'pointer', opacity: cart.length === 0 ? 0.5 : 1, transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: cart.length === 0 ? 'none' : '0 8px 24px rgba(20,187,166,0.3)' }}
         >
-          <Icons.Check /> {isProcessing ? 'Procesando...' : 'Procesar Venta (Doble Enter)'}
+          <Icons.Check /> {isProcessing ? 'Procesando...' : 'Procesar Venta'}
         </button>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
@@ -82,26 +100,43 @@ export default function PaymentPanel({
           )}
           {cart.length > 0 && (
             <button style={{ width: '100%', background: 'transparent', border: 'none', color: 'var(--accent-danger)', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', padding: '8px' }} onClick={() => setIsCancelConfirm(true)}>
-              Anular Venta (F12)
+              Anular Venta
             </button>
           )}
         </div>
       </div>
 
-      <div style={{ marginTop: '0', display: 'flex', justifyContent: 'space-between', gap: '8px' }}>
-        <div style={{ background: 'var(--bg-card)', padding: '12px', borderRadius: '12px', border: '1px solid var(--border-color)', flex: 1, textAlign: 'center', cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 4px 6px rgba(30,58,95,0.1)' }} onMouseEnter={e=>e.currentTarget.style.transform='translateY(-2px)'} onMouseLeave={e=>e.currentTarget.style.transform='none'} onClick={() => searchRef.current?.focus()}>
-          <div style={{ background: 'rgba(255,255,255,0.1)', color: 'white', fontWeight: 800, fontSize: '0.8rem', padding: '4px 10px', borderRadius: '6px', display: 'inline-block', marginBottom: '8px' }}>F8</div>
-          <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: 700 }}>Buscar Producto</div>
+      <div style={{ marginTop: '0', background: 'var(--bg-card)', padding: '16px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+          <h3 style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-primary)', fontWeight: 700 }}>Accesos Rápidos</h3>
+          <button onClick={() => setIsEditingQuick(!isEditingQuick)} style={{ background: isEditingQuick ? 'var(--accent-primary)' : 'rgba(255,255,255,0.05)', color: isEditingQuick ? 'white' : 'var(--text-secondary)', border: 'none', borderRadius: '6px', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s' }}>
+            <Icons.Edit style={{ width: '16px', height: '16px' }} />
+          </button>
         </div>
-
-        <div style={{ background: 'var(--bg-card)', padding: '12px', borderRadius: '12px', border: '1px solid var(--border-color)', flex: 1, textAlign: 'center', cursor: cart.length > 0 ? 'pointer' : 'not-allowed', opacity: cart.length > 0 ? 1 : 0.5, transition: 'all 0.2s', boxShadow: '0 4px 6px rgba(30,58,95,0.1)' }} onMouseEnter={e=>{if(cart.length>0)e.currentTarget.style.transform='translateY(-2px)'}} onMouseLeave={e=>e.currentTarget.style.transform='none'} onClick={() => { if(cart.length > 0) setIsCharging(true); }}>
-          <div style={{ background: 'var(--gradient-primary)', color: 'white', fontWeight: 800, fontSize: '0.8rem', padding: '4px 10px', borderRadius: '6px', display: 'inline-block', marginBottom: '8px' }}>F9</div>
-          <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: 700 }}>Cobrar Venta</div>
-        </div>
-
-        <div style={{ background: 'var(--bg-card)', padding: '12px', borderRadius: '12px', border: '1px solid var(--border-color)', flex: 1, textAlign: 'center', cursor: cart.length > 0 ? 'pointer' : 'not-allowed', opacity: cart.length > 0 ? 1 : 0.5, transition: 'all 0.2s', boxShadow: '0 4px 6px rgba(30,58,95,0.1)' }} onMouseEnter={e=>{if(cart.length>0)e.currentTarget.style.transform='translateY(-2px)'}} onMouseLeave={e=>e.currentTarget.style.transform='none'} onClick={() => { if(cart.length > 0) setIsCancelConfirm(true); }}>
-          <div style={{ background: 'var(--accent-danger)', color: 'white', fontWeight: 800, fontSize: '0.8rem', padding: '4px 10px', borderRadius: '6px', display: 'inline-block', marginBottom: '8px' }}>F10</div>
-          <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: 700 }}>Anular Ticket</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+          {quickButtons.map((btn, idx) => (
+            <div key={btn.id} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px', padding: '8px', display: 'flex', flexDirection: 'column', gap: '4px', position: 'relative' }}>
+              {isEditingQuick ? (
+                <>
+                  <input type="text" value={btn.name} onChange={e => {
+                    const newBtns = [...quickButtons];
+                    newBtns[idx].name = e.target.value;
+                    saveQuickButtons(newBtns);
+                  }} style={{ width: '100%', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', color: 'white', fontSize: '0.75rem', padding: '4px', borderRadius: '4px', textAlign: 'center', boxSizing: 'border-box' }} />
+                  <input type="number" value={btn.price} onChange={e => {
+                    const newBtns = [...quickButtons];
+                    newBtns[idx].price = Number(e.target.value);
+                    saveQuickButtons(newBtns);
+                  }} style={{ width: '100%', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', color: 'var(--accent-success)', fontSize: '0.75rem', padding: '4px', borderRadius: '4px', textAlign: 'center', fontFamily: 'var(--font-mono)', boxSizing: 'border-box' }} />
+                </>
+              ) : (
+                <div onClick={() => handleQuickAdd('VIRTUAL_' + btn.id, btn.name, btn.price, { is_virtual: true })} style={{ cursor: 'pointer', textAlign: 'center', transition: 'all 0.15s' }} onMouseEnter={e=>e.currentTarget.style.transform='scale(1.02)'} onMouseLeave={e=>e.currentTarget.style.transform='none'}>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{btn.name}</div>
+                  <div style={{ fontSize: '0.85rem', color: 'var(--accent-success)', fontWeight: 800, fontFamily: 'var(--font-mono)' }}>${btn.price.toLocaleString('es-AR')}</div>
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       </div>
 

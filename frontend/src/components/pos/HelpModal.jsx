@@ -9,13 +9,9 @@ export default function HelpModal({ showHelp, setShowHelp }) {
         <div style={{ marginBottom: '24px' }}>
           <h3 style={{ fontSize: '1.2rem', marginBottom: '12px', color: 'var(--text-primary)' }}>Atajos de Teclado</h3>
           {[
-            { key: 'F1', label: 'Cobrar — Abre la pantalla de pago' },
-            { key: 'F2', label: 'Buscar — Enfoca el campo de búsqueda' },
-            { key: 'F3', label: 'Cantidad — Editar cantidad del último producto' },
-            { key: 'F4', label: 'Fiado — Registrar venta fiada' },
-            { key: 'F8 / Supr', label: 'Quitar — Elimina el último producto del carrito' },
-            { key: 'F10', label: 'Ayuda — Muestra esta pantalla' },
-            { key: 'F12', label: 'Anular — Vacía todo el carrito' },
+            { key: 'Enter', label: 'Cobrar — Procesar la venta si estás en la caja' },
+            { key: 'Doble Enter', label: 'Procesar Venta — Cobra automáticamente' },
+            { key: 'Supr', label: 'Quitar — Elimina el último producto del carrito' },
             { key: 'Esc', label: 'Salir — Cierra modales o limpia la búsqueda' },
           ].map(s => (
             <div key={s.key} style={{ display: 'flex', alignItems: 'center', gap: '16px', background: 'var(--bg-main)', borderRadius: '8px', padding: '10px 16px', marginBottom: '8px' }}>
@@ -27,7 +23,7 @@ export default function HelpModal({ showHelp, setShowHelp }) {
         <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '20px' }}>
           <h3 style={{ fontSize: '1.2rem', marginBottom: '12px', color: 'var(--text-primary)' }}>❓ Preguntas Frecuentes</h3>
           {[
-            { q: 'No encuentro un producto', a: 'Escribí el nombre o código de barras en el buscador (F2).' },
+            { q: 'No encuentro un producto', a: 'Escribí el nombre o código de barras en el buscador.' },
             { q: 'Me equivoqué de precio', a: 'Antes de cobrar, tocá "Ajustar total" en la pantalla de pago.' },
             { q: 'No anda el lector de códigos', a: 'Escribí el código a mano y presioná Enter.' },
             { q: 'La pantalla se ve mal', a: 'Presioná F11 para pantalla completa.' },
