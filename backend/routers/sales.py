@@ -420,8 +420,10 @@ async def today_sales(sucursal_id: Optional[int] = Query(None)) -> dict:
                     SELECT COUNT(*) as total_tickets, COALESCE(SUM(total),0) as total_vendido,
                            COALESCE(SUM(CASE WHEN is_fiado=1 THEN total ELSE 0 END),0) as total_fiado,
                            COALESCE(SUM(CASE WHEN payment_method='efectivo' AND is_fiado=0 THEN total ELSE 0 END),0) as total_efectivo,
+                           COALESCE(SUM(CASE WHEN payment_method='tarjeta' THEN total ELSE 0 END),0) as total_tarjeta,
+                           COALESCE(SUM(CASE WHEN payment_method='transferencia' THEN total ELSE 0 END),0) as total_transferencia,
                            COALESCE(SUM(CASE WHEN payment_method='mercadopago' THEN total ELSE 0 END),0) as total_mp
-                    FROM sales WHERE business_id = $1 AND date(timestamp)=current_date AND (sucursal_id=$2 OR sucursal_id IS NULL)
+                    FROM sales WHERE business_id = $1 AND timestamp::date=current_date AND (sucursal_id=$2 OR sucursal_id IS NULL)
                 """, b_id, sucursal_id)
             else:
                 row = await conn.fetchrow("""
@@ -431,7 +433,7 @@ async def today_sales(sucursal_id: Optional[int] = Query(None)) -> dict:
                            COALESCE(SUM(CASE WHEN payment_method='tarjeta' THEN total ELSE 0 END),0) as total_tarjeta,
                            COALESCE(SUM(CASE WHEN payment_method='transferencia' THEN total ELSE 0 END),0) as total_transferencia,
                            COALESCE(SUM(CASE WHEN payment_method='mercadopago' THEN total ELSE 0 END),0) as total_mp
-                    FROM sales WHERE business_id = $1 AND date(timestamp)=current_date
+                    FROM sales WHERE business_id = $1 AND timestamp::date=current_date
                 """, b_id)
             return dict(row) if row else {"total_tickets": 0, "total_vendido": 0, "total_fiado": 0, "total_efectivo": 0, "total_tarjeta": 0, "total_transferencia": 0, "total_mp": 0}
     else:
@@ -468,8 +470,8 @@ async def list_sales(limit: int = Query(50), date_from: Optional[str] = Query(No
         params = [b_id]
         clauses = ["s.business_id = $1"]
         n = 2
-        if date_from: clauses.append(f"date(s.timestamp) >= ${n}::date"); params.append(date_from); n += 1
-        if date_to: clauses.append(f"date(s.timestamp) <= ${n}::date"); params.append(date_to); n += 1
+        if date_from: clauses.append(f"s.timestamp::date >= ${n}::date"); params.append(date_from); n += 1
+        if date_to: clauses.append(f"s.timestamp::date <= ${n}::date"); params.append(date_to); n += 1
         if sucursal_id: clauses.append(f"s.sucursal_id = ${n}"); params.append(sucursal_id); n += 1
         where = " AND ".join(clauses)
         params.append(limit)
