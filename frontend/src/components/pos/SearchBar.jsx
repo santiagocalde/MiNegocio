@@ -15,7 +15,7 @@ export default function SearchBar({
   }, [search, productsDB]);
 
   return (
-    <div style={{ background: 'var(--bg-card)', padding: '16px 20px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+    <div style={{ background: 'var(--bg-card)', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
         <div>
           <h2 style={{ fontSize: '1.3rem', fontWeight: 800, margin: '0 0 2px 0', letterSpacing: '-0.2px' }}>Buscar Producto</h2>

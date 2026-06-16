@@ -32,7 +32,7 @@ export default function useCart(productsDB, ivaRate) {
     setCart(prev => {
       const ex = prev.find(item => item.code === code);
       if (ex) return prev.map(item => item.code === code ? { ...item, qty: item.qty + 1 } : item);
-      const itemId = product?.id || (extra?.id || 0);
+      const itemId = product?.id || (extra?.id || code);
       return [...prev, { id: itemId, code, name, price, stock: product?.stock || 0, qty: 1, ...extra }];
     });
     setTimeout(() => { addLockRef.current = false; }, 300);

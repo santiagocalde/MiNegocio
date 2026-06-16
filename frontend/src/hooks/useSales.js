@@ -47,7 +47,7 @@ export default function useSales(cart, effectiveTotal, payment, paymentMethod, u
     const saleTotal = effectiveTotal ?? (cart.reduce((acc, item) => acc + (item.price * item.qty), 0));
     const effectivePayments = useSplitPayment
       ? splitPayments.filter(p => p.method && parseFloat(p.amount) > 0).map(p => ({ method: p.method, amount: parseFloat(p.amount) }))
-      : [{ method: paymentMethod, amount: paymentMethod === 'efectivo' ? (parseFloat(payment) || saleTotal) : saleTotal }];
+      : [{ method: paymentMethod, amount: paymentMethod === 'efectivo' ? ((payment !== '' && !isNaN(parseFloat(payment))) ? parseFloat(payment) : saleTotal) : saleTotal }];
     const totalPaid = effectivePayments.reduce((sum, p) => sum + p.amount, 0);
     const salePayment = totalPaid;
     const saleChange = effectivePayments.length === 1 && effectivePayments[0].method === 'efectivo'
