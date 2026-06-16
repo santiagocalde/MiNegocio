@@ -3,7 +3,7 @@ import { usePanelContext } from '../context/PanelContext';
 import { apiGet, apiPost } from '../services/apiClient';
 import FeatureGate from '../components/ui/FeatureGate';
 
-const PLAN_WEIGHT = { trial: 0, simple: 1, pro: 2, ia: 3 };
+const PLAN_WEIGHT = { trial: 1, simple: 1, pro: 2, ia: 3 };
 
 const Icons = {
   Brain: () => <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>,

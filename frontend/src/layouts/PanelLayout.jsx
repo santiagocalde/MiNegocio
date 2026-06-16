@@ -159,7 +159,8 @@ export default function PanelLayout() {
 
       <PriceCheckModal showPriceCheck={backend.showPriceCheck} setShowPriceCheck={backend.setShowPriceCheck}
         priceCheckQuery={backend.priceCheckQuery} setPriceCheckQuery={backend.setPriceCheckQuery}
-        priceCheckResults={backend.priceCheckResults} setPriceCheckResults={backend.setPriceCheckResults} />
+        priceCheckResults={backend.priceCheckResults} setPriceCheckResults={backend.setPriceCheckResults}
+        productsDB={backend.productsDB} />
 
       <PendingSyncModal showPendingModal={backend.showPendingModal} setShowPendingModal={backend.setShowPendingModal}
         getPendingData={backend.getPendingData} handleManualSync={backend.handleManualSync}

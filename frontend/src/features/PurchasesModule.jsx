@@ -5,7 +5,7 @@ import { SkeletonCard } from '../components/ui/Skeleton';
 import EmptyState from '../components/ui/EmptyState';
 import FeatureGate from '../components/ui/FeatureGate';
 
-const PLAN_WEIGHT = { trial: 0, simple: 1, pro: 2, ia: 3 };
+const PLAN_WEIGHT = { trial: 1, simple: 1, pro: 2, ia: 3 };
 
 // Reusing some SVG icons inline to keep it self-contained or assuming they exist
 const Icons = {

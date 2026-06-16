@@ -5,7 +5,7 @@ import Tooltip from '../ui/Tooltip';
 import LogoPrincipal from '../../assets/images/MiNegocio_transparente_real.png';
 import { usePanelContext } from '../../context/PanelContext';
 
-const PLAN_WEIGHT = { trial: 0, simple: 1, pro: 2, ia: 3 };
+const PLAN_WEIGHT = { trial: 1, simple: 1, pro: 2, ia: 3 };
 
 const NAV_ITEMS = [
   {

@@ -22,8 +22,8 @@ export default function PaymentPanel({
 }) {
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      <div style={{ background: 'var(--bg-card)', padding: '16px 20px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
-        <div style={{ marginBottom: '12px' }}>
+      <div style={{ background: 'var(--bg-card)', padding: '16px 20px', borderRadius: '12px', border: '1px solid var(--border-color)', minHeight: '144px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+        <div style={{ marginBottom: '16px' }}>
           <h2 style={{ fontSize: '1.3rem', fontWeight: 800, margin: '0 0 2px 0', color: 'var(--text-primary)', letterSpacing: '-0.2px' }}>Cliente</h2>
           <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>Selecciona el cliente para la venta</p>
         </div>

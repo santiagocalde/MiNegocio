@@ -5,6 +5,7 @@ import { apiGet, apiPost, apiPatch, SERVER_URL } from '../services/apiClient';
 import { SkeletonTable } from '../components/ui/Skeleton';
 import EmptyState from '../components/ui/EmptyState';
 import useSortable from '../hooks/useSortable.jsx';
+import ConfirmModal from '../components/ui/ConfirmModal';
 
 const Icons = {
   Search: () => <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>,
@@ -25,12 +26,12 @@ const Icons = {
 function AlertAccordion({ icon: Icon, title, subtitle, data, isOpen, onToggle, columns, renderRow }) {
   return (
     <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '12px', marginBottom: '12px', overflow: 'hidden' }}>
-      <div onClick={onToggle} style={{ padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', transition: 'background 0.2s' }} onMouseEnter={e=>e.currentTarget.style.background='var(--bg-hover)'} onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <div style={{ color: 'var(--text-secondary)' }}><Icon /></div>
+      <div onClick={onToggle} style={{ padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', transition: 'background 0.2s' }} onMouseEnter={e=>e.currentTarget.style.background='var(--bg-hover)'} onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ color: 'var(--text-secondary)', transform: 'scale(0.85)' }}><Icon /></div>
           <div>
-            <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '1.1rem' }}>{title}</div>
-            <div style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>{subtitle}</div>
+            <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.95rem' }}>{title}</div>
+            <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>{subtitle}</div>
           </div>
         </div>
         <div style={{ color: 'var(--text-secondary)' }}>
@@ -55,6 +56,31 @@ function AlertAccordion({ icon: Icon, title, subtitle, data, isOpen, onToggle, c
           </table>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={confirmState.isOpen}
+        title={confirmState.title}
+        message={confirmState.message}
+        onClose={() => setConfirmState(prev => ({...prev, isOpen: false}))}
+        onConfirm={confirmState.onConfirm}
+        confirmLabel={confirmState.confirmLabel}
+        variant={confirmState.variant}
+      />
+
+      {showNewCategory && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(30,58,95,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100 }}>
+          <div style={{ background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '24px', width: '300px' }}>
+            <h3 style={{ margin: '0 0 16px 0', color: 'var(--text-primary)' }}>Nueva Categoría</h3>
+            <input type="text" value={newCategoryName} onChange={e => setNewCategoryName(e.target.value)} autoFocus
+                   placeholder="Nombre de categoría"
+                   style={{ width: '100%', padding: '10px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '8px', marginBottom: '16px', outline: 'none', boxSizing: 'border-box' }} />
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+              <button onClick={() => { setShowNewCategory(false); setNewCategoryName(''); }} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', padding: '8px 12px', borderRadius: '8px', cursor: 'pointer' }}>Cancelar</button>
+              <button onClick={handleCreateCategory} style={{ background: 'var(--gradient-primary)', border: 'none', color: 'white', padding: '8px 12px', borderRadius: '8px', cursor: 'pointer' }}>Crear</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -63,6 +89,31 @@ function ToggleSwitch({ isOn }) {
   return (
     <div style={{ width: '36px', height: '20px', background: isOn ? 'var(--gradient-primary)' : 'rgba(255,255,255,0.1)', borderRadius: '20px', position: 'relative', cursor: 'pointer', transition: 'all 0.3s' }}>
       <div style={{ width: '16px', height: '16px', background: 'white', borderRadius: '50%', position: 'absolute', top: '2px', left: isOn ? '18px' : '2px', transition: 'all 0.3s' }} />
+
+      <ConfirmModal
+        isOpen={confirmState.isOpen}
+        title={confirmState.title}
+        message={confirmState.message}
+        onClose={() => setConfirmState(prev => ({...prev, isOpen: false}))}
+        onConfirm={confirmState.onConfirm}
+        confirmLabel={confirmState.confirmLabel}
+        variant={confirmState.variant}
+      />
+
+      {showNewCategory && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(30,58,95,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100 }}>
+          <div style={{ background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '24px', width: '300px' }}>
+            <h3 style={{ margin: '0 0 16px 0', color: 'var(--text-primary)' }}>Nueva Categoría</h3>
+            <input type="text" value={newCategoryName} onChange={e => setNewCategoryName(e.target.value)} autoFocus
+                   placeholder="Nombre de categoría"
+                   style={{ width: '100%', padding: '10px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '8px', marginBottom: '16px', outline: 'none', boxSizing: 'border-box' }} />
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+              <button onClick={() => { setShowNewCategory(false); setNewCategoryName(''); }} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', padding: '8px 12px', borderRadius: '8px', cursor: 'pointer' }}>Cancelar</button>
+              <button onClick={handleCreateCategory} style={{ background: 'var(--gradient-primary)', border: 'none', color: 'white', padding: '8px 12px', borderRadius: '8px', cursor: 'pointer' }}>Crear</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -117,6 +168,23 @@ export default function StockModule() {
   const [showNuevoProducto, setShowNuevoProducto] = useState(false);
   const [categories, setCategories] = useState([]);
   const [newProduct, setNewProduct] = useState({ code: '', name: '', price: '', cost_price: '', stock: '', min_stock: '5', iva: '21%', category_id: '' });
+  const [confirmState, setConfirmState] = useState({ isOpen: false, title: '', message: '', onConfirm: null, confirmLabel: 'Confirmar', variant: 'danger' });
+  const [showNewCategory, setShowNewCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+
+  const handleCreateCategory = async () => {
+    if(!newCategoryName.trim()) return;
+    try {
+      const res = await apiPost('/categories', { name: newCategoryName });
+      if(res.ok) {
+        const cat = await res.json();
+        setCategories([...categories, cat]);
+        setNewProduct({...newProduct, category_id: cat.id});
+        setShowNewCategory(false);
+        setNewCategoryName('');
+      }
+    } catch(e) {}
+  };
 
   useEffect(() => {
     apiGet('/categories').then(r => r.ok ? r.json() : []).then(d => setCategories(Array.isArray(d) ? d : [])).catch(() => {});
@@ -182,7 +250,34 @@ export default function StockModule() {
       if (addToast) addToast('Ingresá un porcentaje mayor a 0.', 'error');
       return;
     }
-    if (!window.confirm(`Vas a aumentar TODOS los precios un ${pct}%. Un producto de $1.000 pasara a costar $${Math.round(1000 * (1 + pct / 100)).toLocaleString('es-AR')}. No se puede deshacer. Continuar?`)) return;
+    setConfirmState({
+      isOpen: true,
+      title: 'Confirmar Aumento Masivo',
+      message: `Vas a aumentar TODOS los precios un ${pct}%. Un producto de $1.000 pasara a costar $${Math.round(1000 * (1 + pct / 100)).toLocaleString('es-AR')}. No se puede deshacer. Continuar?`,
+      confirmLabel: 'Sí, Aumentar',
+      variant: 'danger',
+      onConfirm: async () => {
+        setConfirmState(prev => ({...prev, isOpen: false}));
+        try {
+          const body = { percentage: pct };
+          if (filterCategory) body.category_id = parseInt(filterCategory);
+          const res = await apiPost('/products/batch-increase', body);
+          if (res.ok) {
+            addToast(`Precios aumentados ${pct}% con éxito`, 'success');
+            setShowAumentoMasivo(false);
+            setAumentoPorcentaje('');
+            fetchProducts();
+            onProductsUpdated();
+          } else {
+            addToast('Error al aumentar precios', 'error');
+          }
+        } catch {
+          addToast('Error de conexión', 'error');
+        }
+      }
+    });
+    return;
+
     try {
       const payload = { percentage: pct };
       if (filterCategory) payload.category_id = parseInt(filterCategory);
@@ -356,12 +451,20 @@ export default function StockModule() {
               <td style={{ padding: '16px 24px' }}>{new Date(p.expiry_date).toLocaleDateString('es-AR')}</td>
               <td style={{ padding: '16px 24px' }}><span style={{ background: 'rgba(234,179,8,0.1)', color: 'var(--accent-warning)', border: '1px solid rgba(234,179,8,0.3)', borderRadius: '12px', padding: '4px 12px', fontSize: '0.75rem', fontWeight: 700 }}>Vence pronto</span></td>
               <td style={{ padding: '16px 24px', color: 'var(--text-secondary)', cursor: 'pointer' }} onClick={() => {
-                if (window.confirm(`Eliminar ${p.name}?`)) {
+                setConfirmState({
+                  isOpen: true,
+                  title: 'Eliminar Producto',
+                  message: `¿Seguro que deseas eliminar ${p.name}?`,
+                  confirmLabel: 'Eliminar',
+                  variant: 'danger',
+                  onConfirm: () => {
+                    setConfirmState(prev => ({...prev, isOpen: false}));
                   apiPost(`/products/${p.id}`, {}).then(r => {
                     if (r.ok) { addToast(`${p.name} eliminado.`, 'success'); fetchProducts(); }
                     else addToast('Error al eliminar.', 'error');
                   }).catch(() => addToast('Error de conexion.', 'error'));
-                }
+                  }
+                });
               }}><Icons.Trash /></td>
             </>
           )}
@@ -603,7 +706,10 @@ export default function StockModule() {
                 </select>
               </div>
               <div>
-                <label style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '6px', fontWeight: 600 }}>Categoría</label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <label style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 600 }}>Categoría</label>
+                  <button onClick={() => setShowNewCategory(true)} style={{ background: 'transparent', border: 'none', color: 'var(--accent-primary)', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', padding: 0 }}>+ Nueva</button>
+                </div>
                 <select value={newProduct.category_id} onChange={e => setNewProduct({ ...newProduct, category_id: e.target.value })}
                   style={{ width: '100%', padding: '10px 12px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '8px', outline: 'none', fontSize: '0.95rem', boxSizing: 'border-box' }}>
                   <option value="">Sin categoría</option>
@@ -654,6 +760,31 @@ export default function StockModule() {
               <button onClick={handleAumentoMasivo} disabled={!aumentoPorcentaje} style={{ background: 'var(--accent-danger)', border: 'none', color: 'white', padding: '10px 24px', borderRadius: '8px', cursor: !aumentoPorcentaje ? 'not-allowed' : 'pointer', fontWeight: 700, opacity: !aumentoPorcentaje ? 0.5 : 1 }}>
                 Aplicar Aumento
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <ConfirmModal
+        isOpen={confirmState.isOpen}
+        title={confirmState.title}
+        message={confirmState.message}
+        onClose={() => setConfirmState(prev => ({...prev, isOpen: false}))}
+        onConfirm={confirmState.onConfirm}
+        confirmLabel={confirmState.confirmLabel}
+        variant={confirmState.variant}
+      />
+
+      {showNewCategory && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(30,58,95,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100 }}>
+          <div style={{ background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '24px', width: '300px' }}>
+            <h3 style={{ margin: '0 0 16px 0', color: 'var(--text-primary)' }}>Nueva Categoría</h3>
+            <input type="text" value={newCategoryName} onChange={e => setNewCategoryName(e.target.value)} autoFocus
+                   placeholder="Nombre de categoría"
+                   style={{ width: '100%', padding: '10px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '8px', marginBottom: '16px', outline: 'none', boxSizing: 'border-box' }} />
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+              <button onClick={() => { setShowNewCategory(false); setNewCategoryName(''); }} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', padding: '8px 12px', borderRadius: '8px', cursor: 'pointer' }}>Cancelar</button>
+              <button onClick={handleCreateCategory} style={{ background: 'var(--gradient-primary)', border: 'none', color: 'white', padding: '8px 12px', borderRadius: '8px', cursor: 'pointer' }}>Crear</button>
             </div>
           </div>
         </div>

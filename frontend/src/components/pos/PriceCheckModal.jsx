@@ -1,7 +1,17 @@
 import React from 'react';
 import { apiGet } from '../../services/apiClient';
 
-function PriceCheckModal({ showPriceCheck, setShowPriceCheck, priceCheckQuery, setPriceCheckQuery, priceCheckResults, setPriceCheckResults }) {
+function PriceCheckModal({ showPriceCheck, setShowPriceCheck, priceCheckQuery, setPriceCheckQuery, priceCheckResults, setPriceCheckResults, productsDB }) {
+  React.useEffect(() => {
+    if (!showPriceCheck || !priceCheckQuery.trim()) {
+      setPriceCheckResults([]);
+      return;
+    }
+    const qLower = priceCheckQuery.toLowerCase();
+    const filtered = productsDB?.filter(p => p.name?.toLowerCase().includes(qLower) || p.code?.toLowerCase().includes(qLower)) || [];
+    setPriceCheckResults(filtered.slice(0, 30));
+  }, [priceCheckQuery, showPriceCheck, productsDB, setPriceCheckResults]);
+
   if (!showPriceCheck) return null;
   return (
     <div className="modal-overlay" onClick={() => { setShowPriceCheck(false); setPriceCheckQuery(''); setPriceCheckResults([]); }}>
@@ -9,10 +19,7 @@ function PriceCheckModal({ showPriceCheck, setShowPriceCheck, priceCheckQuery, s
         <h2 className="modal-title" style={{ fontSize: '1.5rem' }}>🔍 Consultar Precio</h2>
         <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
           <input type="text" value={priceCheckQuery} onChange={e => setPriceCheckQuery(e.target.value)}
-            onKeyDown={async e => { if (e.key === 'Enter' && priceCheckQuery.trim()) { try { const res = await apiGet(`/products?q=${encodeURIComponent(priceCheckQuery.trim())}`); const data = await res.json(); setPriceCheckResults(Array.isArray(data) ? data : []); } catch { setPriceCheckResults([]); } } }}
             placeholder="Buscá por nombre o código..." autoFocus style={{ flex: 1, background: 'var(--bg-main)', border: '2px solid var(--border-focus)', color: 'var(--text-primary)', padding: '12px', borderRadius: '8px', fontSize: '1.1rem', outline: 'none' }} />
-          <button onClick={async () => { if (!priceCheckQuery.trim()) return; try { const res = await apiGet(`/products?q=${encodeURIComponent(priceCheckQuery.trim())}`); const data = await res.json(); setPriceCheckResults(Array.isArray(data) ? data : []); } catch { setPriceCheckResults([]); } }}
-            style={{ padding: '12px 20px', background: 'var(--accent-primary)', border: 'none', borderRadius: '8px', color: 'white', fontWeight: 700, cursor: 'pointer' }}>Buscar</button>
         </div>
         <div style={{ flex: 1, overflowY: 'auto' }}>
           {priceCheckResults.length === 0 ? <p style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '24px' }}>{priceCheckQuery ? 'Sin resultados' : 'Escribí un nombre o código y presioná Enter'}</p> : (

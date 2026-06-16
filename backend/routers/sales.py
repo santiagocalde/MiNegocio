@@ -483,11 +483,17 @@ async def list_sales(limit: int = Query(50), date_from: Optional[str] = Query(No
     else:
         import aiosqlite
         async with aiosqlite.connect(main.DB_PATH) as db:
-            cur = await db.execute("""
+            params = []
+            clauses = ["1=1"]
+            if date_from: clauses.append("date(s.timestamp) >= ?"); params.append(date_from)
+            if date_to: clauses.append("date(s.timestamp) <= ?"); params.append(date_to)
+            where = " AND ".join(clauses)
+            params.append(limit)
+            cur = await db.execute(f"""
                 SELECT s.*, COALESCE(SUM(si.item_discount),0) as total_discount
                 FROM sales s LEFT JOIN sale_items si ON s.id = si.sale_id
-                GROUP BY s.id ORDER BY s.timestamp DESC LIMIT ?
-            """, (limit,))
+                WHERE {where} GROUP BY s.id ORDER BY s.timestamp DESC LIMIT ?
+            """, params)
             rows = await cur.fetchall()
             sales = [row_to_dict(r, cur.description) for r in rows]
             for sale in sales:

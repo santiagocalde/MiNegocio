@@ -15,7 +15,7 @@ export default function ProveedoresModule() {
   const navigate = useNavigate();
   const { addToast, backend } = usePanelContext();
   const currentPlan = backend.businessConfig?.plan || 'trial';
-  const PLAN_WEIGHT = { trial: 0, simple: 1, pro: 2, ia: 3 };
+  const PLAN_WEIGHT = { trial: 1, simple: 1, pro: 2, ia: 3 };
   const isPreview = new URLSearchParams(window.location.search).get('preview') === 'true' || localStorage.getItem('saas_mode') === 'true';
   const isLocked = !isPreview && PLAN_WEIGHT[currentPlan] < PLAN_WEIGHT['simple'];
   const [proveedores, setProveedores] = useState([]);

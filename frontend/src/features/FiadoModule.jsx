@@ -101,14 +101,14 @@ export default function FiadoModule() {
       </div>
 
       {/* METRICAS */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginBottom: '32px', flexShrink: 0 }}>
-        <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '24px', position: 'relative', overflow: 'hidden' }}>
-           <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 600, textTransform: 'uppercase', marginBottom: '8px' }}>Deuda Total en la Calle</div>
-           <div style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--accent-warning)', fontFamily: 'var(--font-mono)' }}>${totalDeuda.toLocaleString('es-AR')}</div>
+      <div style={{ display: 'flex', gap: '16px', marginBottom: '24px', flexShrink: 0 }}>
+        <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '16px', flex: 1, position: 'relative', overflow: 'hidden' }}>
+           <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase', marginBottom: '4px' }}>Deuda Total en la Calle</div>
+           <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--accent-warning)', fontFamily: 'var(--font-mono)' }}>${totalDeuda.toLocaleString('es-AR')}</div>
         </div>
-        <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '24px', position: 'relative', overflow: 'hidden' }}>
-           <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 600, textTransform: 'uppercase', marginBottom: '8px' }}>Clientes Morosos</div>
-           <div style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--text-primary)' }}>{customers.length}</div>
+        <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '16px', flex: 1, position: 'relative', overflow: 'hidden' }}>
+           <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase', marginBottom: '4px' }}>Clientes Fiados</div>
+           <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-primary)' }}>{customers.length}</div>
         </div>
       </div>
 

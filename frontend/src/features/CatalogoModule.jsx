@@ -14,7 +14,7 @@ const Icons = {
 export default function CatalogoModule() {
   const { addToast, backend } = usePanelContext();
   const currentPlan = backend.businessConfig?.plan || 'trial';
-  const PLAN_WEIGHT = { trial: 0, simple: 1, pro: 2, ia: 3 };
+  const PLAN_WEIGHT = { trial: 1, simple: 1, pro: 2, ia: 3 };
   const isLocked = PLAN_WEIGHT[currentPlan] < PLAN_WEIGHT['pro'];
   const [isActive, setIsActive] = useState(false);
   const [storeName, setStoreName] = useState('');

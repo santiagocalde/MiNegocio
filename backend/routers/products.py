@@ -28,6 +28,24 @@ async def list_categories() -> list:
             rows = await cur.fetchall()
             return [row_to_dict(r, cur.description) for r in rows]
 
+@router.post("/api/categories", summary="Crear categoria")
+async def create_category(body: dict = Body(...)) -> dict:
+    name = body.get("name", "").strip()
+    if not name: raise HTTPException(400, "Nombre requerido")
+    b_id = _biz_id()
+    if USE_PG:
+        from db_helpers import get_pg_pool
+        pool = await get_pg_pool()
+        async with pool.acquire() as conn:
+            row = await conn.fetchrow("INSERT INTO categories (business_id, name) VALUES ($1, $2) RETURNING id", b_id, name)
+            return {"id": row["id"], "name": name}
+    else:
+        async with aiosqlite.connect(main.DB_PATH) as db:
+            cur = await db.execute("INSERT INTO categories (name) VALUES (?)", (name,))
+            await db.commit()
+            return {"id": cur.lastrowid, "name": name}
+
+
 
 @router.get("/api/products", summary="Listar productos")
 async def list_products(q: Optional[str] = Query(None), limit: int = Query(500), sucursal_id: Optional[int] = Query(None)) -> list:
