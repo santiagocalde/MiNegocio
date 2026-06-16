@@ -84,7 +84,7 @@ export default function Sidebar({
   return (
     <aside className="sidebar">
       <div className="brand" style={{ cursor: 'pointer', display: 'flex', justifyContent: 'center', padding: '4px 0', borderBottom: 'none', boxShadow: 'none' }} onClick={() => navigate('/panel/ventas')}>
-        <img src={LogoPrincipal} alt="MiNegocio" style={{ width: '90%', maxWidth: '190px', height: 'auto', objectFit: 'contain' }} />
+        <img src={LogoPrincipal} alt="MiNegocio" style={{ width: '80%', maxWidth: '140px', height: 'auto', objectFit: 'contain' }} />
       </div>
 
       <nav className="nav-menu" style={{ overflowY: 'auto', flex: 1 }}>

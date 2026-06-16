@@ -113,14 +113,15 @@ async def auth_register(request: Request, body: BusinessCreate) -> dict:
         hashed_pw = bcrypt.hashpw(body.password.encode(), bcrypt.gensalt()).decode()
 
         row = await conn.fetchrow(
-            """INSERT INTO businesses (email, password_hash, business_name, plan)
-               VALUES ($1, $2, $3, 'trial')
-               RETURNING id, email, business_name, plan, status""",
+            """INSERT INTO businesses (email, password_hash, business_name, plan, phone)
+               VALUES ($1, $2, $3, 'trial', $4)
+               RETURNING id, email, business_name, plan, status, phone""",
             body.email.lower().strip(),
             hashed_pw,
             body.business_name.strip() or body.name.strip() or "Mi Kiosco",
+            body.phone or "",
         )
-        biz_id, biz_email, biz_name, biz_plan, biz_status = row
+        biz_id, biz_email, biz_name, biz_plan, biz_status, biz_phone = row
 
         default_pin = str(random.randint(1000, 9999))
         hashed_pin = bcrypt.hashpw(default_pin.encode(), bcrypt.gensalt()).decode()
@@ -175,6 +176,7 @@ async def auth_register(request: Request, body: BusinessCreate) -> dict:
             "business_name": biz_name,
             "plan": biz_plan,
             "status": biz_status,
+            "phone": biz_phone or "",
         },
     }
 
@@ -186,8 +188,8 @@ async def complete_onboarding(body: CompleteOnboarding, business: dict = Depends
     pool = await get_pool()
     async with pool.acquire() as conn:
         await conn.execute(
-            "UPDATE businesses SET business_name = $1 WHERE id = $2",
-            body.business_name.strip(), business["sub"]
+            "UPDATE businesses SET business_name = $1, phone = COALESCE(NULLIF($2, ''), phone) WHERE id = $3",
+            body.business_name.strip(), body.phone.strip(), business["sub"]
         )
     
     import main

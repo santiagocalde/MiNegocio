@@ -65,6 +65,7 @@ async def init_pg() -> None:
                 business_name   TEXT NOT NULL DEFAULT 'Mi Kiosco',
                 plan            TEXT NOT NULL DEFAULT 'trial',
                 plan_end_date   TIMESTAMPTZ,
+                phone           TEXT DEFAULT '',
                 status          TEXT NOT NULL DEFAULT 'active',
                 reset_token     TEXT,
                 reset_token_expires TIMESTAMPTZ,
@@ -337,6 +338,7 @@ async def init_pg() -> None:
                 catalogo_whatsapp TEXT,
                 print_config    TEXT
             );
+            ALTER TABLE businesses ADD COLUMN IF NOT EXISTS phone TEXT DEFAULT '';
             ALTER TABLE business_config ADD COLUMN IF NOT EXISTS print_config TEXT;
 
             CREATE TABLE IF NOT EXISTS audit_log (
