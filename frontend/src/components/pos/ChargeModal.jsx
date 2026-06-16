@@ -3,10 +3,9 @@ import { apiPost } from '../../services/apiClient';
 import { Icons } from '../ui/Icons';
 
 const PAYMENT_METHODS = [
-  { key: 'efectivo', label: 'Efectivo', Icon: Icons.CashIcon },
-  { key: 'tarjeta', label: 'Tarjeta', Icon: Icons.CardIcon },
-  { key: 'transferencia', label: 'Transferencia', Icon: Icons.BankIcon },
-  { key: 'mercadopago', label: 'QR M.Pago', Icon: Icons.QRIcon },
+  { key: 'efectivo',       label: 'Efectivo',       Icon: Icons.CashIcon },
+  { key: 'tarjeta',        label: 'Tarjeta Débito', Icon: Icons.CardIcon },
+  { key: 'transferencia',  label: 'Transferencia',  Icon: Icons.BankIcon },
 ];
 
 export default function ChargeModal({
@@ -22,14 +21,17 @@ export default function ChargeModal({
   cart, autoPrint, setAutoPrint,
   isProcessing,
   confirmCharge, paymentRef,
-  mpQrData, setMpQrData, mpPaymentUrl, setMpPaymentUrl,
-  mpLoading, setMpLoading, mpPaymentStatus, setMpPaymentStatus, setMpIntentId,
   businessConfig, addToast, currentOperator
 }) {
   if (!isCharging) return null;
 
   const finalTotal = adjustedTotal ?? total;
-  const isConfirmDisabled = (!useSplitPayment && paymentMethod === 'efectivo' && (payment === '' || change < 0)) || isProcessing || (paymentMethod === 'mercadopago' && mpPaymentStatus !== 'approved') || (useSplitPayment && splitPayments.reduce((s, p) => s + (parseFloat(p.amount) || 0), 0) < finalTotal);
+  const isConfirmDisabled =
+    (!useSplitPayment && paymentMethod === 'efectivo' && (payment === '' || change < 0)) ||
+    isProcessing ||
+    (useSplitPayment && splitPayments.reduce((s, p) => s + (parseFloat(p.amount) || 0), 0) < finalTotal);
+
+  const transferAlias = businessConfig?.catalogo_whatsapp || businessConfig?.mp_collector_id || null;
 
   return (
     <div className="modal-overlay" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(30,58,95,0.85)', backdropFilter: 'blur(8px)', zIndex: 1000 }} role="dialog" aria-modal="true">
@@ -77,7 +79,7 @@ export default function ChargeModal({
             {/* Payment Method Selector */}
             <div>
               <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '1px' }}>Método de Pago</label>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
                 {PAYMENT_METHODS.map(m => (
                   <button
                     key={m.key}
@@ -87,7 +89,7 @@ export default function ChargeModal({
                       borderColor: !useSplitPayment && paymentMethod === m.key ? 'var(--accent-primary)' : 'var(--border-color)',
                       background: !useSplitPayment && paymentMethod === m.key ? 'rgba(20,187,166, 0.08)' : 'var(--bg-card)',
                       color: !useSplitPayment && paymentMethod === m.key ? 'var(--accent-primary)' : 'var(--text-primary)',
-                      fontWeight: 700, cursor: 'pointer', fontSize: '1rem', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '12px', justifyContent: 'center'
+                      fontWeight: 700, cursor: 'pointer', fontSize: '0.95rem', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'center'
                     }}
                   >
                     <span style={{ width: 24, height: 24, color: 'currentColor' }}><m.Icon /></span> {m.label}
@@ -96,7 +98,7 @@ export default function ChargeModal({
               </div>
             </div>
 
-            {/* Dinero Recibido (Sólo Efectivo) */}
+            {/* Efectivo */}
             {paymentMethod === 'efectivo' && (
               <div style={{ background: 'var(--bg-card)', padding: '24px', borderRadius: '16px', border: '1px solid var(--border-color)' }}>
                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '1px' }}>¿Con cuánto paga? (Ingresa monto + Enter)</label>
@@ -109,33 +111,48 @@ export default function ChargeModal({
                   onKeyDown={e => { if (e.key === 'Enter' && change >= 0 && !isConfirmDisabled) confirmCharge(); }} 
                   style={{ width: '100%', background: 'var(--bg-main)', border: '2px solid var(--accent-primary)', color: 'var(--text-primary)', borderRadius: '12px', padding: '16px', fontSize: '2rem', fontFamily: 'var(--font-mono)', textAlign: 'center', outline: 'none', marginBottom: '16px', boxShadow: '0 0 0 4px rgba(20,187,166, 0.1)' }}
                 />
-                
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px', borderTop: '1px dashed var(--border-color)', paddingTop: '16px' }}>
                   <span style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', fontWeight: 600 }}>VUELTO:</span>
                   <div style={{ fontSize: '2rem', fontWeight: 800, color: change < 0 ? 'var(--accent-danger)' : 'var(--accent-success)', fontFamily: 'var(--font-mono)' }}>
-                    ${change < 0 ? 'Falta dinero' : change.toLocaleString('es-AR')}
+                    {change < 0 ? 'Falta dinero' : `$${change.toLocaleString('es-AR')}`}
                   </div>
                 </div>
               </div>
             )}
 
-            {/* Mercado Pago QR */}
-            {paymentMethod === 'mercadopago' && (
-              <div style={{ background: 'var(--bg-card)', padding: '24px', borderRadius: '16px', border: '1px solid var(--border-color)', textAlign: 'center' }}>
-                {mpQrData ? (
-                  <div style={{ display: 'inline-block', padding: '16px', background: 'white', borderRadius: '16px' }}>
-                    <img src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(mpQrData)}`} alt="QR" style={{ width: 200, height: 200, opacity: mpPaymentStatus === 'approved' ? 0.3 : 1 }} />
-                    {mpPaymentStatus === 'approved' && <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', color: '#10B981', fontSize: '2rem', fontWeight: 900 }}>✅ PAGADO</div>}
-                  </div>
+            {/* Transferencia - muestra alias */}
+            {paymentMethod === 'transferencia' && (
+              <div style={{ background: 'var(--bg-card)', padding: '24px', borderRadius: '16px', border: '1px solid rgba(20,187,166,0.3)', textAlign: 'center' }}>
+                <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '12px' }}>Datos para Transferencia</div>
+                {transferAlias ? (
+                  <>
+                    <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>Alias / CBU</div>
+                    <div style={{ fontSize: '1.8rem', fontWeight: 900, color: 'var(--accent-primary)', fontFamily: 'var(--font-mono)', letterSpacing: '2px', background: 'rgba(20,187,166,0.08)', padding: '16px', borderRadius: '12px', border: '1px dashed rgba(20,187,166,0.3)' }}>
+                      {transferAlias}
+                    </div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '12px' }}>
+                      Podés editar tu alias en Configuración → Datos del negocio
+                    </div>
+                  </>
                 ) : (
-                  <button onClick={async () => {
-                    setMpLoading(true); setMpPaymentStatus('pending');
-                    try {
-                      const res = await apiPost('/mercadopago/create-payment', { total: effectiveTotal, description: `Venta` });
-                      if (res.ok) { const data = await res.json(); setMpQrData(data.qr_data); if(data.intent_id) setMpIntentId(data.intent_id); } else { addToast?.('Error al generar QR de MercadoPago.', 'error'); }
-                    } catch { addToast?.('Error de conexión con MercadoPago.', 'error'); } setMpLoading(false);
-                  }} style={{ background: '#009EE3', color: 'white', border: 'none', padding: '16px 32px', borderRadius: '12px', fontSize: '1.1rem', fontWeight: 800, cursor: 'pointer' }}>Generar QR Oficial MP</button>
+                  <div style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: 1.5 }}>
+                    <p>⚠️ No tenés un alias configurado.</p>
+                    <p>Andá a <strong style={{ color: 'var(--accent-primary)' }}>Configuración → Datos del negocio</strong> para agregar tu alias o CBU.</p>
+                  </div>
                 )}
+                <div style={{ marginTop: '16px', padding: '12px', background: 'rgba(20,187,166,0.06)', borderRadius: '8px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                  Total a transferir: <strong style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>${finalTotal.toLocaleString('es-AR')}</strong>
+                </div>
+              </div>
+            )}
+
+            {/* Tarjeta débito */}
+            {paymentMethod === 'tarjeta' && (
+              <div style={{ background: 'var(--bg-card)', padding: '24px', borderRadius: '16px', border: '1px solid var(--border-color)', textAlign: 'center' }}>
+                <div style={{ fontSize: '3rem', marginBottom: '8px' }}>💳</div>
+                <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px' }}>Pasá la tarjeta por el posnet</div>
+                <div style={{ fontSize: '2rem', fontWeight: 900, color: 'var(--accent-primary)', fontFamily: 'var(--font-mono)' }}>${finalTotal.toLocaleString('es-AR')}</div>
+                <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '8px' }}>Confirmá el pago en el posnet y luego presioná "Procesar Venta"</div>
               </div>
             )}
 
@@ -143,10 +160,9 @@ export default function ChargeModal({
             <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', background: 'var(--bg-card)', padding: '16px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
                 <input type="checkbox" checked={autoPrint || false} onChange={e => setAutoPrint?.(e.target.checked)} style={{ width: '24px', height: '24px', accentColor: 'var(--accent-primary)', cursor: 'pointer' }} />
-                <span style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: '1rem' }}><Icons.Printer /> Imprimir Ticket Fisico (Opcional)</span>
+                <span style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: '1rem' }}><Icons.Printer /> Imprimir Ticket Físico (Opcional)</span>
               </label>
 
-              {/* Botonera de Acción Final */}
               <div style={{ display: 'flex', gap: '16px' }}>
                 <button onClick={() => setIsCharging(false)} style={{ flex: 1, padding: '20px', background: 'transparent', border: '2px solid var(--border-color)', color: 'var(--text-secondary)', borderRadius: '16px', fontSize: '1.1rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s' }}>
                   Cancelar (Esc)
@@ -159,7 +175,6 @@ export default function ChargeModal({
                 </button>
               </div>
             </div>
-
           </div>
         </div>
       </div>

@@ -428,10 +428,12 @@ async def today_sales(sucursal_id: Optional[int] = Query(None)) -> dict:
                     SELECT COUNT(*) as total_tickets, COALESCE(SUM(total),0) as total_vendido,
                            COALESCE(SUM(CASE WHEN is_fiado=1 THEN total ELSE 0 END),0) as total_fiado,
                            COALESCE(SUM(CASE WHEN payment_method='efectivo' AND is_fiado=0 THEN total ELSE 0 END),0) as total_efectivo,
+                           COALESCE(SUM(CASE WHEN payment_method='tarjeta' THEN total ELSE 0 END),0) as total_tarjeta,
+                           COALESCE(SUM(CASE WHEN payment_method='transferencia' THEN total ELSE 0 END),0) as total_transferencia,
                            COALESCE(SUM(CASE WHEN payment_method='mercadopago' THEN total ELSE 0 END),0) as total_mp
                     FROM sales WHERE business_id = $1 AND date(timestamp)=current_date
                 """, b_id)
-            return dict(row) if row else {"total_tickets": 0, "total_vendido": 0, "total_fiado": 0, "total_efectivo": 0, "total_mp": 0}
+            return dict(row) if row else {"total_tickets": 0, "total_vendido": 0, "total_fiado": 0, "total_efectivo": 0, "total_tarjeta": 0, "total_transferencia": 0, "total_mp": 0}
     else:
         import aiosqlite
         async with aiosqlite.connect(main.DB_PATH) as db:
@@ -448,6 +450,8 @@ async def today_sales(sucursal_id: Optional[int] = Query(None)) -> dict:
                     SELECT COUNT(*) as total_tickets, COALESCE(SUM(total),0) as total_vendido,
                            COALESCE(SUM(CASE WHEN is_fiado=1 THEN total ELSE 0 END),0) as total_fiado,
                            COALESCE(SUM(CASE WHEN payment_method='efectivo' AND is_fiado=0 THEN total ELSE 0 END),0) as total_efectivo,
+                           COALESCE(SUM(CASE WHEN payment_method='tarjeta' THEN total ELSE 0 END),0) as total_tarjeta,
+                           COALESCE(SUM(CASE WHEN payment_method='transferencia' THEN total ELSE 0 END),0) as total_transferencia,
                            COALESCE(SUM(CASE WHEN payment_method='mercadopago' THEN total ELSE 0 END),0) as total_mp
                     FROM sales WHERE date(timestamp)=date('now','localtime')
                 """)

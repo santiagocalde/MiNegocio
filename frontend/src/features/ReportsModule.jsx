@@ -39,7 +39,7 @@ export default function ReportsModule() {
   const fetchReports = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
     try {
-      let path = `/sales?limit=200`;
+      let path = `/sales?limit=500`;
       if (dateFrom) path += `&date_from=${dateFrom}`;
       if (dateTo) path += `&date_to=${dateTo}`;
       if (sucursalId) path += `&sucursal_id=${sucursalId}`;
@@ -51,12 +51,10 @@ export default function ReportsModule() {
         
         const metodos = {};
         const productos = {};
-        let totalItems = 0;
         data.forEach(s => {
           metodos[s.payment_method] = (metodos[s.payment_method] || 0) + 1;
           if (s.items && Array.isArray(s.items)) s.items.forEach(i => {
             productos[i.product_name] = (productos[i.product_name] || 0) + i.quantity;
-            totalItems += i.quantity;
           });
         });
 
@@ -69,10 +67,11 @@ export default function ReportsModule() {
         const bestProducto = bestProductoEntries[0]?.[0] || 'Varios';
         const bestProductoCount = bestProductoEntries[0]?.[1] || 0;
 
+        const metodosLabel = { mercadopago: 'Mercado Pago', tarjeta: 'Tarjeta', transferencia: 'Transferencia', efectivo: 'Efectivo' };
         setSummary({ 
           totalVentas: data.length, 
           ingresos, 
-          metodoUsado: bestMetodo === 'mercadopago' ? 'Mercado Pago' : bestMetodo === 'tarjeta' ? 'Tarjeta' : bestMetodo === 'transferencia' ? 'Transferencia' : (bestMetodo || 'Efectivo'), 
+          metodoUsado: metodosLabel[bestMetodo] || bestMetodo || 'Efectivo', 
           pctEfectivo, 
           productoPopular: bestProducto, 
           pctProducto: bestProductoCount 
@@ -82,7 +81,7 @@ export default function ReportsModule() {
       setSalesData([]);
     }
     if (!silent) setLoading(false);
-  }, [serverUrl, sucursalId, dateFrom, dateTo]);
+  }, [sucursalId, dateFrom, dateTo]);
 
   useEffect(() => {
     const today = new Date();
@@ -95,10 +94,10 @@ export default function ReportsModule() {
   useEffect(() => {
     if (dateFrom && dateTo) {
       fetchReports();
-      const interval = setInterval(() => fetchReports(true), 15000);
+      const interval = setInterval(() => fetchReports(true), 10000);
       return () => clearInterval(interval);
     }
-  }, [fetchReports, dateFrom, dateTo]);
+  }, [fetchReports]);
 
   const renderReports = () => (
     <div style={{ padding: '32px 40px', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
