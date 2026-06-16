@@ -29,7 +29,7 @@ export default function ChargeModal({
   if (!isCharging) return null;
 
   const finalTotal = adjustedTotal ?? total;
-  const isConfirmDisabled = (!useSplitPayment && paymentMethod === 'efectivo' && change < 0) || isProcessing || (paymentMethod === 'mercadopago' && mpPaymentStatus !== 'approved') || (useSplitPayment && splitPayments.reduce((s, p) => s + (parseFloat(p.amount) || 0), 0) < finalTotal);
+  const isConfirmDisabled = (!useSplitPayment && paymentMethod === 'efectivo' && (payment === '' || change < 0)) || isProcessing || (paymentMethod === 'mercadopago' && mpPaymentStatus !== 'approved') || (useSplitPayment && splitPayments.reduce((s, p) => s + (parseFloat(p.amount) || 0), 0) < finalTotal);
 
   return (
     <div className="modal-overlay" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(30,58,95,0.85)', backdropFilter: 'blur(8px)', zIndex: 1000 }} role="dialog" aria-modal="true">

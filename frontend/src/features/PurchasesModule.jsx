@@ -119,7 +119,7 @@ export default function PurchasesModule() {
   const [showAIScanner, setShowAIScanner] = useState(false);
   const currentPlan = backend.businessConfig?.plan || 'trial';
   const isLocked = PLAN_WEIGHT[currentPlan] < PLAN_WEIGHT['simple'];
-  const canUseIA = currentPlan === 'ia' || (currentPlan === 'trial' && !isTrialExpired);
+  const canUseIA = currentPlan === 'ia';
   
   const [suppliers, setSuppliers] = useState([]);
   const [purchases, setPurchases] = useState([]);
@@ -306,7 +306,7 @@ export default function PurchasesModule() {
                 {loading ? (
                   Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
                 ) : filteredPurchases.length === 0 ? (
-                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', minHeight: '300px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '48px', minHeight: '200px' }}>
                     <EmptyState icon="Truck" title={searchTerm.trim() ? 'Sin resultados' : 'Sin compras'}
                       description={searchTerm.trim() ? 'No hay compras que coincidan con la búsqueda.' : 'Todavía no registraste ninguna compra. Cargá tu primera factura manualmente o escaneala con IA.'}
                       actionLabel="+ Carga Manual" actionOnClick={() => setActiveTab('new_invoice')} />
@@ -319,7 +319,7 @@ export default function PurchasesModule() {
                             <Icons.Box />
                           </div>
                           <div style={{ flex: 1 }}>
-                            <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '1rem', marginBottom: '4px' }}>{p.supplier_name || 'Proveedor General'}</div>
+                            <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.9rem', marginBottom: '4px' }}>{p.supplier_name || 'Proveedor General'}</div>
                             <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', display: 'flex', gap: '12px' }}>
                               <span>{new Date(p.created_at).toLocaleDateString('es-AR')}</span>
                               <span>•</span>

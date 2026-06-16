@@ -41,11 +41,10 @@ export default function PaymentPanel({
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '12px' }}>
       <div style={{ background: 'var(--bg-card)', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-        <div style={{ marginBottom: '16px' }}>
-          <h2 style={{ fontSize: '1.3rem', fontWeight: 800, margin: '0 0 2px 0', color: 'var(--text-primary)', letterSpacing: '-0.2px' }}>Cliente</h2>
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>Selecciona el cliente para la venta</p>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+          <h2 style={{ fontSize: '1rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)', letterSpacing: '-0.2px' }}>Cliente</h2>
         </div>
-        <select style={{ width: '100%', height: '48px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '0 16px', borderRadius: '8px', fontSize: '0.95rem', outline: 'none', cursor: 'pointer', appearance: 'none', WebkitAppearance: 'none' }}>
+        <select style={{ width: '100%', height: '36px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '0 12px', borderRadius: '8px', fontSize: '0.85rem', outline: 'none', cursor: 'pointer', appearance: 'none', WebkitAppearance: 'none' }}>
           <option>Consumidor Final</option>
           <option>Cliente Frecuente</option>
         </select>

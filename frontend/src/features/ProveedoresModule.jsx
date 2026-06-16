@@ -104,8 +104,8 @@ export default function ProveedoresModule() {
                        <Icons.Truck />
                      </div>
                      <div style={{ flex: 1 }}>
-                       <h3 style={{ margin: '0 0 4px 0', fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)' }}>{p.name}</h3>
-                       <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Contacto: {p.contact} • {p.phone}</p>
+                       <h3 style={{ margin: '0 0 4px 0', fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-primary)' }}>{p.name}</h3>
+                       <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Contacto: {p.contact} • {p.phone}</p>
                      </div>
                      <div style={{ width: '200px', display: 'flex', alignItems: 'center', gap: '16px' }}>
                         <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Deuda:</span>

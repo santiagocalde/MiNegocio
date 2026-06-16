@@ -70,7 +70,7 @@ const ICON_MAP = {
 
 export default function Sidebar({
   currentOperator, pendingSync, setShowPendingModal,
-  todaySalesTotal, setShowResumen, setShowEgreso, setIsClosingCaja,
+  todaySalesTotal, setShowResumen, setShowEgreso, setIsClosingCaja, currentTurnId
 }) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -130,7 +130,11 @@ export default function Sidebar({
           <span style={{ fontSize: '0.8rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-primary)' }}>
             <Icons.Lock style={{ width: 14, height: 14 }} /> Mi Caja
           </span>
-          <span style={{ background: 'var(--gradient-primary)', color: 'white', padding: '2px 6px', borderRadius: '6px', fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Abierta</span>
+          {currentTurnId ? (
+            <span style={{ background: 'var(--gradient-primary)', color: 'white', padding: '2px 6px', borderRadius: '6px', fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Abierta</span>
+          ) : (
+            <span style={{ background: 'rgba(239, 68, 68, 0.2)', color: 'var(--accent-danger)', padding: '2px 6px', borderRadius: '6px', fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Cerrada</span>
+          )}
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -163,11 +167,19 @@ export default function Sidebar({
               <Icons.Chart style={{ width: 14, height: 14 }} /> Resumen del Día
             </button>
           </Tooltip>
-          <Tooltip text="F2 - Cerrar turno y cuadrar caja" block>
-            <button onClick={() => setIsClosingCaja(true)} style={{ width: '100%', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid var(--border-color)', color: 'var(--accent-danger)', padding: '6px 10px', borderRadius: '8px', fontWeight: 700, cursor: 'pointer', fontSize: '0.75rem', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-              <Icons.Lock style={{ width: 14, height: 14 }} /> Cerrar Turno
-            </button>
-          </Tooltip>
+          {currentTurnId ? (
+            <Tooltip text="F2 - Cerrar turno y cuadrar caja" block>
+              <button onClick={() => setIsClosingCaja(true)} style={{ width: '100%', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid var(--border-color)', color: 'var(--accent-danger)', padding: '6px 10px', borderRadius: '8px', fontWeight: 700, cursor: 'pointer', fontSize: '0.75rem', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                <Icons.Lock style={{ width: 14, height: 14 }} /> Cerrar Turno
+              </button>
+            </Tooltip>
+          ) : (
+            <Tooltip text="Abrir caja para vender" block>
+              <button onClick={() => { localStorage.setItem('minegocio_onboarding_pending', 'true'); window.location.reload(); }} style={{ width: '100%', background: 'var(--gradient-primary)', border: 'none', color: 'white', padding: '8px 10px', borderRadius: '8px', fontWeight: 800, cursor: 'pointer', fontSize: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', boxShadow: '0 4px 12px rgba(20, 187, 166, 0.3)' }}>
+                Abrir Caja
+              </button>
+            </Tooltip>
+          )}
         </div>
       </div>
     </aside>

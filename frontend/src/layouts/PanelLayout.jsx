@@ -98,6 +98,7 @@ export default function PanelLayout() {
         setShowResumen={backend.setShowResumen}
         setShowEgreso={backend.setShowEgreso}
         setIsClosingCaja={closeTurn.setIsClosingCaja}
+        currentTurnId={auth.currentTurnId}
       />
 
       <main style={{ flex: 1, overflow: 'auto', position: 'relative', display: 'flex', flexDirection: 'column' }}>

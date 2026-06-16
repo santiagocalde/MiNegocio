@@ -93,9 +93,9 @@ function saveCache(products, deadStock) {
   }
 }
 
-const VirtuosoTable = ({ style, ...props }) => <table style={{ ...style, width: '100%', borderCollapse: 'collapse', textAlign: 'left' }} {...props} />;
+const VirtuosoTable = forwardRef(({ style, ...props }, ref) => <table ref={ref} style={{ ...style, width: '100%', borderCollapse: 'collapse', textAlign: 'left' }} {...props} />);
 const VirtuosoTableHead = forwardRef((props, ref) => <thead ref={ref} style={{ position: 'sticky', top: 0, background: 'var(--bg-main)', zIndex: 1 }} {...props} />);
-const VirtuosoTableRow = ({ item, ...props }) => <tr {...props} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background='rgba(255,255,255,0.02)'} onMouseLeave={e => e.currentTarget.style.background='transparent'} />;
+const VirtuosoTableRow = forwardRef(({ item, ...props }, ref) => <tr ref={ref} {...props} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background='rgba(255,255,255,0.02)'} onMouseLeave={e => e.currentTarget.style.background='transparent'} />);
 
 export default function StockModule() {
   const { backend, addToast, currentSucursalId, backendError } = usePanelContext();
@@ -297,7 +297,7 @@ export default function StockModule() {
     }
 
     try {
-      let path = `/products?limit=500`;
+      let path = `/products?limit=3500`;
       if (q) path += `&q=${encodeURIComponent(q)}`;
       const res = await apiGet(path);
       const data = await res.json();
@@ -520,11 +520,7 @@ export default function StockModule() {
             <TableVirtuoso
               data={filteredProducts}
               style={{ height: '100%' }}
-              components={{
-                Table: VirtuosoTable,
-                TableHead: VirtuosoTableHead,
-                TableRow: VirtuosoTableRow
-              }}
+              className="virtuoso-stock-table"
               fixedHeaderContent={() => (
                 <tr style={{ color: 'var(--text-primary)', fontSize: '0.8rem', fontWeight: 700, borderBottom: '1px solid var(--border-color)' }}>
                   <th style={{ padding: '16px 24px', width: '80px', background: 'var(--bg-main)' }}>Imagen</th>

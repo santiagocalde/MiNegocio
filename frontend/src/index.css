@@ -483,6 +483,12 @@ html {
   background: rgba(255, 255, 255, 0.3);
 }
 
+.virtuoso-stock-table table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
 /* ── Landing Page (Optimized) ──────────────────────────────── */
 :root {
   --lp-bg: #0B132B;
