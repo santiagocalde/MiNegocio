@@ -483,10 +483,9 @@ async def list_sales(limit: int = Query(50), date_from: Optional[str] = Query(No
         params.append(limit)
         async with pool.acquire() as conn:
             rows = await conn.fetch(f"""
-                SELECT s.*, 
-                       (SELECT COALESCE(SUM(item_discount),0) FROM sale_items WHERE sale_id = s.id) as total_discount
-                FROM sales s
-                WHERE {where} ORDER BY s.timestamp DESC LIMIT ${n}
+                SELECT s.*, COALESCE(SUM(si.item_discount),0) as total_discount
+                FROM sales s LEFT JOIN sale_items si ON s.id = si.sale_id
+                WHERE {where} GROUP BY s.id ORDER BY s.timestamp DESC LIMIT ${n}
             """, *params)
             sales = [dict(r) for r in rows]
             for sale in sales:
@@ -503,10 +502,9 @@ async def list_sales(limit: int = Query(50), date_from: Optional[str] = Query(No
             where = " AND ".join(clauses)
             params.append(limit)
             cur = await db.execute(f"""
-                SELECT s.*, 
-                       (SELECT COALESCE(SUM(item_discount),0) FROM sale_items WHERE sale_id = s.id) as total_discount
-                FROM sales s
-                WHERE {where} ORDER BY s.timestamp DESC LIMIT ?
+                SELECT s.*, COALESCE(SUM(si.item_discount),0) as total_discount
+                FROM sales s LEFT JOIN sale_items si ON s.id = si.sale_id
+                WHERE {where} GROUP BY s.id ORDER BY s.timestamp DESC LIMIT ?
             """, params)
             rows = await cur.fetchall()
             sales = [row_to_dict(r, cur.description) for r in rows]
