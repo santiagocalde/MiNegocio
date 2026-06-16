@@ -30,6 +30,18 @@ export default function ProveedoresModule() {
   const fetchProveedores = () => {
     setLoading(true);
     setError(false);
+    const isPreviewMode = new URLSearchParams(window.location.search).get('preview') === 'true' || localStorage.getItem('saas_mode') === 'true';
+    if (isPreviewMode) {
+      setTimeout(() => {
+        setProveedores([
+          { id: 1, name: 'Distribuidora Arcor', contact: 'Juan Perez', phone: '1123456789', debt: 150000 },
+          { id: 2, name: 'Coca Cola Femsa', contact: 'Camión Martes', phone: '0800-COCA', debt: 0 },
+          { id: 3, name: 'Lácteos Serenísima', contact: 'Carlos', phone: '1198765432', debt: 45000 }
+        ]);
+        setLoading(false);
+      }, 400);
+      return;
+    }
     apiGet('/suppliers')
       .then(res => { 
         if (!res.ok) return []; 

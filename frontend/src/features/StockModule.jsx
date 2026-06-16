@@ -226,6 +226,26 @@ export default function StockModule() {
   const fetchProducts = async (q = '') => {
     setLoading(true);
     setOffline(false);
+
+    const isPreview = new URLSearchParams(window.location.search).get('preview') === 'true' || localStorage.getItem('saas_mode') === 'true';
+    if (isPreview) {
+      const MOCK_PRODUCTS = [
+        { id: 1, name: 'Coca Cola 2.25L Retornable', code: '7790895000997', price: 2500, cost_price: 1800, stock: 24, min_stock: 12, category_name: 'Bebidas', category_id: 1, iva: '21%' },
+        { id: 2, name: 'Alfajor Jorgito Chocolate', code: '7791234567890', price: 800, cost_price: 500, stock: 45, min_stock: 15, category_name: 'Golosinas', category_id: 2, iva: '21%' },
+        { id: 3, name: 'Yerba Playadito 1Kg', code: '7791234567891', price: 3500, cost_price: 2600, stock: 10, min_stock: 5, category_name: 'Almacén', category_id: 3, iva: '21%' },
+        { id: 4, name: 'Papas Lays Clásicas 145g', code: '7791234567892', price: 1800, cost_price: 1200, stock: 2, min_stock: 10, category_name: 'Snacks', category_id: 4, iva: '21%' },
+        { id: 5, name: 'Cerveza Quilmes 1L Retornable', code: '7791234567893', price: 1900, cost_price: 1400, stock: 36, min_stock: 24, category_name: 'Bebidas Alcoholicas', category_id: 5, iva: '21%' },
+        { id: 6, name: 'Chocolate Block 170g', code: '7791234567894', price: 2200, cost_price: 1500, stock: 0, min_stock: 10, category_name: 'Golosinas', category_id: 2, iva: '21%' },
+        { id: 7, name: 'Galletitas Oreo 117g', code: '7791234567895', price: 900, cost_price: 600, stock: 20, min_stock: 15, category_name: 'Almacén', category_id: 3, iva: '21%' }
+      ];
+      setTimeout(() => {
+        setProducts(q ? MOCK_PRODUCTS.filter(p => p.name.toLowerCase().includes(q.toLowerCase())) : MOCK_PRODUCTS);
+        setDeadStock([MOCK_PRODUCTS[1]]);
+        setLoading(false);
+      }, 400);
+      return;
+    }
+
     try {
       let path = `/products?limit=500`;
       if (q) path += `&q=${encodeURIComponent(q)}`;
