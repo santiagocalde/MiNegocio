@@ -103,13 +103,7 @@ export default function StockModule() {
   const [offline, setOffline] = useState(false);
   const { sorted: sortedProducts, toggleSort, SortIcon } = useSortable(products, 'name');
 
-  const filteredProducts = sortedProducts.filter(p => {
-    if (filterCategory && String(p.category_id) !== String(filterCategory)) return false;
-    if (filterStock === 'out_stock' && p.stock > 0) return false;
-    if (filterStock === 'in_stock' && p.stock <= 0) return false;
-    if (filterStock === 'low_stock' && p.stock > p.min_stock) return false;
-    return true;
-  });
+
 
   const [showAumentoMasivo, setShowAumentoMasivo] = useState(false);
   const [aumentoPorcentaje, setAumentoPorcentaje] = useState('');
@@ -133,13 +127,20 @@ export default function StockModule() {
       if (addToast) addToast('Código y nombre son obligatorios.', 'error');
       return;
     }
+    const price = parseFloat(newProduct.price) || 0;
+    const cost = parseFloat(newProduct.cost_price) || 0;
+    const stock = parseInt(newProduct.stock) || 0;
+    if (price < 0 || cost < 0 || stock < 0) {
+      if (addToast) addToast('Precio, costo y stock no pueden ser negativos.', 'error');
+      return;
+    }
     try {
       const res = await apiPost('/products', {
         code: newProduct.code,
         name: newProduct.name,
-        price: parseFloat(newProduct.price) || 0,
-        cost_price: parseFloat(newProduct.cost_price) || 0,
-        stock: parseInt(newProduct.stock) || 0,
+        price,
+        cost_price: cost,
+        stock,
         min_stock: parseInt(newProduct.min_stock) || 5,
         iva: newProduct.iva || '21%',
         category_id: newProduct.category_id ? parseInt(newProduct.category_id) : null,
@@ -176,10 +177,14 @@ export default function StockModule() {
   };
 
   const handleAumentoMasivo = async () => {
-    if (!aumentoPorcentaje || isNaN(aumentoPorcentaje)) return;
-    if (!window.confirm(`Vas a aumentar TODOS los precios un ${aumentoPorcentaje}%. Un producto de $1.000 pasara a costar $${Math.round(1000 * (1 + parseFloat(aumentoPorcentaje) / 100)).toLocaleString('es-AR')}. No se puede deshacer. Continuar?`)) return;
+    const pct = parseFloat(aumentoPorcentaje);
+    if (aumentoPorcentaje === '' || isNaN(pct) || pct <= 0) {
+      if (addToast) addToast('Ingresá un porcentaje mayor a 0.', 'error');
+      return;
+    }
+    if (!window.confirm(`Vas a aumentar TODOS los precios un ${pct}%. Un producto de $1.000 pasara a costar $${Math.round(1000 * (1 + pct / 100)).toLocaleString('es-AR')}. No se puede deshacer. Continuar?`)) return;
     try {
-      const payload = { percentage: parseFloat(aumentoPorcentaje) };
+      const payload = { percentage: pct };
       if (filterCategory) payload.category_id = parseInt(filterCategory);
       await apiPost('/products/batch-increase', payload);
       if (addToast) addToast(`Precios aumentados un ${aumentoPorcentaje}% exitosamente.`, 'success');
@@ -259,6 +264,15 @@ export default function StockModule() {
     fetchProducts();
   }, []);
 
+  const filteredProducts = sortedProducts.filter(p => {
+    if (p.price == null) return false;
+    if (filterCategory && String(p.category_id) !== String(filterCategory)) return false;
+    if (filterStock === 'out_stock' && p.stock > 0) return false;
+    if (filterStock === 'in_stock' && p.stock <= 0) return false;
+    if (filterStock === 'low_stock' && p.stock > p.min_stock) return false;
+    return true;
+  });
+
   const handleSearch = (e) => {
     if (e.key === 'Enter') fetchProducts(query);
   };
@@ -288,7 +302,7 @@ export default function StockModule() {
             <button onClick={() => setShowAumentoMasivo(true)} style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', color: 'var(--accent-danger)', padding: '10px 16px', borderRadius: '8px', fontSize: '0.95rem', fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
               <Icons.Chart /> Aumento Masivo
             </button>
-            <input type="file" ref={fileInputRef} accept=".csv, .xlsx" style={{ display: 'none' }} onChange={handleImportCsv} />
+            <input type="file" ref={fileInputRef} accept=".csv" style={{ display: 'none' }} onChange={handleImportCsv} />
             <button onClick={() => fileInputRef.current?.click()} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '10px 16px', borderRadius: '8px', fontSize: '0.95rem', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
               <Icons.Download /> Importar CSV
             </button>
@@ -318,7 +332,7 @@ export default function StockModule() {
             <>
               <td style={{ padding: '16px 24px', fontWeight: 600 }}>{p.name}</td>
               <td style={{ padding: '16px 24px', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>{p.code}</td>
-              <td style={{ padding: '16px 24px' }}>{p.stock} u</td>
+              <td style={{ padding: '16px 24px' }}>{p.stock ?? 0} u</td>
               <td style={{ padding: '16px 24px' }}>{new Date(p.expiry_date).toLocaleDateString('es-AR')}</td>
               <td style={{ padding: '16px 24px' }}><span style={{ background: 'rgba(234,179,8,0.1)', color: 'var(--accent-warning)', border: '1px solid rgba(234,179,8,0.3)', borderRadius: '12px', padding: '4px 12px', fontSize: '0.75rem', fontWeight: 700 }}>Vence pronto</span></td>
               <td style={{ padding: '16px 24px', color: 'var(--text-secondary)', cursor: 'pointer' }} onClick={() => {
@@ -354,8 +368,8 @@ export default function StockModule() {
             <>
               <td style={{ padding: '16px 24px', fontWeight: 600 }}>{p.name}</td>
               <td style={{ padding: '16px 24px', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>{p.code}</td>
-              <td style={{ padding: '16px 24px', color: 'var(--text-primary)', fontWeight: 700 }}>{p.stock} u</td>
-              <td style={{ padding: '16px 24px', color: 'var(--text-secondary)' }}>{p.min_stock} u</td>
+              <td style={{ padding: '16px 24px', color: 'var(--text-primary)', fontWeight: 700 }}>{p.stock ?? 0} u</td>
+              <td style={{ padding: '16px 24px', color: 'var(--text-secondary)' }}>{p.min_stock ?? 0} u</td>
               <td style={{ padding: '16px 24px' }}><span style={{ background: 'rgba(234,179,8,0.1)', color: 'var(--accent-warning)', border: '1px solid rgba(234,179,8,0.3)', borderRadius: '12px', padding: '4px 12px', fontSize: '0.75rem', fontWeight: 700 }}>Crítico</span></td>
             </>
           )}
@@ -369,8 +383,8 @@ export default function StockModule() {
               <td style={{ padding: '16px 24px', fontWeight: 600 }}>{p.name}</td>
               <td style={{ padding: '16px 24px', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>{p.code}</td>
               <td style={{ padding: '16px 24px' }}>{p.category_name}</td>
-              <td style={{ padding: '16px 24px', color: 'var(--text-primary)', fontWeight: 800 }}>{p.stock} u</td>
-              <td style={{ padding: '16px 24px', color: 'var(--text-secondary)' }}>${p.price}</td>
+              <td style={{ padding: '16px 24px', color: 'var(--text-primary)', fontWeight: 800 }}>{p.stock ?? 0} u</td>
+              <td style={{ padding: '16px 24px', color: 'var(--text-secondary)' }}>${p.price ?? 0}</td>
             </>
           )}
         />
@@ -462,20 +476,20 @@ export default function StockModule() {
                     </span>
                   </td>
                   <td style={{ padding: '16px 24px', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.95rem' }}>
-                    ${p.price.toLocaleString('es-AR')}
+                    ${(p.price ?? 0).toLocaleString('es-AR')}
                   </td>
                   <td style={{ padding: '16px 24px' }}>
                     <ToggleSwitch isOn={p.stock > 0} />
                   </td>
                   <td style={{ padding: '16px 24px' }}>
-                    <div style={{ fontWeight: 800, fontSize: '0.95rem', color: p.stock === 0 ? 'var(--accent-danger)' : 'var(--text-primary)', marginBottom: '2px' }}>{p.stock} u</div>
-                    <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>Alerta: {p.min_stock} u</div>
+                    <div style={{ fontWeight: 800, fontSize: '0.95rem', color: (p.stock ?? 0) === 0 ? 'var(--accent-danger)' : 'var(--text-primary)', marginBottom: '2px' }}>{p.stock ?? 0} u</div>
+                    <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>Alerta: {p.min_stock ?? 0} u</div>
                   </td>
                   <td style={{ padding: '16px 24px', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
                     Sin proveedor
                   </td>
                   <td style={{ padding: '16px 24px', textAlign: 'center' }}>
-                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                    <div style={{ display: 'flex', gap: '4px', justifyContent: 'center', flexWrap: 'wrap' }}>
                       <button onClick={async () => {
                         const newPrice = prompt(`Nuevo precio para ${p.name} (actual: $${p.price}):`, p.price);
                         if (newPrice !== null && !isNaN(newPrice) && parseFloat(newPrice) >= 0) {
@@ -492,7 +506,41 @@ export default function StockModule() {
                             if (addToast) addToast('Error de conexión.', 'error');
                           }
                         }
-                      }} style={{ background: 'transparent', color: 'var(--text-secondary)', border: '1px solid var(--border-color)', padding: '6px 12px', borderRadius: '6px', fontSize: '0.8rem', cursor: 'pointer', fontWeight: 600 }}>Editar</button>
+                      }} style={{ background: 'transparent', color: 'var(--text-secondary)', border: '1px solid var(--border-color)', padding: '6px 8px', borderRadius: '6px', fontSize: '0.75rem', cursor: 'pointer', fontWeight: 600 }}>$ Precio</button>
+                      <button onClick={async () => {
+                        const newStock = prompt(`Nuevo stock para ${p.name} (actual: ${p.stock}):`, p.stock);
+                        if (newStock !== null && !isNaN(newStock) && parseInt(newStock) >= 0) {
+                          try {
+                            const res = await apiPatch(`/products/${p.id}/stock`, { stock: parseInt(newStock) });
+                            if (res.ok) {
+                              if (addToast) addToast(`Stock de ${p.name} actualizado.`, 'success');
+                              fetchProducts();
+                              if (onProductsUpdated) onProductsUpdated();
+                            } else {
+                              if (addToast) addToast('Error al actualizar stock.', 'error');
+                            }
+                          } catch {
+                            if (addToast) addToast('Error de conexión.', 'error');
+                          }
+                        }
+                      }} style={{ background: 'transparent', color: 'var(--text-secondary)', border: '1px solid var(--border-color)', padding: '6px 8px', borderRadius: '6px', fontSize: '0.75rem', cursor: 'pointer', fontWeight: 600 }}>Stock</button>
+                      <button onClick={async () => {
+                        const newName = prompt(`Nuevo nombre para ${p.name}:`, p.name);
+                        if (newName !== null && newName.trim()) {
+                          try {
+                            const res = await apiPatch(`/products/${p.id}`, { name: newName.trim() });
+                            if (res.ok) {
+                              if (addToast) addToast(`Nombre de ${p.name} actualizado.`, 'success');
+                              fetchProducts();
+                              if (onProductsUpdated) onProductsUpdated();
+                            } else {
+                              if (addToast) addToast('Error al actualizar nombre.', 'error');
+                            }
+                          } catch {
+                            if (addToast) addToast('Error de conexión.', 'error');
+                          }
+                        }
+                      }} style={{ background: 'transparent', color: 'var(--text-secondary)', border: '1px solid var(--border-color)', padding: '6px 8px', borderRadius: '6px', fontSize: '0.75rem', cursor: 'pointer', fontWeight: 600 }}>Nombre</button>
                       {p.is_virtual === 1 && p.stock > 0 && (
                         <button onClick={() => handleUnpack(p.id)} style={{ background: 'rgba(59, 130, 246, 0.1)', color: 'var(--accent-primary)', border: '1px solid rgba(59, 130, 246, 0.2)', padding: '6px 12px', borderRadius: '6px', fontSize: '0.8rem', cursor: 'pointer', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Icons.Package style={{ width: '14px', height: '14px' }} /> Desarmar</button>
                       )}
