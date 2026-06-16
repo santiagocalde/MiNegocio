@@ -306,7 +306,7 @@ export default function PurchasesModule() {
                 {loading ? (
                   Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
                 ) : filteredPurchases.length === 0 ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '48px', minHeight: '200px' }}>
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', paddingTop: '60px', minHeight: '300px' }}>
                     <EmptyState icon="Truck" title={searchTerm.trim() ? 'Sin resultados' : 'Sin compras'}
                       description={searchTerm.trim() ? 'No hay compras que coincidan con la búsqueda.' : 'Todavía no registraste ninguna compra. Cargá tu primera factura manualmente o escaneala con IA.'}
                       actionLabel="+ Carga Manual" actionOnClick={() => setActiveTab('new_invoice')} />
