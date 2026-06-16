@@ -53,6 +53,22 @@ export default function TopBar({ currentOperator, sucursales, currentSucursalId,
             Sin conexion
           </span>
         )}
+
+        {(() => {
+          const isPreview = new URLSearchParams(window.location.search).get('preview') === 'true' || localStorage.getItem('saas_mode') === 'true';
+          if (isPreview) {
+            return (
+              <button onClick={() => { localStorage.removeItem('saas_token'); localStorage.removeItem('saas_mode'); window.location.href = '/'; }} style={{ background: 'var(--gradient-primary)', color: 'white', border: 'none', padding: '10px 16px', borderRadius: '8px', fontSize: '0.95rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                Salir de Preview
+              </button>
+            );
+          }
+          return (
+            <button onClick={() => { localStorage.removeItem('saas_token'); window.location.href = '/'; }} style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', color: 'var(--text-secondary)', padding: '10px 16px', borderRadius: '8px', fontSize: '0.95rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
+               Cerrar Sesión
+            </button>
+          );
+        })()}
       </div>
 
       {showTutorial && (
