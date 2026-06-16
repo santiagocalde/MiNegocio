@@ -25,13 +25,13 @@ const Icons = {
 
 function AlertAccordion({ icon: Icon, title, subtitle, data, isOpen, onToggle, columns, renderRow }) {
   return (
-    <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '12px', marginBottom: '12px', overflow: 'hidden' }}>
-      <div onClick={onToggle} style={{ padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', transition: 'background 0.2s' }} onMouseEnter={e=>e.currentTarget.style.background='var(--bg-hover)'} onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ color: 'var(--text-secondary)', transform: 'scale(0.85)' }}><Icon /></div>
+    <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', marginBottom: '8px', overflow: 'hidden' }}>
+      <div onClick={onToggle} style={{ padding: '6px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', transition: 'background 0.2s' }} onMouseEnter={e=>e.currentTarget.style.background='var(--bg-hover)'} onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ color: 'var(--text-secondary)', transform: 'scale(0.7)' }}><Icon /></div>
           <div>
-            <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.95rem' }}>{title}</div>
-            <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>{subtitle}</div>
+            <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.85rem' }}>{title}</div>
+            <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem' }}>{subtitle}</div>
           </div>
         </div>
         <div style={{ color: 'var(--text-secondary)' }}>
@@ -43,7 +43,7 @@ function AlertAccordion({ icon: Icon, title, subtitle, data, isOpen, onToggle, c
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
-                {columns.map((c, i) => <th key={i} style={{ padding: '12px 24px', color: 'var(--text-primary)', fontSize: '0.95rem', fontWeight: 600 }}>{c}</th>)}
+                {columns.map((c, i) => <th key={i} style={{ padding: '8px 16px', color: 'var(--text-primary)', fontSize: '0.8rem', fontWeight: 600 }}>{c}</th>)}
               </tr>
             </thead>
             <tbody>
@@ -56,31 +56,6 @@ function AlertAccordion({ icon: Icon, title, subtitle, data, isOpen, onToggle, c
           </table>
         </div>
       )}
-
-      <ConfirmModal
-        isOpen={confirmState.isOpen}
-        title={confirmState.title}
-        message={confirmState.message}
-        onClose={() => setConfirmState(prev => ({...prev, isOpen: false}))}
-        onConfirm={confirmState.onConfirm}
-        confirmLabel={confirmState.confirmLabel}
-        variant={confirmState.variant}
-      />
-
-      {showNewCategory && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(30,58,95,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100 }}>
-          <div style={{ background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '24px', width: '300px' }}>
-            <h3 style={{ margin: '0 0 16px 0', color: 'var(--text-primary)' }}>Nueva Categoría</h3>
-            <input type="text" value={newCategoryName} onChange={e => setNewCategoryName(e.target.value)} autoFocus
-                   placeholder="Nombre de categoría"
-                   style={{ width: '100%', padding: '10px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '8px', marginBottom: '16px', outline: 'none', boxSizing: 'border-box' }} />
-            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-              <button onClick={() => { setShowNewCategory(false); setNewCategoryName(''); }} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', padding: '8px 12px', borderRadius: '8px', cursor: 'pointer' }}>Cancelar</button>
-              <button onClick={handleCreateCategory} style={{ background: 'var(--gradient-primary)', border: 'none', color: 'white', padding: '8px 12px', borderRadius: '8px', cursor: 'pointer' }}>Crear</button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -89,31 +64,6 @@ function ToggleSwitch({ isOn }) {
   return (
     <div style={{ width: '36px', height: '20px', background: isOn ? 'var(--gradient-primary)' : 'rgba(255,255,255,0.1)', borderRadius: '20px', position: 'relative', cursor: 'pointer', transition: 'all 0.3s' }}>
       <div style={{ width: '16px', height: '16px', background: 'white', borderRadius: '50%', position: 'absolute', top: '2px', left: isOn ? '18px' : '2px', transition: 'all 0.3s' }} />
-
-      <ConfirmModal
-        isOpen={confirmState.isOpen}
-        title={confirmState.title}
-        message={confirmState.message}
-        onClose={() => setConfirmState(prev => ({...prev, isOpen: false}))}
-        onConfirm={confirmState.onConfirm}
-        confirmLabel={confirmState.confirmLabel}
-        variant={confirmState.variant}
-      />
-
-      {showNewCategory && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(30,58,95,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100 }}>
-          <div style={{ background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '24px', width: '300px' }}>
-            <h3 style={{ margin: '0 0 16px 0', color: 'var(--text-primary)' }}>Nueva Categoría</h3>
-            <input type="text" value={newCategoryName} onChange={e => setNewCategoryName(e.target.value)} autoFocus
-                   placeholder="Nombre de categoría"
-                   style={{ width: '100%', padding: '10px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '8px', marginBottom: '16px', outline: 'none', boxSizing: 'border-box' }} />
-            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-              <button onClick={() => { setShowNewCategory(false); setNewCategoryName(''); }} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', padding: '8px 12px', borderRadius: '8px', cursor: 'pointer' }}>Cancelar</button>
-              <button onClick={handleCreateCategory} style={{ background: 'var(--gradient-primary)', border: 'none', color: 'white', padding: '8px 12px', borderRadius: '8px', cursor: 'pointer' }}>Crear</button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -143,6 +93,10 @@ function saveCache(products, deadStock) {
   }
 }
 
+const VirtuosoTable = ({ style, ...props }) => <table style={{ ...style, width: '100%', borderCollapse: 'collapse', textAlign: 'left' }} {...props} />;
+const VirtuosoTableHead = forwardRef((props, ref) => <thead ref={ref} style={{ position: 'sticky', top: 0, background: 'var(--bg-main)', zIndex: 1 }} {...props} />);
+const VirtuosoTableRow = ({ item, ...props }) => <tr {...props} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background='rgba(255,255,255,0.02)'} onMouseLeave={e => e.currentTarget.style.background='transparent'} />;
+
 export default function StockModule() {
   const { backend, addToast, currentSucursalId, backendError } = usePanelContext();
   const onProductsUpdated = backend.fetchProductsDB;
@@ -171,6 +125,7 @@ export default function StockModule() {
   const [confirmState, setConfirmState] = useState({ isOpen: false, title: '', message: '', onConfirm: null, confirmLabel: 'Confirmar', variant: 'danger' });
   const [showNewCategory, setShowNewCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
+  const [promptState, setPromptState] = useState({ isOpen: false, title: '', value: '', onConfirm: null });
 
   const handleCreateCategory = async () => {
     if(!newCategoryName.trim()) return;
@@ -566,9 +521,9 @@ export default function StockModule() {
               data={filteredProducts}
               style={{ height: '100%' }}
               components={{
-                Table: ({ style, ...props }) => <table style={{ ...style, width: '100%', borderCollapse: 'collapse', textAlign: 'left' }} {...props} />,
-                TableHead: forwardRef((props, ref) => <thead ref={ref} style={{ position: 'sticky', top: 0, background: 'var(--bg-main)', zIndex: 1 }} {...props} />),
-                TableRow: ({ item, ...props }) => <tr {...props} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background='rgba(255,255,255,0.02)'} onMouseLeave={e => e.currentTarget.style.background='transparent'} />
+                Table: VirtuosoTable,
+                TableHead: VirtuosoTableHead,
+                TableRow: VirtuosoTableRow
               }}
               fixedHeaderContent={() => (
                 <tr style={{ color: 'var(--text-primary)', fontSize: '0.8rem', fontWeight: 700, borderBottom: '1px solid var(--border-color)' }}>
@@ -602,7 +557,9 @@ export default function StockModule() {
                     ${(p.price ?? 0).toLocaleString('es-AR')}
                   </td>
                   <td style={{ padding: '16px 24px' }}>
-                    <ToggleSwitch isOn={p.stock > 0} />
+                    <span style={{ background: p.stock > 0 ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)', color: p.stock > 0 ? 'var(--accent-success)' : 'var(--accent-danger)', padding: '4px 10px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                      {p.stock > 0 ? 'Con Stock' : 'Sin Stock'}
+                    </span>
                   </td>
                   <td style={{ padding: '16px 24px' }}>
                     <div style={{ fontWeight: 800, fontSize: '0.95rem', color: (p.stock ?? 0) === 0 ? 'var(--accent-danger)' : 'var(--text-primary)', marginBottom: '2px' }}>{p.stock ?? 0} u</div>
@@ -613,56 +570,77 @@ export default function StockModule() {
                   </td>
                   <td style={{ padding: '16px 24px', textAlign: 'center' }}>
                     <div style={{ display: 'flex', gap: '4px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                      <button onClick={async () => {
-                        const newPrice = prompt(`Nuevo precio para ${p.name} (actual: $${p.price}):`, p.price);
-                        if (newPrice !== null && !isNaN(newPrice) && parseFloat(newPrice) >= 0) {
-                          try {
-                            const res = await apiPatch(`/products/${p.id}/price`, { price: parseFloat(newPrice) });
-                            if (res.ok) {
-                              if (addToast) addToast(`Precio de ${p.name} actualizado.`, 'success');
-                              fetchProducts();
-                              if (onProductsUpdated) onProductsUpdated();
-                            } else {
-                              if (addToast) addToast('Error al actualizar precio.', 'error');
+                      <button onClick={() => {
+                        setPromptState({
+                          isOpen: true,
+                          title: `Nuevo precio para ${p.name} (actual: $${p.price})`,
+                          value: p.price ?? '',
+                          onConfirm: async (newPrice) => {
+                            setPromptState(prev => ({...prev, isOpen: false}));
+                            if (newPrice !== null && newPrice !== '' && !isNaN(newPrice) && parseFloat(newPrice) >= 0) {
+                              try {
+                                const res = await apiPatch(`/products/${p.id}/price`, { price: parseFloat(newPrice) });
+                                if (res.ok) {
+                                  if (addToast) addToast(`Precio de ${p.name} actualizado.`, 'success');
+                                  fetchProducts();
+                                  if (onProductsUpdated) onProductsUpdated();
+                                } else {
+                                  if (addToast) addToast('Error al actualizar precio.', 'error');
+                                }
+                              } catch {
+                                if (addToast) addToast('Error de conexión.', 'error');
+                              }
                             }
-                          } catch {
-                            if (addToast) addToast('Error de conexión.', 'error');
                           }
-                        }
+                        });
                       }} style={{ background: 'transparent', color: 'var(--text-secondary)', border: '1px solid var(--border-color)', padding: '6px 8px', borderRadius: '6px', fontSize: '0.75rem', cursor: 'pointer', fontWeight: 600 }}>$ Precio</button>
-                      <button onClick={async () => {
-                        const newStock = prompt(`Nuevo stock para ${p.name} (actual: ${p.stock}):`, p.stock);
-                        if (newStock !== null && !isNaN(newStock) && parseInt(newStock) >= 0) {
-                          try {
-                            const res = await apiPatch(`/products/${p.id}/stock`, { stock: parseInt(newStock) });
-                            if (res.ok) {
-                              if (addToast) addToast(`Stock de ${p.name} actualizado.`, 'success');
-                              fetchProducts();
-                              if (onProductsUpdated) onProductsUpdated();
-                            } else {
-                              if (addToast) addToast('Error al actualizar stock.', 'error');
+                      <button onClick={() => {
+                        setPromptState({
+                          isOpen: true,
+                          title: `Nuevo stock para ${p.name} (actual: ${p.stock})`,
+                          value: p.stock ?? '',
+                          onConfirm: async (newStock) => {
+                            setPromptState(prev => ({...prev, isOpen: false}));
+                            if (newStock !== null && newStock !== '' && !isNaN(newStock) && parseInt(newStock) >= 0) {
+                              try {
+                                const res = await apiPatch(`/products/${p.id}/stock`, { stock: parseInt(newStock) });
+                                if (res.ok) {
+                                  if (addToast) addToast(`Stock de ${p.name} actualizado.`, 'success');
+                                  fetchProducts();
+                                  if (onProductsUpdated) onProductsUpdated();
+                                } else {
+                                  if (addToast) addToast('Error al actualizar stock.', 'error');
+                                }
+                              } catch {
+                                if (addToast) addToast('Error de conexión.', 'error');
+                              }
                             }
-                          } catch {
-                            if (addToast) addToast('Error de conexión.', 'error');
                           }
-                        }
+                        });
                       }} style={{ background: 'transparent', color: 'var(--text-secondary)', border: '1px solid var(--border-color)', padding: '6px 8px', borderRadius: '6px', fontSize: '0.75rem', cursor: 'pointer', fontWeight: 600 }}>Stock</button>
-                      <button onClick={async () => {
-                        const newName = prompt(`Nuevo nombre para ${p.name}:`, p.name);
-                        if (newName !== null && newName.trim()) {
-                          try {
-                            const res = await apiPatch(`/products/${p.id}`, { name: newName.trim() });
-                            if (res.ok) {
-                              if (addToast) addToast(`Nombre de ${p.name} actualizado.`, 'success');
-                              fetchProducts();
-                              if (onProductsUpdated) onProductsUpdated();
-                            } else {
-                              if (addToast) addToast('Error al actualizar nombre.', 'error');
+                      <button onClick={() => {
+                        setPromptState({
+                          isOpen: true,
+                          title: `Nuevo nombre para ${p.name}`,
+                          value: p.name,
+                          onConfirm: async (newName) => {
+                            setPromptState(prev => ({...prev, isOpen: false}));
+                            if (newName !== null && newName.trim()) {
+                              try {
+                                const res = await apiPatch(`/products/${p.id}`, { name: newName.trim() });
+                                if (res.ok) {
+                                  if (addToast) addToast(`Nombre de ${p.name} actualizado.`, 'success');
+                                  fetchProducts();
+                                  if (onProductsUpdated) onProductsUpdated();
+                                } else {
+                                  if (addToast) addToast('Error al actualizar nombre.', 'error');
+                                }
+                              } catch {
+                                if (addToast) addToast('Error de conexión.', 'error');
+                              }
                             }
-                          } catch {
-                            if (addToast) addToast('Error de conexión.', 'error');
                           }
-                        }
+                        });
                       }} style={{ background: 'transparent', color: 'var(--text-secondary)', border: '1px solid var(--border-color)', padding: '6px 8px', borderRadius: '6px', fontSize: '0.75rem', cursor: 'pointer', fontWeight: 600 }}>Nombre</button>
                       {p.is_virtual === 1 && p.stock > 0 && (
                         <button onClick={() => handleUnpack(p.id)} style={{ background: 'rgba(59, 130, 246, 0.1)', color: 'var(--accent-primary)', border: '1px solid rgba(59, 130, 246, 0.2)', padding: '6px 12px', borderRadius: '6px', fontSize: '0.8rem', cursor: 'pointer', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Icons.Package style={{ width: '14px', height: '14px' }} /> Desarmar</button>
@@ -785,6 +763,29 @@ export default function StockModule() {
             <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
               <button onClick={() => { setShowNewCategory(false); setNewCategoryName(''); }} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', padding: '8px 12px', borderRadius: '8px', cursor: 'pointer' }}>Cancelar</button>
               <button onClick={handleCreateCategory} style={{ background: 'var(--gradient-primary)', border: 'none', color: 'white', padding: '8px 12px', borderRadius: '8px', cursor: 'pointer' }}>Crear</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {promptState.isOpen && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(30,58,95,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100 }}>
+          <div style={{ background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '24px', width: '320px', boxShadow: '0 10px 25px rgba(0,0,0,0.5)' }}>
+            <h3 style={{ margin: '0 0 16px 0', color: 'var(--text-primary)', fontSize: '1.1rem', fontWeight: 700 }}>{promptState.title}</h3>
+            <input 
+              type="number" 
+              step="any" 
+              value={promptState.value} 
+              onChange={e => setPromptState({...promptState, value: e.target.value})} 
+              autoFocus
+              onKeyDown={e => {
+                if (e.key === 'Enter') promptState.onConfirm(promptState.value);
+                if (e.key === 'Escape') setPromptState({...promptState, isOpen: false});
+              }}
+              style={{ width: '100%', padding: '12px 16px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '8px', marginBottom: '24px', outline: 'none', boxSizing: 'border-box', fontSize: '1.2rem', fontWeight: 800, textAlign: 'center' }} 
+            />
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+              <button onClick={() => setPromptState({...promptState, isOpen: false})} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', padding: '10px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Cancelar</button>
+              <button onClick={() => promptState.onConfirm(promptState.value)} style={{ background: 'var(--gradient-primary)', border: 'none', color: 'white', padding: '10px 24px', borderRadius: '8px', cursor: 'pointer', fontWeight: 700 }}>Guardar</button>
             </div>
           </div>
         </div>

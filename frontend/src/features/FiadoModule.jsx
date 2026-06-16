@@ -22,6 +22,9 @@ export default function FiadoModule() {
   const [transactionsMap, setTransactionsMap] = useState({});
   const [abonoModal, setAbonoModal] = useState(null); // {id, name, balance}
   const [abonoAmount, setAbonoAmount] = useState('');
+  const [newClientModal, setNewClientModal] = useState(false);
+  const [newClientName, setNewClientName] = useState('');
+  const [newClientPhone, setNewClientPhone] = useState('');
 
   const fetchCustomers = async () => {
     setLoading(true);
@@ -29,7 +32,7 @@ export default function FiadoModule() {
       const res = await apiGet('/customers');
       if (res.ok) {
         const data = await res.json();
-        setCustomers(data.filter(c => c.balance > 0));
+        setCustomers(data);
       }
     } catch {
       setCustomers([]);
@@ -86,6 +89,24 @@ export default function FiadoModule() {
     }
   };
 
+  const handleCreateClient = async () => {
+    if (!newClientName.trim()) return;
+    try {
+      const res = await apiPost('/customers', { name: newClientName, phone: newClientPhone });
+      if (res.ok) {
+        addToast?.('Cliente creado exitosamente.', 'success');
+        setNewClientModal(false);
+        setNewClientName('');
+        setNewClientPhone('');
+        fetchCustomers();
+      } else {
+        addToast?.('Error al crear cliente.', 'error');
+      }
+    } catch {
+      addToast?.('Error de conexión al crear cliente.', 'error');
+    }
+  };
+
   const filteredCustomers = customers.filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase()));
   const totalDeuda = customers.reduce((acc, c) => acc + c.balance, 0);
 
@@ -112,16 +133,24 @@ export default function FiadoModule() {
         </div>
       </div>
 
-      {/* BUSCADOR */}
-      <div style={{ position: 'relative', marginBottom: '24px', flexShrink: 0 }}>
-        <span style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }}><Icons.Search /></span>
-        <input 
-          type="text" 
-          placeholder="Buscar cliente por nombre..." 
-          value={searchTerm}
-          onChange={e => setSearchTerm(e.target.value)}
-          style={{ width: '100%', background: 'var(--bg-main)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '16px 16px 16px 48px', borderRadius: '12px', fontSize: '1rem', outline: 'none' }} 
-        />
+      {/* BUSCADOR Y NUEVO CLIENTE */}
+      <div style={{ display: 'flex', gap: '16px', marginBottom: '24px', flexShrink: 0 }}>
+        <div style={{ position: 'relative', flex: 1 }}>
+          <span style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }}><Icons.Search /></span>
+          <input 
+            type="text" 
+            placeholder="Buscar cliente por nombre..." 
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+            style={{ width: '100%', background: 'var(--bg-main)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '16px 16px 16px 48px', borderRadius: '12px', fontSize: '1rem', outline: 'none' }} 
+          />
+        </div>
+        <button 
+          onClick={() => setNewClientModal(true)}
+          style={{ padding: '0 24px', background: 'var(--gradient-primary)', color: 'white', border: 'none', borderRadius: '12px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 8px 16px -4px rgba(20,187,166,0.3)' }}
+        >
+          <span style={{ fontSize: '1.2rem' }}>+</span> Nuevo Cliente
+        </button>
       </div>
 
       {/* LISTA DE CLIENTES */}
@@ -236,6 +265,31 @@ export default function FiadoModule() {
           </div>
         </div>
       )}
+      {/* MODAL NUEVO CLIENTE */}
+      {newClientModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(15,23,42,0.85)', backdropFilter: 'blur(8px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '24px', width: '400px', maxWidth: '90vw', padding: '32px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}>
+            <h3 style={{ margin: '0 0 8px 0', fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)' }}>Nuevo Cliente</h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '24px' }}>Registre un nuevo cliente en el sistema.</p>
+            
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Nombre Completo *</label>
+              <input type="text" value={newClientName} onChange={e => setNewClientName(e.target.value)} style={{ width: '100%', background: 'var(--bg-main)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '12px 16px', borderRadius: '12px', fontSize: '1rem', outline: 'none' }} autoFocus />
+            </div>
+
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Teléfono (Opcional)</label>
+              <input type="text" value={newClientPhone} onChange={e => setNewClientPhone(e.target.value)} style={{ width: '100%', background: 'var(--bg-main)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '12px 16px', borderRadius: '12px', fontSize: '1rem', outline: 'none' }} />
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button onClick={() => setNewClientModal(false)} style={{ flex: 1, padding: '14px', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', borderRadius: '12px', fontWeight: 700, cursor: 'pointer' }}>Cancelar</button>
+              <button onClick={handleCreateClient} disabled={!newClientName.trim()} style={{ flex: 1, padding: '14px', background: newClientName.trim() ? 'var(--gradient-primary)' : 'var(--bg-hover)', color: newClientName.trim() ? 'white' : 'var(--text-secondary)', border: 'none', borderRadius: '12px', fontWeight: 800, cursor: newClientName.trim() ? 'pointer' : 'not-allowed' }}>Crear Cliente</button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
