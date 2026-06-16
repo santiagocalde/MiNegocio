@@ -8,7 +8,12 @@ function PriceCheckModal({ showPriceCheck, setShowPriceCheck, priceCheckQuery, s
       return;
     }
     const qLower = priceCheckQuery.toLowerCase();
-    const filtered = productsDB?.filter(p => p.name?.toLowerCase().includes(qLower) || p.code?.toLowerCase().includes(qLower)) || [];
+    const qWords = qLower.split(' ').filter(Boolean);
+    const filtered = productsDB?.filter(p => {
+      const n = p.name?.toLowerCase() || '';
+      const c = p.code?.toLowerCase() || '';
+      return qWords.every(w => n.includes(w) || c.includes(w));
+    }) || [];
     setPriceCheckResults(filtered.slice(0, 30));
   }, [priceCheckQuery, showPriceCheck, productsDB, setPriceCheckResults]);
 

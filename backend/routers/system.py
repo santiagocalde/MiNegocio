@@ -237,8 +237,8 @@ async def list_plans() -> list:
             rows = await conn.fetch("SELECT slug, name, monthly_price, yearly_price, max_products, max_users, features FROM plans WHERE is_active = true ORDER BY sort_order")
         return [{"id": r["slug"], "name": r["name"], "monthly": r["monthly_price"], "yearly": r["yearly_price"], "desc": f"Hasta {r['max_products']:,} productos".replace(",", "."), "features": json.loads(r["features"]) if isinstance(r["features"], str) else r["features"], "popular": r["slug"] == "pro"} for r in rows]
     except:
-        return [{"id": "simple", "name": "Simple", "monthly": 20000, "yearly": 200000, "desc": "Hasta 3.500 productos", "popular": False, "features": ["Hasta 3.500 productos", "Clientes y ventas", "Soporta cortes de internet", "Manejo de fiados", "Lector laser e impresoras", "Hasta 2 usuarios"]},
-                {"id": "pro", "name": "Pro", "monthly": 30000, "yearly": 300000, "desc": "Hasta 7.000 productos", "popular": True, "features": ["Todo lo de Simple", "Hasta 7.000 productos", "Manejo de proveedores", "Catalogo web online QR", "Reportes de ventas detallados", "Hasta 5 usuarios"]},
+        return [{"id": "simple", "name": "Simple", "monthly": 20000, "yearly": 200000, "desc": "Hasta 3.500 productos", "popular": False, "features": ["Hasta 3.500 productos", "Clientes y ventas", "Soporta cortes de internet", "Manejo de fiados", "Manejo de proveedores", "Lector laser e impresoras", "Hasta 2 usuarios"]},
+                {"id": "pro", "name": "Pro", "monthly": 30000, "yearly": 300000, "desc": "Hasta 7.000 productos", "popular": True, "features": ["Todo lo de Simple", "Hasta 7.000 productos", "Catalogo web online QR", "Reportes de ventas detallados", "Hasta 5 usuarios"]},
                 {"id": "ia", "name": "IA", "monthly": 40000, "yearly": 400000, "desc": "Hasta 10.000 productos", "popular": False, "features": ["Todo lo de Pro", "Hasta 10.000 productos", "Escanner de facturas IA", "Asesor de precios inteligente", "Reportes de rentabilidad", "Hasta 10 usuarios"]}]
 
 

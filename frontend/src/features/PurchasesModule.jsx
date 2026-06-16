@@ -111,7 +111,7 @@ function formatPesos(n) {
 }
 
 export default function PurchasesModule() {
-  const { backend, addToast, auth, currentSucursalId } = usePanelContext();
+  const { backend, addToast, auth, currentSucursalId, isTrialExpired } = usePanelContext();
   const globalProductsDB = backend.productsDB;
   const onProductsUpdated = backend.fetchProductsDB;
   const currentTurnId = auth.currentTurnId;
@@ -119,6 +119,7 @@ export default function PurchasesModule() {
   const [showAIScanner, setShowAIScanner] = useState(false);
   const currentPlan = backend.businessConfig?.plan || 'trial';
   const isLocked = PLAN_WEIGHT[currentPlan] < PLAN_WEIGHT['simple'];
+  const canUseIA = currentPlan === 'ia' || (currentPlan === 'trial' && !isTrialExpired);
   
   const [suppliers, setSuppliers] = useState([]);
   const [purchases, setPurchases] = useState([]);
@@ -273,8 +274,10 @@ export default function PurchasesModule() {
               <button onClick={() => setActiveTab('new_invoice')} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '10px 16px', borderRadius: '8px', fontSize: '0.95rem', fontWeight: 600, cursor: 'pointer', height: '46px', transition: 'all 0.2s' }}>
                 + Carga Manual
               </button>
-              <button onClick={() => setShowAIScanner(true)} style={{ background: 'var(--gradient-primary)', border: 'none', color: 'white', padding: '10px 20px', borderRadius: '8px', fontSize: '0.95rem', fontWeight: 700, cursor: 'pointer', height: '46px', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 4px 12px rgba(20, 187, 166, 0.3)' }}>
-                <Icons.Sparkles /> Escanear Factura
+              <button 
+                onClick={() => canUseIA ? setShowAIScanner(true) : addToast('Esta función requiere el Plan IA.', 'info')} 
+                style={{ background: canUseIA ? 'var(--gradient-primary)' : 'rgba(255,255,255,0.05)', border: canUseIA ? 'none' : '1px solid rgba(255,255,255,0.1)', color: canUseIA ? 'white' : 'var(--text-secondary)', padding: '10px 20px', borderRadius: '8px', fontSize: '0.95rem', fontWeight: 700, cursor: canUseIA ? 'pointer' : 'not-allowed', height: '46px', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: canUseIA ? '0 4px 12px rgba(20, 187, 166, 0.3)' : 'none' }}>
+                {canUseIA ? <Icons.Sparkles /> : <Icons.Lock style={{width: 16, height: 16}} />} Escanear Factura
               </button>
             </>
           ) : (
@@ -303,7 +306,7 @@ export default function PurchasesModule() {
                 {loading ? (
                   Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
                 ) : filteredPurchases.length === 0 ? (
-                  <div style={{ padding: '40px 0' }}>
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', minHeight: '300px' }}>
                     <EmptyState icon="Truck" title={searchTerm.trim() ? 'Sin resultados' : 'Sin compras'}
                       description={searchTerm.trim() ? 'No hay compras que coincidan con la búsqueda.' : 'Todavía no registraste ninguna compra. Cargá tu primera factura manualmente o escaneala con IA.'}
                       actionLabel="+ Carga Manual" actionOnClick={() => setActiveTab('new_invoice')} />

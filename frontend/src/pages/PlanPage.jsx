@@ -87,7 +87,7 @@ function PlanCard({ plan, isYearly, currentPlan, onSubscribe }) {
           color: '#fff',
           border: plan.popular ? 'none' : '1px solid var(--border-color)'
         }}>
-          {plan.cta}
+          {plan.id === 'simple' && currentPlan === 'trial' ? 'Adquirir' : plan.cta || 'Adquirir'}
         </button>
       )}
     </div>
@@ -113,7 +113,7 @@ export default function PlanPage() {
             yearly: p.yearly,
             features: p.features || [],
             popular: p.popular || false,
-            cta: 'Contactar Ventas',
+            cta: 'Adquirir',
           })));
         }
       })

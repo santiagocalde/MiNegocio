@@ -36,8 +36,8 @@ export default function ReportsModule() {
   const isPaid = currentPlan === 'pro' || currentPlan === 'ia';
   const showGate = currentPlan === 'trial' && isTrialExpired && !isPaid;
 
-  const fetchReports = useCallback(async () => {
-    setLoading(true);
+  const fetchReports = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       let path = `/sales?limit=200`;
       if (dateFrom) path += `&date_from=${dateFrom}`;
@@ -81,7 +81,7 @@ export default function ReportsModule() {
     } catch {
       setSalesData([]);
     }
-    setLoading(false);
+    if (!silent) setLoading(false);
   }, [serverUrl, sucursalId, dateFrom, dateTo]);
 
   useEffect(() => {
@@ -93,7 +93,11 @@ export default function ReportsModule() {
   }, []);
 
   useEffect(() => {
-    if (dateFrom && dateTo) fetchReports();
+    if (dateFrom && dateTo) {
+      fetchReports();
+      const interval = setInterval(() => fetchReports(true), 15000);
+      return () => clearInterval(interval);
+    }
   }, [fetchReports, dateFrom, dateTo]);
 
   const renderReports = () => (
