@@ -9,6 +9,7 @@ import './App.css';
 
 const VentasPage = lazy(() => import('./pages/VentasPage'));
 const PlanPage = lazy(() => import('./pages/PlanPage'));
+const AdminPage = lazy(() => import('./pages/AdminPage'));
 const SoportePage = lazy(() => import('./pages/SoportePage'));
 const ConfigPage = lazy(() => import('./pages/ConfigPage'));
 const Onboarding = lazy(() => import('./pages/Onboarding'));
@@ -77,7 +78,8 @@ function App() {
           <Route path="plan" element={<PanelSuspense><PlanPage /></PanelSuspense>} />
         </Route>
 
-        <Route path="/t/:slug" element={<PanelSuspense><PublicCatalog /></PanelSuspense>} />
+        <Route path="/admin" element={<PanelSuspense><AdminPage /></PanelSuspense>} />
+    <Route path="/t/:slug" element={<PanelSuspense><PublicCatalog /></PanelSuspense>} />
         <Route path="/preview" element={<PanelSuspense><PreviewPage /></PanelSuspense>} />
         <Route path="/terminos" element={<PanelSuspense><TermsPage /></PanelSuspense>} />
         <Route path="/privacidad" element={<PanelSuspense><PrivacyPage /></PanelSuspense>} />
