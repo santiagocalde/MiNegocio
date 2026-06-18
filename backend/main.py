@@ -471,8 +471,8 @@ async def get_current_business(authorization: Optional[str] = Header(None)) -> O
 @limiter.limit("5/minute")
 async def login(request: Request, data: dict) -> dict:
     pin = str(data.get("pin", ""))
-    if not pin.isdigit() or len(pin) < 4 or len(pin) > 6:
-        raise HTTPException(status_code=400, detail="El PIN debe tener entre 4 y 6 digitos numericos")
+    if not pin.isdigit() or len(pin) != 4:
+        raise HTTPException(status_code=400, detail="El PIN debe tener exactamente 4 digitos numericos")
 
     if USE_PG:
         from db_helpers import get_pg_pool
@@ -508,9 +508,22 @@ async def login(request: Request, data: dict) -> dict:
 
 
 async def _ensure_open_turn_pg(conn, operator: str, b_id: str):
-    row = await conn.fetchrow("SELECT id FROM turns WHERE closed_at IS NULL AND business_id = $1 ORDER BY opened_at DESC LIMIT 1", b_id)
+    row = await conn.fetchrow(
+        "SELECT id, opened_at FROM turns WHERE closed_at IS NULL AND business_id = $1 ORDER BY opened_at DESC LIMIT 1",
+        b_id
+    )
     if row:
-        return {"turn_id": row["id"], "turn_auto_opened": False}
+        hours = await conn.fetchval(
+            "SELECT EXTRACT(EPOCH FROM (now() - $1::timestamptz))/3600",
+            row["opened_at"]
+        )
+        if hours and hours >= 14:
+            await conn.execute(
+                "UPDATE turns SET closed_at = now(), notes = 'Cierre automatico > 14hs' WHERE id = $1",
+                row["id"]
+            )
+        else:
+            return {"turn_id": row["id"], "turn_auto_opened": False}
     new_row = await conn.fetchrow(
         "INSERT INTO turns (business_id, operator) VALUES ($1, $2) RETURNING id",
         b_id, operator
@@ -520,10 +533,19 @@ async def _ensure_open_turn_pg(conn, operator: str, b_id: str):
 
 async def _ensure_open_turn(operator: str):
     async with aiosqlite.connect(DB_PATH) as db:
-        async with db.execute("SELECT id FROM turns WHERE closed_at IS NULL ORDER BY opened_at DESC LIMIT 1") as cur:
+        async with db.execute("SELECT id, opened_at FROM turns WHERE closed_at IS NULL ORDER BY opened_at DESC LIMIT 1") as cur:
             row = await cur.fetchone()
             if row:
-                return {"turn_id": row[0], "turn_auto_opened": False}
+                async with db.execute("SELECT (julianday('now','localtime') - julianday(?)) * 24.0", (row[1],)) as cur2:
+                    diff = await cur2.fetchone()
+                if diff and diff[0] >= 14:
+                    await db.execute(
+                        "UPDATE turns SET closed_at = datetime('now','localtime'), notes = 'Cierre automatico > 14hs' WHERE id = ?",
+                        (row[0],)
+                    )
+                    await db.commit()
+                else:
+                    return {"turn_id": row[0], "turn_auto_opened": False}
         cur = await db.execute("INSERT INTO turns (operator, opened_at) VALUES (?, datetime('now','localtime'))", (operator,))
         await db.commit()
         return {"turn_id": cur.lastrowid, "turn_auto_opened": True}
