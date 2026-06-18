@@ -132,21 +132,25 @@ export function PanelProvider({ children }) {
           <div className="brand-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 80, height: 80, marginBottom: 24 }}><Icons.Lock /></div>
           <h1 style={{ fontSize: '2rem', marginBottom: '8px' }}>{businessName}</h1>
           <p style={{ color: 'var(--text-secondary)', marginBottom: '8px' }}>Ingresa tu PIN para abrir turno</p>
-          {(() => {
+            {(() => {
             const onboardingPin = localStorage.getItem('minegocio_onboarding_pin');
             if (onboardingPin) {
               return (
-                <div style={{ background: 'rgba(20,187,166,0.1)', border: '1px solid rgba(20,187,166,0.3)', borderRadius: 8, padding: '8px 16px', marginBottom: 16, textAlign: 'center' }}>
-                  <span style={{ color: 'var(--accent-primary)', fontSize: '0.85rem', fontWeight: 600 }}>Tu PIN de acceso es: </span>
-                  <span style={{ color: '#fff', fontSize: '1.2rem', fontWeight: 800, fontFamily: 'var(--font-mono)', letterSpacing: '4px' }}>{onboardingPin}</span>
-                  <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', marginTop: 4 }}>Guardalo. No se volvera a mostrar.</div>
+                <div style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 12, padding: '14px 20px', marginBottom: 20, textAlign: 'center', maxWidth: 320 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 8 }}>
+                    <svg width="18" height="18" fill="none" stroke="#F59E0B" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m0-8v4m-9 4h18l-3.6-14.4A2 2 0 0015.56 1H8.44a2 2 0 00-1.92 1.4L3 17z"/></svg>
+                    <span style={{ color: '#F59E0B', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Importante</span>
+                  </div>
+                  <span style={{ color: '#F1F5F9', fontSize: '0.85rem', fontWeight: 500 }}>Tu PIN de acceso es </span>
+                  <span style={{ color: '#fff', fontSize: '1.4rem', fontWeight: 800, fontFamily: 'var(--font-mono)', letterSpacing: '6px', background: 'rgba(255,255,255,0.05)', padding: '4px 14px', borderRadius: 6, margin: '0 6px' }}>{onboardingPin}</span>
+                  <div style={{ color: '#F87171', fontSize: '0.8rem', marginTop: 10, fontWeight: 600 }}>Este PIN se muestra una sola vez. Anotalo ahora, no lo pierdas.</div>
                 </div>
               );
             }
             return null;
           })()}
           <form onSubmit={auth.handlePin} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
-            <input type="password" value={auth.pin} onChange={e => auth.setPin(e.target.value.replace(/[^0-9]/g, '').slice(0, 4))} placeholder="••••" style={{ width: 160, textAlign: 'center', fontSize: '2rem', letterSpacing: '8px', padding: '12px', background: 'var(--bg-card)', border: '2px solid var(--border-color)', borderRadius: 12, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)', outline: 'none' }} autoFocus />
+            <input type="password" value={auth.pin} onChange={e => auth.setPin(e.target.value.replace(/[^0-9]/g, '').slice(0, 4))} placeholder="••••" style={{ width: 'clamp(180px, 25vw, 240px)', textAlign: 'center', fontSize: '2rem', letterSpacing: '12px', padding: '14px 16px', background: 'var(--bg-card)', border: '2px solid var(--border-color)', borderRadius: 12, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)', outline: 'none' }} autoFocus />
             <button type="submit" style={{ background: 'var(--gradient-primary)', border: 'none', color: 'white', padding: '12px 48px', borderRadius: 12, fontSize: '1rem', fontWeight: 700, cursor: 'pointer', marginTop: 8 }}>Abrir Turno</button>
           </form>
         </div>

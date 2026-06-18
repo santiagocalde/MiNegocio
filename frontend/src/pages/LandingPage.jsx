@@ -105,7 +105,11 @@ export default function LandingPage() {
         setShowLoginModal(false);
         localStorage.setItem('minegocio_onboarding_pending', 'true');
       } else {
-        window.location.href = '/panel';
+        if (localStorage.getItem('minegocio_onboarding_pending') === 'true') {
+          window.location.href = '/register';
+        } else {
+          window.location.href = '/panel';
+        }
       }
     } catch (err) {
       setLoginError(err.message);
