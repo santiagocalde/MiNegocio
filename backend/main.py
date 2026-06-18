@@ -484,11 +484,11 @@ async def login(request: Request, data: dict) -> dict:
                 try:
                     if bcrypt.checkpw(pin.encode(), row["pin"].encode()):
                         t = await _ensure_open_turn_pg(conn, row["name"], b_id)
-                        return {"operator_id": row["id"], "id": row["id"], "name": row["name"], "role": row["role"], "turn_id": t["turn_id"], "turn_auto_opened": t["turn_auto_opened"]}
+                        return {"operator_id": row["id"], "id": row["id"], "name": row["name"], "role": row["role"], "turn_id": t["turn_id"], "turn_auto_opened": t["turn_auto_opened"], "turn_opened_at": t.get("turn_opened_at")}
                 except Exception:
                     if not row["pin"].startswith("$2b$") and pin == row["pin"]:
                         t = await _ensure_open_turn_pg(conn, row["name"], b_id)
-                        return {"operator_id": row["id"], "id": row["id"], "name": row["name"], "role": row["role"], "turn_id": t["turn_id"], "turn_auto_opened": t["turn_auto_opened"]}
+                        return {"operator_id": row["id"], "id": row["id"], "name": row["name"], "role": row["role"], "turn_id": t["turn_id"], "turn_auto_opened": t["turn_auto_opened"], "turn_opened_at": t.get("turn_opened_at")}
             raise HTTPException(status_code=401, detail="PIN incorrecto")
     else:
         async with aiosqlite.connect(DB_PATH) as db:
@@ -499,11 +499,11 @@ async def login(request: Request, data: dict) -> dict:
             try:
                 if bcrypt.checkpw(pin.encode(), op_pin_hash.encode()):
                     t = await _ensure_open_turn(op_name)
-                    return {"operator_id": op_id, "id": op_id, "name": op_name, "role": op_role, "turn_id": t["turn_id"], "turn_auto_opened": t["turn_auto_opened"]}
+                    return {"operator_id": op_id, "id": op_id, "name": op_name, "role": op_role, "turn_id": t["turn_id"], "turn_auto_opened": t["turn_auto_opened"], "turn_opened_at": t.get("turn_opened_at")}
             except Exception:
                 if not op_pin_hash.startswith("$2b$") and pin == op_pin_hash:
                     t = await _ensure_open_turn(op_name)
-                    return {"operator_id": op_id, "id": op_id, "name": op_name, "role": op_role, "turn_id": t["turn_id"], "turn_auto_opened": t["turn_auto_opened"]}
+                    return {"operator_id": op_id, "id": op_id, "name": op_name, "role": op_role, "turn_id": t["turn_id"], "turn_auto_opened": t["turn_auto_opened"], "turn_opened_at": t.get("turn_opened_at")}
         raise HTTPException(status_code=401, detail="PIN incorrecto")
 
 
@@ -523,12 +523,12 @@ async def _ensure_open_turn_pg(conn, operator: str, b_id: str):
                 row["id"]
             )
         else:
-            return {"turn_id": row["id"], "turn_auto_opened": False}
+            return {"turn_id": row["id"], "turn_auto_opened": False, "turn_opened_at": str(row["opened_at"])}
     new_row = await conn.fetchrow(
-        "INSERT INTO turns (business_id, operator) VALUES ($1, $2) RETURNING id",
+        "INSERT INTO turns (business_id, operator) VALUES ($1, $2) RETURNING id, opened_at",
         b_id, operator
     )
-    return {"turn_id": new_row["id"], "turn_auto_opened": True}
+    return {"turn_id": new_row["id"], "turn_auto_opened": True, "turn_opened_at": str(new_row["opened_at"])}
 
 
 async def _ensure_open_turn(operator: str):
@@ -545,10 +545,11 @@ async def _ensure_open_turn(operator: str):
                     )
                     await db.commit()
                 else:
-                    return {"turn_id": row[0], "turn_auto_opened": False}
+                    return {"turn_id": row[0], "turn_auto_opened": False, "turn_opened_at": row[1]}
         cur = await db.execute("INSERT INTO turns (operator, opened_at) VALUES (?, datetime('now','localtime'))", (operator,))
         await db.commit()
-        return {"turn_id": cur.lastrowid, "turn_auto_opened": True}
+        opened_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        return {"turn_id": cur.lastrowid, "turn_auto_opened": True, "turn_opened_at": opened_at}
 
 # ── Gestión de operadores ─────────────────────────────────────
 @app.get("/api/operators", summary="Listar operadores")

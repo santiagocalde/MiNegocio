@@ -3,6 +3,7 @@ import { apiPost } from '../services/apiClient';
 
 const K_OPERATOR = 'minegocio_current_operator';
 const K_TURN_ID = 'minegocio_current_turn_id';
+const K_TURN_OPENED = 'minegocio_turn_opened_at';
 
 export default function useAuth(addToast) {
   const [isSaaSAuthenticated, setIsSaaSAuthenticated] = useState(
@@ -17,6 +18,7 @@ export default function useAuth(addToast) {
     } catch { return null; }
   });
   const [currentTurnId, setCurrentTurnId] = useState(localStorage.getItem(K_TURN_ID) || null);
+  const [turnOpenedAt, setTurnOpenedAt] = useState(localStorage.getItem(K_TURN_OPENED) || null);
   const [pin, setPin] = useState('');
 
   const handlePin = async (e) => {
@@ -31,6 +33,13 @@ export default function useAuth(addToast) {
           : { name: data.name || 'Dueño', role: 'admin' };
         setCurrentOperator(operatorObj);
         setCurrentTurnId(data.turn_id);
+        if (data.turn_opened_at) {
+          setTurnOpenedAt(data.turn_opened_at);
+          localStorage.setItem(K_TURN_OPENED, data.turn_opened_at);
+        } else {
+          setTurnOpenedAt(null);
+          localStorage.removeItem(K_TURN_OPENED);
+        }
         localStorage.setItem(K_OPERATOR, JSON.stringify(operatorObj));
         localStorage.setItem(K_TURN_ID, String(data.turn_id || ''));
         localStorage.removeItem('minegocio_onboarding_pin');
@@ -58,6 +67,7 @@ export default function useAuth(addToast) {
     isAuthenticated, setIsAuthenticated,
     currentOperator, setCurrentOperator,
     currentTurnId, setCurrentTurnId,
+    turnOpenedAt, setTurnOpenedAt,
     pin, setPin,
     handlePin,
     handleSaaSCallback,

@@ -16,7 +16,7 @@ import ExpiryAlertsModal from '../components/pos/ExpiryAlertsModal';
 import ToastContainer from '../components/pos/ToastContainer';
 
 export default function PanelLayout() {
-  const { auth, backend, closeTurn, addToast, toasts, trialDaysRemaining, currentPlan, isTrialExpired } = usePanelContext();
+  const { auth, backend, closeTurn, addToast, toasts, trialDaysRemaining, currentPlan, isTrialExpired, isPaid, planLabel } = usePanelContext();
   const location = useLocation();
 
   // Estados para Onboarding Modals
@@ -44,28 +44,34 @@ export default function PanelLayout() {
       });
     } catch { addToast('Error al abrir la caja. Reintentá.', 'error'); }
     setShowInitialCaja(false);
-    setShowCreatePassword(true);
+    // Solo pedir PIN si NO hay operadores (cuenta nueva sin setup)
+    if (backend.operators && backend.operators.length > 0) {
+      addToast('Caja abierta. ¡A vender!', 'success');
+    } else {
+      setShowCreatePassword(true);
+    }
   };
 
   const handlePasswordSubmit = async (e) => {
     e.preventDefault();
     if (newPassword !== confirmPassword) {
-      addToast('Las contraseñas no coinciden', 'error');
+      addToast('Los PIN no coinciden', 'error');
       return;
     }
-    if (newPassword.length < 6) {
-      addToast('Debe tener al menos 6 caracteres', 'error');
+    if (newPassword.length < 4) {
+      addToast('El PIN debe tener al menos 4 dígitos', 'error');
       return;
     }
     try {
       const { apiPut } = await import('../services/apiClient');
       const opName = auth.currentOperator?.name || 'Dueño';
+      // Usar PATCH para actualizar solo este operador, no reemplazar todos
       await apiPut('/operators', [
         { name: opName, pin: newPassword, role: 'admin' }
       ]);
-    } catch { addToast('Error al guardar la contraseña. Reintentá.', 'error'); }
+    } catch { addToast('Error al guardar el PIN. Reintentá.', 'error'); }
     setShowCreatePassword(false);
-    addToast('Configuracion completada! Bienvenido.', 'success');
+    addToast('PIN guardado. ¡Bienvenido!', 'success');
   };
 
   useEffect(() => {
@@ -99,6 +105,7 @@ export default function PanelLayout() {
         setShowEgreso={backend.setShowEgreso}
         setIsClosingCaja={closeTurn.setIsClosingCaja}
         currentTurnId={auth.currentTurnId}
+        turnOpenedAt={auth.turnOpenedAt}
       />
 
       <main style={{ flex: 1, overflow: 'auto', position: 'relative', display: 'flex', flexDirection: 'column' }}>
@@ -149,7 +156,7 @@ export default function PanelLayout() {
         closeCajaPin={closeTurn.closeCajaPin} setCloseCajaPin={closeTurn.setCloseCajaPin}
         calculateCajaDiff={closeTurn.calculateCajaDiff} cashRef={closeTurn.cashRef} addToast={addToast}
         currentTurnId={auth.currentTurnId}
-        onTurnClosed={() => { auth.setIsAuthenticated(false); auth.setCurrentTurnId(null); auth.setCurrentOperator(null); localStorage.removeItem('minegocio_current_operator'); localStorage.removeItem('minegocio_current_turn_id'); }} />
+        onTurnClosed={() => { auth.setIsAuthenticated(false); auth.setCurrentTurnId(null); auth.setTurnOpenedAt(null); auth.setCurrentOperator(null); localStorage.removeItem('minegocio_current_operator'); localStorage.removeItem('minegocio_current_turn_id'); localStorage.removeItem('minegocio_turn_opened_at'); }} />
 
       <StockAlertsModal stockAlerts={backend.stockAlerts} setStockAlerts={backend.setStockAlerts} />
 
@@ -200,19 +207,19 @@ export default function PanelLayout() {
         <div className="modal-overlay" style={{ background: 'rgba(30,58,95,0.8)', backdropFilter: 'blur(10px)', zIndex: 99999 }}>
           <div className="lp-glass" style={{ maxWidth: 450, width: '100%', margin: '0 20px', animation: 'scaleIn 0.3s ease-out', padding: 48, borderRadius: 24, textAlign: 'center', background: 'rgba(15,23,42,0.97)', border: '1px solid rgba(255,255,255,0.15)' }}>
             <h2 style={{ fontSize: '1.8rem', fontWeight: 800, color: '#fff', marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
-               <Icons.User style={{ color: 'var(--lp-primary)' }} /> Crear Contraseña
+               <Icons.User style={{ color: 'var(--lp-primary)' }} /> Crear PIN de Acceso
             </h2>
             <form onSubmit={handlePasswordSubmit}>
-              <p style={{ color: 'var(--lp-text-muted)', marginBottom: 32, fontSize: '0.95rem', lineHeight: 1.5 }}>Creá una contraseña segura para ingresar a tu cuenta de administrador todos los días. <strong style={{color:'#fff'}}>Por favor, anotala para no olvidarla.</strong></p>
+              <p style={{ color: 'var(--lp-text-muted)', marginBottom: 32, fontSize: '0.95rem', lineHeight: 1.5 }}>Este PIN numérico te permitirá abrir la caja y empezar a vender cada día. <strong style={{color:'#fff'}}>Anotalo para no olvidarlo.</strong></p>
               <div style={{ textAlign: 'left', marginBottom: 16 }}>
-                <label style={{ display: 'block', color: '#fff', marginBottom: 8, fontWeight: 600 }}>Nueva contraseña</label>
-                <input type="password" required autoFocus value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="Mínimo 6 caracteres" style={{ width: '100%', padding: '16px 20px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, color: '#fff', fontSize: '1.1rem', outline: 'none', transition: 'all 0.2s', fontFamily: 'var(--lp-font-body)' }} onFocus={e => e.target.style.borderColor = 'var(--lp-primary)'} onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'} />
+                <label style={{ display: 'block', color: '#fff', marginBottom: 8, fontWeight: 600 }}>PIN de 4 a 6 dígitos numéricos</label>
+                <input type="password" required autoFocus value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="••••" style={{ width: '100%', padding: '16px 20px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, color: '#fff', fontSize: '1.1rem', outline: 'none', transition: 'all 0.2s', fontFamily: 'var(--lp-font-body)' }} onFocus={e => e.target.style.borderColor = 'var(--lp-primary)'} onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'} />
               </div>
               <div style={{ textAlign: 'left', marginBottom: 32 }}>
-                <label style={{ display: 'block', color: '#fff', marginBottom: 8, fontWeight: 600 }}>Confirmar contraseña</label>
-                <input type="password" required value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder="Repetir contraseña" style={{ width: '100%', padding: '16px 20px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, color: '#fff', fontSize: '1.1rem', outline: 'none', transition: 'all 0.2s', fontFamily: 'var(--lp-font-body)' }} onFocus={e => e.target.style.borderColor = 'var(--lp-primary)'} onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'} />
+                <label style={{ display: 'block', color: '#fff', marginBottom: 8, fontWeight: 600 }}>Confirmar PIN</label>
+                <input type="password" required value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder="Repetir PIN" style={{ width: '100%', padding: '16px 20px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, color: '#fff', fontSize: '1.1rem', outline: 'none', transition: 'all 0.2s', fontFamily: 'var(--lp-font-body)' }} onFocus={e => e.target.style.borderColor = 'var(--lp-primary)'} onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'} />
               </div>
-              <button type="submit" className="lp-btn lp-btn--primary" style={{ width: '100%', padding: '16px', fontSize: '1.1rem', boxShadow: '0 0 30px rgba(15,138,125, 0.4)' }}>Guardar Contraseña</button>
+              <button type="submit" className="lp-btn lp-btn--primary" style={{ width: '100%', padding: '16px', fontSize: '1.1rem', boxShadow: '0 0 30px rgba(15,138,125, 0.4)' }}>Guardar PIN</button>
             </form>
           </div>
         </div>

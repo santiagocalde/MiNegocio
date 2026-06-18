@@ -70,14 +70,14 @@ const ICON_MAP = {
 
 export default function Sidebar({
   currentOperator, pendingSync, setShowPendingModal,
-  todaySalesTotal, setShowResumen, setShowEgreso, setIsClosingCaja, currentTurnId
+  todaySalesTotal, setShowResumen, setShowEgreso, setIsClosingCaja, currentTurnId, turnOpenedAt
 }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { currentPlan, addToast } = usePanelContext();
   const currentPath = location.pathname;
 
-  const role = currentOperator?.role || 'operator';
+  const role = currentOperator?.role || 'admin';
 
   const isActive = (path) => currentPath === path;
 
@@ -131,7 +131,19 @@ export default function Sidebar({
             <Icons.Lock style={{ width: 14, height: 14 }} /> Mi Caja
           </span>
           {currentTurnId ? (
-            <span style={{ background: 'var(--gradient-primary)', color: 'white', padding: '2px 6px', borderRadius: '6px', fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Abierta</span>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
+              <span style={{ background: 'var(--gradient-primary)', color: 'white', padding: '2px 6px', borderRadius: '6px', fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Abierta</span>
+              {turnOpenedAt && (() => {
+                const hours = Math.max(0, (Date.now() - new Date(turnOpenedAt).getTime()) / 3600000);
+                const h = Math.floor(hours);
+                const m = Math.floor((hours - h) * 60);
+                return (
+                  <span style={{ color: 'var(--text-secondary)', fontSize: '0.65rem', fontWeight: 500 }}>
+                    {h > 0 ? `${h}h ${m}m` : `${m}m`}
+                  </span>
+                );
+              })()}
+            </div>
           ) : (
             <span style={{ background: 'rgba(239, 68, 68, 0.2)', color: 'var(--accent-danger)', padding: '2px 6px', borderRadius: '6px', fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Cerrada</span>
           )}

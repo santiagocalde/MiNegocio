@@ -72,12 +72,20 @@ export function PanelProvider({ children }) {
           if (!data || !data.id) {
             auth.setIsAuthenticated(false);
             auth.setCurrentTurnId(null);
+            auth.setTurnOpenedAt(null);
             auth.setCurrentOperator(null);
             localStorage.removeItem('minegocio_current_turn_id');
             localStorage.removeItem('minegocio_current_operator');
-          } else if (String(data.id) !== String(auth.currentTurnId)) {
-            auth.setCurrentTurnId(data.id);
-            localStorage.setItem('minegocio_current_turn_id', String(data.id));
+            localStorage.removeItem('minegocio_turn_opened_at');
+          } else {
+            if (String(data.id) !== String(auth.currentTurnId)) {
+              auth.setCurrentTurnId(data.id);
+              localStorage.setItem('minegocio_current_turn_id', String(data.id));
+            }
+            if (data.opened_at && data.opened_at !== auth.turnOpenedAt) {
+              auth.setTurnOpenedAt(data.opened_at);
+              localStorage.setItem('minegocio_turn_opened_at', data.opened_at);
+            }
           }
         })
         .catch(() => { addToast('Error al validar turno. Reintentá.', 'error'); });
@@ -103,7 +111,10 @@ export function PanelProvider({ children }) {
   ]);
 
   if (needsSetup === null) {
-    return <div className="layout" style={{ justifyContent: 'center', alignItems: 'center' }}><div style={{ width: 40, height: 40, border: '3px solid var(--border-color)', borderTopColor: 'var(--accent-primary)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /></div>;
+    return <div className="layout" style={{ justifyContent: 'center', alignItems: 'center', flexDirection: 'column', gap: '16px' }}>
+      <div style={{ width: 40, height: 40, border: '3px solid var(--border-color)', borderTopColor: 'var(--accent-primary)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+      <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Cargando...</span>
+    </div>;
   }
 
   if (needsSetup) {
