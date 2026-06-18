@@ -79,15 +79,6 @@ export default function Onboarding() {
     }
   }, [step, isLoggedIn]);
 
-  // Pre-llenar telefono si viene desde registro modal
-  useEffect(() => {
-    const prefill = localStorage.getItem('minegocio_prefill_phone');
-    if (prefill && step === 1) {
-      setFormData(prev => ({ ...prev, telefono: prefill }));
-      localStorage.removeItem('minegocio_prefill_phone');
-    }
-  }, [step]);
-
   const handleNext = () => {
     setDirection(1);
     setStep(s => Math.min(s + 1, TOTAL_STEPS));
