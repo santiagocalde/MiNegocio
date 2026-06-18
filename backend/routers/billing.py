@@ -9,7 +9,7 @@ from jose import jwt
 router = APIRouter()
 logger = logging.getLogger("NovaStock")
 
-MP_ACCESS_TOKEN = os.environ.get("MP_ACCESS_TOKEN", "APP_USR-5284702967347426-061321-4b16af9c02cf24d023fff0e3471bfa34-801610889")
+MP_ACCESS_TOKEN = os.environ.get("MP_ACCESS_TOKEN", "")
 JWT_SECRET = os.environ.get("JWT_SECRET", "super-secret-key-change-in-prod")
 
 class SubscribeRequest(BaseModel):
@@ -98,9 +98,8 @@ async def mercadopago_webhook(request: Request):
     action = body.get("action")
     data_id = body.get("data", {}).get("id")
 
-    if action == "created" or action == "updated":
-        # Es una suscripción nueva o actualizada. Consultamos la API de MP para verificar.
-        if data_id:
+    if action in ("created", "updated"):
+        if data_id and MP_ACCESS_TOKEN:
             headers = {"Authorization": f"Bearer {MP_ACCESS_TOKEN}"}
             async with httpx.AsyncClient() as client:
                 resp = await client.get(f"https://api.mercadopago.com/preapproval/{data_id}", headers=headers)
@@ -110,16 +109,34 @@ async def mercadopago_webhook(request: Request):
                     ext_ref = sub_data.get("external_reference")
                     
                     if status == "authorized" and ext_ref:
-                        biz_id, plan_id = ext_ref.split("|")
+                        try:
+                            parts = ext_ref.split("|")
+                            if len(parts) != 2:
+                                logger.warning(f"Webhook MP: external_reference invalido: {ext_ref}")
+                                return {"detail": "external_reference invalido"}
+                            biz_id, plan_id = parts
+                        except Exception:
+                            logger.warning(f"Webhook MP: error parseando external_reference: {ext_ref}")
+                            return {"detail": "error parseando external_reference"}
+
+                        freq = sub_data.get("auto_recurring", {})
+                        months = freq.get("frequency", 1) * (12 if freq.get("frequency_type") == "years" else 1)
                         pool = await get_pool()
                         async with pool.acquire() as conn:
-                            await conn.execute("""
-                                UPDATE businesses 
-                                SET plan = $1, status = 'active', 
-                                    plan_end_date = CURRENT_DATE + INTERVAL '1 month',
-                                    updated_at = CURRENT_TIMESTAMP
-                                WHERE id = $2
-                            """, plan_id, biz_id)
-                            logger.info(f"Suscripción de {biz_id} activada (Plan: {plan_id})")
+                            await conn.execute(
+                                "UPDATE businesses SET plan = $1, status = 'active', plan_end_date = CURRENT_DATE + make_interval(months => $2), updated_at = now() WHERE id = $3",
+                                plan_id, months, biz_id
+                            )
+                            logger.info(f"Webhook MP: {biz_id} activado plan {plan_id} por {months} meses")
+        return {"detail": "ok"}
 
-    return {"status": "ok"}
+    if action == "cancelled" and data_id:
+        pool = await get_pool()
+        async with pool.acquire() as conn:
+            await conn.execute(
+                "UPDATE businesses SET status = 'past_due', updated_at = now() WHERE id = $1",
+                data_id
+            )
+        return {"detail": "cancelled"}
+
+    return {"detail": "ignored"}

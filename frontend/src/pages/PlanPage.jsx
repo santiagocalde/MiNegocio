@@ -98,6 +98,7 @@ export default function PlanPage() {
   const { currentPlan, trialDaysRemaining, isTrialExpired } = usePanelContext();
   const [isYearly, setIsYearly] = useState(false);
   const [plans, setPlans] = useState(FALLBACK_PLANS);
+  const [planPageLoading, setPlanPageLoading] = useState(false);
 
   useEffect(() => {
     const baseUrl = import.meta.env.PROD ? '' : 'http://localhost:8005';
@@ -120,19 +121,23 @@ export default function PlanPage() {
       .catch(() => {});
   }, []);
 
-  const activePlanId = currentPlan === 'trial' ? 'simple' : currentPlan;
+  const activePlanId = currentPlan;
 
   const handleSubscribe = async (planId, isYearly) => {
+    if (planPageLoading) return;
+    setPlanPageLoading(true);
     try {
       const response = await apiPost('/billing/subscribe', { plan_id: planId, is_yearly: isYearly });
       const data = await response.json();
       if (data && data.init_point) {
         window.location.href = data.init_point;
       } else {
-        alert('Hubo un error al generar el link de pago.');
+        alert('Hubo un error al generar el link de pago. Intenta de nuevo.');
       }
     } catch (err) {
-      alert('Error de conexión con MercadoPago.');
+      alert('Error de conexion con MercadoPago.');
+    } finally {
+      setPlanPageLoading(false);
     }
   };
 

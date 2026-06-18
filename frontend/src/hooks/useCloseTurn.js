@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 
-export default function useCloseTurn(todaySalesTotal) {
+export default function useCloseTurn(resumenData) {
   const [isClosingCaja, setIsClosingCaja] = useState(false);
   const [closeCajaPin, setCloseCajaPin] = useState('');
   const [countedCash, setCountedCash] = useState('');
@@ -8,8 +8,9 @@ export default function useCloseTurn(todaySalesTotal) {
 
   const calculateCajaDiff = useCallback(() => {
     const counted = parseFloat(countedCash) || 0;
-    return counted - (todaySalesTotal || 0);
-  }, [countedCash, todaySalesTotal]);
+    const totalEfectivo = resumenData?.total_efectivo || 0;
+    return counted - totalEfectivo;
+  }, [countedCash, resumenData]);
 
   const resetCloseTurn = useCallback(() => {
     setIsClosingCaja(false);

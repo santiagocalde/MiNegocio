@@ -171,18 +171,20 @@ export default function useBackend(currentOperator, currentTurnId, currentSucurs
     let evtSource;
 
     const connectSSE = () => {
+      if (evtSource) evtSource.close();
       evtSource = new EventSource(`${baseUrl}/api/events`);
       evtSource.addEventListener('product-changed', () => fetchProductsDB());
       evtSource.addEventListener('sale-created', () => {
         fetchProductsDB();
         apiGet(`/sales/today?sucursal_id=${currentSucursalId}`).then(r => r.json()).then(d => {
-          setTodaySalesTotal((d.total_efectivo || 0) + (d.total_tarjeta || 0) + (d.total_transferencia || 0));
+          setTodaySalesTotal((d.total_efectivo || 0) + (d.total_tarjeta || 0) + (d.total_transferencia || 0) + (d.total_mp || 0) + (d.total_fiado || 0));
           setResumenData(d);
         }).catch(() => {});
       });
       evtSource.onerror = () => {
         evtSource.close();
-        setTimeout(() => {
+        clearTimeout(evtSource._reconnectTimer);
+        evtSource._reconnectTimer = setTimeout(() => {
           fetchProductsDB();
           connectSSE();
         }, retryDelay);
@@ -200,7 +202,7 @@ export default function useBackend(currentOperator, currentTurnId, currentSucurs
         if (e.data === 'sale-made') {
           fetchProductsDB();
           apiGet(`/sales/today?sucursal_id=${currentSucursalId}`).then(r => r.json()).then(d => {
-            setTodaySalesTotal((d.total_efectivo || 0) + (d.total_tarjeta || 0) + (d.total_transferencia || 0));
+            setTodaySalesTotal((d.total_efectivo || 0) + (d.total_tarjeta || 0) + (d.total_transferencia || 0) + (d.total_mp || 0) + (d.total_fiado || 0));
             setResumenData(d);
           }).catch(() => {});
         }
@@ -219,16 +221,16 @@ export default function useBackend(currentOperator, currentTurnId, currentSucurs
   useEffect(() => {
     const checkRealHealth = async () => {
       try {
-        const res = await apiGet('/products?limit=1');
+        const res = await apiGet('/health');
         if (res.ok) {
           setBackendError(false);
           setBackendDetailedError(false);
-          setBackendStatus({ status: 'ok', ...(await res.json().catch(() => ({}))) });
+          setBackendStatus({ status: 'ok' });
           setBackendLastOk(Date.now());
           try {
             const todayRes = await apiGet(`/sales/today?sucursal_id=${currentSucursalId}`);
             const todayData = await todayRes.json();
-            setTodaySalesTotal((todayData.total_efectivo || 0) + (todayData.total_tarjeta || 0) + (todayData.total_transferencia || 0));
+            setTodaySalesTotal((todayData.total_efectivo || 0) + (todayData.total_tarjeta || 0) + (todayData.total_transferencia || 0) + (todayData.total_mp || 0) + (todayData.total_fiado || 0));
             setResumenData(todayData);
           } catch (e) { console.error(e) }
         } else {
@@ -243,7 +245,7 @@ export default function useBackend(currentOperator, currentTurnId, currentSucurs
     checkRealHealth();
     const interval = setInterval(checkRealHealth, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [currentSucursalId]);
 
   useEffect(() => {
     const syncPending = async () => {
