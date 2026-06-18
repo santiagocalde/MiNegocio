@@ -90,6 +90,14 @@ export default function LandingPage() {
       const superAdminEmails = ['calderonsantiago2019@gmail.com', 'admin@minegocio.app'];
       if (data.business && superAdminEmails.includes(data.business.email)) {
         localStorage.setItem('saas_admin_gate', 'true');
+        const adminAuthUrl = import.meta.env.PROD ? '/api/admin/auth' : 'http://localhost:8005/api/admin/auth';
+        fetch(adminAuthUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: loginEmail, password: loginPassword })
+        }).then(r => r.ok ? r.json() : null).then(d => {
+          if (d && d.access_token) localStorage.setItem('admin_token', d.access_token);
+        }).catch(() => {});
       }
       
       if (showLoginModal === 'register') {
