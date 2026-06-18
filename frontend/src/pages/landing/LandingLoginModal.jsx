@@ -6,7 +6,8 @@ export default function LandingLoginModal({
   showLoginModal, setShowLoginModal, setShowForgotPassword,
   loginName, setLoginName, loginEmail, setLoginEmail,
   loginPassword, setLoginPassword, showPassword, setShowPassword,
-  loginLoading, loginError, handleAuthSubmit, goOnboard, navigate
+  loginLoading, loginError, handleAuthSubmit, goOnboard, navigate,
+  loginPhone, setLoginPhone
 }) {
   if (!showLoginModal) return null;
 
@@ -39,6 +40,12 @@ export default function LandingLoginModal({
               <div style={{ marginBottom: 14 }}>
                 <label style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.8)', fontWeight: 500 }}>Tu Nombre</label>
                 <input type="text" value={loginName} onChange={e => setLoginName(e.target.value)} placeholder="Ej: Carlos" style={{ width: '100%', padding: '14px 16px', marginTop: 6, background: 'rgba(30,58,95,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, color: '#fff', outline: 'none', fontSize: '0.95rem', transition: 'all 0.2s', boxShadow: 'inset 0 2px 4px rgba(30,58,95,0.1)' }} onFocus={e => { e.target.style.borderColor = 'var(--lp-primary)'; e.target.style.background = 'rgba(30,58,95,0.5)' }} onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.background = 'rgba(30,58,95,0.3)' }} />
+              </div>
+            )}
+            {showLoginModal === 'register' && (
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.8)', fontWeight: 500 }}>WhatsApp (+54 11...)</label>
+                <input type="tel" value={loginPhone} onChange={e => setLoginPhone(e.target.value.replace(/[^0-9]/g, ''))} placeholder="1123456789" style={{ width: '100%', padding: '14px 16px', marginTop: 6, background: 'rgba(30,58,95,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, color: '#fff', outline: 'none', fontSize: '0.95rem', transition: 'all 0.2s', boxShadow: 'inset 0 2px 4px rgba(30,58,95,0.1)' }} onFocus={e => { e.target.style.borderColor = 'var(--lp-primary)'; e.target.style.background = 'rgba(30,58,95,0.5)' }} onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.background = 'rgba(30,58,95,0.3)' }} />
               </div>
             )}
             <label style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.8)', fontWeight: 500 }}>Correo electrónico</label>

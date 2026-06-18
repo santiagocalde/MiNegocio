@@ -43,6 +43,7 @@ export default function LandingPage() {
   const [loginName, setLoginName] = useState('');
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
+  const [loginPhone, setLoginPhone] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
@@ -58,7 +59,7 @@ export default function LandingPage() {
       const baseUrl = import.meta.env.PROD ? '' : 'http://localhost:8005';
       const endpoint = `${baseUrl}/api/auth/${showLoginModal === 'register' ? 'register' : 'login'}`;
       const body = showLoginModal === 'register'
-        ? { email: loginEmail, password: loginPassword, name: loginName || 'Usuario', business_name: 'Mi Negocio', business_type: 'kiosco' }
+        ? { email: loginEmail, password: loginPassword, name: loginName || 'Usuario', business_name: 'Mi Negocio', business_type: 'kiosco', phone: loginPhone ? '+54 ' + loginPhone : '' }
         : { email: loginEmail, password: loginPassword };
 
       const res = await fetch(endpoint, {
@@ -91,6 +92,7 @@ export default function LandingPage() {
         setUserName(loginName || 'Usuario');
         setShowLoginModal(false);
         localStorage.setItem('minegocio_onboarding_pending', 'true');
+        if (loginPhone) localStorage.setItem('minegocio_prefill_phone', loginPhone);
       } else {
         window.location.href = '/panel';
       }
@@ -263,6 +265,7 @@ export default function LandingPage() {
         loginName={loginName} setLoginName={setLoginName}
         loginEmail={loginEmail} setLoginEmail={setLoginEmail}
         loginPassword={loginPassword} setLoginPassword={setLoginPassword}
+        loginPhone={loginPhone} setLoginPhone={setLoginPhone}
         showPassword={showPassword} setShowPassword={setShowPassword}
         loginLoading={loginLoading} loginError={loginError}
         handleAuthSubmit={handleAuthSubmit} goOnboard={goOnboard} navigate={navigate}
