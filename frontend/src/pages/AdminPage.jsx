@@ -89,8 +89,45 @@ function Toast({ msg, onClose }) {
   );
 }
 
+const SUPERADMIN_EMAILS = ['calderonsantiago2019@gmail.com', 'admin@minegocio.app'];
+
+function isAdminAuthorized() {
+  if (localStorage.getItem('saas_admin_gate') === 'true') return true;
+  try {
+    const raw = localStorage.getItem('saas_business');
+    if (raw) {
+      const biz = JSON.parse(raw);
+      if (biz && biz.email && SUPERADMIN_EMAILS.includes(biz.email)) {
+        localStorage.setItem('saas_admin_gate', 'true');
+        return true;
+      }
+    }
+  } catch {}
+  return false;
+}
+
 export default function AdminPage() {
-  const [token, setToken] = useState(''); const [tab, setTab] = useState('dashboard'); const [toast, setToast] = useState('');
+  const [token, setToken] = useState(() => localStorage.getItem('admin_token') || '');
+  const [tab, setTab] = useState('dashboard'); const [toast, setToast] = useState('');
+  const [authorized, setAuthorized] = useState(() => isAdminAuthorized());
+
+  if (!authorized) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: BG, color: TEXT, gap: 20, padding: 20, textAlign: 'center' }}>
+        <div style={{ width: 56, height: 56, borderRadius: 16, background: 'rgba(239,68,68,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(239,68,68,0.2)' }}>
+          <svg width="28" height="28" fill="none" stroke="#EF4444" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </div>
+        <h2 style={{ fontSize: '1.3rem', fontWeight: 700, margin: 0 }}>Acceso Restringido</h2>
+        <p style={{ color: MUTED, fontSize: '0.9rem', maxWidth: 400, lineHeight: 1.5 }}>
+          Solo la cuenta de administrador puede acceder a este panel. Inicia sesion con tu cuenta en la pagina principal primero.
+        </p>
+        <button onClick={() => window.location.href = '/'} style={{ ...S.primaryBtn, padding: '12px 32px', fontSize: '0.95rem' }}>
+          Ir al inicio
+        </button>
+      </div>
+    );
+  }
+
   if (!token) return <LoginScreen onLogin={t => { setToken(t); localStorage.setItem('admin_token', t); }} />;
   const s = msg => { setToast(msg); setTimeout(() => setToast(''), 3000); };
   return (

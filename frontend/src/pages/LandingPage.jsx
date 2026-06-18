@@ -87,6 +87,11 @@ export default function LandingPage() {
       localStorage.setItem('saas_business', JSON.stringify(data.business));
       if (data.operator_pin) localStorage.setItem('minegocio_onboarding_pin', data.operator_pin);
       
+      const superAdminEmails = ['calderonsantiago2019@gmail.com', 'admin@minegocio.app'];
+      if (data.business && superAdminEmails.includes(data.business.email)) {
+        localStorage.setItem('saas_admin_gate', 'true');
+      }
+      
       if (showLoginModal === 'register') {
         setIsLoggedIn(true);
         setUserName(loginName || 'Usuario');
