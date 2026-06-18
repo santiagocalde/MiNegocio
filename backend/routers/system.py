@@ -107,12 +107,18 @@ async def restore_backup(data: dict) -> dict:
     if not os.path.exists(backup_path):
         raise HTTPException(404, detail="Backup no encontrado")
     try:
+        import time as _time
+        safety_backup = os.path.join(backup_dir, f"pre_restore_{_time.strftime('%Y%m%d_%H%M%S')}.db.gz")
+        with open(DB_PATH, 'rb') as src, gzip.open(safety_backup, 'wb') as dst:
+            shutil.copyfileobj(src, dst)
+        logger.info(f"Backup de seguridad creado: {safety_backup}")
+
         tmp_path = os.path.join(backup_dir, "temp_restore.db")
         with gzip.open(backup_path, 'rb') as gz, open(tmp_path, 'wb') as f:
             shutil.copyfileobj(gz, f)
         shutil.copy(tmp_path, DB_PATH)
         os.remove(tmp_path)
-        return {"success": True, "message": f"Base restaurada desde {filename}"}
+        return {"success": True, "message": f"Base restaurada desde {filename}", "safety_backup": safety_backup}
     except Exception as e:
         raise HTTPException(500, detail=str(e))
 
@@ -197,7 +203,23 @@ async def mercadopago_create_payment(data: dict = Body(...)) -> dict:
 
 @router.get("/api/mercadopago/payment-status/{intent_id}", summary="Estado de pago MP")
 async def mercadopago_payment_status(intent_id: str) -> dict:
-    return {"status": "pending", "intent_id": intent_id}
+    access_token = os.getenv("MP_ACCESS_TOKEN", "")
+    if not access_token:
+        return {"status": "pending", "intent_id": intent_id, "detail": "MP no configurado"}
+    try:
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(
+                f"https://api.mercadopago.com/v1/payments/{intent_id}",
+                headers={"Authorization": f"Bearer {access_token}"}
+            )
+            if resp.status_code == 200:
+                data = resp.json()
+                return {"status": data.get("status", "pending"), "intent_id": intent_id, "detail": data.get("status_detail", "")}
+            if resp.status_code == 404:
+                return {"status": "not_found", "intent_id": intent_id}
+            return {"status": "pending", "intent_id": intent_id}
+    except Exception:
+        return {"status": "pending", "intent_id": intent_id, "detail": "error consultando MP"}
 
 
 # ────────────────────────────────────────────────────────────

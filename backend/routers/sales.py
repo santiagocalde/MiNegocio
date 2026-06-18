@@ -232,10 +232,13 @@ async def create_sale(body: SaleCreate, idempotency_key: Optional[str] = Query(N
                 if existing:
                     return {"id": existing, "duplicate": True, "message": "Venta ya procesada"}
 
-                if body.turn_id:
-                    turn = await conn.fetchrow("SELECT closed_at FROM turns WHERE id = $1", body.turn_id)
-                    if turn and turn["closed_at"] is not None:
-                        raise HTTPException(400, detail="El turno asociado ya se encuentra cerrado")
+                if not body.turn_id:
+                    raise HTTPException(400, detail="Se requiere un turno abierto para registrar ventas")
+                turn = await conn.fetchrow("SELECT id, closed_at FROM turns WHERE id = $1 AND business_id = $2", body.turn_id, b_id)
+                if not turn:
+                    raise HTTPException(404, detail="Turno no encontrado")
+                if turn["closed_at"] is not None:
+                    raise HTTPException(400, detail="El turno asociado ya se encuentra cerrado")
 
                 is_split = len(body.payments) > 0
                 primary_method = 'split' if is_split else body.payment_method
@@ -328,15 +331,19 @@ async def create_sale(body: SaleCreate, idempotency_key: Optional[str] = Query(N
                     return {"id": None, "duplicate": True, "message": "Venta ya procesada"}
 
                 if body.turn_id:
-                    cur_t = await db.execute("SELECT closed_at FROM turns WHERE id=?", (body.turn_id,))
+                    cur_t = await db.execute("SELECT id, closed_at FROM turns WHERE id=?", (body.turn_id,))
                     t = await cur_t.fetchone()
-                    if t and t[0] is not None:
+                    if not t:
+                        raise HTTPException(404, detail="Turno no encontrado")
+                    if t[1] is not None:
                         raise HTTPException(400, detail="El turno asociado ya se encuentra cerrado")
+                else:
+                    raise HTTPException(400, detail="Se requiere un turno abierto para registrar ventas")
 
                 is_split = len(body.payments) > 0
                 primary_method = 'split' if is_split else body.payment_method
                 primary_payment = round(sum(p.amount for p in body.payments), 2) if is_split else round(body.payment, 2)
-                total_sale = round(body.total, 2)
+                total_sale = round(body.total, 2) if body.total else round(primary_payment, 2)
                 change_sale = round(body.change_given, 2)
 
             cur = await db.execute(
@@ -361,7 +368,7 @@ async def create_sale(body: SaleCreate, idempotency_key: Optional[str] = Query(N
 
                 await db.execute(
                     "INSERT INTO sale_items (sale_id,product_id,product_name,quantity,unit_price,item_discount) VALUES (?,?,?,?,?,?)",
-                    (sale_id, item.product_id, item.product_name, item.quantity, item.unit_price, item.item_discount)
+                    (sale_id, item.product_id, item.product_name, item.quantity, db_price, item.item_discount)
                 )
 
                 p_stock, p_is_virtual, p_parent_id, p_pack_size = prod

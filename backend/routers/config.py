@@ -28,6 +28,16 @@ async def get_config() -> dict:
 
 @router.put("/api/config", summary="Actualizar configuracion del negocio")
 async def update_config(data: dict) -> dict:
+    iva_rate = data.get("iva_rate")
+    if iva_rate is not None:
+        try:
+            iva_rate = float(iva_rate)
+        except (ValueError, TypeError):
+            raise HTTPException(400, detail="iva_rate debe ser un numero")
+    cuit = data.get("cuit", "")
+    if cuit and len(cuit) > 20:
+        raise HTTPException(400, detail="CUIT demasiado largo")
+    
     if USE_PG:
         from db_helpers import get_pg_pool
         pool = await get_pg_pool()
@@ -48,8 +58,9 @@ async def update_config(data: dict) -> dict:
         return {"success": True}
     else:
         import aiosqlite
+        b_id = _biz_id() or ""
         async with aiosqlite.connect(main.DB_PATH) as db:
-            await db.execute("DELETE FROM business_config")
+            await db.execute("DELETE FROM business_config WHERE id IN (SELECT id FROM business_config LIMIT 1)")
             await db.execute(
                 "INSERT INTO business_config (nombre, subtitulo, direccion, telefono, cuit, condicion_iva, numero_caja, mensaje_ticket, iva_rate, mp_access_token, mp_collector_id) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
                 (data.get("nombre"), data.get("subtitulo"), data.get("direccion"), data.get("telefono"),
@@ -82,14 +93,17 @@ async def create_sucursal(name: str = Query(...), address: str = Query(""), phon
         from db_helpers import get_pg_pool
         pool = await get_pg_pool()
         async with pool.acquire() as conn:
-            row = await conn.fetchrow("INSERT INTO sucursales (business_id, name) VALUES ($1,$2) RETURNING id", _biz_id(), name)
-            return {"id": row["id"], "name": name}
+            row = await conn.fetchrow(
+                "INSERT INTO sucursales (business_id, name, address, phone) VALUES ($1,$2,$3,$4) RETURNING id",
+                _biz_id(), name, address or "", phone or ""
+            )
+            return {"id": row["id"], "name": name, "address": address, "phone": phone}
     else:
         import aiosqlite
         async with aiosqlite.connect(main.DB_PATH) as db:
-            cur = await db.execute("INSERT INTO sucursales (name) VALUES (?)", (name,))
+            cur = await db.execute("INSERT INTO sucursales (name, address, phone) VALUES (?,?,?)", (name, address or "", phone or ""))
             await db.commit()
-            return {"id": cur.lastrowid, "name": name}
+            return {"id": cur.lastrowid, "name": name, "address": address, "phone": phone}
 
 
 @router.patch("/api/sucursales/{sucursal_id}", summary="Actualizar sucursal")
@@ -98,12 +112,18 @@ async def update_sucursal(sucursal_id: int, name: str = Query(None), address: st
         from db_helpers import get_pg_pool
         pool = await get_pg_pool()
         async with pool.acquire() as conn:
-            await conn.execute("UPDATE sucursales SET name = $1 WHERE id = $2 AND business_id = $3", name, sucursal_id, _biz_id())
+            await conn.execute(
+                "UPDATE sucursales SET name = COALESCE($1, name), address = COALESCE($2, address), phone = COALESCE($3, phone) WHERE id = $4 AND business_id = $5",
+                name, address, phone, sucursal_id, _biz_id()
+            )
             return {"success": True}
     else:
         import aiosqlite
         async with aiosqlite.connect(main.DB_PATH) as db:
-            await db.execute("UPDATE sucursales SET name = ? WHERE id = ?", (name, sucursal_id))
+            await db.execute(
+                "UPDATE sucursales SET name = COALESCE(?, name), address = COALESCE(?, address), phone = COALESCE(?, phone) WHERE id = ?",
+                (name, address, phone, sucursal_id)
+            )
             await db.commit()
             return {"success": True}
 
