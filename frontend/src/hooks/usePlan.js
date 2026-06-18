@@ -1,33 +1,63 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 import { getDaysSince, formatDate } from '../utils/dateUtils';
 import { apiGet } from '../services/apiClient';
 
-export default function usePlan(businessConfig) {
-  const [serverDateStr, setServerDateStr] = useState(null);
+function getStoredPlan() {
+  try {
+    const raw = localStorage.getItem('saas_business');
+    if (raw) {
+      const biz = JSON.parse(raw);
+      if (biz && biz.plan) return { plan: biz.plan, created_at: null };
+    }
+  } catch {}
+  return null;
+}
 
-  useEffect(() => {
+export default function usePlan(businessConfig) {
+  const [serverData, setServerData] = useState(() => getStoredPlan());
+  const [retries, setRetries] = useState(0);
+
+  const fetchPlan = useCallback(() => {
     apiGet('/auth/me')
       .then(r => r.ok ? r.json() : null)
       .then(data => {
-        if (data?.created_at) {
-          setServerDateStr(data.created_at);
+        if (data) {
+          setServerData(data);
+          localStorage.setItem('saas_plan_cache', JSON.stringify({ plan: data.plan, created_at: data.created_at }));
         }
       })
       .catch(() => {});
   }, []);
 
+  useEffect(() => {
+    fetchPlan();
+  }, [fetchPlan]);
+
+  useEffect(() => {
+    if (!serverData || serverData.plan === 'trial') {
+      const timer = setTimeout(() => {
+        if (retries < 5) {
+          setRetries(r => r + 1);
+          fetchPlan();
+        }
+      }, 2000 * (retries + 1));
+      return () => clearTimeout(timer);
+    }
+  }, [serverData, retries, fetchPlan]);
+
   return useMemo(() => {
-    const currentPlan = businessConfig?.plan || 'trial';
-    const planStartDate = serverDateStr || businessConfig?.plan_start_date || new Date().toISOString();
+    const storedFallback = serverData?.plan ? serverData.plan : (getStoredPlan()?.plan || 'trial');
+    const currentPlan = serverData?.plan || storedFallback;
+    const planStartDate = serverData?.created_at || businessConfig?.plan_start_date || new Date().toISOString();
     const daysSinceStart = getDaysSince(planStartDate);
     const isTrialExpired = currentPlan === 'trial' && daysSinceStart > 7;
     const trialDaysRemaining = currentPlan === 'trial' ? Math.max(0, 7 - daysSinceStart) : 0;
     const trialEndDate = currentPlan === 'trial' ? new Date(new Date(planStartDate).getTime() + 7 * 86400000) : null;
     const trialEndDateFormatted = trialEndDate ? formatDate(trialEndDate) : '';
 
-    const planLabel = { trial: 'Trial', pro: 'Pro', ia: 'IA' }[currentPlan] || 'Trial';
+    const planLabel = { trial: 'Trial', simple: 'Simple', pro: 'Pro', ia: 'IA' }[currentPlan] || 'Trial';
     const canAccessIA = currentPlan === 'ia' || (currentPlan === 'trial' && !isTrialExpired);
-    const isPaid = currentPlan === 'pro' || currentPlan === 'ia';
+    const isPaid = currentPlan === 'simple' || currentPlan === 'pro' || currentPlan === 'ia';
     const showGate = currentPlan === 'trial' && isTrialExpired && !isPaid;
 
     return {
@@ -35,5 +65,5 @@ export default function usePlan(businessConfig) {
       trialDaysRemaining, trialEndDate, trialEndDateFormatted,
       planLabel, canAccessIA, isPaid, showGate,
     };
-  }, [businessConfig?.plan, businessConfig?.plan_start_date, serverDateStr]);
+  }, [businessConfig?.plan_start_date, serverData]);
 }

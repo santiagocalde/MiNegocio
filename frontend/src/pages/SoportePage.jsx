@@ -24,7 +24,7 @@ export default function SoportePage() {
   const { backend, currentPlan, trialDaysRemaining, isTrialExpired, trialEndDateFormatted, backendError } = usePanelContext();
   const [openFaq, setOpenFaq] = useState(null);
 
-  const planLabel = { trial: 'Trial', pro: 'Pro', ia: 'IA' }[currentPlan] || 'Trial';
+  const planLabel = { trial: 'Trial', simple: 'Simple', pro: 'Pro', ia: 'IA' }[currentPlan] || 'Trial';
 
   const toggleFaq = (idx) => setOpenFaq(openFaq === idx ? null : idx);
 
