@@ -252,7 +252,7 @@ class TenantMiddleware(BaseHTTPMiddleware):
                     pass
 
         # Rutas publicas (docs, preflight, auth login/register, etc.)
-        if request.method == "OPTIONS" or path.startswith("/api/auth") or path.startswith("/api/admin/auth") or path.startswith("/api/login") or path.startswith("/api/health") or path.startswith("/docs") or path.startswith("/openapi"):
+        if request.method == "OPTIONS" or path.startswith("/api/auth") or path.startswith("/api/admin/auth") or path.startswith("/api/login") or path.startswith("/api/health") or path.startswith("/api/billing/webhook") or path.startswith("/docs") or path.startswith("/openapi"):
             return await call_next(request)
                 
         if SAAS_MODE and not b_id and not is_preview and path.startswith("/api/"):
