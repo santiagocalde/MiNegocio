@@ -192,6 +192,8 @@ async def lifespan(app: FastAPI) -> None:
             from db import init_pg
             await init_pg()
             logger.info("PostgreSQL inicializado — modo cloud activo")
+            from routers.admin import seed_superadmin
+            await seed_superadmin()
         except Exception as e:
             logger.error(f"PostgreSQL no disponible: {e}")
             if APP_ENV == "production":
@@ -250,7 +252,7 @@ class TenantMiddleware(BaseHTTPMiddleware):
                     pass
 
         # Rutas publicas (docs, preflight, auth login/register, etc.)
-        if request.method == "OPTIONS" or path.startswith("/api/auth") or path.startswith("/api/login") or path.startswith("/docs") or path.startswith("/openapi"):
+        if request.method == "OPTIONS" or path.startswith("/api/auth") or path.startswith("/api/admin/auth") or path.startswith("/api/login") or path.startswith("/docs") or path.startswith("/openapi"):
             return await call_next(request)
                 
         if SAAS_MODE and not b_id and not is_preview and path.startswith("/api/"):
@@ -754,6 +756,7 @@ from routers.cashier import router as cashier_router
 from routers.reports import router as reports_router
 from routers.auth import router as auth_router
 from routers.billing import router as billing_router
+from routers.admin import router as admin_router
 
 app.include_router(products_router)
 app.include_router(sales_router)
@@ -766,6 +769,7 @@ app.include_router(cashier_router)
 app.include_router(reports_router)
 app.include_router(auth_router)
 app.include_router(billing_router, prefix="/api/billing")
+app.include_router(admin_router)
 
 if __name__ == "__main__":
     import uvicorn
