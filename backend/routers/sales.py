@@ -271,7 +271,7 @@ async def create_sale(body: SaleCreate, idempotency_key: Optional[str] = Query(N
 
                     await conn.execute(
                         "INSERT INTO sale_items (business_id, sale_id, product_id, product_name, quantity, unit_price, item_discount) VALUES ($1,$2,$3,$4,$5,$6,$7)",
-                        b_id, sale_id, item.product_id, item.product_name, item.quantity, db_price, item.item_discount
+                        b_id, sale_id, item.product_id, db_name, item.quantity, db_price, item.item_discount
                     )
 
                     if prod["is_virtual"] == 1 and prod["parent_id"]:

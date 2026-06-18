@@ -1,7 +1,10 @@
-import { useState, useCallback, useMemo, useRef } from 'react';
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 
-export default function useCart(productsDB, ivaRate) {
-  const [cart, setCart] = useState([]);
+export default function useCart(productsDB, ivaRate, playBeep) {
+  const [cart, setCart] = useState(() => {
+    try { const saved = localStorage.getItem('minegocio_cart'); return saved ? JSON.parse(saved) : []; }
+    catch { return []; }
+  });
   const [search, setSearch] = useState('');
   const [searchError, setSearchError] = useState(false);
   const [flash, setFlash] = useState(false);
@@ -24,6 +27,12 @@ export default function useCart(productsDB, ivaRate) {
 
   const addLockRef = useRef(false);
 
+  // Persist cart to localStorage on every change
+  useEffect(() => {
+    try { localStorage.setItem('minegocio_cart', JSON.stringify(cart)); }
+    catch {}
+  }, [cart]);
+
   const handleQuickAdd = useCallback((code, name, price, extra) => {
     if (addLockRef.current) return;
     addLockRef.current = true;
@@ -36,7 +45,8 @@ export default function useCart(productsDB, ivaRate) {
       return [...prev, { id: itemId, code, name, price, stock: product?.stock || 0, qty: 1, ...extra }];
     });
     setTimeout(() => { addLockRef.current = false; }, 300);
-  }, [productsDB]);
+    if (playBeep) playBeep();
+  }, [productsDB, playBeep]);
 
   const updateQty = useCallback((id, delta) => {
     setCart(prev => prev.map(item => item.id === id ? { ...item, qty: Math.max(0.01, item.qty + delta) } : item));
@@ -82,8 +92,9 @@ export default function useCart(productsDB, ivaRate) {
 
   const totals = useMemo(() => calculateTotals(), [calculateTotals]);
   const { rawTotal, total, subtotal, iva, discount } = totals;
-  const effectiveTotal = adjustedTotal ?? total;
-  const change = (payment != null && payment !== '') ? parseFloat(payment) - effectiveTotal : 0;
+  const sanitizedAdjusted = adjustedTotal != null && !isNaN(adjustedTotal) && adjustedTotal >= 0 ? adjustedTotal : null;
+  const effectiveTotal = sanitizedAdjusted ?? total;
+  const change = (payment != null && payment !== '') ? Math.max(0, parseFloat(payment) - effectiveTotal) : 0;
 
   return {
     cart, setCart,
