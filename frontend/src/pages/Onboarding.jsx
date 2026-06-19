@@ -59,7 +59,7 @@ export default function Onboarding() {
     prefijo: '+54', telefono: '', email: '', nombre: '', negocio: '', tipo: '', posPrevio: '', arca: '', objetivo: ''
   });
 
-  const TOTAL_STEPS = 9;
+  const TOTAL_STEPS = 8;
   const progress = (step / TOTAL_STEPS) * 100;
   
   const isLoggedIn = !!localStorage.getItem('saas_token');
@@ -237,33 +237,30 @@ export default function Onboarding() {
         );
       case 6:
         return (
-          <div style={{ animation: 'fadeIn 0.3s ease' }}>
-            <h2 style={{ fontSize: '1.8rem', fontWeight: 800, color: '#fff', marginBottom: 12 }}>¿Usaste un sistema de ventas antes?</h2>
-            <p style={{ color: 'var(--lp-text-muted)', fontSize: '0.95rem', marginBottom: 32 }}>Esto nos ayuda a adaptar la experiencia a tus conocimientos previos.</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              {['Sí, actualmente uso uno', 'Lo usé en el pasado', 'No, siempre usé cuaderno / memoria'].map((opt, i) => (
-                 <button key={i} onClick={() => { setFormData({ ...formData, posPrevio: opt }); handleNext(); }} style={{ background: formData.posPrevio === opt ? 'rgba(20,187,166,0.15)' : 'rgba(255,255,255,0.03)', border: formData.posPrevio === opt ? '1px solid var(--lp-primary)' : '1px solid rgba(255,255,255,0.1)', padding: '20px', borderRadius: 12, cursor: 'pointer', color: '#fff', fontSize: '1.05rem', fontWeight: 600, textAlign: 'left', transition: 'all 0.2s' }}>
-                   {opt}
-                 </button>
-              ))}
+          <div style={{ animation: 'fadeIn 0.3s ease', display: 'flex', flexDirection: 'column', gap: 20 }}>
+            <div>
+              <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#fff', marginBottom: 8 }}>Tu experiencia</h2>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {['Si, actualmente uso uno', 'Lo use en el pasado', 'No, siempre use cuaderno / memoria'].map((opt, i) => (
+                   <button key={i} onClick={() => { setFormData({ ...formData, posPrevio: opt }); }} style={{ background: formData.posPrevio === opt ? 'rgba(20,187,166,0.15)' : 'rgba(255,255,255,0.03)', border: formData.posPrevio === opt ? '1px solid var(--lp-primary)' : '1px solid rgba(255,255,255,0.1)', padding: '14px 16px', borderRadius: 10, cursor: 'pointer', color: '#fff', fontSize: '0.95rem', fontWeight: 600, textAlign: 'left', transition: 'all 0.2s' }}>
+                     {opt}
+                   </button>
+                ))}
+              </div>
+            </div>
+            <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 18 }}>
+              <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#fff', marginBottom: 8 }}>Facturacion</h2>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {['Si, necesito emitir facturas electronicas', 'No, facturo por mi cuenta / no facturo', 'No lo se todavia'].map((opt, i) => (
+                   <button key={i} onClick={() => { setFormData({ ...formData, arca: opt }); handleNext(); }} style={{ background: formData.arca === opt ? 'rgba(20,187,166,0.15)' : 'rgba(255,255,255,0.03)', border: formData.arca === opt ? '1px solid var(--lp-primary)' : '1px solid rgba(255,255,255,0.1)', padding: '14px 16px', borderRadius: 10, cursor: 'pointer', color: '#fff', fontSize: '0.95rem', fontWeight: 600, textAlign: 'left', transition: 'all 0.2s' }}>
+                     {opt}
+                   </button>
+                ))}
+              </div>
             </div>
           </div>
         );
       case 7:
-        return (
-          <div style={{ animation: 'fadeIn 0.3s ease' }}>
-            <h2 style={{ fontSize: '1.8rem', fontWeight: 800, color: '#fff', marginBottom: 12 }}>¿Necesitás facturar con ARCA (ex AFIP)?</h2>
-            <p style={{ color: 'var(--lp-text-muted)', fontSize: '0.95rem', marginBottom: 32 }}>Podemos conectar tu cuenta para que emitas tickets fiscales de forma automática.</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              {['Sí, necesito emitir facturas electrónicas', 'No, facturo por mi cuenta / no facturo', 'Aún no lo sé, lo decido después'].map((opt, i) => (
-                 <button key={i} onClick={() => { setFormData({ ...formData, arca: opt }); handleNext(); }} style={{ background: formData.arca === opt ? 'rgba(20,187,166,0.15)' : 'rgba(255,255,255,0.03)', border: formData.arca === opt ? '1px solid var(--lp-primary)' : '1px solid rgba(255,255,255,0.1)', padding: '20px', borderRadius: 12, cursor: 'pointer', color: '#fff', fontSize: '1.05rem', fontWeight: 600, textAlign: 'left', transition: 'all 0.2s' }}>
-                   {opt}
-                 </button>
-              ))}
-            </div>
-          </div>
-        );
-      case 8:
         return (
           <div style={{ animation: 'fadeIn 0.3s ease' }}>
             <h2 style={{ fontSize: '1.8rem', fontWeight: 800, color: '#fff', marginBottom: 12 }}>¿Qué buscás resolver principalmente?</h2>
@@ -277,7 +274,7 @@ export default function Onboarding() {
             </div>
           </div>
         );
-      case 9:
+      case 8:
         return (
           <div style={{ animation: 'fadeIn 0.5s ease', textAlign: 'center' }}>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 24 }}>
