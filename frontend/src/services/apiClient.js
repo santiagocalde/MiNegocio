@@ -18,8 +18,7 @@ async function tryRefreshToken() {
   const refreshToken = localStorage.getItem('saas_refresh_token');
   if (!refreshToken) return false;
   if (isRefreshing) {
-    await refreshPromise;
-    return true;
+    return await refreshPromise;
   }
   isRefreshing = true;
   refreshPromise = (async () => {
@@ -34,14 +33,26 @@ async function tryRefreshToken() {
         if (data.refresh_token) localStorage.setItem('saas_refresh_token', data.refresh_token);
         return true;
       }
-      if (res.status === 401) localStorage.removeItem('saas_token');
+      clearSession();
       return false;
-    } catch { return false; }
+    } catch {
+      localStorage.removeItem('saas_token');
+      localStorage.removeItem('saas_refresh_token');
+      return false;
+    } finally {
+      refreshPromise = null;
+      isRefreshing = false;
+    }
   })();
-  const result = await refreshPromise;
-  isRefreshing = false;
-  refreshPromise = null;
-  return result;
+  return await refreshPromise;
+}
+
+function clearSession() {
+  localStorage.removeItem('saas_token');
+  localStorage.removeItem('saas_refresh_token');
+  localStorage.removeItem('saas_business');
+  localStorage.removeItem('saas_admin_gate');
+  localStorage.removeItem('admin_token');
 }
 
 async function request(method, path, body) {
@@ -61,6 +72,10 @@ async function request(method, path, body) {
         headers['Authorization'] = `Bearer ${newToken}`;
         return fetchWithTimeout(`${SERVER_URL}${path}`, { method, headers, body: body ? JSON.stringify(body) : undefined });
       }
+    }
+    const onAuthPage = typeof window !== 'undefined' && (window.location.pathname === '/' || window.location.pathname.startsWith('/panel'));
+    if (!onAuthPage) {
+      window.location.href = '/';
     }
   }
   return res;

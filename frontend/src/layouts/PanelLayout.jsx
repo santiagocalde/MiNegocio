@@ -1,5 +1,5 @@
 import React, { Suspense, useEffect } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import Sidebar from '../components/pos/Sidebar';
 import { Icons } from '../components/ui/Icons';
 import { usePanelContext } from '../context/PanelContext';
@@ -25,6 +25,13 @@ export default function PanelLayout() {
   const [initialCajaMonto, setInitialCajaMonto] = React.useState('');
   const [newPassword, setNewPassword] = React.useState('');
   const [confirmPassword, setConfirmPassword] = React.useState('');
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (isTrialExpired && !isPaid && location.pathname !== '/panel/plan') {
+      navigate('/panel/plan');
+    }
+  }, [isTrialExpired, isPaid, location.pathname, navigate]);
 
   useEffect(() => {
     if (localStorage.getItem('minegocio_onboarding_pending') === 'true') {

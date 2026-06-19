@@ -4,6 +4,13 @@ import { apiGet } from '../services/apiClient';
 
 function getStoredPlan() {
   try {
+    const cached = localStorage.getItem('saas_plan_cache');
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (parsed && parsed.plan) return parsed;
+    }
+  } catch {}
+  try {
     const raw = localStorage.getItem('saas_business');
     if (raw) {
       const biz = JSON.parse(raw);
@@ -23,7 +30,7 @@ export default function usePlan(businessConfig) {
       .then(data => {
         if (data) {
           setServerData(data);
-          localStorage.setItem('saas_plan_cache', JSON.stringify({ plan: data.plan, created_at: data.created_at }));
+          try { localStorage.setItem('saas_plan_cache', JSON.stringify({ plan: data.plan, created_at: data.created_at })); } catch {}
         }
       })
       .catch(() => {});
@@ -34,7 +41,7 @@ export default function usePlan(businessConfig) {
   }, [fetchPlan]);
 
   useEffect(() => {
-    if (!serverData || serverData.plan === 'trial') {
+    if (!serverData) {
       const timer = setTimeout(() => {
         if (retries < 5) {
           setRetries(r => r + 1);

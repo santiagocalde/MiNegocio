@@ -55,14 +55,25 @@ export default function Onboarding() {
   const [direction, setDirection] = useState(1);
   const [registerLoading, setRegisterLoading] = useState(false);
   const [registerError, setRegisterError] = useState('');
-  const [formData, setFormData] = useState({
-    prefijo: '+54', telefono: '', email: '', nombre: '', negocio: '', tipo: '', posPrevio: '', arca: '', objetivo: ''
+  const [formData, setFormData] = useState(() => {
+    try {
+      const saved = localStorage.getItem('minegocio_onboarding_form');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === 'object') return parsed;
+      }
+    } catch {}
+    return { prefijo: '+54', telefono: '', email: '', nombre: '', negocio: '', tipo: '', posPrevio: '', arca: '', objetivo: '' };
   });
 
   const TOTAL_STEPS = 8;
   const progress = (step / TOTAL_STEPS) * 100;
   
   const isLoggedIn = !!localStorage.getItem('saas_token');
+
+  useEffect(() => {
+    try { localStorage.setItem('minegocio_onboarding_form', JSON.stringify(formData)); } catch {}
+  }, [formData]);
 
   useEffect(() => {
     document.body.classList.add('landing-open');
@@ -89,6 +100,7 @@ export default function Onboarding() {
   };
 
   const handleComplete = async () => {
+    if (registerLoading) return;
     setRegisterLoading(true);
     setRegisterError('');
     try {
@@ -161,6 +173,7 @@ export default function Onboarding() {
         }
         localStorage.removeItem('saas_mode');
         localStorage.removeItem('minegocio_onboarding_pending');
+        localStorage.removeItem('minegocio_onboarding_form');
 
         window.location.href = '/panel';
       }
@@ -186,7 +199,7 @@ export default function Onboarding() {
                 </select>
                 <div style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'rgba(255,255,255,0.5)' }}>▼</div>
               </div>
-              <input type="tel" placeholder="11 1234 5678" value={formData.telefono} onChange={e => setFormData({ ...formData, telefono: e.target.value.replace(/[^0-9\s-]/g, '') })} style={{ flex: 1, padding: '16px 20px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, color: '#fff', fontSize: '1.1rem', outline: 'none', transition: 'all 0.2s' }} onFocus={e => e.target.style.borderColor = 'var(--lp-primary)'} onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'} autoFocus />
+              <input type="tel" placeholder="11 1234 5678" value={formData.telefono} onChange={e => setFormData({ ...formData, telefono: e.target.value.replace(/[^0-9]/g, '') })} style={{ flex: 1, padding: '16px 20px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, color: '#fff', fontSize: '1.1rem', outline: 'none', transition: 'all 0.2s' }} onFocus={e => e.target.style.borderColor = 'var(--lp-primary)'} onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'} autoFocus />
             </div>
             <button onClick={handleNext} disabled={formData.telefono.length < 8} className="lp-btn lp-btn--primary" style={{ width: '100%', padding: '16px', fontSize: '1.1rem', opacity: formData.telefono.length < 8 ? 0.5 : 1 }}>Continuar</button>
           </div>
@@ -249,7 +262,7 @@ export default function Onboarding() {
               </div>
             </div>
             <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 18 }}>
-              <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#fff', marginBottom: 8 }}>Facturacion</h2>
+              <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#fff', marginBottom: 8 }}>Facturacion (selecciona para continuar)</h2>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {['Si, necesito emitir facturas electronicas', 'No, facturo por mi cuenta / no facturo', 'No lo se todavia'].map((opt, i) => (
                    <button key={i} onClick={() => { setFormData({ ...formData, arca: opt }); handleNext(); }} style={{ background: formData.arca === opt ? 'rgba(20,187,166,0.15)' : 'rgba(255,255,255,0.03)', border: formData.arca === opt ? '1px solid var(--lp-primary)' : '1px solid rgba(255,255,255,0.1)', padding: '14px 16px', borderRadius: 10, cursor: 'pointer', color: '#fff', fontSize: '0.95rem', fontWeight: 600, textAlign: 'left', transition: 'all 0.2s' }}>

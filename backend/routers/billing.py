@@ -10,7 +10,7 @@ router = APIRouter()
 logger = logging.getLogger("NovaStock")
 
 MP_ACCESS_TOKEN = os.environ.get("MP_ACCESS_TOKEN", "")
-JWT_SECRET = os.environ.get("JWT_SECRET", "super-secret-key-change-in-prod")
+JWT_SECRET = os.environ.get("JWT_SECRET", "minegocio-produccion-secret-2026")
 
 class SubscribeRequest(BaseModel):
     plan_id: str
@@ -121,11 +121,22 @@ async def mercadopago_webhook(request: Request):
                         except Exception:
                             logger.warning(f"Webhook MP: error parseando external_reference: {ext_ref}")
                             return {"detail": "error parseando external_reference"}
-
-                        freq = sub_data.get("auto_recurring", {})
-                        months = freq.get("frequency", 1) * (12 if freq.get("frequency_type") == "years" else 1)
+                    else:
                         pool = await get_pool()
                         async with pool.acquire() as conn:
+                            row = await conn.fetchrow("SELECT id, plan_pending FROM businesses WHERE mp_subscription_id = $1", data_id)
+                            if row and row["plan_pending"]:
+                                biz_id = row["id"]
+                                plan_id = row["plan_pending"]
+                                logger.info(f"Webhook MP: matched {biz_id} via mp_subscription_id={data_id}")
+                            else:
+                                logger.warning(f"Webhook MP: no ext_ref and no matching mp_subscription_id={data_id}")
+                                return {"detail": "no matching subscription"}
+
+                    freq = sub_data.get("auto_recurring", {})
+                    months = freq.get("frequency", 1) * (12 if freq.get("frequency_type") == "years" else 1)
+                    pool = await get_pool()
+                    async with pool.acquire() as conn:
                             if status == "authorized":
                                 await conn.execute(
                                     "UPDATE businesses SET plan = $1, status = 'active', plan_end_date = CURRENT_DATE + make_interval(months => $2), mp_subscription_id = $3, updated_at = now() WHERE id = $4",

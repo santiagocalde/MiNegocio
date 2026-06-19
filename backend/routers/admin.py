@@ -164,6 +164,16 @@ async def admin_change_plan(
         if not old:
             raise HTTPException(404, detail="Negocio no encontrado")
         
+        if new_plan != "ia":
+            prod_count = await conn.fetchval("SELECT COUNT(*) FROM products WHERE business_id = $1", business_id)
+            op_count = await conn.fetchval("SELECT COUNT(*) FROM operators WHERE business_id = $1", business_id)
+            from main import PLAN_LIMITS
+            limit = PLAN_LIMITS.get(new_plan, {})
+            if limit.get("max_products") and prod_count > limit["max_products"]:
+                logger.warning(f"Downgrade {business_id}: {prod_count} productos exceden limite {new_plan} ({limit['max_products']})")
+            if limit.get("max_operators") and op_count > limit["max_operators"]:
+                logger.warning(f"Downgrade {business_id}: {op_count} operadores exceden limite {new_plan} ({limit['max_operators']})")
+        
         async with conn.transaction():
             await conn.execute(
                 "UPDATE businesses SET plan = $1, updated_at = $2 WHERE id = $3",
