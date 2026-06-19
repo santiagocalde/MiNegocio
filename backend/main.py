@@ -763,7 +763,7 @@ async def check_billing_grace_period() -> None:
             logger.info("Grace period task completada.")
         except Exception as e:
             logger.error(f"Error en grace period task: {e}")
-        await asyncio.sleep(60 * 60 * 6)
+        await asyncio.sleep(60 * 60)
 
 # ─────────────────────────────────────────────────────────────
 # INCLUSIÓN DE ROUTERS MODULARES

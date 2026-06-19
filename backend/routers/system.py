@@ -260,9 +260,8 @@ async def list_plans() -> list:
         return [{"id": r["slug"], "name": r["name"], "monthly": r["monthly_price"], "yearly": r["yearly_price"], "desc": f"Hasta {r['max_products']:,} productos".replace(",", "."), "features": json.loads(r["features"]) if isinstance(r["features"], str) else r["features"], "popular": r["slug"] == "pro"} for r in rows]
     except Exception as e:
         logger.warning(f"No se pudieron cargar planes desde DB, usando fallback: {e}")
-        return [{"id": "simple", "name": "Simple", "monthly": 20000, "yearly": 200000, "desc": "Hasta 3.500 productos", "popular": False, "features": ["Hasta 3.500 productos", "Clientes y ventas", "Soporta cortes de internet", "Manejo de fiados", "Manejo de proveedores", "Lector laser e impresoras", "Hasta 2 usuarios"]},
-                {"id": "pro", "name": "Pro", "monthly": 30000, "yearly": 300000, "desc": "Hasta 7.000 productos", "popular": True, "features": ["Todo lo de Simple", "Hasta 7.000 productos", "Catalogo web online QR", "Reportes de ventas detallados", "Hasta 5 usuarios"]},
-                {"id": "ia", "name": "IA", "monthly": 40000, "yearly": 400000, "desc": "Hasta 10.000 productos", "popular": False, "features": ["Todo lo de Pro", "Hasta 10.000 productos", "Escanner de facturas IA", "Asesor de precios inteligente", "Reportes de rentabilidad", "Hasta 10 usuarios"]}]
+        from core.plan_pricing import PLANS_CONFIG
+        return [{"id": slug, "name": p["name"], "monthly": p["monthly"], "yearly": p["yearly"], "desc": p["desc"], "popular": p["popular"], "features": p["features"]} for slug, p in PLANS_CONFIG.items()]
 
 
 @router.get("/api/metrics", summary="Metricas publicas")

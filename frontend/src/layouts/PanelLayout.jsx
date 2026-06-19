@@ -106,6 +106,7 @@ export default function PanelLayout() {
         setIsClosingCaja={closeTurn.setIsClosingCaja}
         currentTurnId={auth.currentTurnId}
         turnOpenedAt={auth.turnOpenedAt}
+        initialCash={auth.initialCash}
       />
 
       <main style={{ flex: 1, overflow: 'auto', position: 'relative', display: 'flex', flexDirection: 'column' }}>

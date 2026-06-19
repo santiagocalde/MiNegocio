@@ -31,17 +31,12 @@ def get_current_business_id(request: Request) -> str:
 async def create_subscription(body: SubscribeRequest, request: Request):
     biz_id = get_current_business_id(request)
     
-    # Precios fijos (en prod se puede leer de la DB)
-    plans_config = {
-        "simple": {"name": "Plan Simple", "monthly": 20000, "yearly": 200000},
-        "pro":    {"name": "Plan Pro",    "monthly": 30000, "yearly": 300000},
-        "ia":     {"name": "Plan IA",     "monthly": 40000, "yearly": 400000}
-    }
+    from core.plan_pricing import PLANS_CONFIG
     
-    if body.plan_id not in plans_config:
-        raise HTTPException(status_code=400, detail="Plan no válido")
+    if body.plan_id not in PLANS_CONFIG:
+        raise HTTPException(status_code=400, detail="Plan no valido")
         
-    plan_info = plans_config[body.plan_id]
+    plan_info = PLANS_CONFIG[body.plan_id]
     amount = plan_info["yearly"] if body.is_yearly else plan_info["monthly"]
     frequency_type = "months"
     frequency = 12 if body.is_yearly else 1

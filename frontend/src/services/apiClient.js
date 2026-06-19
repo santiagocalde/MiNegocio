@@ -34,6 +34,7 @@ async function tryRefreshToken() {
         if (data.refresh_token) localStorage.setItem('saas_refresh_token', data.refresh_token);
         return true;
       }
+      if (res.status === 401) localStorage.removeItem('saas_token');
       return false;
     } catch { return false; }
   })();

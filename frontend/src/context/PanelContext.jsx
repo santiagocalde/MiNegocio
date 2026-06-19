@@ -7,7 +7,7 @@ import usePrinting from '../hooks/usePrinting';
 import useSound from '../hooks/useSound';
 import usePlan from '../hooks/usePlan';
 import SetupWizard from '../components/SetupWizard';
-import { apiGet } from '../services/apiClient';
+import { apiGet, apiPost } from '../services/apiClient';
 import { Icons } from '../components/ui/Icons';
 
 const PanelContext = createContext(null);
@@ -86,6 +86,9 @@ export function PanelProvider({ children }) {
               auth.setTurnOpenedAt(data.opened_at);
               localStorage.setItem('minegocio_turn_opened_at', data.opened_at);
             }
+            if (data.initial_cash != null) {
+              auth.setInitialCash(data.initial_cash);
+            }
           }
         })
         .catch(() => { addToast('Error al validar turno. Reintentá.', 'error'); });
@@ -152,6 +155,7 @@ export function PanelProvider({ children }) {
           <form onSubmit={auth.handlePin} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
             <input type="password" value={auth.pin} onChange={e => auth.setPin(e.target.value.replace(/[^0-9]/g, '').slice(0, 4))} placeholder="••••" style={{ width: 'clamp(180px, 25vw, 240px)', textAlign: 'center', fontSize: '2rem', letterSpacing: '12px', padding: '14px 16px', background: 'var(--bg-card)', border: '2px solid var(--border-color)', borderRadius: 12, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)', outline: 'none' }} autoFocus />
             <button type="submit" style={{ background: 'var(--gradient-primary)', border: 'none', color: 'white', padding: '12px 48px', borderRadius: 12, fontSize: '1rem', fontWeight: 700, cursor: 'pointer', marginTop: 8 }}>Abrir Turno</button>
+            <ForgotPinLink />
           </form>
         </div>
       );
@@ -161,4 +165,47 @@ export function PanelProvider({ children }) {
   }
 
   return <PanelContext.Provider value={value}>{children}</PanelContext.Provider>;
+}
+
+function ForgotPinLink() {
+  const [show, setShow] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState('');
+
+  const handleForgotPin = async () => {
+    setLoading(true); setErr('');
+    try {
+      const biz = JSON.parse(localStorage.getItem('saas_business') || '{}');
+      if (!biz.email) { setErr('No se encontro el email de la cuenta.'); setLoading(false); return; }
+      await apiPost('/auth/forgot-pin', { email: biz.email });
+      setSent(true);
+    } catch { setErr('Error de conexion. Intenta de nuevo.'); }
+    setLoading(false);
+  };
+
+  return (
+    <div style={{ marginTop: 4, textAlign: 'center' }}>
+      {!show && !sent && (
+        <button onClick={() => setShow(true)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '0.78rem', cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: 2, padding: '4px 8px' }}>
+          Olvide mi PIN
+        </button>
+      )}
+      {show && !sent && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'center' }}>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', margin: 0 }}>Te enviamos un nuevo PIN a tu correo</p>
+          <button onClick={handleForgotPin} disabled={loading} style={{ background: 'var(--gradient-primary)', border: 'none', color: 'white', padding: '8px 24px', borderRadius: 8, fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', opacity: loading ? 0.6 : 1 }}>
+            {loading ? 'Enviando...' : 'Enviar nuevo PIN'}
+          </button>
+          <button onClick={() => setShow(false)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '0.75rem', cursor: 'pointer' }}>Cancelar</button>
+        </div>
+      )}
+      {sent && (
+        <div style={{ color: 'var(--accent-success)', fontSize: '0.85rem', fontWeight: 600, padding: '8px 12px', background: 'rgba(16,185,129,0.1)', borderRadius: 8 }}>
+          PIN enviado. Revisa tu correo.
+        </div>
+      )}
+      {err && <div style={{ color: 'var(--accent-danger)', fontSize: '0.78rem', marginTop: 4 }}>{err}</div>}
+    </div>
+  );
 }

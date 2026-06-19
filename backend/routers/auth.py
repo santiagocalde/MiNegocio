@@ -424,3 +424,45 @@ async def reset_password(request: Request, body: ResetPasswordRequest) -> dict:
         )
 
     return {"message": "Contrasena restablecida correctamente. Ya podes iniciar sesion."}
+
+
+@router.post("/forgot-pin", summary="Solicitar nuevo PIN de operador")
+@auth_limiter.limit("3/15minutes")
+async def forgot_pin(request: Request, body: ForgotPasswordRequest) -> dict:
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            "SELECT id, email, business_name FROM businesses WHERE email = $1",
+            body.email.lower().strip(),
+        )
+        if not row:
+            return {"message": "Si el email existe, recibiras un nuevo PIN."}
+
+        new_pin = str(__import__('random').randint(1000, 9999))
+        hashed_pin = bcrypt.hashpw(new_pin.encode(), bcrypt.gensalt()).decode()
+
+        await conn.execute(
+            "UPDATE operators SET pin = $1 WHERE business_id = $2 AND role = 'admin'",
+            hashed_pin, row["id"]
+        )
+
+        resend_key = os.getenv("RESEND_API_KEY", "")
+        if resend_key:
+            try:
+                import httpx
+                async with httpx.AsyncClient(timeout=10) as client:
+                    await client.post(
+                        "https://api.resend.com/emails",
+                        headers={"Authorization": f"Bearer {resend_key}", "Content-Type": "application/json"},
+                        json={
+                            "from": "MiNegocio <no-reply@minegocio.com>",
+                            "to": [row["email"]],
+                            "subject": f"Tu nuevo PIN de acceso - {row['business_name']}",
+                            "html": f'<p>Hola {row["business_name"]},</p><p>Tu nuevo PIN de acceso es: <strong style="font-size:20px">{new_pin}</strong></p><p>Ingresalo en la pantalla de inicio para abrir tu caja.</p><p>Si no solicitaste este cambio, contactanos urgente.</p>'
+                        }
+                    )
+                logger.info(f"Nuevo PIN enviado a {row['email']}")
+            except Exception as e:
+                logger.error(f"No se pudo enviar email de PIN: {e}")
+
+    return {"message": "Si el email existe, recibiras un nuevo PIN por correo."}

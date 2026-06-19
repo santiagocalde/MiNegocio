@@ -19,6 +19,7 @@ export default function useAuth(addToast) {
   });
   const [currentTurnId, setCurrentTurnId] = useState(localStorage.getItem(K_TURN_ID) || null);
   const [turnOpenedAt, setTurnOpenedAt] = useState(localStorage.getItem(K_TURN_OPENED) || null);
+  const [initialCash, setInitialCash] = useState(0);
   const [pin, setPin] = useState('');
 
   const handlePin = async (e) => {
@@ -68,6 +69,7 @@ export default function useAuth(addToast) {
     currentOperator, setCurrentOperator,
     currentTurnId, setCurrentTurnId,
     turnOpenedAt, setTurnOpenedAt,
+    initialCash, setInitialCash,
     pin, setPin,
     handlePin,
     handleSaaSCallback,

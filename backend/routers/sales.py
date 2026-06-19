@@ -87,7 +87,7 @@ async def get_active_turn() -> dict:
         pool = await get_pg_pool()
         async with pool.acquire() as conn:
             row = await conn.fetchrow(
-                "SELECT id, operator, opened_at FROM turns WHERE closed_at IS NULL AND business_id = $1 ORDER BY id DESC LIMIT 1",
+                "SELECT id, operator, opened_at, initial_cash FROM turns WHERE closed_at IS NULL AND business_id = $1 ORDER BY id DESC LIMIT 1",
                 b_id
             )
             if row:
@@ -101,12 +101,12 @@ async def get_active_turn() -> dict:
                         row["id"]
                     )
                     return {"id": None}
-                return {"id": row["id"], "operator": row["operator"]}
+                return {"id": row["id"], "operator": row["operator"], "opened_at": str(row["opened_at"]), "initial_cash": float(row["initial_cash"] or 0)}
             return {"id": None}
     else:
         import aiosqlite
         async with aiosqlite.connect(main.DB_PATH) as db:
-            cur = await db.execute("SELECT id, operator, opened_at FROM turns WHERE closed_at IS NULL ORDER BY id DESC LIMIT 1")
+            cur = await db.execute("SELECT id, operator, opened_at, initial_cash FROM turns WHERE closed_at IS NULL ORDER BY id DESC LIMIT 1")
             row = await cur.fetchone()
             if row:
                 cur = await db.execute("SELECT (julianday('now','localtime') - julianday(?)) * 24.0", (row[2],))
@@ -115,7 +115,7 @@ async def get_active_turn() -> dict:
                     await db.execute("UPDATE turns SET closed_at = datetime('now','localtime'), notes = 'Cierre automatico > 14hs' WHERE id = ?", (row[0],))
                     await db.commit()
                     return {"id": None}
-                return {"id": row[0], "operator": row[1]}
+                return {"id": row[0], "operator": row[1], "opened_at": row[2], "initial_cash": float(row[3] or 0)}
             return {"id": None}
 
 
