@@ -211,8 +211,8 @@ async def admin_change_status(
 ) -> dict:
     new_status = body.get("status", "").lower()
     reason = body.get("reason", "")
-    if new_status not in ("active", "suspended", "expired"):
-        raise HTTPException(400, detail="Estado inválido. Usar: active, suspended, expired")
+    if new_status not in ("active", "suspended", "expired", "past_due"):
+        raise HTTPException(400, detail="Estado inválido. Usar: active, suspended, expired, past_due")
     
     pool = await _get_pool()
     async with pool.acquire() as conn:

@@ -5,9 +5,12 @@ import os
 import logging
 from db import get_pool
 from jose import jwt
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
 router = APIRouter()
 logger = logging.getLogger("NovaStock")
+billing_limiter = Limiter(key_func=get_remote_address)
 
 MP_ACCESS_TOKEN = os.environ.get("MP_ACCESS_TOKEN", "")
 JWT_SECRET = os.environ.get("JWT_SECRET", "ta1P4pMAryFH5_lDGf-8GmbTSBrMWg5uYheoWg93s1o")
@@ -28,6 +31,7 @@ def get_current_business_id(request: Request) -> str:
         raise HTTPException(status_code=401, detail="Token invalido")
 
 @router.post("/subscribe")
+@billing_limiter.limit("5/10minutes")
 async def create_subscription(body: SubscribeRequest, request: Request):
     biz_id = get_current_business_id(request)
     
@@ -35,20 +39,25 @@ async def create_subscription(body: SubscribeRequest, request: Request):
     
     if body.plan_id not in PLANS_CONFIG:
         raise HTTPException(status_code=400, detail="Plan no valido")
-        
+    
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        existing = await conn.fetchrow(
+            "SELECT mp_subscription_id, plan FROM businesses WHERE id = $1", biz_id
+        )
+        if not existing:
+            raise HTTPException(status_code=404, detail="Negocio no encontrado")
+        if existing["plan"] == body.plan_id and existing["mp_subscription_id"]:
+            raise HTTPException(status_code=400, detail="Ya tenes una suscripcion activa a este plan. Contacta a soporte para cambios.")
+        payer_email = await conn.fetchval("SELECT email FROM businesses WHERE id = $1", biz_id)
+        if not payer_email:
+            raise HTTPException(status_code=404, detail="Negocio no encontrado")
+
     plan_info = PLANS_CONFIG[body.plan_id]
     amount = plan_info["yearly"] if body.is_yearly else plan_info["monthly"]
     frequency_type = "months"
     frequency = 12 if body.is_yearly else 1
     reason = f"{plan_info['name']} {'Anual' if body.is_yearly else 'Mensual'} - MiNegocio"
-
-    # Buscar el email del negocio
-    pool = await get_pool()
-    async with pool.acquire() as conn:
-        biz = await conn.fetchrow("SELECT email FROM businesses WHERE id = $1", biz_id)
-        if not biz:
-            raise HTTPException(status_code=404, detail="Negocio no encontrado")
-        payer_email = biz["email"]
 
     # Llamar a MercadoPago para crear la suscripción (Preapproval)
     mp_payload = {

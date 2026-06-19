@@ -1,9 +1,9 @@
-from fastapi import APIRouter, HTTPException, Depends, Query, Body
+from fastapi import APIRouter, HTTPException, Depends, Query, Body, Request
 from pydantic import BaseModel
 from typing import Optional, List
 import aiosqlite
 import main
-from main import row_to_dict, USE_PG
+from main import row_to_dict, USE_PG, get_current_business, check_plan_limits
 
 router = APIRouter()
 
@@ -254,9 +254,13 @@ async def create_supplier(body: dict) -> dict:
 
 
 @router.post("/api/purchases", summary="Crear compra")
-async def create_purchase(body: dict) -> dict:
+async def create_purchase(request: Request, body: dict) -> dict:
     b_id = _biz_id()
     if USE_PG:
+        auth = request.headers.get("Authorization")
+        if auth and auth.startswith("Bearer "):
+            biz = await get_current_business(auth)
+            if biz: await check_plan_limits("purchases", biz)
         from db_helpers import get_pg_pool
         pool = await get_pg_pool()
         async with pool.acquire() as conn:

@@ -791,6 +791,7 @@ async def check_billing_grace_period() -> None:
                         """)
             else:
                 async with aiosqlite.connect(DB_PATH) as db:
+                    await db.execute("BEGIN IMMEDIATE")
                     await db.execute("UPDATE businesses SET status = 'past_due', updated_at = datetime('now','localtime') WHERE status = 'active' AND plan != 'trial' AND plan_end_date IS NOT NULL AND date(plan_end_date, '+3 days') <= date('now')")
                     await db.execute("UPDATE businesses SET status = 'suspended', updated_at = datetime('now','localtime') WHERE status IN ('active', 'past_due') AND plan != 'trial' AND plan_end_date IS NOT NULL AND date(plan_end_date, '+15 days') <= date('now')")
                     await db.execute("UPDATE businesses SET status = 'expired', updated_at = datetime('now','localtime') WHERE status = 'active' AND plan = 'trial' AND date(created_at, '+7 days') <= date('now')")
