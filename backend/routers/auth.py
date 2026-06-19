@@ -155,7 +155,7 @@ async def auth_register(request: Request, body: BusinessCreate) -> dict:
     tenant_db_path = os.path.join(main.DATA_DIR, f"novastock_{biz_id}.db")
     await init_sqlite_db(tenant_db_path, logging.getLogger("NovaStock"))
 
-    # Crear operador en SQLite (tenant local, para modo offline)
+    import asyncio as _asyncio
     try:
         async with aiosqlite.connect(tenant_db_path) as tenant_db:
             await tenant_db.execute(
@@ -163,10 +163,9 @@ async def auth_register(request: Request, body: BusinessCreate) -> dict:
                 (biz_name or "Dueño", hashed_pin)
             )
             await tenant_db.commit()
-        except Exception as e:
-            logging.getLogger("NovaStock.Auth").warning(f"No se pudo crear operador SQLite: {e}")
+    except Exception as e:
+        logging.getLogger("NovaStock.Auth").warning(f"No se pudo crear operador SQLite: {e}")
 
-    import asyncio as _asyncio
     _asyncio.create_task(_send_welcome_email(biz_email, biz_name))
 
     return {
