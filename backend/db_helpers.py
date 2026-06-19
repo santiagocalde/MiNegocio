@@ -5,7 +5,6 @@ from typing import Optional, Any
 
 USE_PG = bool(os.getenv("DATABASE_URL", ""))
 
-_db_pool: Optional[asyncpg.Pool] = None
 _db_path: Optional[str] = None
 
 
@@ -15,18 +14,14 @@ def set_db_path(path: str):
 
 
 async def get_pg_pool() -> asyncpg.Pool:
-    global _db_pool
-    if _db_pool is None:
-        dsn = os.getenv("DATABASE_URL") or f"postgresql://{os.getenv('PG_USER','minegocio')}:{os.getenv('PG_PASSWORD','1234')}@{os.getenv('PG_HOST','localhost')}:{os.getenv('PG_PORT','5432')}/{os.getenv('PG_DATABASE','minegocio')}"
-        _db_pool = await asyncpg.create_pool(dsn=dsn, min_size=4, max_size=20, command_timeout=30)
-    return _db_pool
+    """Alias del pool canónico en db.py — un solo pool para toda la app."""
+    from db import get_pool
+    return await get_pool()
 
 
 async def close_pg():
-    global _db_pool
-    if _db_pool:
-        await _db_pool.close()
-        _db_pool = None
+    from db import close_pool
+    await close_pool()
 
 
 def row_to_dict(row, description=None):
