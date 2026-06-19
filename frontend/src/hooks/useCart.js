@@ -31,7 +31,31 @@ export default function useCart(productsDB, ivaRate, playBeep) {
   useEffect(() => {
     try { localStorage.setItem('minegocio_cart', JSON.stringify(cart)); }
     catch {}
+    try {
+      const bc = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('minegocio-cart') : null;
+      if (bc) {
+        bc.postMessage('cart-updated');
+        bc.close();
+      }
+    } catch {}
   }, [cart]);
+
+  // Listen for cart changes from other tabs
+  useEffect(() => {
+    const bc = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('minegocio-cart') : null;
+    if (!bc) return;
+    const handler = () => {
+      try {
+        const saved = localStorage.getItem('minegocio_cart');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) setCart(parsed);
+        }
+      } catch {}
+    };
+    bc.onmessage = handler;
+    return () => bc.close();
+  }, []);
 
   const handleQuickAdd = useCallback((code, name, price, extra) => {
     if (addLockRef.current) return;

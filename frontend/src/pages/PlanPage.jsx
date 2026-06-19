@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { usePanelContext } from '../context/PanelContext';
 import { WHATSAPP_LINK } from '../utils/constants';
 import { Icons } from '../components/ui/Icons';
-import { apiPost } from '../services/apiClient';
+import { apiPost, apiGet } from '../services/apiClient';
 
 const FALLBACK_PLANS = [
   { id: 'simple', name: 'Simple', monthly: 20000, yearly: 200000, desc: 'Todo lo necesario para arrancar.', popular: false, features: ['Hasta 3.500 productos', 'Clientes y ventas', 'Soporta cortes de internet', 'Cuentas corrientes', 'Manejo de proveedores', 'Lector laser e impresoras', 'Hasta 2 usuarios'], cta: 'Adquirir' },
@@ -101,8 +101,7 @@ export default function PlanPage() {
   const [planPageLoading, setPlanPageLoading] = useState(false);
 
   useEffect(() => {
-    const baseUrl = import.meta.env.PROD ? '' : 'http://localhost:8005';
-    fetch(`${baseUrl}/api/plans`)
+    apiGet('/plans')
       .then(res => res.ok ? res.json() : Promise.reject())
       .then(data => {
         if (Array.isArray(data) && data.length > 0) {

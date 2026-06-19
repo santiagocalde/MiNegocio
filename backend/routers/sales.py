@@ -244,7 +244,8 @@ async def create_sale(body: SaleCreate, idempotency_key: Optional[str] = Query(N
                 primary_method = 'split' if is_split else body.payment_method
                 primary_payment = round(sum(p.amount for p in body.payments), 2) if is_split else round(body.payment, 2)
                 total_sale = round(body.total, 2) if body.total else round(primary_payment, 2)
-                change_sale = round(body.change_given, 2)
+                is_cash = primary_method == 'efectivo' or any(p.method == 'efectivo' for p in body.payments)
+                change_sale = round(body.change_given, 2) if is_cash else 0
 
                 row = await conn.fetchrow(
                     """INSERT INTO sales (business_id, turn_id, total, payment, change_given, operator, is_fiado, fiado_name, payment_method, client_cuit, idempotency_key)
@@ -298,6 +299,9 @@ async def create_sale(body: SaleCreate, idempotency_key: Optional[str] = Query(N
                             b_id, item.product_id, item.quantity, f"Venta #{sale_id}", body.operator, f"sale-{sale_id}-{item.product_id}"
                         )
 
+                if abs(db_total - total_sale) > 0.02:
+                    logger.warning(f"Venta #{sale_id}: total DB={db_total} vs frontend={total_sale} (diferencia={round(db_total-total_sale,2)})")
+
                 if body.is_fiado and body.fiado_name:
                     cust = await conn.fetchrow("SELECT id FROM customers WHERE name = $1 AND business_id = $2", body.fiado_name, b_id)
                     if not cust:
@@ -346,55 +350,55 @@ async def create_sale(body: SaleCreate, idempotency_key: Optional[str] = Query(N
                 total_sale = round(body.total, 2) if body.total else round(primary_payment, 2)
                 change_sale = round(body.change_given, 2)
 
-            cur = await db.execute(
-                "INSERT INTO sales (turn_id,total,payment,change_given,operator,is_fiado,fiado_name,payment_method,client_cuit,idempotency_key) VALUES (?,?,?,?,?,?,?,?,?,?)",
-                (body.turn_id, total_sale, primary_payment, change_sale, body.operator,
-                 1 if body.is_fiado else 0, body.fiado_name, primary_method, body.client_cuit, effective_key)
-            )
-            sale_id = cur.lastrowid
-            db_total_sql = 0
-
-            for item in body.items:
-                p_cur = await db.execute(
-                    "SELECT id, price, stock, is_virtual, parent_id, pack_size FROM products WHERE id = ?",
-                    (item.product_id,)
+                cur = await db.execute(
+                    "INSERT INTO sales (turn_id,total,payment,change_given,operator,is_fiado,fiado_name,payment_method,client_cuit,idempotency_key) VALUES (?,?,?,?,?,?,?,?,?,?)",
+                    (body.turn_id, total_sale, primary_payment, change_sale, body.operator,
+                     1 if body.is_fiado else 0, body.fiado_name, primary_method, body.client_cuit, effective_key)
                 )
-                prod = await p_cur.fetchone()
-                if not prod:
-                    raise HTTPException(404, detail=f"Producto {item.product_name} no encontrado")
+                sale_id = cur.lastrowid
+                db_total_sql = 0
 
-                db_price = round(prod[1], 2)
-                db_total_sql += db_price * item.quantity
-
-                await db.execute(
-                    "INSERT INTO sale_items (sale_id,product_id,product_name,quantity,unit_price,item_discount) VALUES (?,?,?,?,?,?)",
-                    (sale_id, item.product_id, item.product_name, item.quantity, db_price, item.item_discount)
-                )
-
-                p_stock, p_is_virtual, p_parent_id, p_pack_size = prod
-                if p_is_virtual == 1 and p_parent_id:
-                    real_qty = item.quantity * (p_pack_size or 1)
-                    result = await db.execute(
-                        "UPDATE products SET stock = stock - ? WHERE id = ? AND stock >= ?",
-                        (real_qty, p_parent_id, real_qty)
+                for item in body.items:
+                    p_cur = await db.execute(
+                        "SELECT id, price, stock, is_virtual, parent_id, pack_size FROM products WHERE id = ?",
+                        (item.product_id,)
                     )
-                    if result.rowcount == 0:
-                        raise HTTPException(400, detail=f"Stock insuficiente de {item.product_name} (Pack Virtual)")
+                    prod = await p_cur.fetchone()
+                    if not prod:
+                        raise HTTPException(404, detail=f"Producto {item.product_name} no encontrado")
+
+                    db_price = round(prod[1], 2)
+                    db_total_sql += db_price * item.quantity
+
                     await db.execute(
-                        "INSERT INTO stock_movements (product_id, movement_type, quantity, reason, operator) VALUES (?,?,?,?,?)",
-                        (p_parent_id, "salida", real_qty, f"Venta #{sale_id} (Pack Virtual)", body.operator)
+                        "INSERT INTO sale_items (sale_id,product_id,product_name,quantity,unit_price,item_discount) VALUES (?,?,?,?,?,?)",
+                        (sale_id, item.product_id, item.product_name, item.quantity, db_price, item.item_discount)
                     )
-                else:
-                    result = await db.execute(
-                        "UPDATE products SET stock = stock - ? WHERE id = ? AND stock >= ?",
-                        (item.quantity, item.product_id, item.quantity)
-                    )
-                    if result.rowcount == 0:
-                        raise HTTPException(400, detail=f"Stock insuficiente de {item.product_name}")
-                    await db.execute(
-                        "INSERT INTO stock_movements (product_id, movement_type, quantity, reason, operator) VALUES (?,?,?,?,?)",
-                        (item.product_id, "salida", item.quantity, f"Venta #{sale_id}", body.operator)
-                    )
+
+                    p_stock, p_is_virtual, p_parent_id, p_pack_size = prod
+                    if p_is_virtual == 1 and p_parent_id:
+                        real_qty = item.quantity * (p_pack_size or 1)
+                        result = await db.execute(
+                            "UPDATE products SET stock = stock - ? WHERE id = ? AND stock >= ?",
+                            (real_qty, p_parent_id, real_qty)
+                        )
+                        if result.rowcount == 0:
+                            raise HTTPException(400, detail=f"Stock insuficiente de {item.product_name} (Pack Virtual)")
+                        await db.execute(
+                            "INSERT INTO stock_movements (product_id, movement_type, quantity, reason, operator) VALUES (?,?,?,?,?)",
+                            (p_parent_id, "salida", real_qty, f"Venta #{sale_id} (Pack Virtual)", body.operator)
+                        )
+                    else:
+                        result = await db.execute(
+                            "UPDATE products SET stock = stock - ? WHERE id = ? AND stock >= ?",
+                            (item.quantity, item.product_id, item.quantity)
+                        )
+                        if result.rowcount == 0:
+                            raise HTTPException(400, detail=f"Stock insuficiente de {item.product_name}")
+                        await db.execute(
+                            "INSERT INTO stock_movements (product_id, movement_type, quantity, reason, operator) VALUES (?,?,?,?,?)",
+                            (item.product_id, "salida", item.quantity, f"Venta #{sale_id}", body.operator)
+                        )
 
                 if body.is_fiado and body.fiado_name:
                     cur_c = await db.execute("SELECT id FROM customers WHERE name = ?", (body.fiado_name,))
@@ -411,7 +415,7 @@ async def create_sale(body: SaleCreate, idempotency_key: Optional[str] = Query(N
                     )
 
                 await db.commit()
-                await events.emit("sale-created", {"id": sale_id})
+                await events.emit("sale-created", {"id": sale_id, "business_id": b_id})
                 return {"id": sale_id, "ticket": sale_id}
 
 

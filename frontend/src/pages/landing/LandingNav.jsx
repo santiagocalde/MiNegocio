@@ -84,7 +84,8 @@ export default function LandingNav({
                     <button onClick={() => {
                       localStorage.removeItem('saas_token'); localStorage.removeItem('saas_refresh_token');
                       localStorage.removeItem('saas_mode');
-                      localStorage.removeItem('saas_admin_gate');
+                      localStorage.removeItem('saas_admin_gate'); localStorage.removeItem('admin_token');
+                      localStorage.removeItem('saas_business');
                       localStorage.removeItem('minegocio_current_operator');
                       setIsLoggedIn(false);
                       setShowUserMenu(false);
