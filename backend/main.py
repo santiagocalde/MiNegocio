@@ -513,11 +513,11 @@ async def _ensure_open_turn_pg(conn, operator: str, b_id: str):
             "SELECT EXTRACT(EPOCH FROM (now() - $1::timestamptz))/3600",
             row["opened_at"]
         )
-            if hours and hours >= 14:
-                    await conn.execute(
-                        "UPDATE turns SET closed_at = now(), sales_total = COALESCE((SELECT SUM(total) FROM sales WHERE turn_id = $1 AND business_id = $2), 0), notes = 'Cierre automatico > 14hs' WHERE id = $1",
-                        row["id"], b_id
-                    )
+        if hours and hours >= 14:
+            await conn.execute(
+                "UPDATE turns SET closed_at = now(), sales_total = COALESCE((SELECT SUM(total) FROM sales WHERE turn_id = $1 AND business_id = $2), 0), notes = 'Cierre automatico > 14hs' WHERE id = $1",
+                row["id"], b_id
+            )
         else:
             return {"turn_id": row["id"], "turn_auto_opened": False, "turn_opened_at": str(row["opened_at"])}
     new_row = await conn.fetchrow(
@@ -536,8 +536,8 @@ async def _ensure_open_turn(operator: str):
                     diff = await cur2.fetchone()
                 if diff and diff[0] >= 14:
                     await db.execute(
-                        "UPDATE turns SET closed_at = datetime('now','localtime'), notes = 'Cierre automatico > 14hs' WHERE id = ?",
-                        (row[0],)
+                        "UPDATE turns SET closed_at = datetime('now','localtime'), sales_total = COALESCE((SELECT SUM(total) FROM sales WHERE turn_id = ?), 0), notes = 'Cierre automatico > 14hs' WHERE id = ?",
+                        (row[0], row[0])
                     )
                     await db.commit()
                 else:

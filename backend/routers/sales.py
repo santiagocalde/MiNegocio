@@ -97,8 +97,8 @@ async def get_active_turn() -> dict:
                 )
                 if hours and hours >= 14:
                     await conn.execute(
-                        "UPDATE turns SET closed_at = now(), notes = 'Cierre automatico > 14hs' WHERE id = $1",
-                        row["id"]
+                        "UPDATE turns SET closed_at = now(), sales_total = COALESCE((SELECT SUM(total) FROM sales WHERE turn_id = $1 AND business_id = $2), 0), notes = 'Cierre automatico > 14hs' WHERE id = $1",
+                        row["id"], b_id
                     )
                     return {"id": None}
                 return {"id": row["id"], "operator": row["operator"], "opened_at": str(row["opened_at"]), "initial_cash": float(row["initial_cash"] or 0)}
@@ -112,7 +112,7 @@ async def get_active_turn() -> dict:
                 cur = await db.execute("SELECT (julianday('now','localtime') - julianday(?)) * 24.0", (row[2],))
                 diff = await cur.fetchone()
                 if diff and diff[0] >= 14:
-                    await db.execute("UPDATE turns SET closed_at = datetime('now','localtime'), notes = 'Cierre automatico > 14hs' WHERE id = ?", (row[0],))
+                    await db.execute("UPDATE turns SET closed_at = datetime('now','localtime'), sales_total = COALESCE((SELECT SUM(total) FROM sales WHERE turn_id = ?), 0), notes = 'Cierre automatico > 14hs' WHERE id = ?", (row[0], row[0],))
                     await db.commit()
                     return {"id": None}
                 return {"id": row[0], "operator": row[1], "opened_at": row[2], "initial_cash": float(row[3] or 0)}
