@@ -28,14 +28,14 @@ async def get_config() -> dict:
 
 @router.put("/api/config", summary="Actualizar configuracion del negocio")
 async def update_config(data: dict) -> dict:
-    iva_rate = data.get("iva_rate")
-    if iva_rate is not None:
+    iva_rate_raw = data.get("iva_rate")
+    if iva_rate_raw is not None:
         try:
-            iva_rate = float(iva_rate)
+            float(str(iva_rate_raw))
         except (ValueError, TypeError):
             raise HTTPException(400, detail="iva_rate debe ser un numero")
     cuit = data.get("cuit", "")
-    if cuit and len(cuit) > 20:
+    if cuit and len(str(cuit)) > 20:
         raise HTTPException(400, detail="CUIT demasiado largo")
     
     if USE_PG:
