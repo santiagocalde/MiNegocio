@@ -400,6 +400,96 @@ async def admin_business_detail(
 
 
 # ────────────────────────────────────────────────────────────
+# ANALYTICS ENDPOINTS
+# ────────────────────────────────────────────────────────────
+
+@router.get("/api/admin/analytics/revenue", summary="MRR trend por mes")
+async def admin_revenue_trend(admin: dict = Depends(verify_superadmin)) -> list:
+    pool = await _get_pool()
+    async with pool.acquire() as conn:
+        plan_prices = {"simple": 20000, "pro": 30000, "ia": 40000}
+        rows = await conn.fetch("""
+            SELECT to_char(date_trunc('month', s.timestamp), 'YYYY-MM') as month,
+                   COUNT(*) as total_sales
+            FROM sales s
+            WHERE s.timestamp >= CURRENT_DATE - INTERVAL '12 months'
+            GROUP BY 1 ORDER BY 1
+        """)
+        biz_rows = await conn.fetch("""
+            SELECT to_char(date_trunc('month', created_at), 'YYYY-MM') as month,
+                   COUNT(*) as new_businesses
+            FROM businesses
+            WHERE created_at >= CURRENT_DATE - INTERVAL '12 months'
+            GROUP BY 1 ORDER BY 1
+        """)
+        months = []
+        sales_data = {}
+        signup_data = {}
+        for r in rows:
+            sales_data[r["month"]] = r["total_sales"]
+        for r in biz_rows:
+            signup_data[r["month"]] = r["new_businesses"]
+        
+        all_months = sorted(set(list(sales_data.keys()) + list(signup_data.keys())))
+        for m in all_months:
+            months.append({
+                "month": m,
+                "sales": sales_data.get(m, 0),
+                "signups": signup_data.get(m, 0),
+            })
+        return months
+
+
+@router.get("/api/admin/analytics/signups", summary="Signups ultimos 30 dias")
+async def admin_signups_trend(admin: dict = Depends(verify_superadmin)) -> list:
+    pool = await _get_pool()
+    async with pool.acquire() as conn:
+        rows = await conn.fetch("""
+            SELECT to_char(d.d, 'YYYY-MM-DD') as day, COALESCE(b.cnt, 0) as count
+            FROM generate_series(CURRENT_DATE - INTERVAL '30 days', CURRENT_DATE, '1 day') d(d)
+            LEFT JOIN (
+                SELECT DATE(created_at) as dt, COUNT(*) as cnt
+                FROM businesses WHERE created_at >= CURRENT_DATE - INTERVAL '30 days'
+                GROUP BY 1
+            ) b ON b.dt = d.d::date
+            ORDER BY d.d
+        """)
+        return [{"day": r["day"], "count": r["count"]} for r in rows]
+
+
+@router.get("/api/admin/analytics/activity", summary="Actividad reciente")
+async def admin_recent_activity(admin: dict = Depends(verify_superadmin)) -> list:
+    pool = await _get_pool()
+    async with pool.acquire() as conn:
+        sales = await conn.fetch("""
+            SELECT 'sale' as type, s.id, s.timestamp, b.business_name, s.total::text as detail
+            FROM sales s JOIN businesses b ON s.business_id = b.id
+            ORDER BY s.timestamp DESC LIMIT 30
+        """)
+        logins = await conn.fetch("""
+            SELECT 'login' as type, a.id, a.timestamp, s.email as business_name, '' as detail
+            FROM admin_audit_log a LEFT JOIN superadmins s ON a.superadmin_id = s.id
+            WHERE a.action = 'plan_change'
+            ORDER BY a.timestamp DESC LIMIT 20
+        """)
+        registered = await conn.fetch("""
+            SELECT 'signup' as type, id, created_at as timestamp, email as business_name, plan as detail
+            FROM businesses ORDER BY created_at DESC LIMIT 20
+        """)
+        
+        events = []
+        for r in sales:
+            events.append({"type": "sale", "time": str(r["timestamp"]), "msg": f"{r['business_name']} vendio ${int(r['total'])}"})
+        for r in logins:
+            events.append({"type": "admin", "time": str(r["timestamp"]), "msg": f"Admin {r['business_name']} cambio plan"})
+        for r in registered:
+            events.append({"type": "signup", "time": str(r["timestamp"]), "msg": f"{r['business_name']} se registro (plan {r['detail']})"})
+        
+        events.sort(key=lambda e: e["time"], reverse=True)
+        return events[:50]
+
+
+# ────────────────────────────────────────────────────────────
 # SEED DEFAULT SUPERADMIN
 # ────────────────────────────────────────────────────────────
 
