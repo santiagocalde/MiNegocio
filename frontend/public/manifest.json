@@ -1,0 +1,19 @@
+{
+  "name": "MiNegocio POS",
+  "short_name": "MiNegocio",
+  "description": "Sistema de Punto de Venta para kioscos y comercios",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#060913",
+  "theme_color": "#060913",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ],
+  "categories": ["business", "productivity"],
+  "lang": "es-AR"
+}

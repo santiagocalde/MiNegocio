@@ -32,12 +32,16 @@ class BusinessCreate(BaseModel):
     @field_validator("password")
     @classmethod
     def password_strength(cls, v: str) -> str:
-        if len(v) < 8:
-            raise ValueError("La contrasena debe tener al menos 8 caracteres")
+        if len(v) < 10:
+            raise ValueError("La contrasena debe tener al menos 10 caracteres")
         if not any(c.isdigit() for c in v):
             raise ValueError("La contrasena debe contener al menos 1 numero")
         if not any(c.isupper() for c in v):
             raise ValueError("La contrasena debe contener al menos 1 mayuscula")
+        if not any(c.islower() for c in v):
+            raise ValueError("La contrasena debe contener al menos 1 minuscula")
+        if not any(c in "!@#$%^&*()_+-=[]{}|;:,.<>?/~" for c in v):
+            raise ValueError("La contrasena debe contener al menos 1 caracter especial (!@#$%)")
         return v
 
 class CompleteOnboarding(BaseModel):

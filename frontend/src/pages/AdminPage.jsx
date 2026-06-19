@@ -295,30 +295,44 @@ function ActivityFeed({ token }) {
   };
 
   return (
-    <div style={{ maxWidth: 800 }}>
+    <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 22 }}>
-        <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#F1F5F9', margin: 0 }}>Actividad reciente</h2>
-        <button onClick={() => setAutoRefresh(!autoRefresh)} style={{ ...S.ghostBtn, background: autoRefresh ? 'rgba(16,185,129,0.08)' : 'rgba(255,255,255,0.02)', color: autoRefresh ? '#10B981' : MUTED, border: `1px solid ${autoRefresh ? 'rgba(16,185,129,0.2)' : 'rgba(255,255,255,0.06)'}` }}>
-          {autoRefresh ? 'Auto ON' : 'Auto OFF'}
-        </button>
+        <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#F1F5F9', margin: 0 }}>Actividad en tiempo real</h2>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <span style={{ color: MUTED, fontSize: '0.72rem' }}>Auto-refresh cada 30s</span>
+          <button onClick={() => setAutoRefresh(!autoRefresh)} style={{ ...S.ghostBtn, background: autoRefresh ? 'rgba(16,185,129,0.08)' : 'rgba(255,255,255,0.02)', color: autoRefresh ? '#10B981' : MUTED, border: `1px solid ${autoRefresh ? 'rgba(16,185,129,0.2)' : 'rgba(255,255,255,0.06)'}`, padding: '4px 10px', fontSize: '0.7rem' }}>
+            {autoRefresh ? 'ON' : 'OFF'}
+          </button>
+        </div>
       </div>
-      {!events ? <div style={{ ...S.card, textAlign: 'center', padding: 40 }}><Skeleton h={14} w="80%" /></div> : events.length === 0 ? (
-        <div style={{ ...S.card, textAlign: 'center', padding: 60, color: MUTED }}>
-          <div style={{ fontSize: '2rem', marginBottom: 12 }}>📭</div>
-          <div style={{ fontSize: '0.9rem', fontWeight: 500 }}>Sin actividad registrada</div>
+      {!events ? (
+        <div style={{ ...S.card, textAlign: 'center', padding: 48 }}>
+          <Skeleton h={14} w="30%" /><div style={{height:8}} /><Skeleton h={14} w="50%" /><div style={{height:8}} /><Skeleton h={14} w="40%" />
+        </div>
+      ) : events.length === 0 ? (
+        <div style={{ ...S.card, textAlign: 'center', padding: 70, color: MUTED }}>
+          <div style={{ fontSize: '3rem', marginBottom: 14, opacity: 0.5 }}>⏳</div>
+          <div style={{ fontSize: '0.95rem', fontWeight: 600 }}>Sin actividad reciente</div>
+          <div style={{ fontSize: '0.78rem', marginTop: 4 }}>Los eventos apareceran aqui cuando haya ventas, registros o cambios</div>
         </div>
       ) : (
-        <div style={S.card}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))', gap: 8 }}>
           {events.map((e, i) => {
             const tc = typeConfig[e.type] || typeConfig.sale;
             return (
-              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '10px 0', borderBottom: i < events.length - 1 ? `1px solid rgba(255,255,255,0.015)` : 'none' }}>
-                <span style={{ color: tc.color, fontSize: '0.7rem', width: 18, textAlign: 'center', flexShrink: 0, marginTop: 2 }}>{tc.icon}</span>
-                <div style={{ flex: 1 }}>
-                  <div style={{ color: TEXT, fontSize: '0.84rem', fontWeight: 500 }}>{e.msg}</div>
-                  <div style={{ color: MUTED, fontSize: '0.68rem', marginTop: 2 }}>{fmtDate(e.time)} {fmtTime(e.time)}</div>
+              <div key={i} style={{ ...S.card, padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 12, borderLeft: `3px solid ${tc.color}`, transition: 'all 0.15s' }}>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: `${tc.color}12`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, border: `1px solid ${tc.color}20` }}>
+                  <span style={{ fontSize: '0.9rem' }}>{tc.icon}</span>
                 </div>
-                <span style={{ ...S.pill(tc.color), fontSize: '0.65rem' }}>{tc.label}</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ color: '#E2E8F0', fontSize: '0.84rem', fontWeight: 500, lineHeight: 1.3, wordBreak: 'break-word' }}>{e.msg}</div>
+                  <div style={{ color: MUTED, fontSize: '0.68rem', marginTop: 3, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span>{fmtDate(e.time)}</span>
+                    <span>·</span>
+                    <span>{fmtTime(e.time)}</span>
+                  </div>
+                </div>
+                <span style={{ ...S.pill(tc.color), fontSize: '0.66rem', flexShrink: 0 }}>{tc.label}</span>
               </div>
             );
           })}
@@ -478,15 +492,15 @@ function ProductsManager({ token, toast }) {
   const [bizSearch, setBizSearch] = useState('');
 
   useEffect(() => {
-    fetchAdmin(`${API}/businesses?limit=200`, token).then(r => r.json()).then(d => {
+    fetchAdmin(`${API}/businesses?limit=200`, token).then(r => r.ok ? r.json() : null).then(d => {
       if (d?.data) setBusinesses(d.data);
-    });
+    }).catch(() => {});
   }, [token]);
 
   useEffect(() => {
     if (!bizId) { setProducts(null); return; }
     fetchAdmin(`${API}/businesses/${bizId}/products?page=${page}&limit=50`, token)
-      .then(r => r.json()).then(setProducts);
+      .then(r => r.ok ? r.json() : null).then(setProducts).catch(() => {});
   }, [bizId, page, token]);
 
   const handleUpload = async () => {

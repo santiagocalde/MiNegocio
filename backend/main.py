@@ -159,6 +159,37 @@ async def backup_task() -> None:
             logger.info(f"Backup válido creado: {backup_path_gz}")
         except Exception as e:
             logger.error(f"No se pudo crear el backup: {e}")
+        
+        # Backup PostgreSQL (pg_dump)
+        try:
+            if USE_PG and os.getenv("PG_BACKUP_ENABLED", "1") == "1":
+                pg_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                pg_backup_path = os.path.join(backup_dir, f"pg_backup_{pg_timestamp}.sql.gz")
+                pg_host = os.getenv("PG_HOST", "db")
+                pg_user = os.getenv("PG_USER", "minegocio")
+                pg_db = os.getenv("PG_DATABASE", "minegocio")
+                pg_password = os.getenv("PG_PASSWORD", "")
+                env = os.environ.copy()
+                env["PGPASSWORD"] = pg_password
+                proc = await asyncio.create_subprocess_exec(
+                    "pg_dump", "-h", pg_host, "-U", pg_user, "-d", pg_db, "--no-owner", "--no-acl",
+                    stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE, env=env
+                )
+                stdout, stderr = await proc.communicate()
+                if proc.returncode == 0:
+                    with gzip.open(pg_backup_path, "wb") as f:
+                        f.write(stdout)
+                    pg_backups = sorted(glob.glob(os.path.join(backup_dir, "pg_backup_*.sql.gz")))
+                    if len(pg_backups) > 5:
+                        for old in pg_backups[:-5]:
+                            os.remove(old)
+                    logger.info(f"Backup PostgreSQL creado: {pg_backup_path}")
+                else:
+                    logger.error(f"Error pg_dump (code {proc.returncode}): {stderr.decode()[:200]}")
+        except FileNotFoundError:
+            logger.warning("pg_dump no encontrado. Instalar: apt-get install postgresql-client")
+        except Exception as e:
+            logger.warning(f"Backup PostgreSQL fallo (no critico): {e}")
             
         await asyncio.sleep(600) # 10 minutos
 
