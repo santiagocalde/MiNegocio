@@ -462,7 +462,7 @@ async def admin_recent_activity(admin: dict = Depends(verify_superadmin)) -> lis
     pool = await _get_pool()
     async with pool.acquire() as conn:
         sales = await conn.fetch("""
-            SELECT 'sale' as type, s.id, s.timestamp, b.business_name, s.total::text as detail
+            SELECT 'sale' as type, s.id, s.timestamp, b.business_name, COALESCE(s.total, 0) as total
             FROM sales s JOIN businesses b ON s.business_id = b.id
             ORDER BY s.timestamp DESC LIMIT 30
         """)
