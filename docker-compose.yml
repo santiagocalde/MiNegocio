@@ -27,7 +27,7 @@ services:
       - PG_USER=minegocio
       - PG_PASSWORD=${PG_PASSWORD:-1234}
       - PG_DATABASE=minegocio
-      - JWT_SECRET=${JWT_SECRET:-cambiar-esta-clave-en-produccion-2026}
+      - JWT_SECRET=${JWT_SECRET:-ta1P4pMAryFH5_lDGf-8GmbTSBrMWg5uYheoWg93s1o}
       - MP_ACCESS_TOKEN=${MP_ACCESS_TOKEN:-}
       - MP_COLLECTOR_ID=${MP_COLLECTOR_ID:-}
       - RESEND_API_KEY=${RESEND_API_KEY:-}

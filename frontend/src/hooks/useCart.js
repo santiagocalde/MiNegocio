@@ -2,8 +2,18 @@ import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 
 export default function useCart(productsDB, ivaRate, playBeep) {
   const [cart, setCart] = useState(() => {
-    try { const saved = localStorage.getItem('minegocio_cart'); return saved ? JSON.parse(saved) : []; }
-    catch { return []; }
+    try {
+      const saved = localStorage.getItem('minegocio_cart');
+      if (saved) {
+        const ts = localStorage.getItem('minegocio_cart_ts');
+        if (ts) {
+          const age = Date.now() - parseInt(ts);
+          if (age > 86400000) { localStorage.removeItem('minegocio_cart'); localStorage.removeItem('minegocio_cart_ts'); return []; }
+        }
+        return JSON.parse(saved);
+      }
+    } catch {}
+    return [];
   });
   const [search, setSearch] = useState('');
   const [searchError, setSearchError] = useState(false);
@@ -24,20 +34,23 @@ export default function useCart(productsDB, ivaRate, playBeep) {
   const [autoPrint, setAutoPrint] = useState(false);
   const [isCancelConfirm, setIsCancelConfirm] = useState(false);
   const [promotionSavings, setPromotionSavings] = useState(0);
-
   const addLockRef = useRef(false);
+  const debounceRef = useRef(null);
 
-  // Persist cart to localStorage on every change
+  // Persist cart to localStorage with debounce
   useEffect(() => {
-    try { localStorage.setItem('minegocio_cart', JSON.stringify(cart)); }
-    catch {}
-    try {
-      const bc = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('minegocio-cart') : null;
-      if (bc) {
-        bc.postMessage('cart-updated');
-        bc.close();
-      }
-    } catch {}
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      try {
+        localStorage.setItem('minegocio_cart', JSON.stringify(cart));
+        localStorage.setItem('minegocio_cart_ts', String(Date.now()));
+      } catch {}
+      try {
+        const bc = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('minegocio-cart') : null;
+        if (bc) { bc.postMessage('cart-updated'); bc.close(); }
+      } catch {}
+    }, 250);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, [cart]);
 
   // Listen for cart changes from other tabs

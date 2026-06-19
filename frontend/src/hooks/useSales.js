@@ -86,11 +86,18 @@ export default function useSales(cart, effectiveTotal, payment, paymentMethod, u
       setLastSaleId(data.id);
     } catch (err) {
       console.error('Venta falló, guardando en pendientes:', err);
-      // Punto 42: Outbox pattern con idempotency key - offline queue persists
       const pendingStr = localStorage.getItem('minegocio_pending_sales');
       const pending = pendingStr ? JSON.parse(pendingStr) : [];
       pending.push({ payload: salePayload, idempotencyKey });
       localStorage.setItem('minegocio_pending_sales', JSON.stringify(pending));
+      addToast('⚠️ Venta guardada sin conexión. Se sincronizará automáticamente.', 'info');
+      setIsProcessing(false);
+      processingRef.current = false;
+      localStorage.removeItem('minegocio_cart');
+      setLastSale({ cart: saleCart, total: saleTotal, payment: salePayment, change: saleChange, tipoFactura: emitirFactura ? tipoFactura : 'C', afip: null, paymentMethod: useSplitPayment ? 'split' : paymentMethod });
+      clearCart();
+      setIsCharging(false);
+      return;
     }
     setIsProcessing(false);
     processingRef.current = false;
@@ -104,18 +111,20 @@ export default function useSales(cart, effectiveTotal, payment, paymentMethod, u
     return { saleCart, saleTotal, salePayment, saleChange, afipResponse, effectivePayments };
   }, [isProcessing, cart, adjustedTotal, effectiveTotal, useSplitPayment, splitPayments, paymentMethod, payment, currentTurnId, currentOperator, clientCuit, emitirFactura, tipoFactura, vueltoEnCuenta, clienteVuelto, clearCart, setTicketNumber]);
 
-  const confirmFiado = useCallback(async () => {
+  const confirmFiado = useCallback(async (partialAmount) => {
     if (!fiadoName) return;
-    const saleTotal = effectiveTotal ?? (cart.reduce((acc, item) => acc + (item.price * item.qty), 0));
+    const cartTotal = effectiveTotal ?? (cart.reduce((acc, item) => acc + (item.price * item.qty), 0));
+    const fiadoAmount = partialAmount && partialAmount > 0 && partialAmount <= cartTotal ? partialAmount : cartTotal;
+    const paymentAmount = cartTotal - fiadoAmount;
     const salePayload = {
       turn_id: currentTurnId,
-      total: saleTotal,
-      payment: 0,
+      total: cartTotal,
+      payment: paymentAmount,
       change_given: 0,
       operator: currentOperator?.name || 'Sistema',
       is_fiado: true,
       fiado_name: fiadoName,
-      payment_method: 'fiado',
+      payment_method: paymentAmount > 0 ? 'split' : 'fiado',
       client_cuit: '',
       items: cart.map(i => ({ product_id: i.id, product_name: i.name, quantity: i.qty, unit_price: i.price })),
     };

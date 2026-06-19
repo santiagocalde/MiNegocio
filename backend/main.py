@@ -57,7 +57,7 @@ os.makedirs(DATA_DIR, exist_ok=True)
 DB_PATH = os.getenv("DB_PATH") or os.path.join(DATA_DIR, "minegocio.db")
 LOG_FILE = os.path.join(BASE_DIR, "minegocio.log")
 
-JWT_SECRET    = os.getenv("JWT_SECRET", "minegocio-dev-secret-CAMBIAR-EN-PRODUCCION-2026")
+JWT_SECRET = os.getenv("JWT_SECRET", "ta1P4pMAryFH5_lDGf-8GmbTSBrMWg5uYheoWg93s1o")
 JWT_ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES  = 60
 REFRESH_TOKEN_EXPIRE_DAYS    = 7
@@ -237,29 +237,25 @@ class TenantMiddleware(BaseHTTPMiddleware):
         # Extraer business_id del JWT siempre que este presente
         auth_header = request.headers.get("Authorization")
         b_id = None
-        is_preview = False
         if auth_header and auth_header.startswith("Bearer "):
             token = auth_header.split(" ")[1]
-            if token == "preview-token":
-                is_preview = True
-            else:
-                try:
-                    payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-                    if payload.get("type") == "access":
-                        b_id = payload.get("sub")
-                        business_id_ctx.set(b_id)
-                except Exception:
-                    pass
+            try:
+                payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+                if payload.get("type") == "access":
+                    b_id = payload.get("sub")
+                    business_id_ctx.set(b_id)
+            except jwt.ExpiredSignatureError:
+                pass
+            except jwt.JWTError:
+                pass
+            except Exception:
+                pass
 
         # Rutas publicas (docs, preflight, auth login/register, etc.)
-        if request.method == "OPTIONS" or path.startswith("/api/auth") or path.startswith("/api/admin/auth") or path.startswith("/api/login") or path.startswith("/api/health") or path.startswith("/api/billing/webhook") or path.startswith("/api/plans") or path.startswith("/api/metrics") or path.startswith("/api/testimonials") or path.startswith("/api/send-contact") or path.startswith("/docs") or path.startswith("/openapi"):
-            return await call_next(request)
-                
-        if SAAS_MODE and not b_id and not is_preview and path.startswith("/api/"):
+        if SAAS_MODE and not b_id and path.startswith("/api/") and not path.startswith("/api/auth") and not path.startswith("/api/admin/auth") and not path.startswith("/api/login") and not path.startswith("/api/health") and not path.startswith("/api/billing/webhook") and not path.startswith("/api/plans") and not path.startswith("/api/metrics") and not path.startswith("/api/testimonials") and not path.startswith("/api/send-contact") and not path.startswith("/docs") and not path.startswith("/openapi"):
+            if request.method == "OPTIONS":
+                return await call_next(request)
             return JSONResponse(status_code=401, content={"detail": "Token JWT requerido en modo SaaS. Acceso denegado."})
-
-        if is_preview and request.method in ("POST", "PUT", "PATCH", "DELETE") and not path.startswith("/api/auth") and not path.startswith("/api/send-contact"):
-            return JSONResponse(status_code=403, content={"detail": "Modo preview: solo lectura. Registrate para escribir datos."})
             
         return await call_next(request)
 
@@ -517,11 +513,11 @@ async def _ensure_open_turn_pg(conn, operator: str, b_id: str):
             "SELECT EXTRACT(EPOCH FROM (now() - $1::timestamptz))/3600",
             row["opened_at"]
         )
-        if hours and hours >= 14:
-            await conn.execute(
-                "UPDATE turns SET closed_at = now(), notes = 'Cierre automatico > 14hs' WHERE id = $1",
-                row["id"]
-            )
+            if hours and hours >= 14:
+                    await conn.execute(
+                        "UPDATE turns SET closed_at = now(), sales_total = COALESCE((SELECT SUM(total) FROM sales WHERE turn_id = $1 AND business_id = $2), 0), notes = 'Cierre automatico > 14hs' WHERE id = $1",
+                        row["id"], b_id
+                    )
         else:
             return {"turn_id": row["id"], "turn_auto_opened": False, "turn_opened_at": str(row["opened_at"])}
     new_row = await conn.fetchrow(
@@ -755,10 +751,16 @@ async def check_billing_grace_period() -> None:
                             WHERE status IN ('active', 'past_due') AND plan != 'trial' AND plan_end_date IS NOT NULL
                             AND plan_end_date + interval '15 days' <= now()
                         """)
+                        await conn.execute("""
+                            UPDATE businesses SET status = 'expired', updated_at = now()
+                            WHERE status = 'active' AND plan = 'trial'
+                            AND created_at + interval '7 days' <= now()
+                        """)
             else:
                 async with aiosqlite.connect(DB_PATH) as db:
                     await db.execute("UPDATE businesses SET status = 'past_due', updated_at = datetime('now','localtime') WHERE status = 'active' AND plan != 'trial' AND plan_end_date IS NOT NULL AND date(plan_end_date, '+3 days') <= date('now')")
                     await db.execute("UPDATE businesses SET status = 'suspended', updated_at = datetime('now','localtime') WHERE status IN ('active', 'past_due') AND plan != 'trial' AND plan_end_date IS NOT NULL AND date(plan_end_date, '+15 days') <= date('now')")
+                    await db.execute("UPDATE businesses SET status = 'expired', updated_at = datetime('now','localtime') WHERE status = 'active' AND plan = 'trial' AND date(created_at, '+7 days') <= date('now')")
                     await db.commit()
             logger.info("Grace period task completada.")
         except Exception as e:

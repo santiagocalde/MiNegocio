@@ -90,6 +90,7 @@ export default function SearchBar({
               }
             }
           }}
+          autoFocus
         />
         {search.trim().length > 0 && autocomplete.length > 0 && (
           <div role="listbox" aria-label="Resultados de búsqueda" style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', zIndex: 100, marginTop: '4px', boxShadow: '0 4px 12px rgba(30,58,95,0.2)' }}>

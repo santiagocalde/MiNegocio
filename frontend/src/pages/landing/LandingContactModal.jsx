@@ -10,8 +10,8 @@ export default function LandingContactModal({ showContactModal, setShowContactMo
       <style>{`
         .contact-input {
           width: 100%; padding: 14px 16px; background: rgba(255,255,255,0.02);
-          border: 1px solid rgba(255,255,255,0.08); borderRadius: 12px; color: #fff;
-          outline: none; fontSize: 0.95rem; fontFamily: inherit; transition: all 0.3s ease;
+          border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; color: #fff;
+          outline: none; font-size: 0.95rem; font-family: inherit; transition: all 0.3s ease;
           backdrop-filter: blur(10px);
         }
         .contact-input:focus {

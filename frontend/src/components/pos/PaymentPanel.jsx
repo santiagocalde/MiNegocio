@@ -129,7 +129,7 @@ export default function PaymentPanel({
                   }} style={{ width: '100%', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', color: 'var(--accent-success)', fontSize: '0.75rem', padding: '4px', borderRadius: '4px', textAlign: 'center', fontFamily: 'var(--font-mono)', boxSizing: 'border-box' }} />
                 </>
               ) : (
-                <div onClick={() => handleQuickAdd('VIRTUAL_' + btn.id, btn.name, btn.price, { is_virtual: true })} style={{ cursor: 'pointer', textAlign: 'center', transition: 'all 0.15s' }} onMouseEnter={e=>e.currentTarget.style.transform='scale(1.02)'} onMouseLeave={e=>e.currentTarget.style.transform='none'}>
+                <div onClick={() => handleQuickAdd('BTN_' + btn.id, btn.name, btn.price, { is_virtual: true })} style={{ cursor: 'pointer', textAlign: 'center', transition: 'all 0.15s' }} onMouseEnter={e=>e.currentTarget.style.transform='scale(1.02)'} onMouseLeave={e=>e.currentTarget.style.transform='none'}>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{btn.name}</div>
                   <div style={{ fontSize: '0.85rem', color: 'var(--accent-success)', fontWeight: 800, fontFamily: 'var(--font-mono)' }}>${btn.price.toLocaleString('es-AR')}</div>
                 </div>

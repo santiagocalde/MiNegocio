@@ -12,8 +12,7 @@ const Icons = {
 };
 
 export default function CatalogoModule() {
-  const { addToast, backend } = usePanelContext();
-  const currentPlan = backend.businessConfig?.plan || 'trial';
+  const { addToast, backend, currentPlan } = usePanelContext();
   const PLAN_WEIGHT = { trial: 1, simple: 1, pro: 2, ia: 3 };
   const isLocked = PLAN_WEIGHT[currentPlan] < PLAN_WEIGHT['pro'];
   const [isActive, setIsActive] = useState(false);
@@ -75,10 +74,10 @@ export default function CatalogoModule() {
 
   return (
     <FeatureGate isLocked={isLocked} requiredPlan="Pro">
-    <div style={{ padding: '32px 40px', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
+    <div style={{ padding: '22px 28px', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px', flexShrink: 0 }}>
         <div>
-          <h2 style={{ fontSize: '2rem', fontWeight: 800, margin: '0 0 4px 0', color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>Catálogo Online</h2>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, margin: '0 0 4px 0', color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>Catálogo Online</h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: 0 }}>Tu tienda virtual sincronizada en tiempo real con tu stock.</p>
         </div>
       </div>

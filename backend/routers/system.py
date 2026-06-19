@@ -102,6 +102,8 @@ async def list_backups() -> dict:
 @router.post("/api/backup/restore", summary="Restaurar backup")
 async def restore_backup(data: dict) -> dict:
     filename = data.get("filename", "")
+    if os.path.basename(filename) != filename or not filename.endswith('.db.gz'):
+        raise HTTPException(400, detail="Nombre de archivo invalido")
     backup_dir = os.path.join(main.BASE_DIR, "backups")
     backup_path = os.path.join(backup_dir, filename)
     if not os.path.exists(backup_path):
@@ -226,10 +228,12 @@ async def mercadopago_payment_status(intent_id: str) -> dict:
 # CONTACTO
 # ────────────────────────────────────────────────────────────
 @router.post("/api/send-contact-email", summary="Enviar email de contacto")
-async def send_contact_email(data: dict = Body(...)) -> dict:
-    nombre = data.get("nombre", "Sin nombre")
-    contacto = data.get("contacto", "")
-    mensaje = data.get("mensaje", "")
+@limiter.limit("3/10minutes")
+async def send_contact_email(request: Request, data: dict = Body(...)) -> dict:
+    import html as html_mod
+    nombre = html_mod.escape(data.get("nombre", "Sin nombre")[:100])
+    contacto = html_mod.escape(data.get("contacto", "")[:200])
+    mensaje = html_mod.escape(data.get("mensaje", "")[:2000])
     resend_key = os.getenv("RESEND_API_KEY", "")
     if not resend_key:
         logger.warning("RESEND_API_KEY no configurada")

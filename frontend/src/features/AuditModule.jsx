@@ -12,8 +12,7 @@ const Icons = {
 };
 
 export default function AuditModule() {
-  const { addToast, backend } = usePanelContext();
-  const currentPlan = backend.businessConfig?.plan || 'trial';
+  const { addToast, backend, currentPlan } = usePanelContext();
   const isLocked = PLAN_WEIGHT[currentPlan] < PLAN_WEIGHT['pro'];
   const [movements, setMovements] = useState([]);
   const [filterType, setFilterType] = useState('all');
@@ -101,15 +100,18 @@ export default function AuditModule() {
 
   const filtered = movements.filter(m => {
     const matchesFilter = filterType === 'all' || m.movement_type === filterType;
-    const matchesSearch = m.product_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (m.reason && m.reason.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (m.operator && m.operator.toLowerCase().includes(searchTerm.toLowerCase()));
+    const name = m.product_name || '';
+    const reason = m.reason || '';
+    const operator = m.operator || '';
+    const matchesSearch = name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      reason.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      operator.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesFilter && matchesSearch;
   });
 
   return (
     <FeatureGate isLocked={isLocked} requiredPlan="Pro">
-      <div style={{ padding: '32px 40px', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflowY: 'auto' }}>
+      <div style={{ padding: '22px 28px', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflowY: 'auto' }}>
       
       {/* HEADER COMPARTIDO */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', flexShrink: 0 }}>
@@ -175,7 +177,7 @@ export default function AuditModule() {
                       {m.product_name}
                     </div>
                     <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                      {new Date(m.timestamp).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' })} • Operador: {m.operator || 'Sistema'}
+                      {m.timestamp ? new Date(m.timestamp).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' }) : '---'} • Operador: {m.operator || 'Sistema'}
                     </div>
                   </div>
                   <div style={{ flex: 1, color: 'var(--text-secondary)', fontSize: '0.85rem', padding: '0 16px' }}>

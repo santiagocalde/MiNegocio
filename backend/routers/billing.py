@@ -10,7 +10,7 @@ router = APIRouter()
 logger = logging.getLogger("NovaStock")
 
 MP_ACCESS_TOKEN = os.environ.get("MP_ACCESS_TOKEN", "")
-JWT_SECRET = os.environ.get("JWT_SECRET", "minegocio-produccion-secret-2026")
+JWT_SECRET = os.environ.get("JWT_SECRET", "ta1P4pMAryFH5_lDGf-8GmbTSBrMWg5uYheoWg93s1o")
 
 class SubscribeRequest(BaseModel):
     plan_id: str

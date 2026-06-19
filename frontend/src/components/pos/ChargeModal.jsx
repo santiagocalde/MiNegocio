@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { apiPost } from '../../services/apiClient';
 import { Icons } from '../ui/Icons';
 
@@ -32,6 +32,16 @@ export default function ChargeModal({
     (useSplitPayment && splitPayments.reduce((s, p) => s + (parseFloat(p.amount) || 0), 0) < finalTotal);
 
   const transferAlias = businessConfig?.catalogo_whatsapp || businessConfig?.mp_collector_id || null;
+
+  useEffect(() => {
+    if (!isCharging) return;
+    const handler = (e) => {
+      if (e.key === 'Escape') { setIsCharging(false); return; }
+      if (e.key === 'Enter' && !isConfirmDisabled) { e.preventDefault(); confirmCharge(); }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [isCharging, isConfirmDisabled, confirmCharge, setIsCharging]);
 
   return (
     <div className="modal-overlay" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(30,58,95,0.85)', backdropFilter: 'blur(8px)', zIndex: 1000 }} role="dialog" aria-modal="true">
@@ -108,9 +118,17 @@ export default function ChargeModal({
                   value={payment} 
                   onChange={e => setPayment(e.target.value)} 
                   autoFocus 
-                  onKeyDown={e => { if (e.key === 'Enter' && change >= 0 && !isConfirmDisabled) confirmCharge(); }} 
+                  onKeyDown={e => { if (e.key === 'Enter' && change >= 0 && !isConfirmDisabled) confirmCharge(); e.stopPropagation(); }} 
                   style={{ width: '100%', background: 'var(--bg-main)', border: '2px solid var(--accent-primary)', color: 'var(--text-primary)', borderRadius: '12px', padding: '16px', fontSize: '2rem', fontFamily: 'var(--font-mono)', textAlign: 'center', outline: 'none', marginBottom: '16px', boxShadow: '0 0 0 4px rgba(20,187,166, 0.1)' }}
                 />
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '12px' }}>
+                  <button onClick={() => setPayment(finalTotal.toString())} style={{ flex: '1 0 auto', padding: '8px 12px', background: 'var(--accent-success)', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 800, fontSize: '0.85rem', cursor: 'pointer' }}>Pago Exacto</button>
+                  {[1000, 2000, 5000, 10000, 20000].map(bill => (
+                    <button key={bill} onClick={() => setPayment(p => (parseFloat(p || 0) + bill).toString())} style={{ flex: '1 0 auto', padding: '8px 10px', background: 'rgba(255,255,255,0.06)', color: '#fff', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer', fontFamily: 'var(--font-mono)' }}>
+                      +${bill.toLocaleString('es-AR')}
+                    </button>
+                  ))}
+                </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px', borderTop: '1px dashed var(--border-color)', paddingTop: '16px' }}>
                   <span style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', fontWeight: 600 }}>VUELTO:</span>
                   <div style={{ fontSize: '2rem', fontWeight: 800, color: change < 0 ? 'var(--accent-danger)' : 'var(--accent-success)', fontFamily: 'var(--font-mono)' }}>
@@ -171,7 +189,7 @@ export default function ChargeModal({
                   onClick={confirmCharge} 
                   disabled={isConfirmDisabled}
                   style={{ flex: 2, padding: '20px', background: isConfirmDisabled ? 'var(--bg-hover)' : 'var(--gradient-primary)', color: isConfirmDisabled ? 'var(--text-secondary)' : 'white', border: 'none', borderRadius: '16px', fontSize: '1.2rem', fontWeight: 800, cursor: isConfirmDisabled ? 'not-allowed' : 'pointer', transition: 'all 0.2s', boxShadow: isConfirmDisabled ? 'none' : '0 10px 25px -5px rgba(20,187,166, 0.4)' }}>
-                  {isProcessing ? 'PROCESANDO...' : 'PROCESAR VENTA (Enter)'}
+                  {isProcessing ? 'PROCESANDO...' : 'PROCESAR VENTA'}
                 </button>
               </div>
             </div>

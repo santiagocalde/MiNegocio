@@ -34,7 +34,7 @@ export default function LandingTestimonials() {
                 <div style={{ display: 'flex', gap: 2, marginBottom: 12 }}>{Array.from({ length: t.stars }).map((_, j) => <Svg.Star key={j} />)}</div>
                 <p style={{ fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16, fontStyle: 'italic', flex: 1 }}>"{t.text}"</p>
                 <div style={{ fontWeight: 700, fontSize: '0.85rem' }}>{t.name}</div>
-                <div style={{ color: 'var(--lp-text-muted)', fontSize: '0.75rem' }}>{t.business}</div>
+                <div style={{ color: 'var(--lp-text-muted)', fontSize: '0.75rem' }}>{t.business_name || t.business}</div>
               </div>
             </Reveal>
           ))}

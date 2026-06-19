@@ -104,11 +104,11 @@ export default function ReportsModule() {
   }, [fetchReports]);
 
   const renderReports = () => (
-    <div style={{ padding: '32px 40px', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
+    <div style={{ padding: '22px 28px', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
       
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', flexShrink: 0 }}>
         <div>
-          <h2 style={{ fontSize: '2rem', fontWeight: 800, margin: '0 0 4px 0', color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>Reportes de Ventas</h2>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, margin: '0 0 4px 0', color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>Reportes de Ventas</h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: 0 }}>Historial y analíticas de la caja</p>
         </div>
         
@@ -138,14 +138,14 @@ export default function ReportsModule() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px', flexShrink: 0 }}>
         <div style={{ background: 'var(--bg-card)', borderRadius: '12px', padding: '20px', border: '1px solid var(--border-color)', position: 'relative' }}>
           <div style={{ color: 'var(--text-primary)', fontSize: '0.9rem', fontWeight: 700, marginBottom: '12px' }}>Total de Ventas</div>
-          <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '4px', letterSpacing: '-0.5px' }}>{summary.totalVentas}</div>
+          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '4px', letterSpacing: '-0.5px' }}>{summary.totalVentas}</div>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Total de ventas registradas del negocio.</div>
           <svg style={{ position: 'absolute', top: '20px', right: '20px', color: 'var(--text-secondary)', opacity: 0.5 }} width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
         </div>
 
         <div style={{ background: 'var(--bg-card)', borderRadius: '12px', padding: '20px', border: '1px solid var(--border-color)', position: 'relative' }}>
           <div style={{ color: 'var(--text-primary)', fontSize: '0.9rem', fontWeight: 700, marginBottom: '12px' }}>Ingresos Totales</div>
-          <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '4px', letterSpacing: '-0.5px' }}>{formatPesos(summary.ingresos)}</div>
+          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '4px', letterSpacing: '-0.5px' }}>{formatPesos(summary.ingresos)}</div>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Ingresos totales registrados del negocio.</div>
           <svg style={{ position: 'absolute', top: '20px', right: '20px', color: 'var(--text-secondary)', opacity: 0.5 }} width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
         </div>
@@ -228,8 +228,8 @@ export default function ReportsModule() {
                     <tbody>
                       {sortedSales.map((sale) => (
                         <tr key={sale.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background='rgba(255,255,255,0.02)'} onMouseLeave={e => e.currentTarget.style.background='transparent'}>
-                          <td style={{ padding: '16px', fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>{sale.id.toString().padStart(8, '0')}</td>
-                          <td style={{ padding: '16px', fontSize: '0.85rem' }}>{new Date(sale.created_at).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' })}</td>
+                          <td style={{ padding: '16px', fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>{(sale.id ?? '').toString().padStart(8, '0') || '---'}</td>
+                          <td style={{ padding: '16px', fontSize: '0.85rem' }}>{sale.created_at ? new Date(sale.created_at).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' }) : '---'}</td>
                           <td style={{ padding: '16px', fontSize: '0.85rem' }}>{sale.operator}</td>
                           <td style={{ padding: '16px', fontSize: '0.85rem', color: 'var(--text-secondary)', maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                             {sale.items?.map(i => `${i.product_name} x${i.quantity}`).join(', ') || 'Varios'}
@@ -256,7 +256,7 @@ export default function ReportsModule() {
   );
 
   const renderGate = () => (
-    <div style={{ padding: '32px 40px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', boxSizing: 'border-box' }}>
+    <div style={{ padding: '22px 28px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', boxSizing: 'border-box' }}>
       <div style={{ maxWidth: 480, textAlign: 'center' }}>
         <div style={{ marginBottom: 16 }}><Icons.Sparkles /></div>
         <h2 style={{ fontSize: '1.8rem', fontWeight: 800, margin: '0 0 8px 0', color: 'var(--text-primary)' }}>Reportes IA</h2>

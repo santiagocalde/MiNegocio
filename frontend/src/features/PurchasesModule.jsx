@@ -70,7 +70,7 @@ function AIScannerModal({ onClose, onScanSuccess }) {
             <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 600 }}>Créditos mensuales: <span style={{ color: 'var(--text-primary)' }}>45/50</span></span>
           </div>
           
-          <h2 style={{ fontSize: '2rem', fontWeight: 800, margin: '0 0 8px 0', color: 'var(--text-primary)' }}>Carga de Facturas con IA</h2>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, margin: '0 0 8px 0', color: 'var(--text-primary)' }}>Carga de Facturas con IA</h2>
           <p style={{ color: 'var(--text-secondary)', margin: '0 0 32px 0', fontSize: '0.95rem' }}>Fotografiá el remito o factura del proveedor. La IA detectará automáticamente los productos, cantidades y costos. El stock se actualizará solo.</p>
 
           <div 
@@ -112,13 +112,12 @@ function formatPesos(n) {
 }
 
 export default function PurchasesModule() {
-  const { backend, addToast, auth, currentSucursalId, isTrialExpired } = usePanelContext();
+  const { backend, addToast, auth, currentSucursalId, currentPlan } = usePanelContext();
   const globalProductsDB = backend.productsDB;
   const onProductsUpdated = backend.fetchProductsDB;
   const currentTurnId = auth.currentTurnId;
   const [activeTab, setActiveTab] = useState('history'); // history | new_invoice
   const [showAIScanner, setShowAIScanner] = useState(false);
-  const currentPlan = backend.businessConfig?.plan || 'trial';
   const isLocked = PLAN_WEIGHT[currentPlan] < PLAN_WEIGHT['simple'];
   const canUseIA = currentPlan === 'ia';
   
@@ -260,12 +259,12 @@ export default function PurchasesModule() {
 
   return (
     <FeatureGate isLocked={isLocked} requiredPlan="Simple">
-      <div style={{ padding: '32px 40px', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
+      <div style={{ padding: '22px 28px', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
       
       {/* HEADER COMPARTIDO */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', flexShrink: 0 }}>
         <div>
-          <h2 style={{ fontSize: '2rem', fontWeight: 800, margin: '0 0 4px 0', color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>Gestión de Compras</h2>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, margin: '0 0 4px 0', color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>Gestión de Compras</h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', margin: 0 }}>Registro de facturas, ingresos de stock y control de gastos.</p>
         </div>
         
@@ -322,7 +321,7 @@ export default function PurchasesModule() {
                           <div style={{ flex: 1 }}>
                             <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.9rem', marginBottom: '4px' }}>{p.supplier_name || 'Proveedor General'}</div>
                             <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', display: 'flex', gap: '12px' }}>
-                              <span>{new Date(p.created_at).toLocaleDateString('es-AR')}</span>
+                              <span>{p.created_at ? new Date(p.created_at).toLocaleDateString('es-AR') : '---'}</span>
                               <span>•</span>
                               <span>Factura: {p.invoice_number || 'S/N'}</span>
                             </div>
@@ -438,7 +437,7 @@ export default function PurchasesModule() {
               <div style={{ padding: '24px', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-main)' }}>
                 <div>
                   <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 600 }}>Total Factura (Costo)</div>
-                  <div style={{ fontSize: '2rem', fontWeight: 800, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 800, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>
                     {formatPesos(cartTotal)}
                   </div>
                 </div>
@@ -485,7 +484,7 @@ export default function PurchasesModule() {
                 </div>
                 <div>
                   <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>Fecha</div>
-                  <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{new Date(detailPurchase.created_at).toLocaleString('es-AR', { dateStyle: 'medium' })}</div>
+                  <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{detailPurchase.created_at ? new Date(detailPurchase.created_at).toLocaleString('es-AR', { dateStyle: 'medium' }) : '---'}</div>
                 </div>
                 <div>
                   <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>Items</div>

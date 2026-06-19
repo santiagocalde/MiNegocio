@@ -117,8 +117,8 @@ async def price_suggestions(threshold_pct: float = Query(15.0), category_id: Opt
                 params.append(category_id)
                 n += 1
             rows = await conn.fetch(f"""
-                SELECT p.*, ROUND((p.price - p.cost_price) / NULLIF(p.cost_price,0) * 100, 1) as current_margin,
-                       ROUND(p.cost_price * (1 + ${n} / 100.0) / 10) * 10 as suggested_price
+                SELECT p.*, ROUND(CAST((p.price - p.cost_price) / NULLIF(p.cost_price,0) * 100 AS numeric), 1) as current_margin,
+                       ROUND(CAST(p.cost_price * (1 + ${n} / 100.0) / 10 AS numeric)) * 10 as suggested_price
                 FROM products p WHERE {where}
                 ORDER BY current_margin ASC
             """, *params, threshold_pct)

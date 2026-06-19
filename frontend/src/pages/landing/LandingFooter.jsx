@@ -21,8 +21,8 @@ export default function LandingFooter({ navigate, setShowContactModal, handleDog
         </div>
         <p style={{ fontSize: '0.85rem', letterSpacing: '0.5px' }}>© 2026 MiNegocio · Hecho con fuerza para los kioscos de Argentina</p>
         <div style={{ display: 'flex', gap: 20, fontSize: '0.8rem', color: 'var(--lp-text-muted)' }}>
-          <span onClick={() => navigate('/terminos')} role="button" tabIndex={0} onKeyDown={e => { if (e.key === 'Enter') navigate('/terminos'); }} style={{ cursor: 'pointer', transition: 'color 0.2s' }} onMouseEnter={e => e.target.style.color = '#fff'} onMouseLeave={e => e.target.style.color = 'var(--lp-text-muted)'}>Terminos y Condiciones</span>
-          <span onClick={() => navigate('/privacidad')} role="button" tabIndex={0} onKeyDown={e => { if (e.key === 'Enter') navigate('/privacidad'); }} style={{ cursor: 'pointer', transition: 'color 0.2s' }} onMouseEnter={e => e.target.style.color = '#fff'} onMouseLeave={e => e.target.style.color = 'var(--lp-text-muted)'}>Politica de Privacidad</span>
+          <span onClick={() => navigate('/terminos')} role="button" tabIndex={0} onKeyDown={e => { if (e.key === 'Enter') navigate('/terminos'); }} style={{ cursor: 'pointer', transition: 'color 0.2s' }} onMouseEnter={e => e.target.style.color = '#fff'} onMouseLeave={e => e.target.style.color = 'var(--lp-text-muted)'}>Términos y Condiciones</span>
+          <span onClick={() => navigate('/privacidad')} role="button" tabIndex={0} onKeyDown={e => { if (e.key === 'Enter') navigate('/privacidad'); }} style={{ cursor: 'pointer', transition: 'color 0.2s' }} onMouseEnter={e => e.target.style.color = '#fff'} onMouseLeave={e => e.target.style.color = 'var(--lp-text-muted)'}>Política de Privacidad</span>
         </div>
       </div>
     </footer>

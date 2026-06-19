@@ -13,10 +13,10 @@ export default function useSound() {
     const osc = context.createOscillator();
     const gain = context.createGain();
     osc.connect(gain); gain.connect(context.destination);
-    osc.frequency.value = 1200; osc.type = 'sine';
-    gain.gain.setValueAtTime(0.3, context.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, context.currentTime + 0.15);
-    osc.start(context.currentTime); osc.stop(context.currentTime + 0.15);
+    osc.frequency.value = 800; osc.type = 'sine';
+    gain.gain.setValueAtTime(0.08, context.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, context.currentTime + 0.08);
+    osc.start(context.currentTime); osc.stop(context.currentTime + 0.08);
   }, []);
 
   const playErrorBeep = useCallback(() => {

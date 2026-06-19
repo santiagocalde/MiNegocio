@@ -188,7 +188,7 @@ async def init_pg() -> None:
                 tipo_factura    TEXT DEFAULT 'C',
                 cae             TEXT,
                 cae_vto         TEXT,
-                idempotency_key TEXT,
+                idempotency_key TEXT UNIQUE,
                 reverted        INTEGER DEFAULT 0,
                 sucursal_id     INTEGER DEFAULT 1,
                 timestamp       TIMESTAMPTZ DEFAULT now()
@@ -388,7 +388,31 @@ async def init_pg() -> None:
                 ('Tenia miedo de usar un sistema, pero en 5 minutos ya estaba vendiendo. Es mas facil que WhatsApp.', 'Graciela', 'Dietetica Luz Verde, Avellaneda', 4, true)
             """)
 
-        logger.info("PostgreSQL inicializado: todas las tablas creadas y datos seedeados")
+            await conn.execute("""
+            CREATE TABLE IF NOT EXISTS superadmins (
+                id              TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+                email           TEXT UNIQUE NOT NULL,
+                password_hash   TEXT NOT NULL,
+                role            TEXT DEFAULT 'superadmin',
+                created_at      TIMESTAMPTZ DEFAULT now(),
+                last_login      TIMESTAMPTZ
+            );
+
+            CREATE TABLE IF NOT EXISTS admin_audit_log (
+                id              TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+                superadmin_id   TEXT REFERENCES superadmins(id),
+                business_id     TEXT REFERENCES businesses(id),
+                action          TEXT NOT NULL,
+                old_value       JSONB,
+                new_value       JSONB,
+                notes           TEXT,
+                timestamp       TIMESTAMPTZ DEFAULT now()
+            )
+            """)
+            await conn.execute("CREATE INDEX IF NOT EXISTS idx_admin_audit_business ON admin_audit_log(business_id)")
+            await conn.execute("CREATE INDEX IF NOT EXISTS idx_admin_audit_action ON admin_audit_log(action)")
+
+    logger.info("PostgreSQL inicializado: todas las tablas creadas y datos seedeados")
 
 
 async def get_business_id_from_jwt(payload: dict) -> Optional[str]:

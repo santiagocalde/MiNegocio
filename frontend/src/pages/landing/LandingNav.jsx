@@ -87,6 +87,10 @@ export default function LandingNav({
                       localStorage.removeItem('saas_admin_gate'); localStorage.removeItem('admin_token');
                       localStorage.removeItem('saas_business');
                       localStorage.removeItem('minegocio_current_operator');
+                      localStorage.removeItem('minegocio_current_turn_id');
+                      localStorage.removeItem('minegocio_cart');
+                      localStorage.removeItem('minegocio_pending_sales');
+                      localStorage.removeItem('minegocio_onboarding_pending');
                       setIsLoggedIn(false);
                       setShowUserMenu(false);
                       window.location.reload();
@@ -108,7 +112,7 @@ export default function LandingNav({
         </button>
       </div>
       {mobileMenu && (
-        <div className="nav-mobile-menu" style={{ display: 'none', flexDirection: 'column', alignItems: 'center', gap: 16, padding: '20px 0', marginTop: 12, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+        <div className="nav-mobile-menu" style={{ flexDirection: 'column', alignItems: 'center', gap: 16, padding: '20px 0', marginTop: 12, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
           {['Funciones', 'Planes', 'Contacto'].map(link => (
             <a key={link} 
                href={link === 'Contacto' ? '#' : `#${link.toLowerCase()}`} 

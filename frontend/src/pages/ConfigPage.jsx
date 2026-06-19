@@ -15,6 +15,7 @@ const FIELDS = [
   { key: 'mensaje_ticket', label: 'Mensaje final del ticket', placeholder: '¡Gracias por su compra!' },
   { key: 'iva_rate',       label: 'IVA % por defecto',     placeholder: '21', options: ['21', '10.5', '27', '0'] },
   { key: 'mp_access_token',label: 'Access Token de Mercado Pago', placeholder: 'APP_USR-...', type: 'password' },
+  { key: 'mp_collector_id',label: 'Alias / ID de Cobro de Mercado Pago', placeholder: 'TuAliasMP o ID de caja', type: 'password' },
 ];
 
 const inputStyle = {
@@ -69,7 +70,7 @@ export default function ConfigPage() {
   };
 
   return (
-    <div style={{ padding: '32px 40px', width: '100%', height: '100%', overflowY: 'auto', boxSizing: 'border-box' }}>
+    <div style={{ padding: '22px 28px', width: '100%', height: '100%', overflowY: 'auto', boxSizing: 'border-box' }}>
       <div style={{ maxWidth: '800px', margin: '0 auto', background: 'var(--bg-card)', padding: '32px', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.2)', border: '1px solid var(--border-color)' }}>
         <h2 style={{ fontSize: '1.8rem', color: 'var(--text-primary)', marginBottom: '8px' }}><Icons.Settings /> Ajustes y Configuración</h2>
         <p style={{ color: 'var(--text-secondary)', textAlign: 'center', marginBottom: '24px', fontSize: '0.9rem' }}>

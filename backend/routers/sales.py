@@ -434,7 +434,7 @@ async def today_sales(sucursal_id: Optional[int] = Query(None)) -> dict:
                            COALESCE(SUM(CASE WHEN payment_method='tarjeta' THEN total ELSE 0 END),0) as total_tarjeta,
                            COALESCE(SUM(CASE WHEN payment_method='transferencia' THEN total ELSE 0 END),0) as total_transferencia,
                            COALESCE(SUM(CASE WHEN payment_method='mercadopago' THEN total ELSE 0 END),0) as total_mp
-                    FROM sales WHERE business_id = $1 AND timestamp::date=current_date AND (sucursal_id=$2 OR sucursal_id IS NULL)
+                    FROM sales WHERE business_id = $1 AND timestamp::date=current_date AND sucursal_id = $2
                 """, b_id, sucursal_id)
             else:
                 row = await conn.fetchrow("""
@@ -455,8 +455,10 @@ async def today_sales(sucursal_id: Optional[int] = Query(None)) -> dict:
                     SELECT COUNT(*) as total_tickets, COALESCE(SUM(total),0) as total_vendido,
                            COALESCE(SUM(CASE WHEN is_fiado=1 THEN total ELSE 0 END),0) as total_fiado,
                            COALESCE(SUM(CASE WHEN payment_method='efectivo' AND is_fiado=0 THEN total ELSE 0 END),0) as total_efectivo,
+                           COALESCE(SUM(CASE WHEN payment_method='tarjeta' THEN total ELSE 0 END),0) as total_tarjeta,
+                           COALESCE(SUM(CASE WHEN payment_method='transferencia' THEN total ELSE 0 END),0) as total_transferencia,
                            COALESCE(SUM(CASE WHEN payment_method='mercadopago' THEN total ELSE 0 END),0) as total_mp
-                    FROM sales WHERE date(timestamp)=date('now','localtime') AND (sucursal_id IS NULL OR sucursal_id = ?)
+                    FROM sales WHERE date(timestamp)=date('now','localtime') AND sucursal_id = ?
                 """, (sucursal_id,))
             else:
                 cur = await db.execute("""

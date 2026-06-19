@@ -12,7 +12,7 @@ import main
 router = APIRouter()
 logger = logging.getLogger("NovaStock.Admin")
 
-JWT_SECRET = os.environ.get("JWT_SECRET", "minegocio-produccion-secret-2026")
+JWT_SECRET = os.environ.get("JWT_SECRET", "ta1P4pMAryFH5_lDGf-8GmbTSBrMWg5uYheoWg93s1o")
 JWT_ALGORITHM = "HS256"
 
 from slowapi import Limiter

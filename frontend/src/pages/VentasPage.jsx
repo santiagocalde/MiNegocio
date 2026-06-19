@@ -17,7 +17,7 @@ import TicketPrint from '../components/TicketPrint';
 
 export default function VentasPage() {
   const { auth, backend, addToast, playBeep, currentSucursalId, setCurrentSucursalId } = usePanelContext();
-  const cart = useCart(backend.productsDB, 21);
+  const cart = useCart(backend.productsDB, 21, playBeep);
   const promos = usePromotions(cart.cart);
 
   useEffect(() => { cart.setPromotionSavings(promos.promotionSavings); }, [promos.promotionSavings]);

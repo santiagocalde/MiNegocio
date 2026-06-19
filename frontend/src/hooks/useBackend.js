@@ -243,7 +243,7 @@ export default function useBackend(currentOperator, currentTurnId, currentSucurs
       }
     };
     checkRealHealth();
-    const interval = setInterval(checkRealHealth, 5000);
+    const interval = setInterval(checkRealHealth, 15000);
     return () => clearInterval(interval);
   }, [currentSucursalId]);
 
@@ -279,7 +279,7 @@ export default function useBackend(currentOperator, currentTurnId, currentSucurs
         }
       } catch (e) { console.error(e) }
     };
-    const interval = setInterval(syncPending, 4000);
+    const interval = setInterval(syncPending, 10000);
     return () => clearInterval(interval);
   }, [fetchProductsDB]);
 
