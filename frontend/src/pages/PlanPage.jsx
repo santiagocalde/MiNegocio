@@ -99,6 +99,7 @@ export default function PlanPage() {
   const [isYearly, setIsYearly] = useState(false);
   const [plans, setPlans] = useState(FALLBACK_PLANS);
   const [planPageLoading, setPlanPageLoading] = useState(false);
+  const [planPageError, setPlanPageError] = useState('');
 
   useEffect(() => {
     apiGet('/plans')
@@ -125,16 +126,17 @@ export default function PlanPage() {
   const handleSubscribe = async (planId, isYearly) => {
     if (planPageLoading) return;
     setPlanPageLoading(true);
+    setPlanPageError('');
     try {
       const response = await apiPost('/billing/subscribe', { plan_id: planId, is_yearly: isYearly });
       const data = await response.json();
       if (data && data.init_point) {
         window.location.href = data.init_point;
       } else {
-        alert('Hubo un error al generar el link de pago. Intenta de nuevo.');
+        setPlanPageError('No se pudo generar el link de pago. Intenta nuevamente.');
       }
     } catch (err) {
-      alert('Error de conexion con MercadoPago.');
+      setPlanPageError('Error de conexion con MercadoPago. Revisa tu internet.');
     } finally {
       setPlanPageLoading(false);
     }
@@ -171,6 +173,12 @@ export default function PlanPage() {
           }}>Anual <span style={{ fontSize: '0.7rem', opacity: 0.8 }}>(ahorrá 20%)</span></button>
         </div>
       </div>
+
+      {planPageError && (
+        <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, padding: '12px 20px', marginBottom: 20, color: '#FCA5A5', fontSize: '0.88rem', fontWeight: 500, textAlign: 'center', maxWidth: 400, margin: '0 auto 20px' }}>
+          {planPageError}
+        </div>
+      )}
 
       <div style={{ maxWidth: 1000, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 32, alignItems: 'stretch', paddingBottom: 40 }}>
         {plans.map((plan) => (

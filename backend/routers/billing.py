@@ -77,19 +77,27 @@ async def create_subscription(body: SubscribeRequest, request: Request):
     async with httpx.AsyncClient() as client:
         resp = await client.post("https://api.mercadopago.com/preapproval", json=mp_payload, headers=headers)
         if resp.status_code >= 400:
-            logger.error(f"Error de MercadoPago: {resp.text}")
+            logger.error(f"Error de MercadoPago subscribe: {resp.text}")
             raise HTTPException(status_code=400, detail="Error al generar link de pago")
         
         data = resp.json()
-        return {"init_point": data["init_point"]}
+        preapproval_id = data.get("id")
+        if preapproval_id:
+            pool = await get_pool()
+            async with pool.acquire() as conn:
+                await conn.execute(
+                    "UPDATE businesses SET mp_subscription_id = $1, plan_pending = $2, updated_at = now() WHERE id = $3",
+                    preapproval_id, body.plan_id, biz_id
+                )
+            logger.info(f"Preapproval MP creado: {preapproval_id} para {biz_id} (plan: {body.plan_id})")
+        return {"init_point": data["init_point"], "subscription_id": preapproval_id}
 
 @router.post("/webhook")
 async def mercadopago_webhook(request: Request):
     """
-    Webhook que recibe notificaciones de MercadoPago (IPN o Webhooks).
-    En este MVP, asumiremos que si llega una notificacion de preapproval, actualizamos la DB.
+    Webhook que recibe notificaciones de MercadoPago.
+    Verifica el estado real del preapproval y actualiza la DB.
     """
-    # En Producción real, MP envía topic y id por query params o body.
     try:
         body = await request.json()
     except Exception:
@@ -108,7 +116,7 @@ async def mercadopago_webhook(request: Request):
                     status = sub_data.get("status")
                     ext_ref = sub_data.get("external_reference")
                     
-                    if status == "authorized" and ext_ref:
+                    if ext_ref:
                         try:
                             parts = ext_ref.split("|")
                             if len(parts) != 2:
@@ -123,18 +131,30 @@ async def mercadopago_webhook(request: Request):
                         months = freq.get("frequency", 1) * (12 if freq.get("frequency_type") == "years" else 1)
                         pool = await get_pool()
                         async with pool.acquire() as conn:
-                            await conn.execute(
-                                "UPDATE businesses SET plan = $1, status = 'active', plan_end_date = CURRENT_DATE + make_interval(months => $2), updated_at = now() WHERE id = $3",
-                                plan_id, months, biz_id
-                            )
-                            logger.info(f"Webhook MP: {biz_id} activado plan {plan_id} por {months} meses")
+                            if status == "authorized":
+                                await conn.execute(
+                                    "UPDATE businesses SET plan = $1, status = 'active', plan_end_date = CURRENT_DATE + make_interval(months => $2), mp_subscription_id = $3, updated_at = now() WHERE id = $4",
+                                    plan_id, months, data_id, biz_id
+                                )
+                                logger.info(f"Webhook MP: {biz_id} activado {plan_id} ({months}m), sub={data_id}")
+                            elif status == "pending":
+                                await conn.execute(
+                                    "UPDATE businesses SET mp_subscription_id = $1, plan_pending = $2, updated_at = now() WHERE id = $3",
+                                    data_id, plan_id, biz_id
+                                )
+                            elif status in ("cancelled", "paused"):
+                                await conn.execute(
+                                    "UPDATE businesses SET status = 'past_due', mp_subscription_id = NULL, updated_at = now() WHERE id = $1",
+                                    biz_id
+                                )
+                                logger.info(f"Webhook MP: {biz_id} cancelado/pausado")
         return {"detail": "ok"}
 
     if action == "cancelled" and data_id:
         pool = await get_pool()
         async with pool.acquire() as conn:
             await conn.execute(
-                "UPDATE businesses SET status = 'past_due', updated_at = now() WHERE id = $1",
+                "UPDATE businesses SET status = 'past_due', mp_subscription_id = NULL, updated_at = now() WHERE mp_subscription_id = $1",
                 data_id
             )
         return {"detail": "cancelled"}
