@@ -152,6 +152,13 @@ async def mercadopago_webhook(request: Request):
                                     plan_id, months, data_id, biz_id
                                 )
                                 logger.info(f"Webhook MP: {biz_id} activado {plan_id} ({months}m), sub={data_id}")
+                                row = await conn.fetchrow("SELECT email, business_name FROM businesses WHERE id = $1", biz_id)
+                                if row:
+                                    from core.plan_pricing import PLANS_CONFIG
+                                    plan_label = PLANS_CONFIG.get(plan_id, {}).get("name", plan_id)
+                                    is_yearly = months >= 12
+                                    import asyncio as _asyncio
+                                    _asyncio.create_task(_send_plan_email(row["email"], row["business_name"], plan_label, is_yearly))
                             elif status == "pending":
                                 await conn.execute(
                                     "UPDATE businesses SET mp_subscription_id = $1, plan_pending = $2, updated_at = now() WHERE id = $3",
@@ -175,3 +182,10 @@ async def mercadopago_webhook(request: Request):
         return {"detail": "cancelled"}
 
     return {"detail": "ignored"}
+
+async def _send_plan_email(email: str, name: str, plan_label: str, is_yearly: bool):
+    try:
+        from services.email_service import send_plan_activated
+        await send_plan_activated(email, name, plan_label.split()[-1].lower() if ' ' in plan_label else plan_label.lower(), is_yearly)
+    except Exception as e:
+        logger.warning(f"No se pudo enviar email de activacion a {email}: {e}")

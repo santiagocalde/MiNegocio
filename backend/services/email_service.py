@@ -1,21 +1,13 @@
 import httpx
 import os
 import logging
+from services.email_templates import (
+    RESEND_API_KEY, FROM_EMAIL, trial_reminder_template, trial_welcome_template, plan_activated_template
+)
 
 logger = logging.getLogger("NovaStock")
 
-RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
-
-# Dirección de correo verificada en Resend (Sender)
-# IMPORTANTE: Si la cuenta es gratuita y el dominio no está verificado,
-# solo podrás enviar correos a la dirección de correo con la que creaste Resend.
-FROM_EMAIL = "onboarding@resend.dev"
-
 async def send_email(to_email: str, subject: str, html_content: str):
-    """
-    Envía un email usando la API REST de Resend mediante HTTPX.
-    No requiere instalar dependencias extra (usa httpx que ya está en FastAPI).
-    """
     if not RESEND_API_KEY:
         logger.warning(f"Simulando email a {to_email} (RESEND_API_KEY no configurado): {subject}")
         return {"status": "simulated", "to": to_email}
@@ -24,61 +16,45 @@ async def send_email(to_email: str, subject: str, html_content: str):
         "Authorization": f"Bearer {RESEND_API_KEY}",
         "Content-Type": "application/json"
     }
-    
     payload = {
         "from": FROM_EMAIL,
         "to": [to_email],
         "subject": subject,
         "html": html_content
     }
-    
     try:
         async with httpx.AsyncClient() as client:
             response = await client.post("https://api.resend.com/emails", json=payload, headers=headers, timeout=10.0)
-            response.raise_for_status()
-            logger.info(f"Email enviado exitosamente a {to_email}: {subject}")
-            return response.json()
+            if response.status_code == 200:
+                logger.info(f"Email enviado a {to_email}: {subject}")
+                return response.json()
+            else:
+                logger.error(f"Resend error {response.status_code}: {response.text[:200]}")
+                return {"status": "error", "detail": response.text[:200]}
     except Exception as e:
         logger.error(f"Error enviando email a {to_email}: {e}")
         return {"status": "error", "message": str(e)}
 
+
 async def send_trial_reminder(to_email: str, business_name: str, days_left: int):
-    """Envía un recordatorio de que el período de prueba está por terminar."""
-    subject = f"⏳ Quedan {days_left} días de tu prueba en MiNegocio"
-    
-    logo_url = "https://mi-negocio.app/MiNegocio_transparente_real.png"
-    header = f'<div style="text-align: center; margin-bottom: 20px;"><img src="{logo_url}" alt="MiNegocio Logo" width="200" style="max-width: 100%; height: auto;"></div>'
-    
-    if days_left <= 0:
-        subject = "🚫 Tu período de prueba ha finalizado"
-        html = f"""
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
-            {header}
-            <h2 style="color: #1E3A5F;">¡Hola {business_name}!</h2>
-            <p>Esperamos que hayas disfrutado tu semana probando <strong>MiNegocio</strong>.</p>
-            <p><strong>Tu período de prueba gratuito ha finalizado.</strong> Para seguir usando el sistema y no perder acceso a tu inventario y reportes, por favor suscribite a uno de nuestros planes.</p>
-            <div style="text-align: center; margin: 30px 0;">
-                <a href="https://mi-negocio.app/planes" style="background-color: #14BBA6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px;">Ver Planes y Suscribirme</a>
-            </div>
-            <p>Si necesitás ayuda, respondé a este correo o contactanos por WhatsApp.</p>
-            <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
-            <p style="font-size: 12px; color: #999; text-align: center;">© 2026 MiNegocio App</p>
-        </div>
-        """
-    else:
-        html = f"""
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
-            {header}
-            <h2 style="color: #1E3A5F;">¡Hola {business_name}!</h2>
-            <p>Esperamos que estés aprovechando al máximo <strong>MiNegocio</strong> para gestionar tu kiosco.</p>
-            <p>Te escribimos para avisarte que te quedan <strong>{days_left} días</strong> de prueba gratuita.</p>
-            <p>Podés suscribirte en cualquier momento para asegurar que tu sistema siga funcionando sin interrupciones una vez que finalice la prueba.</p>
-            <div style="text-align: center; margin: 30px 0;">
-                <a href="https://mi-negocio.app/planes" style="background-color: #14BBA6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px;">Ver Planes</a>
-            </div>
-            <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
-            <p style="font-size: 12px; color: #999; text-align: center;">© 2026 MiNegocio App</p>
-        </div>
-        """
-        
+    subject = f"MiNegocio — Quedan {days_left} dias de prueba" if days_left > 0 else "MiNegocio — Prueba finalizada"
+    html = trial_reminder_template(business_name, days_left)
+    return await send_email(to_email, subject, html)
+
+
+async def send_trial_welcome(to_email: str, business_name: str):
+    subject = "MiNegocio — Bienvenido! Tu prueba de 7 dias esta activa"
+    html = trial_welcome_template(business_name)
+    return await send_email(to_email, subject, html)
+
+
+async def send_plan_activated(to_email: str, business_name: str, plan_name: str, is_yearly: bool = False):
+    features_map = {
+        "simple": ["Hasta 3.500 productos", "Clientes y ventas", "Soporta cortes de internet", "Manejo de fiados", "Manejo de proveedores", "Lector laser e impresoras", "Hasta 2 usuarios"],
+        "pro": ["Todo lo de Simple", "Hasta 7.000 productos", "Catalogo web online QR", "Reportes de ventas detallados", "Hasta 5 usuarios"],
+        "ia": ["Todo lo de Pro", "Hasta 10.000 productos", "Escanner de facturas IA", "Asesor de precios inteligente", "Reportes de rentabilidad", "Hasta 10 usuarios"],
+    }
+    features = features_map.get(plan_name, [f"Plan {plan_name}"])
+    subject = f"MiNegocio — Plan {plan_name} activado!"
+    html = plan_activated_template(business_name, plan_name, features, is_yearly)
     return await send_email(to_email, subject, html)

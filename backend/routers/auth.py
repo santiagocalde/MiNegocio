@@ -9,6 +9,7 @@ from jose import jwt, JWTError
 
 from db import get_pool
 from main import JWT_SECRET, JWT_ALGORITHM
+from services.email_templates import base_template
 
 logger = logging.getLogger("NovaStock.Auth")
 router = APIRouter(prefix="/api/auth", tags=["Auth"])
@@ -16,34 +17,6 @@ router = APIRouter(prefix="/api/auth", tags=["Auth"])
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 auth_limiter = Limiter(key_func=get_remote_address)
-
-# ── Email template ──────────────────────────────────────────
-LOGO_URL = "https://mi-negocio.app/MiNegocio_transparente_real.png"
-
-def _email_html(title: str, body: str, cta_text: str = "", cta_url: str = "") -> str:
-    cta_html = f'<a href="{cta_url}" style="display:inline-block;background:linear-gradient(135deg,#14BBA6,#0F8A7D);color:#fff;padding:14px 36px;border-radius:10px;text-decoration:none;font-weight:700;font-size:16px;margin-top:20px">{cta_text}</a>' if cta_text else ""
-    return f"""<!DOCTYPE html><html><head><meta charset="utf-8"></head>
-<body style="margin:0;padding:0;background:#060913;font-family:-apple-system,BlinkMacSystemFont,sans-serif">
-<table width="100%" cellpadding="0" cellspacing="0" style="background:#060913;padding:40px 0">
-<tr><td align="center">
-<table width="480" cellpadding="0" cellspacing="0" style="background:#0B1120;border:1px solid rgba(20,187,166,0.1);border-radius:16px;overflow:hidden">
-<tr><td style="padding:32px 40px 20px;text-align:center;background:linear-gradient(180deg,rgba(20,187,166,0.05),transparent)">
-<img src="{LOGO_URL}" alt="MiNegocio" style="width:120px;height:auto;margin-bottom:8px">
-</td></tr>
-<tr><td style="padding:8px 40px 28px">
-<h1 style="color:#F1F5F9;font-size:20px;font-weight:700;margin:0 0 12px;letter-spacing:-0.2px">{title}</h1>
-<div style="color:#94A3B8;font-size:15px;line-height:1.6">{body}</div>
-{cta_html}
-</td></tr>
-<tr><td style="padding:16px 40px;border-top:1px solid rgba(255,255,255,0.04);text-align:center">
-<p style="color:#475569;font-size:12px;margin:0">MiNegocio &middot; Sistema de gestion para kioscos</p>
-<p style="color:#475569;font-size:12px;margin:4px 0 0">
-<a href="https://wa.me/5491144276384" style="color:#14BBA6;text-decoration:none">WhatsApp</a> &middot; 
-<a href="https://mi-negocio.app" style="color:#14BBA6;text-decoration:none">mi-negocio.app</a>
-</p>
-</td></tr>
-</table>
-</td></tr></table></body></html>"""
 
 class BusinessCreate(BaseModel):
     email: EmailStr
@@ -190,8 +163,11 @@ async def auth_register(request: Request, body: BusinessCreate) -> dict:
                 (biz_name or "Dueño", hashed_pin)
             )
             await tenant_db.commit()
-    except Exception as e:
-        logging.getLogger("NovaStock.Auth").warning(f"No se pudo crear operador SQLite: {e}")
+        except Exception as e:
+            logging.getLogger("NovaStock.Auth").warning(f"No se pudo crear operador SQLite: {e}")
+
+    import asyncio as _asyncio
+    _asyncio.create_task(_send_welcome_email(biz_email, biz_name))
 
     return {
         "access_token": access_token,
@@ -208,8 +184,15 @@ async def auth_register(request: Request, body: BusinessCreate) -> dict:
         },
     }
 
-@router.post("/complete-onboarding", summary="Completar onboarding del comercio")
-async def complete_onboarding(body: CompleteOnboarding, business: dict = Depends(get_current_business)) -> dict:
+# — Background: enviar email de bienvenida trial —
+async def _send_welcome_email(email: str, name: str):
+    try:
+        from services.email_service import send_trial_welcome
+        await send_trial_welcome(email, name)
+    except Exception as e:
+        logger.warning(f"No se pudo enviar email de bienvenida a {email}: {e}")
+
+# ── Complete Onboarding ────────────────────────────────────
     if not business:
         raise HTTPException(status_code=401, detail="No autenticado.")
     
@@ -407,10 +390,14 @@ async def forgot_password(request: Request, body: ForgotPasswordRequest) -> dict
                             json={
                                 "from": "MiNegocio <noreply@mi-negocio.app>",
                                 "to": [row["email"]],
-                                "subject": "Recupera tu contrasena - MiNegocio",
-                                "html": _email_html(
+                                "subject": "MiNegocio — Recupera tu contrasena",
+                                "html": base_template(
                                     "Recuperar Contrasena",
-                                    f'<p>Hola {row["business_name"]},</p><p>Recibimos una solicitud para restablecer tu contrasena. Hace clic en el boton de abajo para crear una nueva:</p><p style="color:#64748B;font-size:13px">Este enlace expira en 1 hora. Si no solicitaste este cambio, ignora este mensaje.</p>',
+                                    f"""<p style="margin:0 0 14px">Hola <strong style="color:#F1F5F9">{row["business_name"]}</strong>,</p>
+                                    <p style="margin:0 0 16px;color:#CBD5E1">Recibimos una solicitud para restablecer tu contrasena. Hace clic en el boton de abajo para crear una nueva:</p>
+                                    <div style="background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.12);border-radius:8px;padding:10px 14px;margin-bottom:8px">
+                                      <p style="color:#FBBF24;font-size:12px;font-weight:600;margin:0">Este enlace expira en 1 hora. Si no solicitaste este cambio, ignora este mensaje.</p>
+                                    </div>""",
                                     "Restablecer Contrasena",
                                     f"https://mi-negocio.app/reset-password?token={reset_token}"
                                 )
@@ -495,13 +482,23 @@ async def forgot_pin(request: Request, body: ForgotPasswordRequest) -> dict:
                         json={
                             "from": "MiNegocio <noreply@mi-negocio.app>",
                             "to": [row["email"]],
-                            "subject": f"Tu nuevo PIN de acceso - MiNegocio",
-                            "html": _email_html(
+                            "subject": "MiNegocio — Tu nuevo PIN de acceso",
+                            "html": base_template(
                                 "Nuevo PIN de Acceso",
-                                f'<p>Hola {row["business_name"]},</p><p>Tu nuevo PIN para abrir la caja es:</p><p style="font-size:32px;font-weight:800;color:#14BBA6;letter-spacing:6px;text-align:center;background:rgba(20,187,166,0.08);padding:16px;border-radius:10px;margin:16px 0">{new_pin}</p><p style="color:#F87171;font-size:13px"><strong>Este PIN se muestra una sola vez.</strong> Anotalo en un lugar seguro. Si no solicitaste este cambio, contactanos urgente.</p>',
+                                f"""<p style="margin:0 0 14px">Hola <strong style="color:#F1F5F9">{row["business_name"]}</strong>,</p>
+                                <p style="margin:0 0 16px;color:#CBD5E1">Tu nuevo PIN para abrir la caja es:</p>
+                                <div style="background:rgba(20,187,166,0.08);border:1px solid rgba(20,187,166,0.15);border-radius:12px;padding:20px;text-align:center;margin-bottom:20px">
+                                  <span style="font-size:36px;font-weight:800;color:#14BBA6;letter-spacing:10px;font-family:monospace">{new_pin}</span>
+                                </div>
+                                <div style="background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.12);border-radius:8px;padding:10px 14px;margin-bottom:8px">
+                                  <p style="color:#FCA5A5;font-size:12px;font-weight:600;margin:0">Este PIN se muestra una sola vez. Anotalo en un lugar seguro.</p>
+                                </div>
+                                <p style="margin:0;color:#94A3B8;font-size:13px">Si no solicitaste este cambio, contactanos urgente.</p>""",
                                 "Ir a MiNegocio",
                                 "https://mi-negocio.app"
                             )
+                        }
+                    )
                         }
                     )
                     if resp.status_code == 200:

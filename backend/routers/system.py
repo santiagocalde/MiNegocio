@@ -234,6 +234,7 @@ async def mercadopago_payment_status(intent_id: str) -> dict:
 @limiter.limit("3/10minutes")
 async def send_contact_email(request: Request, data: dict = Body(...)) -> dict:
     import html as html_mod
+    from services.email_templates import base_template, WHATSAPP_LINK
     nombre = html_mod.escape(data.get("nombre", "Sin nombre")[:100])
     contacto = html_mod.escape(data.get("contacto", "")[:200])
     mensaje = html_mod.escape(data.get("mensaje", "")[:2000])
@@ -241,32 +242,23 @@ async def send_contact_email(request: Request, data: dict = Body(...)) -> dict:
     if not resend_key:
         logger.warning("RESEND_API_KEY no configurada")
         return {"success": False, "message": "Servicio de email no configurado"}
-    logo_url = "https://mi-negocio.app/MiNegocio_transparente_real.png"
     contact_email = os.getenv("CONTACT_EMAIL", "upcodednow@gmail.com")
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
             resp = await client.post("https://api.resend.com/emails", headers={"Authorization": f"Bearer {resend_key}", "Content-Type": "application/json"}, json={
                 "from": "MiNegocio <noreply@mi-negocio.app>",
                 "to": [contact_email],
-                "subject": f"Nuevo mensaje de {nombre} - MiNegocio",
-                "html": f"""<!DOCTYPE html><html><head><meta charset="utf-8"></head>
-<body style="margin:0;padding:0;background:#060913;font-family:-apple-system,BlinkMacSystemFont,sans-serif">
-<table width="100%" cellpadding="0" cellspacing="0" style="background:#060913;padding:40px 0">
-<tr><td align="center">
-<table width="480" cellpadding="0" cellspacing="0" style="background:#0B1120;border:1px solid rgba(20,187,166,0.1);border-radius:16px;overflow:hidden">
-<tr><td style="padding:32px 40px 20px;text-align:center;background:linear-gradient(180deg,rgba(20,187,166,0.05),transparent)">
-<img src="{logo_url}" alt="MiNegocio" style="width:120px;height:auto;margin-bottom:8px">
-</td></tr>
-<tr><td style="padding:8px 40px 28px">
-<h1 style="color:#F1F5F9;font-size:20px;font-weight:700;margin:0 0 12px">Nuevo mensaje de contacto</h1>
-<div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);border-radius:10px;padding:16px;margin-bottom:16px">
-<p style="color:#94A3B8;font-size:13px;margin:0 0 4px"><strong style="color:#E2E8F0">Nombre:</strong> {nombre}</p>
-<p style="color:#94A3B8;font-size:13px;margin:0 0 4px"><strong style="color:#E2E8F0">Contacto:</strong> {contacto}</p>
-</div>
-<div style="color:#E2E8F0;font-size:15px;line-height:1.6;white-space:pre-wrap">{mensaje}</div>
-<a href="https://wa.me/5491144276384" style="display:inline-block;background:#25D366;color:#fff;padding:12px 28px;border-radius:10px;text-decoration:none;font-weight:700;font-size:14px;margin-top:20px">Responder por WhatsApp</a>
-</td></tr>
-</table></td></tr></table></body></html>"""
+                "subject": f"MiNegocio — Mensaje de {nombre}",
+                "html": base_template(
+                    "Nuevo mensaje de contacto",
+                    f"""<div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);border-radius:10px;padding:16px;margin-bottom:16px">
+                      <p style="color:#94A3B8;font-size:13px;margin:0 0 6px"><strong style="color:#E2E8F0">Nombre:</strong> {nombre}</p>
+                      <p style="color:#94A3B8;font-size:13px;margin:0"><strong style="color:#E2E8F0">Contacto:</strong> {contacto}</p>
+                    </div>
+                    <div style="color:#CBD5E1;font-size:14px;line-height:1.7;white-space:pre-wrap;margin-bottom:8px">{mensaje}</div>""",
+                    "Responder por WhatsApp",
+                    WHATSAPP_LINK
+                )
             })
             if resp.status_code == 200:
                 logger.info(f"Email de contacto enviado a {contact_email}")
