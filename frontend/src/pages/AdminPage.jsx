@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const API = import.meta.env.PROD ? '/api/admin' : 'http://localhost:8005/api/admin';
 
@@ -7,7 +7,7 @@ const STATUS = { active: { label: 'Activo', color: '#10B981' }, suspended: { lab
 const SUPERADMIN_EMAILS = ['calderonsantiago2019@gmail.com', 'admin@minegocio.app'];
 
 function fetchAdmin(url, token, opts = {}) {
-  return fetch(url, { ...opts, headers: { ...opts.headers, 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' } });
+  return fetch(url, { ...opts, headers: { ...opts.headers, 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' } }).catch(err => { console.warn('Admin fetch failed:', url, err.message); return Response.error(); });
 }
 
 function fmtDate(d) { if (!d) return '—'; try { return new Date(d).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: '2-digit' }); } catch { return '—'; } }
@@ -67,22 +67,24 @@ function MiniChart({ data, color, height = 60 }) {
 }
 
 function BarChart({ data, color, height = 100 }) {
-  if (!data || data.length === 0) return <div style={{ height, display: 'flex', alignItems: 'center', justifyContent: 'center', color: MUTED, fontSize: '0.7rem' }}>Sin datos</div>;
-  const maxVal = Math.max(...data.map(d => d.count || d.sales || 0)) || 1;
-  const w = Math.min(data.length * 16, 500);
-  const h = height;
-  const barW = Math.max(6, Math.floor((w - data.length * 2) / data.length));
-  return (
-    <svg width={w} height={h} style={{ display: 'block', margin: '0 auto' }}>
-      {data.map((d, i) => {
-        const v = d.count || d.sales || 0;
-        const bh = Math.max(2, (v / maxVal) * (h - 20));
-        const x = i * (barW + 2) + 2;
-        const y = h - bh - 14;
-        return <rect key={i} x={x} y={y} width={barW} height={bh} rx="2" fill={color} opacity="0.8" />;
-      })}
-    </svg>
-  );
+  if (!data || !Array.isArray(data) || data.length === 0) return <div style={{ height, display: 'flex', alignItems: 'center', justifyContent: 'center', color: MUTED, fontSize: '0.7rem' }}>Sin datos</div>;
+  try {
+    const maxVal = Math.max(...data.map(d => d?.count || d?.sales || 0)) || 1;
+    const w = Math.min(Math.max(data.length * 16, 100), 500);
+    const h = height;
+    const barW = Math.max(4, Math.floor((w - data.length * 2) / data.length));
+    return (
+      <svg width={w} height={h} style={{ display: 'block', margin: '0 auto' }}>
+        {data.map((d, i) => {
+          const v = d?.count || d?.sales || 0;
+          const bh = Math.max(2, (v / maxVal) * (h - 20));
+          const x = i * (barW + 2) + 2;
+          const y = h - bh - 14;
+          return <rect key={i} x={x} y={y} width={barW} height={bh} rx="2" fill={color} opacity="0.8" />;
+        })}
+      </svg>
+    );
+  } catch { return <div style={{ height, display: 'flex', alignItems: 'center', justifyContent: 'center', color: MUTED, fontSize: '0.7rem' }}>Error al cargar grafico</div>; }
 }
 
 
@@ -199,9 +201,9 @@ function Dashboard({ token }) {
   const [signups, setSignups] = useState(null);
 
   useEffect(() => {
-    fetchAdmin(`${API}/metrics`, token).then(r => r.json()).then(setM);
-    fetchAdmin(`${API}/analytics/revenue`, token).then(r => r.json()).then(setRevenue);
-    fetchAdmin(`${API}/analytics/signups`, token).then(r => r.json()).then(setSignups);
+    fetchAdmin(`${API}/metrics`, token).then(r => r.ok ? r.json() : null).then(d => d && setM(d)).catch(() => {});
+    fetchAdmin(`${API}/analytics/revenue`, token).then(r => r.ok ? r.json() : null).then(d => d && setRevenue(d)).catch(() => {});
+    fetchAdmin(`${API}/analytics/signups`, token).then(r => r.ok ? r.json() : null).then(d => d && setSignups(d)).catch(() => {});
   }, [token]);
 
   if (!m) return (

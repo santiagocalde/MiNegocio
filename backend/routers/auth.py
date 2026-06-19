@@ -17,6 +17,34 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 auth_limiter = Limiter(key_func=get_remote_address)
 
+# ── Email template ──────────────────────────────────────────
+LOGO_URL = "https://mi-negocio.app/MiNegocio_transparente_real.png"
+
+def _email_html(title: str, body: str, cta_text: str = "", cta_url: str = "") -> str:
+    cta_html = f'<a href="{cta_url}" style="display:inline-block;background:linear-gradient(135deg,#14BBA6,#0F8A7D);color:#fff;padding:14px 36px;border-radius:10px;text-decoration:none;font-weight:700;font-size:16px;margin-top:20px">{cta_text}</a>' if cta_text else ""
+    return f"""<!DOCTYPE html><html><head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;background:#060913;font-family:-apple-system,BlinkMacSystemFont,sans-serif">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#060913;padding:40px 0">
+<tr><td align="center">
+<table width="480" cellpadding="0" cellspacing="0" style="background:#0B1120;border:1px solid rgba(20,187,166,0.1);border-radius:16px;overflow:hidden">
+<tr><td style="padding:32px 40px 20px;text-align:center;background:linear-gradient(180deg,rgba(20,187,166,0.05),transparent)">
+<img src="{LOGO_URL}" alt="MiNegocio" style="width:120px;height:auto;margin-bottom:8px">
+</td></tr>
+<tr><td style="padding:8px 40px 28px">
+<h1 style="color:#F1F5F9;font-size:20px;font-weight:700;margin:0 0 12px;letter-spacing:-0.2px">{title}</h1>
+<div style="color:#94A3B8;font-size:15px;line-height:1.6">{body}</div>
+{cta_html}
+</td></tr>
+<tr><td style="padding:16px 40px;border-top:1px solid rgba(255,255,255,0.04);text-align:center">
+<p style="color:#475569;font-size:12px;margin:0">MiNegocio &middot; Sistema de gestion para kioscos</p>
+<p style="color:#475569;font-size:12px;margin:4px 0 0">
+<a href="https://wa.me/5491144276384" style="color:#14BBA6;text-decoration:none">WhatsApp</a> &middot; 
+<a href="https://mi-negocio.app" style="color:#14BBA6;text-decoration:none">mi-negocio.app</a>
+</p>
+</td></tr>
+</table>
+</td></tr></table></body></html>"""
+
 class BusinessCreate(BaseModel):
     email: EmailStr
     password: str
@@ -379,8 +407,13 @@ async def forgot_password(request: Request, body: ForgotPasswordRequest) -> dict
                             json={
                                 "from": "MiNegocio <noreply@mi-negocio.app>",
                                 "to": [row["email"]],
-                                "subject": "Recupera tu contrasena de MiNegocio",
-                                "html": f'<p>Hola {row["business_name"]},</p><p>Hace clic en el enlace para restablecer tu contrasena:</p><p><a href="{reset_url}">{reset_url}</a></p><p>Este enlace expira en 1 hora.</p>'
+                                "subject": "Recupera tu contrasena - MiNegocio",
+                                "html": _email_html(
+                                    "Recuperar Contrasena",
+                                    f'<p>Hola {row["business_name"]},</p><p>Recibimos una solicitud para restablecer tu contrasena. Hace clic en el boton de abajo para crear una nueva:</p><p style="color:#64748B;font-size:13px">Este enlace expira en 1 hora. Si no solicitaste este cambio, ignora este mensaje.</p>',
+                                    "Restablecer Contrasena",
+                                    f"https://mi-negocio.app/reset-password?token={reset_token}"
+                                )
                             }
                         )
                     if resp.status_code == 200:
@@ -462,8 +495,13 @@ async def forgot_pin(request: Request, body: ForgotPasswordRequest) -> dict:
                         json={
                             "from": "MiNegocio <noreply@mi-negocio.app>",
                             "to": [row["email"]],
-                            "subject": f"Tu nuevo PIN de acceso - {row['business_name']}",
-                            "html": f'<p>Hola {row["business_name"]},</p><p>Tu nuevo PIN de acceso es: <strong style="font-size:20px">{new_pin}</strong></p><p>Ingresalo en la pantalla de inicio para abrir tu caja.</p><p>Si no solicitaste este cambio, contactanos urgente.</p>'
+                            "subject": f"Tu nuevo PIN de acceso - MiNegocio",
+                            "html": _email_html(
+                                "Nuevo PIN de Acceso",
+                                f'<p>Hola {row["business_name"]},</p><p>Tu nuevo PIN para abrir la caja es:</p><p style="font-size:32px;font-weight:800;color:#14BBA6;letter-spacing:6px;text-align:center;background:rgba(20,187,166,0.08);padding:16px;border-radius:10px;margin:16px 0">{new_pin}</p><p style="color:#F87171;font-size:13px"><strong>Este PIN se muestra una sola vez.</strong> Anotalo en un lugar seguro. Si no solicitaste este cambio, contactanos urgente.</p>',
+                                "Ir a MiNegocio",
+                                "https://mi-negocio.app"
+                            )
                         }
                     )
                     if resp.status_code == 200:
