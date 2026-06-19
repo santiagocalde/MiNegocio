@@ -229,34 +229,31 @@ async def auth_login(request: Request, body: BusinessLogin) -> dict:
             "SELECT id, email, business_name, plan, status, password_hash FROM businesses WHERE email = $1",
             body.email.lower().strip(),
         )
-    if not row:
-        raise HTTPException(status_code=401, detail="Email o contrasena incorrectos")
-    biz_id, biz_email, biz_name, biz_plan, biz_status, pw_hash = row
+        if not row:
+            raise HTTPException(status_code=401, detail="Email o contrasena incorrectos")
+        biz_id, biz_email, biz_name, biz_plan, biz_status, pw_hash = row
 
-    if not bcrypt.checkpw(body.password.encode(), pw_hash.encode()):
-        raise HTTPException(status_code=401, detail="Email o contrasena incorrectos")
-    if biz_status == "suspended":
-        raise HTTPException(status_code=403, detail="Cuenta suspendida. Contacta a soporte.")
-    if biz_status == "expired":
-        raise HTTPException(status_code=403, detail="Tu periodo de prueba ha finalizado. Elegi un plan para continuar.")
+        if not bcrypt.checkpw(body.password.encode(), pw_hash.encode()):
+            raise HTTPException(status_code=401, detail="Email o contrasena incorrectos")
+        if biz_status == "suspended":
+            raise HTTPException(status_code=403, detail="Cuenta suspendida. Contacta a soporte.")
+        if biz_status == "expired":
+            raise HTTPException(status_code=403, detail="Tu periodo de prueba ha finalizado. Elegi un plan para continuar.")
 
-    access_token = jwt.encode(
-        {"sub": str(biz_id), "email": biz_email, "type": "access",
-         "exp": datetime.now(timezone.utc) + timedelta(minutes=60)},
-        JWT_SECRET, algorithm=JWT_ALGORITHM,
-    )
-    refresh_token = jwt.encode(
-        {"sub": str(biz_id), "email": biz_email, "type": "refresh",
-         "exp": datetime.now(timezone.utc) + timedelta(days=7)},
-        JWT_SECRET, algorithm=JWT_ALGORITHM,
-    )
-    try:
+        access_token = jwt.encode(
+            {"sub": str(biz_id), "email": biz_email, "type": "access",
+             "exp": datetime.now(timezone.utc) + timedelta(minutes=60)},
+            JWT_SECRET, algorithm=JWT_ALGORITHM,
+        )
+        refresh_token = jwt.encode(
+            {"sub": str(biz_id), "email": biz_email, "type": "refresh",
+             "exp": datetime.now(timezone.utc) + timedelta(days=7)},
+            JWT_SECRET, algorithm=JWT_ALGORITHM,
+        )
         await conn.execute(
             "INSERT INTO auth_tokens (business_id, token, token_type, expires_at) VALUES ($1, $2, 'refresh', $3)",
             biz_id, refresh_token, datetime.now(timezone.utc) + timedelta(days=7)
         )
-    except Exception:
-        pass
 
     return {
         "access_token": access_token,
