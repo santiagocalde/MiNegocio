@@ -191,7 +191,8 @@ async def _send_welcome_email(email: str, name: str):
     except Exception as e:
         logger.warning(f"No se pudo enviar email de bienvenida a {email}: {e}")
 
-# ── Complete Onboarding ────────────────────────────────────
+@router.post("/complete-onboarding", summary="Completar onboarding del comercio")
+async def complete_onboarding(body: CompleteOnboarding, business: dict = Depends(get_current_business)) -> dict:
     if not business:
         raise HTTPException(status_code=401, detail="No autenticado.")
     
