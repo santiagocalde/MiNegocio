@@ -175,9 +175,10 @@ async def admin_change_plan(
                 logger.warning(f"Downgrade {business_id}: {op_count} operadores exceden limite {new_plan} ({limit['max_operators']})")
         
         async with conn.transaction():
+            new_plan_end = _now() + timedelta(days=30) if new_plan in ("simple","pro","ia") else None
             await conn.execute(
-                "UPDATE businesses SET plan = $1, updated_at = $2 WHERE id = $3",
-                new_plan, _now(), business_id
+                "UPDATE businesses SET plan = $1, plan_end_date = COALESCE($2, plan_end_date), plan_pending = NULL, updated_at = $3 WHERE id = $4",
+                new_plan, new_plan_end, _now(), business_id
             )
             audit_id = await conn.fetchval(
                 """INSERT INTO admin_audit_log (superadmin_id, business_id, action, old_value, new_value, notes)

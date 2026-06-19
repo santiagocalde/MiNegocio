@@ -201,6 +201,8 @@ async def init_db(DB_PATH: str, logger) -> None:
                 business_name   TEXT NOT NULL DEFAULT 'Mi Kiosco',
                 plan            TEXT NOT NULL DEFAULT 'trial',
                 plan_end_date   TEXT,
+                plan_pending    TEXT,
+                mp_subscription_id TEXT,
                 status          TEXT NOT NULL DEFAULT 'active',
                 created_at      TEXT DEFAULT (datetime('now','localtime')),
                 updated_at      TEXT DEFAULT (datetime('now','localtime'))

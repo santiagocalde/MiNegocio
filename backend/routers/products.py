@@ -1,10 +1,10 @@
-from fastapi import APIRouter, HTTPException, Depends, Query, Body
+from fastapi import APIRouter, HTTPException, Depends, Query, Body, Request
 from fastapi.responses import Response
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 import aiosqlite
 import main
-from main import row_to_dict, USE_PG
+from main import row_to_dict, USE_PG, get_current_business, check_product_limit
 
 router = APIRouter()
 
@@ -139,7 +139,7 @@ async def price_suggestions(threshold_pct: float = Query(15.0), category_id: Opt
 
 
 @router.post("/api/products/import", summary="Importar productos CSV")
-async def import_products_csv(csv_text: str = Body(..., media_type="text/plain")) -> dict:
+async def import_products_csv(request: Request, csv_text: str = Body(..., media_type="text/plain")) -> dict:
     import csv, io
     b_id = _biz_id()
     text = csv_text
@@ -148,6 +148,10 @@ async def import_products_csv(csv_text: str = Body(..., media_type="text/plain")
     rows = list(reader)
     if not rows:
         raise HTTPException(400, detail="Archivo CSV vacio")
+
+    if USE_PG:
+        biz = await get_current_business(request)
+        if biz: await check_product_limit(biz, len(rows))
 
     parsed = []
     errors = []
@@ -206,8 +210,11 @@ async def import_products_csv(csv_text: str = Body(..., media_type="text/plain")
 
 
 @router.post("/api/products", status_code=201, summary="Crear producto")
-async def create_product(product: dict = Body(...)) -> Dict[str, Any]:
+async def create_product(request: Request, product: dict = Body(...)) -> Dict[str, Any]:
     b_id = _biz_id()
+    if USE_PG:
+        biz = await get_current_business(request)
+        if biz: await check_product_limit(biz, 1)
     if USE_PG:
         from db_helpers import get_pg_pool
         pool = await get_pg_pool()

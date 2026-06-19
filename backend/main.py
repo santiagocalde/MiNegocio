@@ -367,15 +367,26 @@ async def check_product_limit(business: Optional[dict] = None, extra_count: int 
     if limit is None:
         return
 
-    async with aiosqlite.connect(DB_PATH) as db:
-        async with db.execute("SELECT COUNT(*) FROM products WHERE is_virtual = 0") as cur:
-            count = (await cur.fetchone())[0]
+    if USE_PG:
+        from db_helpers import get_pg_pool
+        pool = await get_pg_pool()
+        async with pool.acquire() as conn:
+            count = await conn.fetchval(
+                "SELECT COUNT(*) FROM products WHERE business_id = $1 AND is_virtual = 0",
+                business.get("sub")
+            )
+    else:
+        import aiosqlite
+        async with aiosqlite.connect(DB_PATH) as db:
+            async with db.execute("SELECT COUNT(*) FROM products WHERE is_virtual = 0") as cur:
+                count = (await cur.fetchone())[0]
 
     if count + extra_count > limit:
         raise HTTPException(
             status_code=402,
             detail=f"Limite de {limit} productos alcanzado (plan {plan}). Tienes {count}, intentas agregar {extra_count}. Actualiza tu plan."
         )
+    return {"count": count, "limit": limit}
 
 
 # ────────────────────────────────────────────────────────────
@@ -567,8 +578,15 @@ async def list_operators() -> list:
                 return [row_to_dict(r, cur.description) for r in rows]
 
 @app.put("/api/operators", summary="Reemplazar todos los operadores")
-async def update_operators(data: list[dict]) -> dict:
+async def update_operators(request: Request, data: list[dict]) -> dict:
     if USE_PG:
+        biz = await get_current_business(request)
+        if biz:
+            plan = biz.get("plan", "trial")
+            max_ops = PLAN_LIMITS.get(plan, PLAN_LIMITS["trial"])["max_operators"]
+            if max_ops and len(data) > max_ops:
+                raise HTTPException(402, detail=f"Limite de {max_ops} operadores (plan {plan}). Recibidos {len(data)}. Actualiza tu plan.")
+        from db_helpers import get_pg_pool
         from db_helpers import get_pg_pool
         pool = await get_pg_pool()
         async with pool.acquire() as conn:
@@ -611,6 +629,18 @@ async def create_operator(request: Request, data: dict) -> dict:
     if not name: raise HTTPException(400, detail="Nombre requerido")
     if not pin.isdigit() or len(pin) < 4 or len(pin) > 6: raise HTTPException(400, detail="PIN 4-6 digitos")
     if role not in ("admin","manager","employee","cashier"): raise HTTPException(400, detail="Rol invalido")
+    if USE_PG:
+        biz = await get_current_business(request)
+        if biz:
+            plan = biz.get("plan", "trial")
+            max_ops = PLAN_LIMITS.get(plan, PLAN_LIMITS["trial"])["max_operators"]
+            if max_ops:
+                from db_helpers import get_pg_pool
+                pool = await get_pg_pool()
+                async with pool.acquire() as conn:
+                    count = await conn.fetchval("SELECT COUNT(*) FROM operators WHERE business_id = $1", biz["sub"])
+                    if count >= max_ops:
+                        raise HTTPException(402, detail=f"Limite de {max_ops} operadores alcanzado (plan {plan}). Actualiza tu plan.")
     hashed = bcrypt.hashpw(pin.encode(), bcrypt.gensalt()).decode()
     if USE_PG:
         from db_helpers import get_pg_pool

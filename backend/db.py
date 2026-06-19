@@ -65,6 +65,8 @@ async def init_pg() -> None:
                 business_name   TEXT NOT NULL DEFAULT 'Mi Kiosco',
                 plan            TEXT NOT NULL DEFAULT 'trial',
                 plan_end_date   TIMESTAMPTZ,
+                plan_pending    TEXT,
+                mp_subscription_id TEXT,
                 phone           TEXT DEFAULT '',
                 status          TEXT NOT NULL DEFAULT 'active',
                 reset_token     TEXT,

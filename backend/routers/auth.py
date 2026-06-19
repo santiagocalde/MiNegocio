@@ -222,6 +222,8 @@ async def auth_login(request: Request, body: BusinessLogin) -> dict:
         raise HTTPException(status_code=401, detail="Email o contrasena incorrectos")
     if biz_status == "suspended":
         raise HTTPException(status_code=403, detail="Cuenta suspendida. Contacta a soporte.")
+    if biz_status == "expired":
+        raise HTTPException(status_code=403, detail="Tu periodo de prueba ha finalizado. Elegi un plan para continuar.")
 
     access_token = jwt.encode(
         {"sub": str(biz_id), "email": biz_email, "type": "access",

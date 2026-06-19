@@ -139,7 +139,7 @@ async def mercadopago_webhook(request: Request):
                     async with pool.acquire() as conn:
                             if status == "authorized":
                                 await conn.execute(
-                                    "UPDATE businesses SET plan = $1, status = 'active', plan_end_date = CURRENT_DATE + make_interval(months => $2), mp_subscription_id = $3, updated_at = now() WHERE id = $4",
+                                    "UPDATE businesses SET plan = $1, status = 'active', plan_end_date = CURRENT_DATE + make_interval(months => $2), plan_pending = NULL, mp_subscription_id = $3, updated_at = now() WHERE id = $4",
                                     plan_id, months, data_id, biz_id
                                 )
                                 logger.info(f"Webhook MP: {biz_id} activado {plan_id} ({months}m), sub={data_id}")

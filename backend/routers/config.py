@@ -1,7 +1,7 @@
-from fastapi import APIRouter, HTTPException, Query, Body
+from fastapi import APIRouter, HTTPException, Query, Body, Request
 from typing import Optional
 import main
-from main import USE_PG, row_to_dict
+from main import USE_PG, row_to_dict, get_current_business, check_plan_limits
 
 router = APIRouter()
 
@@ -88,9 +88,11 @@ async def list_sucursales() -> list:
 
 
 @router.post("/api/sucursales", summary="Crear sucursal")
-async def create_sucursal(name: str = Query(...), address: str = Query(""), phone: str = Query("")) -> dict:
+async def create_sucursal(request: Request, name: str = Query(...), address: str = Query(""), phone: str = Query("")) -> dict:
     if USE_PG:
         from db_helpers import get_pg_pool
+        biz = await get_current_business(request)
+        if biz: await check_plan_limits("multi_sucursal", biz)
         pool = await get_pg_pool()
         async with pool.acquire() as conn:
             row = await conn.fetchrow(
