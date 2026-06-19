@@ -9,8 +9,11 @@ import httpx
 import main
 from main import row_to_dict, logger, DB_PATH, DATA_DIR, USE_PG, JWT_SECRET, JWT_ALGORITHM
 from jose import jwt as jose_jwt
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
 router = APIRouter()
+limiter = Limiter(key_func=get_remote_address)
 
 def _biz_id():
     return main.business_id_ctx.get() if hasattr(main, 'business_id_ctx') else None
