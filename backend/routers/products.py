@@ -8,9 +8,14 @@ from main import row_to_dict, USE_PG, get_current_business, check_product_limit
 
 router = APIRouter()
 
-
 def _biz_id():
     return main.business_id_ctx.get() if hasattr(main, 'business_id_ctx') else None
+
+async def _check_product_limit(request: Request, extra: int = 0):
+    auth = request.headers.get("Authorization")
+    if auth and auth.startswith("Bearer "):
+        biz = await get_current_business(auth)
+        if biz: await check_product_limit(biz, extra)
 
 
 @router.get("/api/categories", summary="Listar categorias")
@@ -149,9 +154,7 @@ async def import_products_csv(request: Request, csv_text: str = Body(..., media_
     if not rows:
         raise HTTPException(400, detail="Archivo CSV vacio")
 
-    if USE_PG:
-        biz = await get_current_business(request)
-        if biz: await check_product_limit(biz, len(rows))
+    await _check_product_limit(request, len(rows))
 
     parsed = []
     errors = []
@@ -212,9 +215,7 @@ async def import_products_csv(request: Request, csv_text: str = Body(..., media_
 @router.post("/api/products", status_code=201, summary="Crear producto")
 async def create_product(request: Request, product: dict = Body(...)) -> Dict[str, Any]:
     b_id = _biz_id()
-    if USE_PG:
-        biz = await get_current_business(request)
-        if biz: await check_product_limit(biz, 1)
+    await _check_product_limit(request, 1)
     if USE_PG:
         from db_helpers import get_pg_pool
         pool = await get_pg_pool()

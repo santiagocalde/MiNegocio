@@ -580,13 +580,14 @@ async def list_operators() -> list:
 @app.put("/api/operators", summary="Reemplazar todos los operadores")
 async def update_operators(request: Request, data: list[dict]) -> dict:
     if USE_PG:
-        biz = await get_current_business(request)
-        if biz:
-            plan = biz.get("plan", "trial")
-            max_ops = PLAN_LIMITS.get(plan, PLAN_LIMITS["trial"])["max_operators"]
-            if max_ops and len(data) > max_ops:
-                raise HTTPException(402, detail=f"Limite de {max_ops} operadores (plan {plan}). Recibidos {len(data)}. Actualiza tu plan.")
-        from db_helpers import get_pg_pool
+        auth = request.headers.get("Authorization")
+        if auth and auth.startswith("Bearer "):
+            biz = await get_current_business(auth)
+            if biz:
+                plan = biz.get("plan", "trial")
+                max_ops = PLAN_LIMITS.get(plan, PLAN_LIMITS["trial"])["max_operators"]
+                if max_ops and len(data) > max_ops:
+                    raise HTTPException(402, detail=f"Limite de {max_ops} operadores (plan {plan}). Recibidos {len(data)}. Actualiza tu plan.")
         from db_helpers import get_pg_pool
         pool = await get_pg_pool()
         async with pool.acquire() as conn:
@@ -630,10 +631,12 @@ async def create_operator(request: Request, data: dict) -> dict:
     if not pin.isdigit() or len(pin) < 4 or len(pin) > 6: raise HTTPException(400, detail="PIN 4-6 digitos")
     if role not in ("admin","manager","employee","cashier"): raise HTTPException(400, detail="Rol invalido")
     if USE_PG:
-        biz = await get_current_business(request)
-        if biz:
-            plan = biz.get("plan", "trial")
-            max_ops = PLAN_LIMITS.get(plan, PLAN_LIMITS["trial"])["max_operators"]
+        auth = request.headers.get("Authorization")
+        if auth and auth.startswith("Bearer "):
+            biz = await get_current_business(auth)
+            if biz:
+                plan = biz.get("plan", "trial")
+                max_ops = PLAN_LIMITS.get(plan, PLAN_LIMITS["trial"])["max_operators"]
             if max_ops:
                 from db_helpers import get_pg_pool
                 pool = await get_pg_pool()

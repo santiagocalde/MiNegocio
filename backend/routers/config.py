@@ -91,8 +91,10 @@ async def list_sucursales() -> list:
 async def create_sucursal(request: Request, name: str = Query(...), address: str = Query(""), phone: str = Query("")) -> dict:
     if USE_PG:
         from db_helpers import get_pg_pool
-        biz = await get_current_business(request)
-        if biz: await check_plan_limits("multi_sucursal", biz)
+        auth = request.headers.get("Authorization")
+        if auth and auth.startswith("Bearer "):
+            biz = await get_current_business(auth)
+            if biz: await check_plan_limits("multi_sucursal", biz)
         pool = await get_pg_pool()
         async with pool.acquire() as conn:
             row = await conn.fetchrow(
