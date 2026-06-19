@@ -2,9 +2,9 @@
 SuperAdmin Panel — Gestión de negocios SaaS, planes, métricas y auditoría.
 Todas las rutas requieren JWT con role='superadmin'.
 """
-import os, bcrypt, logging
+import os, bcrypt, logging, csv, io
 from datetime import datetime, timedelta, timezone
-from fastapi import APIRouter, HTTPException, Query, Depends, Request, Header
+from fastapi import APIRouter, HTTPException, Query, Depends, Request, Header, Body
 from typing import Optional
 from jose import jwt
 import main
@@ -397,6 +397,104 @@ async def admin_business_detail(
             raise HTTPException(404, detail="Negocio no encontrado")
         
         return dict(biz)
+
+
+# ────────────────────────────────────────────────────────────
+# ANALYTICS ENDPOINTS
+# ────────────────────────────────────────────────────────────
+
+
+# ────────────────────────────────────────────────────────────
+# PRODUCT MANAGEMENT (SuperAdmin carga productos a negocios)
+# ────────────────────────────────────────────────────────────
+
+@router.get("/api/admin/businesses/{business_id}/products", summary="Listar productos de un negocio")
+async def admin_list_products(
+    business_id: str,
+    page: int = Query(1, ge=1),
+    limit: int = Query(50, ge=1, le=500),
+    admin: dict = Depends(verify_superadmin),
+) -> dict:
+    pool = await _get_pool()
+    async with pool.acquire() as conn:
+        total = await conn.fetchval(
+            "SELECT COUNT(*) FROM products WHERE business_id = $1", business_id
+        )
+        offset = (page - 1) * limit
+        rows = await conn.fetch(
+            "SELECT id, code, name, price, cost_price, stock, min_stock, iva, category_id FROM products WHERE business_id = $1 ORDER BY name LIMIT $2 OFFSET $3",
+            business_id, limit, offset
+        )
+        return {"total": total, "page": page, "limit": limit, "data": [dict(r) for r in rows]}
+
+
+@router.post("/api/admin/businesses/{business_id}/products", summary="Cargar productos via CSV (admin)")
+async def admin_import_products(
+    business_id: str,
+    body: dict = Body(...),
+    admin: dict = Depends(verify_superadmin),
+) -> dict:
+    csv_text = body.get("csv_text", "")
+    clear_existing = body.get("clear_existing", False)
+    if not csv_text.strip():
+        raise HTTPException(400, detail="CSV vacio")
+    
+    delimiter = ',' if ',' in csv_text.split('\n')[0] else ';'
+    reader = csv.DictReader(io.StringIO(csv_text), delimiter=delimiter)
+    rows = list(reader)
+    if not rows:
+        raise HTTPException(400, detail="Archivo CSV vacio o invalido")
+    
+    pool = await _get_pool()
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            if clear_existing:
+                await conn.execute("DELETE FROM products WHERE business_id = $1", business_id)
+            
+            imported = 0
+            errors = []
+            for i, row in enumerate(rows):
+                try:
+                    code = (row.get('code') or row.get('codigo') or '').strip()
+                    name = (row.get('name') or row.get('nombre') or row.get('producto') or '').strip()
+                    if not code or not name:
+                        errors.append(f"Fila {i+2}: falta code o nombre")
+                        continue
+                    price = float(row.get('price') or row.get('precio') or 0)
+                    cost_price = float(row.get('cost_price') or row.get('costo') or 0)
+                    stock = int(float(row.get('stock') or row.get('inventario') or 0))
+                    min_stock = int(float(row.get('min_stock') or row.get('stock_minimo') or 5))
+                    iva = str(row.get('iva') or '21%')
+                    category_id = row.get('category_id') or row.get('categoria_id') or None
+                    
+                    await conn.execute(
+                        """INSERT INTO products (business_id, code, name, price, cost_price, stock, min_stock, iva, category_id)
+                           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)""",
+                        business_id, code, name, price, cost_price, stock, min_stock, iva, category_id
+                    )
+                    imported += 1
+                except Exception as e:
+                    errors.append(f"Fila {i+2}: {str(e)}")
+        
+        logger.info(f"Admin {admin['email']} importo {imported} productos para {business_id}")
+        return {"imported": imported, "errors": errors, "total_rows": len(rows), "cleared": clear_existing}
+
+
+@router.delete("/api/admin/businesses/{business_id}/products", summary="Eliminar todos los productos de un negocio")
+async def admin_clear_products(
+    business_id: str,
+    admin: dict = Depends(verify_superadmin),
+) -> dict:
+    pool = await _get_pool()
+    async with pool.acquire() as conn:
+        count = await conn.fetchval("SELECT COUNT(*) FROM products WHERE business_id = $1", business_id)
+        async with conn.transaction():
+            await conn.execute("DELETE FROM stock_movements WHERE business_id = $1", business_id)
+            await conn.execute("DELETE FROM sale_items WHERE business_id = $1", business_id)
+            await conn.execute("DELETE FROM promotion_conditions WHERE product_id IN (SELECT id FROM products WHERE business_id = $1)", business_id)
+            await conn.execute("DELETE FROM products WHERE business_id = $1", business_id)
+        logger.warning(f"Admin {admin['email']} elimino {count} productos de {business_id}")
+        return {"success": True, "deleted_count": count}
 
 
 # ────────────────────────────────────────────────────────────

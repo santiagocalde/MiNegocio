@@ -371,19 +371,22 @@ async def forgot_password(request: Request, body: ForgotPasswordRequest) -> dict
             if resend_key:
                 try:
                     import httpx
-                    reset_url = f"https://minegocio.com/reset-password?token={reset_token}"
+                    reset_url = f"https://mi-negocio.app/reset-password?token={reset_token}"
                     async with httpx.AsyncClient(timeout=10) as client:
-                        await client.post(
+                        resp = await client.post(
                             "https://api.resend.com/emails",
                             headers={"Authorization": f"Bearer {resend_key}", "Content-Type": "application/json"},
                             json={
-                                "from": "MiNegocio <no-reply@minegocio.com>",
+                                "from": "MiNegocio <noreply@mi-negocio.app>",
                                 "to": [row["email"]],
                                 "subject": "Recupera tu contrasena de MiNegocio",
                                 "html": f'<p>Hola {row["business_name"]},</p><p>Hace clic en el enlace para restablecer tu contrasena:</p><p><a href="{reset_url}">{reset_url}</a></p><p>Este enlace expira en 1 hora.</p>'
                             }
                         )
-                    logger.info(f"Email de reset enviado a {row['email']}")
+                    if resp.status_code == 200:
+                        logger.info(f"Email de reset enviado a {row['email']}")
+                    else:
+                        logger.error(f"Resend error {resp.status_code}: {resp.text[:200]}")
                 except Exception as e:
                     logger.error(f"No se pudo enviar email de reset: {e}")
             else:
@@ -453,18 +456,25 @@ async def forgot_pin(request: Request, body: ForgotPasswordRequest) -> dict:
             try:
                 import httpx
                 async with httpx.AsyncClient(timeout=10) as client:
-                    await client.post(
+                    resp = await client.post(
                         "https://api.resend.com/emails",
                         headers={"Authorization": f"Bearer {resend_key}", "Content-Type": "application/json"},
                         json={
-                            "from": "MiNegocio <no-reply@minegocio.com>",
+                            "from": "MiNegocio <noreply@mi-negocio.app>",
                             "to": [row["email"]],
                             "subject": f"Tu nuevo PIN de acceso - {row['business_name']}",
                             "html": f'<p>Hola {row["business_name"]},</p><p>Tu nuevo PIN de acceso es: <strong style="font-size:20px">{new_pin}</strong></p><p>Ingresalo en la pantalla de inicio para abrir tu caja.</p><p>Si no solicitaste este cambio, contactanos urgente.</p>'
                         }
                     )
-                logger.info(f"Nuevo PIN enviado a {row['email']}")
+                    if resp.status_code == 200:
+                        logger.info(f"Nuevo PIN enviado a {row['email']}")
+                    else:
+                        logger.error(f"Resend error {resp.status_code}: {resp.text[:200]}")
+                        logger.info(f"PIN generado para {row['email']} (NO enviado por email): {new_pin}")
             except Exception as e:
                 logger.error(f"No se pudo enviar email de PIN: {e}")
+                logger.info(f"PIN generado para {row['email']} (fallback log): {new_pin}")
+        else:
+            logger.info(f"PIN generado para {row['email']} (sin RESEND_API_KEY): {new_pin}")
 
     return {"message": "Si el email existe, recibiras un nuevo PIN por correo."}

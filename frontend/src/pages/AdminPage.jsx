@@ -165,6 +165,7 @@ export default function AdminPage() {
             {[
               { key: 'dashboard', label: 'Dashboard', icon: <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg> },
               { key: 'businesses', label: 'Negocios', icon: <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg> },
+              { key: 'products', label: 'Productos', icon: <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.3,7 12,12 20.7,7"/><line x1="12" y1="22" x2="12" y2="12"/></svg> },
               { key: 'activity', label: 'Actividad', icon: <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/></svg> },
               { key: 'audit', label: 'Auditoria', icon: <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> },
             ].map(t => (
@@ -185,6 +186,7 @@ export default function AdminPage() {
         {tab === 'businesses' && <Businesses token={token} toast={s} />}
         {tab === 'activity' && <ActivityFeed token={token} />}
         {tab === 'audit' && <Audit token={token} />}
+        {tab === 'products' && <ProductsManager token={token} toast={s} />}
       </main>
     </div>
   );
@@ -456,6 +458,167 @@ function Businesses({ token, toast }) {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+
+/* ─── Products Manager ─── */
+function ProductsManager({ token, toast }) {
+  const [bizId, setBizId] = useState('');
+  const [businesses, setBusinesses] = useState([]);
+  const [products, setProducts] = useState(null);
+  const [page, setPage] = useState(1);
+  const [csvText, setCsvText] = useState('');
+  const [clearExisting, setClearExisting] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadResult, setUploadResult] = useState(null);
+  const [bizSearch, setBizSearch] = useState('');
+
+  useEffect(() => {
+    fetchAdmin(`${API}/businesses?limit=200`, token).then(r => r.json()).then(d => {
+      if (d?.data) setBusinesses(d.data);
+    });
+  }, [token]);
+
+  useEffect(() => {
+    if (!bizId) { setProducts(null); return; }
+    fetchAdmin(`${API}/businesses/${bizId}/products?page=${page}&limit=50`, token)
+      .then(r => r.json()).then(setProducts);
+  }, [bizId, page, token]);
+
+  const handleUpload = async () => {
+    if (!csvText.trim() || !bizId) return;
+    setUploading(true); setUploadResult(null);
+    try {
+      const r = await fetchAdmin(`${API}/businesses/${bizId}/products`, token, {
+        method: 'POST',
+        body: JSON.stringify({ csv_text: csvText, clear_existing: clearExisting })
+      });
+      const d = await r.json();
+      setUploadResult(d);
+      if (d.imported > 0) { setCsvText(''); setPage(1); fetchAdmin(`${API}/businesses/${bizId}/products?page=1&limit=50`, token).then(r => r.json()).then(setProducts); }
+      toast(d.imported > 0 ? `${d.imported} productos importados` : 'Sin productos para importar');
+    } catch { toast('Error al importar'); }
+    setUploading(false);
+  };
+
+  const handleClear = async () => {
+    if (!bizId || !window.confirm(`Eliminar TODOS los productos del negocio seleccionado?`)) return;
+    const r = await fetchAdmin(`${API}/businesses/${bizId}/products`, token, { method: 'DELETE' });
+    const d = await r.json();
+    toast(`${d.deleted_count} productos eliminados`);
+    setProducts(null);
+    fetchAdmin(`${API}/businesses/${bizId}/products?page=1&limit=50`, token).then(r => r.json()).then(setProducts);
+  };
+
+  const filteredBiz = businesses.filter(b => !bizSearch || b.business_name.toLowerCase().includes(bizSearch.toLowerCase()) || b.email.toLowerCase().includes(bizSearch.toLowerCase()));
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#F1F5F9', margin: 0 }}>Gestion de Productos</h2>
+
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+        <div style={{ flex: 1, minWidth: 220 }}>
+          <input type="text" value={bizSearch} onChange={e => setBizSearch(e.target.value)} placeholder="Buscar negocio..." style={S.input} onFocus={e => e.target.style.borderColor = ACCENT} onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.06)'} />
+          <div style={{ ...S.card, marginTop: 8, padding: 12, maxHeight: 240, overflow: 'auto' }}>
+            {filteredBiz.slice(0, 30).map(b => (
+              <div key={b.id} onClick={() => { setBizId(b.id); setPage(1); }} style={{ padding: '8px 10px', borderRadius: 6, cursor: 'pointer', transition: 'all 0.12s', background: bizId === b.id ? 'rgba(20,187,166,0.1)' : 'transparent', color: bizId === b.id ? ACCENT : TEXT, fontSize: '0.82rem', fontWeight: 500, display: 'flex', justifyContent: 'space-between' }}>
+                <span>{b.business_name}</span>
+                <span style={{ color: MUTED, fontSize: '0.72rem' }}>{b.plan}</span>
+              </div>
+            ))}
+            {filteredBiz.length === 0 && <div style={{ color: MUTED, fontSize: '0.8rem', padding: 8, textAlign: 'center' }}>Sin resultados</div>}
+          </div>
+        </div>
+
+        <div style={{ flex: 2, minWidth: 300 }}>
+          {bizId ? (
+            <div style={S.card}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                <span style={{ color: TEXT, fontWeight: 600, fontSize: '0.9rem' }}>
+                  {products ? `${products.total} productos` : 'Cargando...'}
+                </span>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <button onClick={handleClear} style={{ ...S.ghostBtn, color: '#EF4444', padding: '5px 12px', fontSize: '0.72rem' }}>Limpiar Todo</button>
+                  <button onClick={() => document.getElementById('csv-file-input')?.click()} style={S.ghostBtn}>
+                    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17,8 12,3 7,8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    Cargar CSV
+                  </button>
+                </div>
+              </div>
+
+              <input id="csv-file-input" type="file" accept=".csv" style={{ display: 'none' }} onChange={e => {
+                const file = e.target.files?.[0];
+                if (file) { const reader = new FileReader(); reader.onload = ev => setCsvText(ev.target.result); reader.readAsText(file); }
+                e.target.value = '';
+              }} />
+
+              {csvText && (
+                <div style={{ marginBottom: 12 }}>
+                  <textarea value={csvText} onChange={e => setCsvText(e.target.value)} rows={6} style={{ width: '100%', padding: 10, background: 'rgba(255,255,255,0.02)', border: `1px solid ${BORDER}`, borderRadius: 8, color: TEXT, fontSize: '0.78rem', fontFamily: 'monospace', resize: 'vertical', boxSizing: 'border-box', outline: 'none' }} placeholder="code,name,price,cost_price,stock&#10;7791234567890,Coca Cola 500ml,850,500,24" onFocus={e => e.target.style.borderColor = ACCENT} onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.06)'} />
+                  <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginTop: 8 }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 6, color: MUTED, fontSize: '0.76rem', cursor: 'pointer' }}>
+                      <input type="checkbox" checked={clearExisting} onChange={e => setClearExisting(e.target.checked)} />
+                      Reemplazar existentes
+                    </label>
+                    <button onClick={handleUpload} disabled={uploading} style={{ ...S.primaryBtn, padding: '7px 16px', fontSize: '0.78rem' }}>
+                      {uploading ? 'Subiendo...' : `Subir ${csvText.split('\n').filter(l => l.trim()).length - 1} productos`}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {uploadResult && (
+                <div style={{ padding: '10px 14px', borderRadius: 8, background: uploadResult.errors.length > 0 ? 'rgba(245,158,11,0.08)' : 'rgba(16,185,129,0.06)', border: `1px solid ${uploadResult.errors.length > 0 ? 'rgba(245,158,11,0.2)' : 'rgba(16,185,129,0.15)'}`, marginBottom: 12 }}>
+                  <div style={{ color: TEXT, fontSize: '0.82rem', fontWeight: 600 }}>{uploadResult.imported} de {uploadResult.total_rows} importados {uploadResult.cleared ? '(reemplazo)' : ''}</div>
+                  {uploadResult.errors.slice(0, 5).map((e, i) => <div key={i} style={{ color: '#F59E0B', fontSize: '0.7rem', marginTop: 3 }}>{e}</div>)}
+                  {uploadResult.errors.length > 5 && <div style={{ color: MUTED, fontSize: '0.7rem', marginTop: 2 }}>...y {uploadResult.errors.length - 5} errores mas</div>}
+                </div>
+              )}
+
+              {products && products.data?.length > 0 && (
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
+                  <thead><tr>
+                    <th style={{...S.tableTh, padding:'8px 10px'}}>Codigo</th>
+                    <th style={{...S.tableTh, padding:'8px 10px'}}>Nombre</th>
+                    <th style={{...S.tableTh, padding:'8px 10px', textAlign:'right'}}>Precio</th>
+                    <th style={{...S.tableTh, padding:'8px 10px', textAlign:'right'}}>Stock</th>
+                  </tr></thead>
+                  <tbody>
+                    {products.data.map(p => (
+                      <tr key={p.id} style={{ borderBottom: `1px solid rgba(255,255,255,0.01)` }}>
+                        <td style={{...S.tableTd, padding:'7px 10px', fontSize:'0.78rem', fontFamily:'monospace'}}>{p.code}</td>
+                        <td style={{...S.tableTd, padding:'7px 10px', fontSize:'0.78rem'}}>{p.name}</td>
+                        <td style={{...S.tableTd, padding:'7px 10px', fontSize:'0.78rem', textAlign:'right'}}>${Number(p.price).toLocaleString('es-AR')}</td>
+                        <td style={{...S.tableTd, padding:'7px 10px', fontSize:'0.78rem', textAlign:'right', color: p.stock <= (p.min_stock || 5) ? '#EF4444' : ACCENT}}>{p.stock}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+              {products && products.total > 50 && (
+                <div style={{ display: 'flex', gap: 6, justifyContent: 'center', marginTop: 10 }}>
+                  <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1} style={{ ...S.ghostBtn, fontSize: '0.7rem', padding: '4px 10px', opacity: page <= 1 ? 0.3 : 1 }}>Anterior</button>
+                  <span style={{ color: MUTED, fontSize: '0.74rem' }}>Pag. {page}</span>
+                  <button onClick={() => setPage(p => p + 1)} disabled={!products || products.data.length < 50} style={{ ...S.ghostBtn, fontSize: '0.7rem', padding: '4px 10px', opacity: (!products || products.data.length < 50) ? 0.3 : 1 }}>Siguiente</button>
+                </div>
+              )}
+              {products && products.data?.length === 0 && (
+                <div style={{ textAlign: 'center', padding: 40, color: MUTED }}>
+                  <div style={{ fontSize: '1.5rem', marginBottom: 8 }}>📦</div>
+                  <div style={{ fontSize: '0.85rem' }}>Sin productos. Carga un CSV para empezar.</div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div style={{ ...S.card, textAlign: 'center', padding: 60, color: MUTED }}>
+              <div style={{ fontSize: '2rem', marginBottom: 12 }}>👆</div>
+              <div style={{ fontSize: '0.9rem' }}>Selecciona un negocio para ver sus productos</div>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
