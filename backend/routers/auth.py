@@ -499,8 +499,6 @@ async def forgot_pin(request: Request, body: ForgotPasswordRequest) -> dict:
                             )
                         }
                     )
-                        }
-                    )
                     if resp.status_code == 200:
                         logger.info(f"Nuevo PIN enviado a {row['email']}")
                     else:
