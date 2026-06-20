@@ -99,7 +99,7 @@ async def init_db(DB_PATH: str, logger) -> None:
                 id          INTEGER PRIMARY KEY AUTOINCREMENT,
                 business_id TEXT DEFAULT 'kiosco_default', 
                 sale_id     INTEGER NOT NULL,
-                product_id  INTEGER NOT NULL,
+                product_id  INTEGER,
                 product_name TEXT   NOT NULL,
                 quantity    REAL NOT NULL,
                 unit_price  REAL    NOT NULL,
