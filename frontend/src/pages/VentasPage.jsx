@@ -136,7 +136,8 @@ export default function VentasPage() {
       <FiadoModal isFiadoOpen={sales.isFiadoOpen} setIsFiadoOpen={sales.setIsFiadoOpen}
         adjustedTotal={cart.adjustedTotal} total={cart.total}
         fiadoName={sales.fiadoName} setFiadoName={sales.setFiadoName}
-        fiadoRef={fiadoRef} confirmFiado={sales.confirmFiado} />
+        fiadoRef={fiadoRef} confirmFiado={sales.confirmFiado}
+        customers={backend.customers} />
 
       <CancelConfirmModal isCancelConfirm={cart.isCancelConfirm} setIsCancelConfirm={cart.setIsCancelConfirm}
         clearCart={cart.clearCart} cart={cart.cart} adjustedTotal={cart.adjustedTotal}

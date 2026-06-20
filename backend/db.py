@@ -203,7 +203,7 @@ async def init_pg() -> None:
                 id              SERIAL PRIMARY KEY,
                 business_id     TEXT NOT NULL REFERENCES businesses(id),
                 sale_id         INTEGER NOT NULL REFERENCES sales(id),
-                product_id      INTEGER NOT NULL,
+                product_id      INTEGER,
                 product_name    TEXT,
                 quantity        REAL NOT NULL,
                 unit_price      REAL NOT NULL,
@@ -342,6 +342,7 @@ async def init_pg() -> None:
             );
             ALTER TABLE businesses ADD COLUMN IF NOT EXISTS phone TEXT DEFAULT '';
             ALTER TABLE business_config ADD COLUMN IF NOT EXISTS print_config TEXT;
+            ALTER TABLE sale_items ALTER COLUMN product_id DROP NOT NULL;
 
             CREATE TABLE IF NOT EXISTS audit_log (
                 id              SERIAL PRIMARY KEY,
