@@ -392,82 +392,6 @@ export default function StockModule() {
         </div>
       )}
 
-      {/* ACCORDIONS ALERTAS */}
-      <div style={{ marginBottom: '24px', flexShrink: 0 }}>
-        <AlertAccordion 
-          icon={Icons.Clock} title="Productos por vencer" subtitle={`${nearExpiry.length} alerta dentro de los próximos 15 días`} 
-          isOpen={openAccordion === 'vencer'} onToggle={() => toggleAccordion('vencer')}
-          data={nearExpiry} columns={['Producto', 'Código', 'Cantidad', 'Vence', 'Estado', 'Acción']}
-          renderRow={(p) => (
-            <>
-              <td style={{ padding: '16px 24px', fontWeight: 600 }}>{p.name}</td>
-              <td style={{ padding: '16px 24px', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>{p.code}</td>
-              <td style={{ padding: '16px 24px' }}>{p.stock ?? 0} u</td>
-              <td style={{ padding: '16px 24px' }}>{new Date(p.expiry_date).toLocaleDateString('es-AR')}</td>
-              <td style={{ padding: '16px 24px' }}><span style={{ background: 'rgba(234,179,8,0.1)', color: 'var(--accent-warning)', border: '1px solid rgba(234,179,8,0.3)', borderRadius: '12px', padding: '4px 12px', fontSize: '0.75rem', fontWeight: 700 }}>Vence pronto</span></td>
-              <td style={{ padding: '16px 24px', color: 'var(--text-secondary)', cursor: 'pointer' }} onClick={() => {
-                setConfirmState({
-                  isOpen: true,
-                  title: 'Eliminar Producto',
-                  message: `¿Seguro que deseas eliminar ${p.name}?`,
-                  confirmLabel: 'Eliminar',
-                  variant: 'danger',
-                  onConfirm: () => {
-                    setConfirmState(prev => ({...prev, isOpen: false}));
-                  apiPost(`/products/${p.id}`, {}).then(r => {
-                    if (r.ok) { addToast(`${p.name} eliminado.`, 'success'); fetchProducts(); }
-                    else addToast('Error al eliminar.', 'error');
-                  }).catch(() => addToast('Error de conexion.', 'error'));
-                  }
-                });
-              }}><Icons.Trash /></td>
-            </>
-          )}
-        />
-        <AlertAccordion 
-          icon={Icons.Box} title="Sin Stock" subtitle={`${emptyStock.length} productos sin stock`} 
-          isOpen={openAccordion === 'empty'} onToggle={() => toggleAccordion('empty')}
-          data={emptyStock} columns={['Producto', 'Código', 'Categoría', 'Stock', 'Estado']}
-          renderRow={(p) => (
-            <>
-              <td style={{ padding: '16px 24px', fontWeight: 600 }}>{p.name}</td>
-              <td style={{ padding: '16px 24px', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>{p.code}</td>
-              <td style={{ padding: '16px 24px' }}><span style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--text-secondary)', borderRadius: '12px', padding: '4px 10px', fontSize: '0.75rem', fontWeight: 600 }}>{p.category_name || 'Varios'}</span></td>
-              <td style={{ padding: '16px 24px', color: 'var(--accent-danger)', fontWeight: 800 }}>0 u</td>
-              <td style={{ padding: '16px 24px' }}><span style={{ background: 'rgba(239,68,68,0.1)', color: 'var(--accent-danger)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '12px', padding: '4px 12px', fontSize: '0.75rem', fontWeight: 700 }}>Agotado</span></td>
-            </>
-          )}
-        />
-        <AlertAccordion 
-          icon={Icons.Warning} title="Alertas de Stock" subtitle={`${lowStock.length} productos con stock bajo`} 
-          isOpen={openAccordion === 'low'} onToggle={() => toggleAccordion('low')}
-          data={lowStock} columns={['Producto', 'Código', 'Cantidad Actual', 'Mínimo', 'Estado']}
-          renderRow={(p) => (
-            <>
-              <td style={{ padding: '16px 24px', fontWeight: 600 }}>{p.name}</td>
-              <td style={{ padding: '16px 24px', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>{p.code}</td>
-              <td style={{ padding: '16px 24px', color: 'var(--text-primary)', fontWeight: 700 }}>{p.stock ?? 0} u</td>
-              <td style={{ padding: '16px 24px', color: 'var(--text-secondary)' }}>{p.min_stock ?? 0} u</td>
-              <td style={{ padding: '16px 24px' }}><span style={{ background: 'rgba(234,179,8,0.1)', color: 'var(--accent-warning)', border: '1px solid rgba(234,179,8,0.3)', borderRadius: '12px', padding: '4px 12px', fontSize: '0.75rem', fontWeight: 700 }}>Crítico</span></td>
-            </>
-          )}
-        />
-        <AlertAccordion 
-          icon={Icons.Trash} title="Stock Muerto" subtitle={`${deadStock.length} productos sin ventas en 30 días`} 
-          isOpen={openAccordion === 'dead'} onToggle={() => toggleAccordion('dead')}
-          data={deadStock} columns={['Producto', 'Código', 'Categoría', 'Stock Estancado', 'Precio']}
-          renderRow={(p) => (
-            <>
-              <td style={{ padding: '16px 24px', fontWeight: 600 }}>{p.name}</td>
-              <td style={{ padding: '16px 24px', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>{p.code}</td>
-              <td style={{ padding: '16px 24px' }}>{p.category_name}</td>
-              <td style={{ padding: '16px 24px', color: 'var(--text-primary)', fontWeight: 800 }}>{p.stock ?? 0} u</td>
-              <td style={{ padding: '16px 24px', color: 'var(--text-secondary)' }}>${p.price ?? 0}</td>
-            </>
-          )}
-        />
-      </div>
-
       {/* SEARCH BAR FULL WIDTH */}
       <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexShrink: 0 }}>
         <div style={{ flex: 1, position: 'relative' }}>
@@ -541,7 +465,7 @@ export default function StockModule() {
                     </div>
                   </td>
                   <td style={{ padding: '16px 24px' }}>
-                    <div style={{ fontWeight: 600, fontSize: '0.95rem', color: 'var(--text-primary)', marginBottom: '4px' }}>{p.name}</div>
+                    <div style={{ fontWeight: 600, fontSize: '1.05rem', color: 'var(--text-primary)', marginBottom: '4px' }}>{p.name}</div>
                     <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontFamily: 'var(--font-mono)' }}>{p.code}</div>
                   </td>
                   <td style={{ padding: '16px 24px' }}>
@@ -589,7 +513,7 @@ export default function StockModule() {
                             }
                           }
                         });
-                      }} style={{ background: 'transparent', color: 'var(--text-secondary)', border: '1px solid var(--border-color)', padding: '6px 8px', borderRadius: '6px', fontSize: '0.75rem', cursor: 'pointer', fontWeight: 600 }}>$ Precio</button>
+                      }} style={{ background: 'transparent', color: 'var(--text-secondary)', border: '1px solid var(--border-color)', padding: '8px 12px', borderRadius: '6px', fontSize: '0.85rem', cursor: 'pointer', fontWeight: 600 }}>$ Precio</button>
                       <button onClick={() => {
                         setPromptState({
                           isOpen: true,
@@ -613,7 +537,7 @@ export default function StockModule() {
                             }
                           }
                         });
-                      }} style={{ background: 'transparent', color: 'var(--text-secondary)', border: '1px solid var(--border-color)', padding: '6px 8px', borderRadius: '6px', fontSize: '0.75rem', cursor: 'pointer', fontWeight: 600 }}>Stock</button>
+                      }} style={{ background: 'transparent', color: 'var(--text-secondary)', border: '1px solid var(--border-color)', padding: '8px 12px', borderRadius: '6px', fontSize: '0.85rem', cursor: 'pointer', fontWeight: 600 }}>Stock</button>
                       <button onClick={() => {
                         setPromptState({
                           isOpen: true,
@@ -637,7 +561,7 @@ export default function StockModule() {
                             }
                           }
                         });
-                      }} style={{ background: 'transparent', color: 'var(--text-secondary)', border: '1px solid var(--border-color)', padding: '6px 8px', borderRadius: '6px', fontSize: '0.75rem', cursor: 'pointer', fontWeight: 600 }}>Nombre</button>
+                      }} style={{ background: 'transparent', color: 'var(--text-secondary)', border: '1px solid var(--border-color)', padding: '8px 12px', borderRadius: '6px', fontSize: '0.85rem', cursor: 'pointer', fontWeight: 600 }}>Nombre</button>
                       {p.is_virtual === 1 && p.stock > 0 && (
                         <button onClick={() => handleUnpack(p.id)} style={{ background: 'rgba(59, 130, 246, 0.1)', color: 'var(--accent-primary)', border: '1px solid rgba(59, 130, 246, 0.2)', padding: '6px 12px', borderRadius: '6px', fontSize: '0.8rem', cursor: 'pointer', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Icons.Package style={{ width: '14px', height: '14px' }} /> Desarmar</button>
                       )}
@@ -654,6 +578,82 @@ export default function StockModule() {
               actionLabel={offline ? 'Reintentar' : undefined} actionOnClick={offline ? () => fetchProducts() : undefined} />
           )}
         </div>
+      </div>
+
+      {/* ACCORDIONS ALERTAS */}
+      <div style={{ marginTop: '24px', flexShrink: 0 }}>
+        <AlertAccordion
+          icon={Icons.Clock} title="Productos por vencer" subtitle={`${nearExpiry.length} alerta dentro de los próximos 15 días`}
+          isOpen={openAccordion === 'vencer'} onToggle={() => toggleAccordion('vencer')}
+          data={nearExpiry} columns={['Producto', 'Código', 'Cantidad', 'Vence', 'Estado', 'Acción']}
+          renderRow={(p) => (
+            <>
+              <td style={{ padding: '16px 24px', fontWeight: 600 }}>{p.name}</td>
+              <td style={{ padding: '16px 24px', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>{p.code}</td>
+              <td style={{ padding: '16px 24px' }}>{p.stock ?? 0} u</td>
+              <td style={{ padding: '16px 24px' }}>{new Date(p.expiry_date).toLocaleDateString('es-AR')}</td>
+              <td style={{ padding: '16px 24px' }}><span style={{ background: 'rgba(234,179,8,0.1)', color: 'var(--accent-warning)', border: '1px solid rgba(234,179,8,0.3)', borderRadius: '12px', padding: '4px 12px', fontSize: '0.75rem', fontWeight: 700 }}>Vence pronto</span></td>
+              <td style={{ padding: '16px 24px', color: 'var(--text-secondary)', cursor: 'pointer' }} onClick={() => {
+                setConfirmState({
+                  isOpen: true,
+                  title: 'Eliminar Producto',
+                  message: `¿Seguro que deseas eliminar ${p.name}?`,
+                  confirmLabel: 'Eliminar',
+                  variant: 'danger',
+                  onConfirm: () => {
+                    setConfirmState(prev => ({...prev, isOpen: false}));
+                  apiPost(`/products/${p.id}`, {}).then(r => {
+                    if (r.ok) { addToast(`${p.name} eliminado.`, 'success'); fetchProducts(); }
+                    else addToast('Error al eliminar.', 'error');
+                  }).catch(() => addToast('Error de conexion.', 'error'));
+                  }
+                });
+              }}><Icons.Trash /></td>
+            </>
+          )}
+        />
+        <AlertAccordion
+          icon={Icons.Box} title="Sin Stock" subtitle={`${emptyStock.length} productos sin stock`}
+          isOpen={openAccordion === 'empty'} onToggle={() => toggleAccordion('empty')}
+          data={emptyStock} columns={['Producto', 'Código', 'Categoría', 'Stock', 'Estado']}
+          renderRow={(p) => (
+            <>
+              <td style={{ padding: '16px 24px', fontWeight: 600 }}>{p.name}</td>
+              <td style={{ padding: '16px 24px', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>{p.code}</td>
+              <td style={{ padding: '16px 24px' }}><span style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--text-secondary)', borderRadius: '12px', padding: '4px 10px', fontSize: '0.75rem', fontWeight: 600 }}>{p.category_name || 'Varios'}</span></td>
+              <td style={{ padding: '16px 24px', color: 'var(--accent-danger)', fontWeight: 800 }}>0 u</td>
+              <td style={{ padding: '16px 24px' }}><span style={{ background: 'rgba(239,68,68,0.1)', color: 'var(--accent-danger)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '12px', padding: '4px 12px', fontSize: '0.75rem', fontWeight: 700 }}>Agotado</span></td>
+            </>
+          )}
+        />
+        <AlertAccordion
+          icon={Icons.Warning} title="Alertas de Stock" subtitle={`${lowStock.length} productos con stock bajo`}
+          isOpen={openAccordion === 'low'} onToggle={() => toggleAccordion('low')}
+          data={lowStock} columns={['Producto', 'Código', 'Cantidad Actual', 'Mínimo', 'Estado']}
+          renderRow={(p) => (
+            <>
+              <td style={{ padding: '16px 24px', fontWeight: 600 }}>{p.name}</td>
+              <td style={{ padding: '16px 24px', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>{p.code}</td>
+              <td style={{ padding: '16px 24px', color: 'var(--text-primary)', fontWeight: 700 }}>{p.stock ?? 0} u</td>
+              <td style={{ padding: '16px 24px', color: 'var(--text-secondary)' }}>{p.min_stock ?? 0} u</td>
+              <td style={{ padding: '16px 24px' }}><span style={{ background: 'rgba(234,179,8,0.1)', color: 'var(--accent-warning)', border: '1px solid rgba(234,179,8,0.3)', borderRadius: '12px', padding: '4px 12px', fontSize: '0.75rem', fontWeight: 700 }}>Crítico</span></td>
+            </>
+          )}
+        />
+        <AlertAccordion
+          icon={Icons.Trash} title="Stock Muerto" subtitle={`${deadStock.length} productos sin ventas en 30 días`}
+          isOpen={openAccordion === 'dead'} onToggle={() => toggleAccordion('dead')}
+          data={deadStock} columns={['Producto', 'Código', 'Categoría', 'Stock Estancado', 'Precio']}
+          renderRow={(p) => (
+            <>
+              <td style={{ padding: '16px 24px', fontWeight: 600 }}>{p.name}</td>
+              <td style={{ padding: '16px 24px', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>{p.code}</td>
+              <td style={{ padding: '16px 24px' }}>{p.category_name}</td>
+              <td style={{ padding: '16px 24px', color: 'var(--text-primary)', fontWeight: 800 }}>{p.stock ?? 0} u</td>
+              <td style={{ padding: '16px 24px', color: 'var(--text-secondary)' }}>${p.price ?? 0}</td>
+            </>
+          )}
+        />
       </div>
 
       {/* MODAL NUEVO PRODUCTO */}

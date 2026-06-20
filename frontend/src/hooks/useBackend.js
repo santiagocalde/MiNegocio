@@ -44,6 +44,7 @@ export default function useBackend(currentOperator, currentTurnId, currentSucurs
   const [priceCheckResults, setPriceCheckResults] = useState([]);
   const [showDuplicateCodeModal, setShowDuplicateCodeModal] = useState(false);
   const [duplicateCodeMatches, setDuplicateCodeMatches] = useState([]);
+  const [customers, setCustomers] = useState([]);
 
   const fetchProductsDB = useCallback(() => {
     apiGet(`/products?limit=5000&sucursal_id=${currentSucursalId}`)
@@ -165,6 +166,7 @@ export default function useBackend(currentOperator, currentTurnId, currentSucurs
     apiGet('/config').then(r => r.json()).then(d => setBusinessConfig(d)).catch(() => {});
     apiGet('/operators').then(r => r.json()).then(d => setOperators(Array.isArray(d) ? d : [])).catch(() => {});
     apiGet('/sucursales').then(r => r.json()).then(d => setSucursales(Array.isArray(d) ? d : [])).catch(() => {});
+    apiGet('/customers').then(r => r.json()).then(d => setCustomers(Array.isArray(d) ? d : [])).catch(() => {});
     // Item 13: SSE - Escuchar eventos en tiempo real
     const baseUrl = SERVER_URL.replace('/api', '');
     let retryDelay = 1000;
@@ -334,6 +336,7 @@ export default function useBackend(currentOperator, currentTurnId, currentSucurs
     priceCheckResults, setPriceCheckResults,
     showDuplicateCodeModal, setShowDuplicateCodeModal,
     duplicateCodeMatches, setDuplicateCodeMatches,
+    customers, setCustomers,
     handleUnpack,
     handleDevolucionItem, handleDevolucion,
     handleManualSync,

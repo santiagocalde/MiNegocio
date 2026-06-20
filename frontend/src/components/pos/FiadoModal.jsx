@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-export default function FiadoModal({ isFiadoOpen, setIsFiadoOpen, adjustedTotal, total, fiadoName, setFiadoName, fiadoRef, confirmFiado }) {
+export default function FiadoModal({ isFiadoOpen, setIsFiadoOpen, adjustedTotal, total, fiadoName, setFiadoName, fiadoRef, confirmFiado, customers }) {
   const [fiadoAmount, setFiadoAmount] = useState('');
   const maxFiado = adjustedTotal ?? total;
   
@@ -26,7 +26,9 @@ export default function FiadoModal({ isFiadoOpen, setIsFiadoOpen, adjustedTotal,
           value={fiadoName} onChange={e => setFiadoName(e.target.value)} autoFocus
           onKeyDown={e => { if (e.key === 'Enter' && fiadoName) handleConfirm(); }}
           style={{ fontSize: '1.5rem', fontFamily: 'var(--font-main)', textAlign: 'left' }} />
-        <datalist id="fiado-names" />
+        <datalist id="fiado-names">
+          {customers?.map(c => <option key={c.id} value={c.name} />)}
+        </datalist>
       </div>
       <div className="modal-actions">
         <button className="btn btn-modal-cancel" onClick={() => { setIsFiadoOpen(false); setFiadoName(''); setFiadoAmount(''); }}>Cancelar (Esc)</button>

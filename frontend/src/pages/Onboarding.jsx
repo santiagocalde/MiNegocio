@@ -297,9 +297,8 @@ export default function Onboarding() {
             <p style={{ color: 'var(--lp-text-muted)', fontSize: '1.05rem', marginBottom: 40, maxWidth: 400, margin: '0 auto 40px' }}>Bienvenido a <strong>{formData.negocio || 'MiNegocio'}</strong>. La demo de 7 dias te permitira probar todo sin restricciones.</p>
             
             <div style={{ background: 'rgba(20,187,166,0.1)', border: '1px solid rgba(20,187,166,0.3)', borderRadius: 12, padding: '16px', marginBottom: 24, textAlign: 'left' }}>
-              <p style={{ color: '#fff', fontSize: '0.9rem', margin: '0 0 8px 0', fontWeight: 700 }}>Datos de acceso — guardalos</p>
-              <p style={{ color: 'var(--lp-text-muted)', fontSize: '0.85rem', margin: '0 0 4px 0' }}>Email: <strong style={{ color: '#fff' }}>{formData.email}</strong></p>
-              <p style={{ color: 'var(--lp-text-muted)', fontSize: '0.85rem', margin: 0 }}>Contraseña: <strong style={{ color: '#fff', fontFamily: 'var(--lp-font-mono)' }}>{formData.telefono.replace(/[^0-9]/g, '').slice(-8).padStart(8, '0') + 'Aa1'}</strong></p>
+              <p style={{ color: '#fff', fontSize: '0.9rem', margin: '0 0 8px 0', fontWeight: 700 }}>Tu email de acceso — guardalo</p>
+              <p style={{ color: 'var(--lp-text-muted)', fontSize: '0.85rem', margin: 0 }}>Email: <strong style={{ color: '#fff' }}>{formData.email}</strong></p>
             </div>
             
             {registerError && (
