@@ -34,7 +34,7 @@ export function PanelProvider({ children }) {
 
   const auth = useAuth(addToast);
   const backend = useBackend(auth.currentOperator, auth.currentTurnId, currentSucursalId, addToast);
-  const closeTurn = useCloseTurn(backend.resumenData);
+  const closeTurn = useCloseTurn(backend.resumenData, auth.initialCash);
   const printing = usePrinting();
   const plan = usePlan(backend.businessConfig);
 

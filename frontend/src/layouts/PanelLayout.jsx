@@ -8,7 +8,6 @@ import CloseTurnModal from '../components/pos/CloseTurnModal';
 import StockAlertsModal from '../components/pos/StockAlertsModal';
 import HelpModal from '../components/pos/HelpModal';
 import ResumenModal from '../components/pos/ResumenModal';
-import PriceCheckModal from '../components/pos/PriceCheckModal';
 import PendingSyncModal from '../components/pos/PendingSyncModal';
 import CierresAnterioresModal from '../components/pos/CierresAnterioresModal';
 import BackupRestoreModal from '../components/pos/BackupRestoreModal';
@@ -173,12 +172,8 @@ export default function PanelLayout() {
       <ResumenModal showResumen={backend.showResumen} setShowResumen={backend.setShowResumen}
         resumenData={backend.resumenData} businessConfig={backend.businessConfig} addToast={addToast} />
 
-      <PriceCheckModal showPriceCheck={backend.showPriceCheck} setShowPriceCheck={backend.setShowPriceCheck}
-        priceCheckQuery={backend.priceCheckQuery} setPriceCheckQuery={backend.setPriceCheckQuery}
-        priceCheckResults={backend.priceCheckResults} setPriceCheckResults={backend.setPriceCheckResults}
-        productsDB={backend.productsDB} />
 
-      <PendingSyncModal showPendingModal={backend.showPendingModal} setShowPendingModal={backend.setShowPendingModal}
+<PendingSyncModal showPendingModal={backend.showPendingModal} setShowPendingModal={backend.setShowPendingModal}
         getPendingData={backend.getPendingData} handleManualSync={backend.handleManualSync}
         setPendingSync={backend.setPendingSync} addToast={addToast} />
 
