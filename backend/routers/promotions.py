@@ -44,16 +44,24 @@ async def evaluate_promotions(body: dict) -> list:
             return results
 
 
+def _item_price(i):
+    return i.get("price", 0) or i.get("unit_price", 0)
+
+
 def _calculate_savings(promo, cart_items):
     if promo["type"] == "combo" and promo.get("combo_price", 0) > 0:
         cond_product_ids = {c["product_id"] for c in promo.get("conditions", [])}
         affected = [i for i in cart_items if i.get("product_id") in cond_product_ids]
         if len(affected) >= len(cond_product_ids):
-            original = sum(i.get("unit_price", 0) * i.get("quantity", 1) for i in cart_items if i.get("product_id") in cond_product_ids)
+            original = sum(_item_price(i) * i.get("quantity", 1) for i in cart_items if i.get("product_id") in cond_product_ids)
             return max(0, original - promo["combo_price"])
     if promo["type"] == "discount" and promo.get("discount_percent", 0) > 0:
-        cond_product_ids = {c["product_id"] for c in promo.get("conditions", [])}
-        affected_total = sum(i.get("unit_price", 0) * i.get("quantity", 1) for i in cart_items if i.get("product_id") in cond_product_ids)
+        cond_map = {c["product_id"]: (c.get("min_qty") or 1) for c in promo.get("conditions", [])}
+        affected_total = 0
+        for i in cart_items:
+            pid = i.get("product_id")
+            if pid in cond_map and i.get("quantity", 1) >= cond_map[pid]:
+                affected_total += _item_price(i) * i.get("quantity", 1)
         return round(affected_total * promo["discount_percent"] / 100, 2)
     return 0
 

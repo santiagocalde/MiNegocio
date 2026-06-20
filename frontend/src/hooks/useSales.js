@@ -66,14 +66,29 @@ export default function useSales(cart, effectiveTotal, payment, paymentMethod, u
       vuelto_en_cuenta: vueltoEnCuenta,
       cliente_vuelto: clienteVuelto,
       payments: useSplitPayment ? effectivePayments : [],
-      items: saleCart.map(i => ({ product_id: i.id, product_name: i.name, quantity: i.qty, unit_price: i.price })),
+      items: saleCart.map(i => ({
+        product_id: typeof i.id === 'number' ? i.id : null,
+        product_name: i.name,
+        quantity: i.qty,
+        unit_price: i.price,
+        is_virtual: i.is_virtual || typeof i.id !== 'number',
+        item_discount: 0,
+      })),
     };
 
     const idempotencyKey = crypto.randomUUID();
     let afipResponse = null;
     try {
       const res = await apiPost(`/sales?idempotency_key=${idempotencyKey}`, salePayload);
-      if (!res.ok) throw new Error("Error al procesar la venta");
+      if (!res.ok) {
+        // HTTP error (4xx/5xx) — show the actual error message, do NOT save offline
+        const errData = await res.json().catch(() => ({}));
+        const msg = errData.detail || `Error ${res.status} al procesar la venta`;
+        addToast(`Error: ${msg}`, 'error');
+        setIsProcessing(false);
+        processingRef.current = false;
+        return;
+      }
       const data = await res.json();
       afipResponse = data.afip;
       try {
@@ -85,7 +100,8 @@ export default function useSales(cart, effectiveTotal, payment, paymentMethod, u
       }
       setLastSaleId(data.id);
     } catch (err) {
-      console.error('Venta falló, guardando en pendientes:', err);
+      // Network error (fetch itself threw) — save offline
+      console.error('Red inaccesible, guardando en pendientes:', err);
       const pendingStr = localStorage.getItem('minegocio_pending_sales');
       const pending = pendingStr ? JSON.parse(pendingStr) : [];
       pending.push({ payload: salePayload, idempotencyKey });
@@ -126,7 +142,14 @@ export default function useSales(cart, effectiveTotal, payment, paymentMethod, u
       fiado_name: fiadoName,
       payment_method: paymentAmount > 0 ? 'split' : 'fiado',
       client_cuit: '',
-      items: cart.map(i => ({ product_id: i.id, product_name: i.name, quantity: i.qty, unit_price: i.price })),
+      items: cart.map(i => ({
+        product_id: typeof i.id === 'number' ? i.id : null,
+        product_name: i.name,
+        quantity: i.qty,
+        unit_price: i.price,
+        is_virtual: i.is_virtual || typeof i.id !== 'number',
+        item_discount: 0,
+      })),
     };
     const idempotencyKey = crypto.randomUUID();
     try {

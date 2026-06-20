@@ -51,11 +51,12 @@ class TurnClose(BaseModel):
     pin: Optional[str] = None
 
 class SaleItem(BaseModel):
-    product_id: int
+    product_id: Optional[int] = None
     product_name: str
     quantity: float = Field(gt=0)
     unit_price: float = Field(gt=0)
     item_discount: float = 0
+    is_virtual: bool = False
 
 class SalePayment(BaseModel):
     method: str

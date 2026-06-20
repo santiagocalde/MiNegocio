@@ -172,7 +172,12 @@ export default function useBackend(currentOperator, currentTurnId, currentSucurs
 
     const connectSSE = () => {
       if (evtSource) evtSource.close();
-      evtSource = new EventSource(`${baseUrl}/api/events`);
+      const sseToken = localStorage.getItem('saas_token');
+      const validToken = sseToken && sseToken !== 'demo-token' && sseToken !== 'preview-token';
+      const sseUrl = validToken
+        ? `${baseUrl}/api/events?token=${encodeURIComponent(sseToken)}`
+        : `${baseUrl}/api/events`;
+      evtSource = new EventSource(sseUrl);
       evtSource.addEventListener('product-changed', () => fetchProductsDB());
       evtSource.addEventListener('sale-created', () => {
         fetchProductsDB();

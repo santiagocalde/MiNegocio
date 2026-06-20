@@ -13,11 +13,13 @@ import FiadoModal from '../components/pos/FiadoModal';
 import CancelConfirmModal from '../components/pos/CancelConfirmModal';
 import DevolucionModal from '../components/pos/DevolucionModal';
 import DuplicateCodeModal from '../components/pos/DuplicateCodeModal';
+import PriceCheckModal from '../components/pos/PriceCheckModal';
 import TicketPrint from '../components/TicketPrint';
 
 export default function VentasPage() {
   const { auth, backend, addToast, playBeep, currentSucursalId, setCurrentSucursalId } = usePanelContext();
-  const cart = useCart(backend.productsDB, 21, playBeep);
+  const ivaRate = backend.businessConfig?.iva_rate ?? 0;
+  const cart = useCart(backend.productsDB, ivaRate, playBeep);
   const promos = usePromotions(cart.cart);
 
   useEffect(() => { cart.setPromotionSavings(promos.promotionSavings); }, [promos.promotionSavings]);
@@ -151,6 +153,13 @@ export default function VentasPage() {
         duplicateCodeMatches={backend.duplicateCodeMatches}
         setDuplicateCodeMatches={backend.setDuplicateCodeMatches}
         setCart={cart.setCart} playBeep={playBeep} searchRef={searchRef} />
+
+      <PriceCheckModal
+        showPriceCheck={backend.showPriceCheck} setShowPriceCheck={backend.setShowPriceCheck}
+        priceCheckQuery={backend.priceCheckQuery} setPriceCheckQuery={backend.setPriceCheckQuery}
+        priceCheckResults={backend.priceCheckResults} setPriceCheckResults={backend.setPriceCheckResults}
+        productsDB={backend.productsDB}
+        onAddToCart={p => cart.handleQuickAdd(p.code, p.name, p.price)} />
 
       {sales.lastSale && (
         <TicketPrint cart={sales.lastSale.cart} total={sales.lastSale.total} payment={sales.lastSale.payment}

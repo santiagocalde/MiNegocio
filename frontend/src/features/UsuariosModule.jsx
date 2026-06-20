@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { usePanelContext } from '../context/PanelContext';
-import { apiGet, apiPut } from '../services/apiClient';
+import { apiGet, apiPut, apiDelete } from '../services/apiClient';
 import EmptyState from '../components/ui/EmptyState';
 import useSortable from '../hooks/useSortable.jsx';
 
 const Icons = {
   User: () => <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>,
   Shield: () => <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>,
-  Plus: () => <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
+  Plus: () => <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>,
+  Trash: () => <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>,
 };
 
 export default function UsuariosModule() {
@@ -20,6 +21,7 @@ export default function UsuariosModule() {
   const [showModal, setShowModal] = useState(false);
   const [editIndex, setEditIndex] = useState(null);
   const [form, setForm] = useState({ name: '', pin: '', role: 'cajero' });
+  const [deleteConfirm, setDeleteConfirm] = useState(null); // { id, name }
 
   const openNew = () => {
     setEditIndex(null);
@@ -33,6 +35,23 @@ export default function UsuariosModule() {
     setEditIndex(originalIdx >= 0 ? originalIdx : sortedIdx);
     setForm({ name: u.name, pin: '', role: u.role });
     setShowModal(true);
+  };
+
+  const handleDelete = async () => {
+    if (!deleteConfirm) return;
+    try {
+      const res = await apiDelete(`/operators/${deleteConfirm.id}`);
+      if (res.ok) {
+        if (addToast) addToast(`Usuario "${deleteConfirm.name}" eliminado.`, 'success');
+        setDeleteConfirm(null);
+        const fresh = await apiGet('/operators');
+        if (fresh.ok) onOperatorsUpdate(await fresh.json());
+      } else {
+        if (addToast) addToast('Error al eliminar usuario.', 'error');
+      }
+    } catch {
+      if (addToast) addToast('Error de conexión.', 'error');
+    }
   };
 
   const handleSave = async () => {
@@ -106,14 +125,31 @@ export default function UsuariosModule() {
                 </td>
                 <td style={{ padding: '16px', fontFamily: 'var(--font-mono)' }}>****</td>
                 <td style={{ padding: '16px' }}>{u.last_login}</td>
-                <td style={{ padding: '16px', textAlign: 'right' }}>
+                <td style={{ padding: '16px', textAlign: 'right', display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                   <button onClick={() => openEdit(idx)} style={{ background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', transition: 'all 0.15s', fontSize: '0.8rem', fontWeight: 600 }}>Editar</button>
+                  <button onClick={() => setDeleteConfirm({ id: u.id, name: u.name })} style={{ background: 'transparent', border: '1px solid rgba(239,68,68,0.4)', color: 'var(--accent-danger)', padding: '6px 10px', borderRadius: '6px', cursor: 'pointer', transition: 'all 0.15s', display: 'flex', alignItems: 'center' }}><Icons.Trash /></button>
                 </td>
               </tr>
             )))}
           </tbody>
         </table>
       </div>
+
+      {deleteConfirm && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(30,58,95,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100 }}>
+          <div style={{ background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '32px', width: '380px' }}>
+            <div style={{ fontSize: '2.5rem', textAlign: 'center', marginBottom: '16px' }}>⚠️</div>
+            <h2 style={{ fontSize: '1.3rem', fontWeight: 800, margin: '0 0 12px 0', color: 'var(--text-primary)', textAlign: 'center' }}>Eliminar usuario</h2>
+            <p style={{ color: 'var(--text-secondary)', textAlign: 'center', margin: '0 0 24px 0' }}>
+              ¿Eliminar a <strong style={{ color: 'var(--text-primary)' }}>{deleteConfirm.name}</strong>? Esta acción no se puede deshacer.
+            </p>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+              <button onClick={() => setDeleteConfirm(null)} style={{ background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Cancelar</button>
+              <button onClick={handleDelete} style={{ background: 'var(--accent-danger)', border: 'none', color: 'white', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', fontWeight: 700 }}>Eliminar</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(30,58,95,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
