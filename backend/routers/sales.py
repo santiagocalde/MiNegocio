@@ -258,6 +258,16 @@ async def create_sale(body: SaleCreate, idempotency_key: Optional[str] = Query(N
                 db_total = 0
 
                 for item in body.items:
+                    if item.is_virtual or item.product_id is None:
+                        # Producto virtual (acceso rápido, monto manual) — sin stock DB
+                        db_price = round(item.unit_price, 2)
+                        db_total += db_price * item.quantity
+                        await conn.execute(
+                            "INSERT INTO sale_items (business_id, sale_id, product_id, product_name, quantity, unit_price, item_discount) VALUES ($1,$2,$3,$4,$5,$6,$7)",
+                            b_id, sale_id, None, item.product_name, item.quantity, db_price, item.item_discount
+                        )
+                        continue
+
                     prod = await conn.fetchrow(
                         "SELECT id, price, stock, is_virtual, parent_id, pack_size FROM products WHERE id = $1 AND business_id = $2",
                         item.product_id, b_id
@@ -359,6 +369,16 @@ async def create_sale(body: SaleCreate, idempotency_key: Optional[str] = Query(N
                 db_total_sql = 0
 
                 for item in body.items:
+                    if item.is_virtual or item.product_id is None:
+                        # Producto virtual — sin DB lookup ni descuento de stock
+                        db_price = round(item.unit_price, 2)
+                        db_total_sql += db_price * item.quantity
+                        await db.execute(
+                            "INSERT INTO sale_items (sale_id,product_id,product_name,quantity,unit_price,item_discount) VALUES (?,?,?,?,?,?)",
+                            (sale_id, None, item.product_name, item.quantity, db_price, item.item_discount)
+                        )
+                        continue
+
                     p_cur = await db.execute(
                         "SELECT id, price, stock, is_virtual, parent_id, pack_size FROM products WHERE id = ?",
                         (item.product_id,)
@@ -375,7 +395,7 @@ async def create_sale(body: SaleCreate, idempotency_key: Optional[str] = Query(N
                         (sale_id, item.product_id, item.product_name, item.quantity, db_price, item.item_discount)
                     )
 
-                    p_stock, p_is_virtual, p_parent_id, p_pack_size = prod
+                    p_stock, p_is_virtual, p_parent_id, p_pack_size = prod[2], prod[3], prod[4], prod[5]
                     if p_is_virtual == 1 and p_parent_id:
                         real_qty = item.quantity * (p_pack_size or 1)
                         result = await db.execute(
@@ -404,8 +424,8 @@ async def create_sale(body: SaleCreate, idempotency_key: Optional[str] = Query(N
                     cur_c = await db.execute("SELECT id FROM customers WHERE name = ?", (body.fiado_name,))
                     c_row = await cur_c.fetchone()
                     if not c_row:
-                        await db.execute("INSERT INTO customers (name) VALUES (?)", (body.fiado_name,))
-                        cust_id = db.last_insert_rowid
+                        ins_c = await db.execute("INSERT INTO customers (name) VALUES (?)", (body.fiado_name,))
+                        cust_id = ins_c.lastrowid
                     else:
                         cust_id = c_row[0]
                     await db.execute("UPDATE customers SET balance = balance + ? WHERE id = ?", (total_sale, cust_id))
