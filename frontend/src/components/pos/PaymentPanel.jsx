@@ -1,6 +1,7 @@
 import React from 'react';
 import { Icons } from '../ui/Icons';
 import { apiPost } from '../../services/apiClient';
+import { formatMoney } from '../../utils/format';
 
 export default function PaymentPanel({
   cart, total, adjustedTotal, effectiveTotal, subtotal, iva, discount, ivaRate, change, payment, paymentMethod,
@@ -40,16 +41,6 @@ export default function PaymentPanel({
   };
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '12px' }}>
-      <div style={{ background: 'var(--bg-card)', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-          <h2 style={{ fontSize: '1rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)', letterSpacing: '-0.2px' }}>Cliente</h2>
-        </div>
-        <select style={{ width: '100%', height: '36px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '0 12px', borderRadius: '8px', fontSize: '0.85rem', outline: 'none', cursor: 'pointer', appearance: 'none', WebkitAppearance: 'none' }}>
-          <option>Consumidor Final</option>
-          <option>Cliente Frecuente</option>
-        </select>
-      </div>
-
       <div style={{ background: 'var(--bg-card)', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
           <h2 style={{ fontSize: '1.3rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)', letterSpacing: '-0.2px' }}>Resumen</h2>
@@ -58,18 +49,18 @@ export default function PaymentPanel({
 
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', fontSize: '0.95rem', color: 'var(--text-secondary)' }}>
           <span>Subtotal:</span>
-          <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>${subtotal.toLocaleString('es-AR', { minimumFractionDigits: 2 })}</span>
+          <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{formatMoney(subtotal)}</span>
         </div>
         {iva > 0 && (
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', fontSize: '0.95rem', color: 'var(--text-secondary)' }}>
             <span>IVA ({ivaRate}%):</span>
-            <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>${iva.toLocaleString('es-AR', { minimumFractionDigits: 2 })}</span>
+            <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{formatMoney(iva)}</span>
           </div>
         )}
         {discount > 0 && (
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', fontSize: '0.95rem', color: 'var(--accent-success)' }}>
             <span>{promotionSavings > 0 ? 'Descuento + Promo:' : 'Descuento:'}</span>
-            <span style={{ fontWeight: 600 }}>-${discount.toLocaleString('es-AR')}</span>
+            <span style={{ fontWeight: 600 }}>-{formatMoney(discount)}</span>
           </div>
         )}
 
@@ -77,7 +68,7 @@ export default function PaymentPanel({
 
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px', fontSize: '1.2rem', color: 'var(--text-primary)', fontWeight: 800 }}>
           <span>Total:</span>
-          <span>${(adjustedTotal ?? total).toLocaleString('es-AR')}</span>
+          <span>{formatMoney(adjustedTotal ?? total)}</span>
         </div>
 
         <button
@@ -90,7 +81,7 @@ export default function PaymentPanel({
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
           <button style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)', color: 'var(--text-primary)', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', padding: '12px', borderRadius: '12px', transition: 'all 0.2s' }} onMouseEnter={e=>e.target.style.background='rgba(255,255,255,0.05)'} onMouseLeave={e=>e.target.style.background='rgba(255,255,255,0.02)'} onClick={() => setIsFiadoOpen(true)}>
-            % Gestionar Extras
+            Anotar Fiado
           </button>
           {lastSale && (
             <button style={{ width: '100%', background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.15)', color: 'var(--accent-danger)', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', padding: '12px', borderRadius: '12px', transition: 'all 0.2s' }} onMouseEnter={e=>e.target.style.background='rgba(239,68,68,0.1)'} onMouseLeave={e=>e.target.style.background='rgba(239,68,68,0.05)'} onClick={() => { setDevolucionQtys({}); setShowDevolucionItems(true); }}>

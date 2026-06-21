@@ -111,18 +111,15 @@ export default function FiadoModule() {
   const totalDeuda = customers.reduce((acc, c) => acc + c.balance, 0);
 
   return (
-    <div style={{ padding: '22px 28px', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflowY: 'auto' }}>
-      
+    <div style={{ padding: '12px 20px', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflowY: 'auto' }}>
+
       {/* HEADER */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', flexShrink: 0 }}>
-        <div>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, margin: '0 0 4px 0', color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>Cuentas Corrientes</h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: 0 }}>Gestión de libretas y pagos parciales.</p>
-        </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexShrink: 0 }}>
+        <h2 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>Fiados</h2>
       </div>
 
       {/* METRICAS */}
-      <div style={{ display: 'flex', gap: '16px', marginBottom: '24px', flexShrink: 0 }}>
+      <div style={{ display: 'flex', gap: '16px', marginBottom: '12px', flexShrink: 0 }}>
         <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '16px', flex: 1, position: 'relative', overflow: 'hidden' }}>
            <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase', marginBottom: '4px' }}>Deuda Total en la Calle</div>
            <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--accent-warning)', fontFamily: 'var(--font-mono)' }}>${totalDeuda.toLocaleString('es-AR')}</div>
@@ -193,7 +190,7 @@ export default function FiadoModule() {
                     onClick={(e) => { e.stopPropagation(); setAbonoModal(c); }}
                     style={{ background: 'var(--gradient-success)', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 16px', fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s', display: 'flex', alignItems: 'center', gap: '6px' }}
                   >
-                    <Icons.DollarSign /> Entrega
+                    <Icons.DollarSign /> Recibir pago
                   </button>
                   <div style={{ color: 'var(--text-secondary)' }}>
                     {isExpanded ? <Icons.ChevronUp /> : <Icons.ChevronDown />}
@@ -238,8 +235,8 @@ export default function FiadoModule() {
 
       {/* MODAL ABONO */}
       {abonoModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(11, 19, 43, 0.8)', backdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
-          <div style={{ background: 'var(--bg-card)', padding: '32px', borderRadius: '24px', width: '400px', border: '1px solid var(--border-color)' }}>
+        <div className="modal-overlay" onClick={() => setAbonoModal(null)}>
+          <div onClick={e => e.stopPropagation()} style={{ background: 'var(--bg-card)', padding: '32px', borderRadius: '24px', width: '400px', maxWidth: '90vw', border: '1px solid var(--border-color)' }}>
             <h3 style={{ margin: '0 0 8px 0', fontSize: '1.5rem', color: 'var(--text-primary)' }}>Recibir Pago</h3>
             <p style={{ color: 'var(--text-secondary)', marginBottom: '24px' }}>Cliente: <strong>{abonoModal.name}</strong><br/>Deuda Total: <strong style={{color: 'var(--accent-warning)'}}>${(abonoModal.balance ?? 0).toLocaleString('es-AR')}</strong></p>
             
@@ -267,8 +264,8 @@ export default function FiadoModule() {
       )}
       {/* MODAL NUEVO CLIENTE */}
       {newClientModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(15,23,42,0.85)', backdropFilter: 'blur(8px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '24px', width: '400px', maxWidth: '90vw', padding: '32px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}>
+        <div className="modal-overlay" onClick={() => setNewClientModal(false)}>
+          <div onClick={e => e.stopPropagation()} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '24px', width: '400px', maxWidth: '90vw', padding: '32px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}>
             <h3 style={{ margin: '0 0 8px 0', fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)' }}>Nuevo Cliente</h3>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '24px' }}>Registre un nuevo cliente en el sistema.</p>
             

@@ -7,6 +7,7 @@ import ErrorBoundary from './components/ui/ErrorBoundary';
 import './index.css';
 import './App.css';
 
+const InicioPage = lazy(() => import('./pages/InicioPage'));
 const VentasPage = lazy(() => import('./pages/VentasPage'));
 const PlanPage = lazy(() => import('./pages/PlanPage'));
 const AdminPage = lazy(() => import('./pages/AdminPage'));
@@ -61,7 +62,8 @@ function App() {
             </PanelProvider>
           </ErrorBoundary>
         }>
-          <Route index element={<Navigate to="ventas" replace />} />
+          <Route index element={<Navigate to="inicio" replace />} />
+          <Route path="inicio" element={<PanelSuspense><InicioPage /></PanelSuspense>} />
           <Route path="ventas" element={<PanelSuspense><VentasPage /></PanelSuspense>} />
           <Route path="inventario" element={<PanelSuspense><StockModule /></PanelSuspense>} />
           <Route path="compras" element={<PanelSuspense><PurchasesModule /></PanelSuspense>} />
