@@ -38,6 +38,11 @@
   padding: 0;
 }
 
+html {
+  overflow-x: hidden;
+  overscroll-behavior-x: none;
+}
+
 body {
   font-family: var(--font-main);
   background-color: var(--bg-main);
@@ -514,6 +519,7 @@ body.landing-open {
   overflow-y: auto;
   height: auto;
   background: var(--lp-bg);
+  overscroll-behavior-x: none;
 }
 
 /* ── Background Canvas (single paint) ── */
@@ -701,6 +707,11 @@ body.landing-open {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  display: inline-block;
+  /* el ? en itálica sobresale del bounding box; sin este margen
+     -webkit-background-clip:text lo recorta en el borde derecho */
+  padding-right: 0.3em;
+  margin-right: -0.3em;
 }
 .lp-glass:hover {
   border-color: rgba(20,187,166,0.2);
@@ -956,6 +967,10 @@ details[open] summary .faq-chevron { transform: rotate(45deg); }
   .hater-table { font-size: 0.75rem; }
   .hater-table th, .hater-table td { padding: 8px 10px; }
   .lp-section { padding: 60px 16px !important; }
+  /* Pricing: el scale(1.05) de la tarjeta "popular" desborda en mobile */
+  .lp-plan-card { transform: none !important; }
+  .lp-plan-popular { transform: none !important; }
+  .lp-plan-custom { margin-top: 48px !important; padding: 24px !important; }
 }
 
 /* ── Page Transitions ──────────────────────────────────────── */
@@ -1023,4 +1038,20 @@ main > * {
   0% { transform: scale(0); opacity: 0; }
   5% { transform: scale(0.02); opacity: 0.9; }
   100% { transform: scale(1); opacity: 0; }
+}
+
+/* Accesibilidad y ahorro de recursos: respeta la preferencia del sistema de
+   reducir movimiento. En notebooks/celulares en modo ahorro apaga las
+   animaciones de fondo en loop (orbs, shimmer, marquee, flotantes) que
+   consumen CPU/GPU de forma constante, sin afectar la legibilidad. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .lp-orb { display: none !important; }
 }
