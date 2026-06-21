@@ -24,10 +24,11 @@ export default function CatalogoModule() {
   useEffect(() => {
     apiGet('/config').then(r => r.ok && r.json()).then(data => {
       if (data) {
-        setStoreName(data.name || data.business_name || 'Mi Kiosco');
-        setWhatsapp(data.whatsapp || data.phone || '');
+        setStoreName(data.nombre || data.business_name || 'Mi Kiosco');
+        setWhatsapp(data.catalogo_whatsapp || data.telefono || data.phone || '');
         setIsActive(!!data.catalogo_activo);
-        setSlug(data.slug || data.business_name?.replace(/\s+/g, '').toLowerCase() || 'mikiosco');
+        const fallback = (data.nombre || 'mikiosco').replace(/[^a-z0-9]/gi, '').toLowerCase() || 'mikiosco';
+        setSlug(data.catalogo_slug || fallback);
       }
     }).catch(() => {});
   }, []);
@@ -35,8 +36,9 @@ export default function CatalogoModule() {
   const handleSave = async () => {
     try {
       const res = await apiPut('/config', {
-        name: storeName,
-        whatsapp: whatsapp,
+        nombre: storeName,
+        catalogo_whatsapp: whatsapp,
+        catalogo_slug: slug,
         catalogo_activo: isActive,
       });
       if (res.ok) {
@@ -56,8 +58,9 @@ export default function CatalogoModule() {
     setSaving(true);
     try {
       const res = await apiPut('/config', {
-        name: storeName,
-        whatsapp: whatsapp,
+        nombre: storeName,
+        catalogo_whatsapp: whatsapp,
+        catalogo_slug: slug,
         catalogo_activo: newVal,
       });
       if (res.ok) {
@@ -74,12 +77,9 @@ export default function CatalogoModule() {
 
   return (
     <FeatureGate isLocked={isLocked} requiredPlan="Pro">
-    <div style={{ padding: '22px 28px', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px', flexShrink: 0 }}>
-        <div>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, margin: '0 0 4px 0', color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>Catálogo Online</h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: 0 }}>Tu tienda virtual sincronizada en tiempo real con tu stock.</p>
-        </div>
+    <div style={{ padding: '12px 20px', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexShrink: 0 }}>
+        <h2 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>Catálogo Online</h2>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 350px', gap: '32px', flex: 1 }}>

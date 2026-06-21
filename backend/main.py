@@ -55,7 +55,7 @@ os.makedirs(DATA_DIR, exist_ok=True)
 DB_PATH  = os.getenv("DB_PATH") or os.path.join(DATA_DIR, "minegocio.db")
 LOG_FILE = os.path.join(BASE_DIR, "minegocio.log")
 
-JWT_SECRET   = os.getenv("JWT_SECRET", "ta1P4pMAryFH5_lDGf-8GmbTSBrMWg5uYheoWg93s1o")
+JWT_SECRET   = os.getenv("JWT_SECRET", "dev-insecure-change-me")
 JWT_ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 REFRESH_TOKEN_EXPIRE_DAYS   = 7
@@ -96,13 +96,20 @@ async def get_product_or_404(db, product_id: int) -> dict:
 # ── Validación de entorno ─────────────────────────────────────
 def validate_env():
     jwt_secret = os.getenv("JWT_SECRET", "")
-    default_secret = "novastock-dev-secret-CAMBIAR-EN-PRODUCCION-2026"
-    if not jwt_secret or jwt_secret == default_secret:
+    # Secretos débiles/conocidos que NUNCA deben usarse en producción.
+    weak_secrets = {
+        "",
+        "dev-insecure-change-me",
+        "novastock-dev-secret-CAMBIAR-EN-PRODUCCION-2026",
+        "super-secret-key-change-me-in-production",
+        "ta1P4pMAryFH5_lDGf-8GmbTSBrMWg5uYheoWg93s1o",
+    }
+    if jwt_secret in weak_secrets or len(jwt_secret) < 32:
         if APP_ENV == "production":
-            logger.critical("🚨 JWT_SECRET must be changed from default in production!")
+            logger.critical("🚨 JWT_SECRET ausente o inseguro en producción. Definí un JWT_SECRET fuerte (>=32 chars) en .env.")
             sys.exit(1)
         else:
-            logger.warning("⚠️  JWT_SECRET is using the default dev secret. Change it for production.")
+            logger.warning("⚠️  JWT_SECRET inseguro/por defecto. Cambialo antes de ir a producción.")
     db_url = os.getenv("DATABASE_URL", "")
     if db_url and not db_url.startswith("postgresql"):
         logger.warning("⚠️  DATABASE_URL should start with 'postgresql://'")
@@ -229,8 +236,10 @@ _CORS_ORIGINS = (
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_CORS_ORIGINS,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "Accept", "X-Requested-With"],
+    allow_credentials=False,
+    max_age=600,
 )
 
 
@@ -252,7 +261,7 @@ class TenantMiddleware(BaseHTTPMiddleware):
         public_prefixes = (
             "/api/auth", "/api/admin/auth", "/api/login", "/api/health",
             "/api/billing/webhook", "/api/plans", "/api/metrics",
-            "/api/testimonials", "/api/send-contact", "/docs", "/openapi",
+            "/api/testimonials", "/api/send-contact", "/api/catalogo", "/docs", "/openapi",
         )
         path = request.url.path
         if SAAS_MODE and not b_id and path.startswith("/api/"):
@@ -293,6 +302,7 @@ async def sse_event_stream(
     token: Optional[str] = Query(None),
     authorization: Optional[str] = Header(None),
 ):
+    biz_id = None
     if SAAS_MODE:
         raw = token or (
             authorization.split(" ")[1]
@@ -302,11 +312,13 @@ async def sse_event_stream(
         if not raw:
             raise HTTPException(status_code=401, detail="Token requerido para SSE")
         try:
-            jwt.decode(raw, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+            payload = jwt.decode(raw, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+            biz_id = payload.get("sub")
         except Exception:
             raise HTTPException(status_code=401, detail="Token SSE inválido o expirado")
 
-    queue = events.register()
+    # Suscripción acotada al tenant: solo recibe eventos de su propio negocio
+    queue = events.register(biz_id)
 
     async def event_generator():
         try:
@@ -316,7 +328,7 @@ async def sse_event_stream(
         except asyncio.CancelledError:
             pass
         finally:
-            events.unregister(queue)
+            events.unregister(queue, biz_id)
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
