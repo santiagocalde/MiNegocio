@@ -17,6 +17,7 @@ export default function PublicCatalog() {
   const [searchTerm, setSearchTerm] = useState('');
   const [cart, setCart] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [whatsapp, setWhatsapp] = useState('');
 
   useEffect(() => {
     const baseUrl = import.meta.env.PROD ? '' : 'http://localhost:8005';
@@ -25,6 +26,7 @@ export default function PublicCatalog() {
       .then(data => {
         const list = Array.isArray(data) ? data : (data?.products || []);
         setProducts(list);
+        if (!Array.isArray(data)) setWhatsapp(data?.catalogo_whatsapp || data?.whatsapp || '');
         setLoading(false);
       })
       .catch(() => {
@@ -55,17 +57,22 @@ export default function PublicCatalog() {
 
   const cartTotal = cart.reduce((acc, item) => acc + item.price * item.qty, 0);
 
-  const formatPrice = (p) => '$' + p.toLocaleString('es-AR');
+  const formatPrice = (p) => '$' + Number(p || 0).toLocaleString('es-AR');
 
-  const filteredProducts = products.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
+  const filteredProducts = products.filter(p => (p.name || '').toLowerCase().includes(searchTerm.toLowerCase()));
 
   const sendWhatsAppOrder = () => {
+    const numero = (whatsapp || '').replace(/[^0-9]/g, '');
+    if (!numero) {
+      alert('Este comercio todavía no configuró su WhatsApp para pedidos.');
+      return;
+    }
     let msg = `Hola, quiero hacer el siguiente pedido:\n\n`;
     cart.forEach(item => {
       msg += `• ${item.qty}x ${item.name} - ${formatPrice(item.price * item.qty)}\n`;
     });
     msg += `\n*Total: ${formatPrice(cartTotal)}*`;
-    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`, '_blank');
+    window.open(`https://wa.me/${numero}?text=${encodeURIComponent(msg)}`, '_blank');
   };
 
   return (
