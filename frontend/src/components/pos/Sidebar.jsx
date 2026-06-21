@@ -11,9 +11,10 @@ const NAV_ITEMS = [
   {
     category: 'OPERACIÓN',
     items: [
+      { label: 'Inicio', path: '/panel/inicio', icon: 'Home', roles: ['admin', 'manager', 'operator'] },
       { label: 'Punto de Venta', path: '/panel/ventas', icon: 'ShoppingCart', roles: ['admin', 'manager', 'operator'] },
       { label: 'Compras', path: '/panel/compras', icon: 'Truck', roles: ['admin', 'manager'], minPlan: 'simple' },
-      { label: 'Fiados / Clientes', path: '/panel/clientes', icon: 'Book', roles: ['admin', 'manager', 'operator'] },
+      { label: 'Fiados', path: '/panel/clientes', icon: 'Book', roles: ['admin', 'manager', 'operator'] },
     ],
   },
   {
@@ -51,7 +52,10 @@ const NAV_ITEMS = [
   },
 ];
 
+const Home = () => <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1V9.5z" /></svg>;
+
 const ICON_MAP = {
+  Home,
   ShoppingCart: Icons.ShoppingCart,
   Truck: Icons.Truck,
   Book: Icons.Book,
