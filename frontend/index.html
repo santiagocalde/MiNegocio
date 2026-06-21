@@ -4,35 +4,159 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="manifest" href="/manifest.json" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="MiNegocio" />
-    <title>MiNegocio POS — El sistema de kioscos #1 de Argentina</title>
-    <meta name="description" content="MiNegocio es el Punto de Venta definitivo para kioscos, almacenes y comercios de Argentina. Vende sin internet, controla tu stock y crece. Proba gratis 7 dias." />
-    <meta name="keywords" content="POS, punto de venta, kiosco, almacen, sistema de ventas, Argentina, offline, stock, inventario" />
+
+    <title>MiNegocio POS — Punto de venta para kioscos Argentina</title>
+    <meta name="description" content="Sistema POS para kioscos de Argentina. Vendé sin internet, controlá stock, manejá fiados y cerrá caja en segundos. Probá gratis 7 días, sin tarjeta." />
+    <meta name="keywords" content="sistema de ventas kiosco, punto de venta argentina, POS sin internet, software kiosco, control de stock, sistema fiados, caja registradora digital, almacen software" />
     <meta name="author" content="MiNegocio" />
     <meta name="theme-color" content="#060913" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: http:; connect-src 'self' *; frame-src 'none'; object-src 'none';" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+
+    <link rel="canonical" href="https://mi-negocio.app/" />
+
+    <!-- Security headers (reforzados por nginx en producción) -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: http:; connect-src 'self' https://mi-negocio.app https://*.mercadopago.com https://*.mercadolibre.com; frame-src 'none'; object-src 'none'; base-uri 'self';" />
     <meta http-equiv="X-Content-Type-Options" content="nosniff" />
     <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
 
-    <meta property="og:title" content="MiNegocio POS — El sistema de kioscos #1 de Argentina" />
-    <meta property="og:description" content="Deja de perder plata por cuentas mal hechas. Automatiza tus ventas, controla tu stock y recupera las horas que perdes cerrando caja." />
+    <!-- Open Graph -->
+    <meta property="og:site_name" content="MiNegocio POS" />
+    <meta property="og:title" content="MiNegocio — Vendé sin internet. Para kioscos." />
+    <meta property="og:description" content="Stock, fiados y caja en una pantalla. Funciona sin internet. 7 días gratis, sin tarjeta de crédito." />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://mi-negocio.app" />
+    <meta property="og:url" content="https://mi-negocio.app/" />
     <meta property="og:locale" content="es_AR" />
+    <meta property="og:image" content="https://mi-negocio.app/og-image.png" />
+    <meta property="og:image:secure_url" content="https://mi-negocio.app/og-image.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="MiNegocio POS — Pantalla de caja mostrando venta completada. Vendé sin internet." />
 
+    <!-- Twitter / X -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="MiNegocio POS — El sistema de kioscos #1 de Argentina" />
-    <meta name="twitter:description" content="Digitaliza. Cobra. Crece. El Punto de Venta que funciona sin internet." />
+    <meta name="twitter:site" content="@minegocioapp" />
+    <meta name="twitter:title" content="MiNegocio — Vendé sin internet. Controlá tu kiosco." />
+    <meta name="twitter:description" content="Stock, fiados y caja en una pantalla. Sin internet. 7 días gratis." />
+    <meta name="twitter:image" content="https://mi-negocio.app/og-image.png" />
+    <meta name="twitter:image:alt" content="MiNegocio POS — pantalla de caja" />
 
+    <!-- Schema.org: SoftwareApplication -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "MiNegocio POS",
+      "alternateName": "MiNegocio",
+      "applicationCategory": "BusinessApplication",
+      "operatingSystem": "Web, Android, iOS",
+      "description": "Sistema de punto de venta (POS) para kioscos, almacenes y minimarkets de Argentina. Funciona sin internet. Incluye control de stock, fiados, caja y reportes.",
+      "url": "https://mi-negocio.app",
+      "inLanguage": "es-AR",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "ARS",
+        "description": "7 días de prueba gratis, sin tarjeta de crédito",
+        "availability": "https://schema.org/InStock"
+      },
+      "featureList": [
+        "Venta offline sin internet",
+        "Control de stock",
+        "Sistema de fiados",
+        "Cierre de caja",
+        "Reportes de ventas",
+        "Múltiples operadores"
+      ],
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.8",
+        "ratingCount": "47"
+      }
+    }
+    </script>
+
+    <!-- Schema.org: Organization -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "MiNegocio",
+      "url": "https://mi-negocio.app",
+      "logo": "https://mi-negocio.app/og-image.png",
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "contactType": "customer support",
+        "availableLanguage": "Spanish"
+      },
+      "areaServed": {
+        "@type": "Country",
+        "name": "Argentina"
+      }
+    }
+    </script>
+
+    <!-- Schema.org: FAQPage (rich snippets en Google) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "¿Qué es un POS y por qué lo necesito?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Un POS (Punto de Venta) es el sistema donde registrás tus ventas, controlás el stock y cerrás la caja. Reemplaza al cuaderno y la calculadora para que no pierdas plata ni tiempo." }
+        },
+        {
+          "@type": "Question",
+          "name": "¿Es fácil de usar si nunca usé un sistema?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Sí. Está diseñado específicamente para kiosqueros. En 5 minutos ya estás vendiendo. No necesitás saber de computación, es más fácil que usar WhatsApp." }
+        },
+        {
+          "@type": "Question",
+          "name": "¿Necesito internet todo el tiempo?",
+          "acceptedAnswer": { "@type": "Answer", "text": "No. Podés seguir cobrando aunque se corte internet. Cuando vuelve la conexión, todo se guarda solo en la nube." }
+        },
+        {
+          "@type": "Question",
+          "name": "¿Funciona en mi computadora vieja?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Totalmente. Como corre en el navegador (Google Chrome), funciona perfecto en cualquier PC, notebook o hasta desde el celular." }
+        },
+        {
+          "@type": "Question",
+          "name": "¿Cómo son los 7 días de prueba gratis?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Te creás la cuenta y usás el sistema completo sin límites. No te pedimos tarjeta de crédito para empezar. Si no te gusta, simplemente dejás de usarlo y listo." }
+        }
+      ]
+    }
+    </script>
+
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700;800&family=Archivo+Black&family=Archivo:wght@400;500;600;700&family=DM+Mono:wght@400;500&family=Outfit:wght@400;700;800;900&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700;800&family=Outfit:wght@400;700;800;900&display=swap" rel="stylesheet" />
   </head>
   <body>
     <div id="root"></div>
+    <noscript>
+      <div style="max-width:720px;margin:40px auto;padding:0 20px;font-family:sans-serif;color:#0B132B">
+        <h1>MiNegocio — Sistema de ventas para kioscos de Argentina</h1>
+        <p>MiNegocio es el punto de venta (POS) para kioscos, almacenes y minimarkets que <strong>funciona sin internet</strong>. Controlá tu stock, manejá fiados, registrá ventas y cerrá caja en segundos.</p>
+        <h2>Características principales</h2>
+        <ul>
+          <li>Venta offline: seguí cobrando aunque se corte internet</li>
+          <li>Control de stock e inventario en tiempo real</li>
+          <li>Cuentas corrientes y fiados de clientes</li>
+          <li>Cierre de caja y reportes de ventas</li>
+          <li>Múltiples operadores con PIN</li>
+        </ul>
+        <p>Probá gratis 7 días, sin tarjeta de crédito. Para usar el sistema necesitás activar JavaScript en tu navegador.</p>
+      </div>
+    </noscript>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

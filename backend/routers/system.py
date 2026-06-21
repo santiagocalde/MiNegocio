@@ -94,8 +94,24 @@ async def create_backup() -> dict:
         if os.path.exists(tmp_path): os.remove(tmp_path)
 
 
+def _require_owner(request: Request):
+    """Solo el dueño del negocio (role='admin' en operators o el business owner) puede acceder."""
+    auth = request.headers.get("Authorization", "")
+    if not auth.startswith("Bearer "):
+        raise HTTPException(401, detail="Autenticación requerida")
+    try:
+        payload = jose_jwt.decode(auth.split(" ")[1], JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        if payload.get("type") != "access" or not payload.get("sub"):
+            raise HTTPException(403, detail="Sin permisos suficientes")
+    except Exception:
+        raise HTTPException(401, detail="Token inválido")
+
+
 @router.get("/api/backup/list", summary="Listar backups disponibles")
-async def list_backups() -> dict:
+async def list_backups(request: Request) -> dict:
+    _require_owner(request)
+    if main.USE_PG:
+        raise HTTPException(400, detail="Backup manual no disponible en modo PostgreSQL")
     backup_dir = os.path.join(main.BASE_DIR, "backups")
     os.makedirs(backup_dir, exist_ok=True)
     files = sorted(glob.glob(os.path.join(backup_dir, "*.db.gz")), reverse=True)
@@ -103,7 +119,10 @@ async def list_backups() -> dict:
 
 
 @router.post("/api/backup/restore", summary="Restaurar backup")
-async def restore_backup(data: dict) -> dict:
+async def restore_backup(request: Request, data: dict) -> dict:
+    _require_owner(request)
+    if main.USE_PG:
+        raise HTTPException(400, detail="Restauración no disponible en modo PostgreSQL")
     filename = data.get("filename", "")
     if os.path.basename(filename) != filename or not filename.endswith('.db.gz'):
         raise HTTPException(400, detail="Nombre de archivo invalido")

@@ -3,10 +3,10 @@ services:
     image: postgres:15-alpine
     environment:
       POSTGRES_USER: minegocio
-      POSTGRES_PASSWORD: ${PG_PASSWORD:-1234}
+      POSTGRES_PASSWORD: ${PG_PASSWORD:?PG_PASSWORD no definido en .env}
       POSTGRES_DB: minegocio
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     restart: unless-stopped
@@ -21,13 +21,13 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql://minegocio:${PG_PASSWORD:-1234}@db:5432/minegocio
+      - DATABASE_URL=postgresql://minegocio:${PG_PASSWORD:?PG_PASSWORD no definido en .env}@db:5432/minegocio
       - PG_HOST=db
       - PG_PORT=5432
       - PG_USER=minegocio
-      - PG_PASSWORD=${PG_PASSWORD:-1234}
+      - PG_PASSWORD=${PG_PASSWORD:?PG_PASSWORD no definido en .env}
       - PG_DATABASE=minegocio
-      - JWT_SECRET=${JWT_SECRET:-ta1P4pMAryFH5_lDGf-8GmbTSBrMWg5uYheoWg93s1o}
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET no definido en .env}
       - MP_ACCESS_TOKEN=${MP_ACCESS_TOKEN:-}
       - MP_COLLECTOR_ID=${MP_COLLECTOR_ID:-}
       - RESEND_API_KEY=${RESEND_API_KEY:-}

@@ -216,6 +216,8 @@ async def import_products_csv(request: Request, csv_text: str = Body(..., media_
 async def create_product(request: Request, product: dict = Body(...)) -> Dict[str, Any]:
     b_id = _biz_id()
     await _check_product_limit(request, 1)
+    import uuid as _uuid
+    code = product.get("code") or product.get("barcode") or f"AUTO-{_uuid.uuid4().hex[:8].upper()}"
     if USE_PG:
         from db_helpers import get_pg_pool
         pool = await get_pg_pool()
@@ -223,7 +225,7 @@ async def create_product(request: Request, product: dict = Body(...)) -> Dict[st
             row = await conn.fetchrow("""
                 INSERT INTO products (business_id, code, name, price, cost_price, stock, min_stock, iva, category_id, is_virtual, parent_id, pack_size, expiry_date)
                 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING id
-            """, b_id, product.get("code"), product.get("name"), product.get("price", 0), product.get("cost_price", 0),
+            """, b_id, code, product.get("name"), product.get("price", 0), product.get("cost_price", 0),
                 product.get("stock", 0), product.get("min_stock", 5), product.get("iva", "21%"),
                 product.get("category_id"), 1 if product.get("is_virtual") else 0,
                 product.get("parent_id"), product.get("pack_size", 1), product.get("expiry_date", ""))
@@ -232,7 +234,7 @@ async def create_product(request: Request, product: dict = Body(...)) -> Dict[st
         async with aiosqlite.connect(main.DB_PATH) as db:
             cur = await db.execute(
                 "INSERT INTO products (code,name,price,cost_price,stock,min_stock,iva,category_id,is_virtual,parent_id,pack_size,expiry_date) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
-                (product.get("code"), product.get("name"), product.get("price", 0), product.get("cost_price", 0),
+                (code, product.get("name"), product.get("price", 0), product.get("cost_price", 0),
                  product.get("stock", 0), product.get("min_stock", 5), product.get("iva", "21%"),
                  product.get("category_id"), 1 if product.get("is_virtual") else 0,
                  product.get("parent_id"), product.get("pack_size", 1), product.get("expiry_date", ""))
