@@ -58,15 +58,6 @@ export default function Onboarding() {
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [showPwd, setShowPwd] = useState(false);
 
-  // Requisitos de contraseña (deben coincidir con el backend)
-  const pwdChecks = {
-    len: formData.password.length >= 10,
-    upper: /[A-Z]/.test(formData.password),
-    lower: /[a-z]/.test(formData.password),
-    digit: /[0-9]/.test(formData.password),
-    special: /[!@#$%^&*()_+\-=\[\]{}|;:,.<>?/~]/.test(formData.password),
-  };
-  const passwordValid = Object.values(pwdChecks).every(Boolean);
   const [formData, setFormData] = useState(() => {
     try {
       const saved = localStorage.getItem('minegocio_onboarding_form');
@@ -77,6 +68,17 @@ export default function Onboarding() {
     } catch {}
     return { prefijo: '+54', telefono: '', email: '', password: '', nombre: '', negocio: '', tipo: '', posPrevio: '', arca: '', objetivo: '' };
   });
+
+  // Requisitos de contraseña (deben coincidir con el backend)
+  const _pwd = formData.password || '';
+  const pwdChecks = {
+    len: _pwd.length >= 10,
+    upper: /[A-Z]/.test(_pwd),
+    lower: /[a-z]/.test(_pwd),
+    digit: /[0-9]/.test(_pwd),
+    special: /[!@#$%^&*()_+\-=\[\]{}|;:,.<>?/~]/.test(_pwd),
+  };
+  const passwordValid = Object.values(pwdChecks).every(Boolean);
 
   const TOTAL_STEPS = 9;
   const progress = (step / TOTAL_STEPS) * 100;
