@@ -23,8 +23,6 @@ export default function ChargeModal({
   confirmCharge, paymentRef,
   businessConfig, addToast, currentOperator
 }) {
-  if (!isCharging) return null;
-
   const finalTotal = adjustedTotal ?? total;
   const isConfirmDisabled =
     (!useSplitPayment && paymentMethod === 'efectivo' && (payment === '' || change < 0)) ||
@@ -33,6 +31,7 @@ export default function ChargeModal({
 
   const transferAlias = businessConfig?.catalogo_whatsapp || businessConfig?.mp_collector_id || null;
 
+  // El hook debe llamarse SIEMPRE (antes de cualquier return) para no violar las Reglas de Hooks
   useEffect(() => {
     if (!isCharging) return;
     const handler = (e) => {
@@ -42,6 +41,8 @@ export default function ChargeModal({
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [isCharging, isConfirmDisabled, confirmCharge, setIsCharging]);
+
+  if (!isCharging) return null;
 
   return (
     <div className="modal-overlay" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(30,58,95,0.85)', backdropFilter: 'blur(8px)', zIndex: 1000 }} role="dialog" aria-modal="true">
