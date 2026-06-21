@@ -55,6 +55,7 @@ export default function Onboarding() {
   const [direction, setDirection] = useState(1);
   const [registerLoading, setRegisterLoading] = useState(false);
   const [registerError, setRegisterError] = useState('');
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [formData, setFormData] = useState(() => {
     try {
       const saved = localStorage.getItem('minegocio_onboarding_form');
@@ -66,7 +67,7 @@ export default function Onboarding() {
     return { prefijo: '+54', telefono: '', email: '', nombre: '', negocio: '', tipo: '', posPrevio: '', arca: '', objetivo: '' };
   });
 
-  const TOTAL_STEPS = 8;
+  const TOTAL_STEPS = 9;
   const progress = (step / TOTAL_STEPS) * 100;
   
   const isLoggedIn = !!localStorage.getItem('saas_token');
@@ -133,7 +134,7 @@ export default function Onboarding() {
         localStorage.removeItem('minegocio_onboarding_pending');
         window.location.href = '/panel';
       } else {
-        const registerPassword = formData.telefono.replace(/[^0-9]/g, '').slice(-8).padStart(8, '0') + 'Aa1';
+        const registerPassword = formData.telefono.replace(/[^0-9]/g, '').slice(-8).padStart(8, '0') + 'Aa1!';
         const res = await fetch(`${baseUrl}/api/auth/register`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -250,30 +251,33 @@ export default function Onboarding() {
         );
       case 6:
         return (
-          <div style={{ animation: 'fadeIn 0.3s ease', display: 'flex', flexDirection: 'column', gap: 20 }}>
-            <div>
-              <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#fff', marginBottom: 8 }}>Tu experiencia</h2>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {['Si, actualmente uso uno', 'Lo use en el pasado', 'No, siempre use cuaderno / memoria'].map((opt, i) => (
-                   <button key={i} onClick={() => { setFormData({ ...formData, posPrevio: opt }); }} style={{ background: formData.posPrevio === opt ? 'rgba(20,187,166,0.15)' : 'rgba(255,255,255,0.03)', border: formData.posPrevio === opt ? '1px solid var(--lp-primary)' : '1px solid rgba(255,255,255,0.1)', padding: '14px 16px', borderRadius: 10, cursor: 'pointer', color: '#fff', fontSize: '0.95rem', fontWeight: 600, textAlign: 'left', transition: 'all 0.2s' }}>
-                     {opt}
-                   </button>
-                ))}
-              </div>
-            </div>
-            <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 18 }}>
-              <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#fff', marginBottom: 8 }}>Facturacion (selecciona para continuar)</h2>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {['Si, necesito emitir facturas electronicas', 'No, facturo por mi cuenta / no facturo', 'No lo se todavia'].map((opt, i) => (
-                   <button key={i} onClick={() => { setFormData({ ...formData, arca: opt }); handleNext(); }} style={{ background: formData.arca === opt ? 'rgba(20,187,166,0.15)' : 'rgba(255,255,255,0.03)', border: formData.arca === opt ? '1px solid var(--lp-primary)' : '1px solid rgba(255,255,255,0.1)', padding: '14px 16px', borderRadius: 10, cursor: 'pointer', color: '#fff', fontSize: '0.95rem', fontWeight: 600, textAlign: 'left', transition: 'all 0.2s' }}>
-                     {opt}
-                   </button>
-                ))}
-              </div>
+          <div style={{ animation: 'fadeIn 0.3s ease' }}>
+            <h2 style={{ fontSize: '1.8rem', fontWeight: 800, color: '#fff', marginBottom: 12 }}>¿Usaste un sistema de ventas antes?</h2>
+            <p style={{ color: 'var(--lp-text-muted)', fontSize: '0.95rem', marginBottom: 32 }}>Contanos tu experiencia para adaptar el sistema a tu nivel.</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 32 }}>
+              {['Si, actualmente uso uno', 'Lo use en el pasado', 'No, siempre use cuaderno / memoria'].map((opt, i) => (
+                 <button key={i} onClick={() => { setFormData({ ...formData, posPrevio: opt }); handleNext(); }} style={{ background: formData.posPrevio === opt ? 'rgba(20,187,166,0.15)' : 'rgba(255,255,255,0.03)', border: formData.posPrevio === opt ? '1px solid var(--lp-primary)' : '1px solid rgba(255,255,255,0.1)', padding: '16px 20px', borderRadius: 12, cursor: 'pointer', color: '#fff', fontSize: '0.95rem', fontWeight: 600, textAlign: 'left', transition: 'all 0.2s' }}>
+                   {opt}
+                 </button>
+              ))}
             </div>
           </div>
         );
       case 7:
+        return (
+          <div style={{ animation: 'fadeIn 0.3s ease' }}>
+            <h2 style={{ fontSize: '1.8rem', fontWeight: 800, color: '#fff', marginBottom: 12 }}>¿Necesitás emitir facturas electrónicas?</h2>
+            <p style={{ color: 'var(--lp-text-muted)', fontSize: '0.95rem', marginBottom: 32 }}>Así sabemos si tenés que conectar tu cuenta con ARCA (ex AFIP).</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 32 }}>
+              {['Si, necesito emitir facturas electronicas', 'No, facturo por mi cuenta / no facturo', 'No lo se todavia'].map((opt, i) => (
+                 <button key={i} onClick={() => { setFormData({ ...formData, arca: opt }); handleNext(); }} style={{ background: formData.arca === opt ? 'rgba(20,187,166,0.15)' : 'rgba(255,255,255,0.03)', border: formData.arca === opt ? '1px solid var(--lp-primary)' : '1px solid rgba(255,255,255,0.1)', padding: '16px 20px', borderRadius: 12, cursor: 'pointer', color: '#fff', fontSize: '0.95rem', fontWeight: 600, textAlign: 'left', transition: 'all 0.2s' }}>
+                   {opt}
+                 </button>
+              ))}
+            </div>
+          </div>
+        );
+      case 8:
         return (
           <div style={{ animation: 'fadeIn 0.3s ease' }}>
             <h2 style={{ fontSize: '1.8rem', fontWeight: 800, color: '#fff', marginBottom: 12 }}>¿Qué buscás resolver principalmente?</h2>
@@ -287,7 +291,7 @@ export default function Onboarding() {
             </div>
           </div>
         );
-      case 8:
+      case 9:
         return (
           <div style={{ animation: 'fadeIn 0.5s ease', textAlign: 'center' }}>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 24 }}>
@@ -307,7 +311,21 @@ export default function Onboarding() {
               </div>
             )}
 
-            <button onClick={handleComplete} disabled={registerLoading} className="lp-btn lp-btn--primary" style={{ width: '100%', padding: '20px', fontSize: '1.2rem', boxShadow: '0 0 30px rgba(15,138,125, 0.4)', opacity: registerLoading ? 0.6 : 1, cursor: registerLoading ? 'not-allowed' : 'pointer' }}>
+            {/* Consentimiento — Ley 25.326 */}
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 20, cursor: 'pointer', textAlign: 'left' }} onClick={() => setTermsAccepted(v => !v)}>
+              <div style={{ width: 20, height: 20, borderRadius: 5, border: `2px solid ${termsAccepted ? 'var(--lp-primary)' : 'rgba(255,255,255,0.25)'}`, background: termsAccepted ? 'rgba(20,187,166,0.2)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2, transition: 'all 0.2s' }}>
+                {termsAccepted && <svg width="12" height="12" fill="none" stroke="var(--lp-primary)" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>}
+              </div>
+              <span style={{ fontSize: '0.82rem', color: 'rgba(230,255,251,0.6)', lineHeight: 1.5, userSelect: 'none' }}>
+                Leí y acepto los{' '}
+                <span onClick={e => { e.stopPropagation(); window.open('/terminos', '_blank'); }} style={{ color: 'var(--lp-primary)', fontWeight: 600, textDecoration: 'underline', textUnderlineOffset: 2 }}>Términos y Condiciones</span>
+                {' '}y la{' '}
+                <span onClick={e => { e.stopPropagation(); window.open('/privacidad', '_blank'); }} style={{ color: 'var(--lp-primary)', fontWeight: 600, textDecoration: 'underline', textUnderlineOffset: 2 }}>Política de Privacidad</span>
+                , incluyendo el tratamiento de mis datos personales según la Ley 25.326.
+              </span>
+            </label>
+
+            <button onClick={handleComplete} disabled={registerLoading || !termsAccepted} className="lp-btn lp-btn--primary" style={{ width: '100%', padding: '20px', fontSize: '1.2rem', boxShadow: termsAccepted ? '0 0 30px rgba(15,138,125, 0.4)' : 'none', opacity: (registerLoading || !termsAccepted) ? 0.5 : 1, cursor: (registerLoading || !termsAccepted) ? 'not-allowed' : 'pointer' }}>
               {registerLoading ? 'Creando cuenta...' : 'Entrar al Sistema'} {!registerLoading && <Svg.ArrowRight />}
             </button>
           </div>
