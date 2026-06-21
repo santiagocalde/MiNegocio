@@ -3,6 +3,11 @@ Templates de email unificados para MiNegocio.
 Usado por email_service.py, auth.py, y system.py.
 """
 import os
+import html as _html
+
+def _e(value: str) -> str:
+    """Escapa HTML para uso seguro en templates de email."""
+    return _html.escape(str(value) if value else "", quote=True)
 
 LOGO_URL = "https://mi-negocio.app/MiNegocio_transparente_real.png"
 WHATSAPP_NUMBER = "5491144276384"
@@ -92,7 +97,7 @@ def trial_welcome_template(business_name: str) -> str:
     return base_template(
         "Bienvenido a MiNegocio!",
         f"""
-        <p style="margin:0 0 14px">Hola <strong style="color:#F1F5F9">{business_name}</strong>,</p>
+        <p style="margin:0 0 14px">Hola <strong style="color:#F1F5F9">{_e(business_name)}</strong>,</p>
         <p style="margin:0 0 14px">Tu periodo de prueba de <strong style="color:#14BBA6">7 dias</strong> ya esta activo. Podes usar todas las funciones sin restricciones.</p>
         <p style="margin:0 0 6px;color:#94A3B8;font-size:14px">Que incluye:</p>
         <table cellpadding="0" cellspacing="0" style="margin-bottom:18px">
@@ -113,7 +118,7 @@ def trial_reminder_template(business_name: str, days_left: int) -> str:
         return base_template(
             "Tu prueba gratuita ha finalizado",
             f"""
-            <p style="margin:0 0 14px">Hola <strong style="color:#F1F5F9">{business_name}</strong>,</p>
+            <p style="margin:0 0 14px">Hola <strong style="color:#F1F5F9">{_e(business_name)}</strong>,</p>
             <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.15);border-radius:10px;padding:14px 18px;margin-bottom:18px">
               <p style="color:#FCA5A5;font-size:14px;font-weight:600;margin:0">Tu periodo de prueba gratuito de 7 dias ha finalizado.</p>
             </div>
@@ -128,7 +133,7 @@ def trial_reminder_template(business_name: str, days_left: int) -> str:
         return base_template(
             f"Quedan {days_left} dias de tu prueba",
             f"""
-            <p style="margin:0 0 14px">Hola <strong style="color:#F1F5F9">{business_name}</strong>,</p>
+            <p style="margin:0 0 14px">Hola <strong style="color:#F1F5F9">{_e(business_name)}</strong>,</p>
             <div style="background:rgba({ '245,158,11' if days_left <= 2 else '20,187,166' },0.08);border:1px solid rgba({ '245,158,11' if days_left <= 2 else '20,187,166' },0.15);border-radius:10px;padding:14px 18px;margin-bottom:18px">
               <p style="color:{urgency_color};font-size:16px;font-weight:700;margin:0">Te quedan <span style="font-size:22px">{days_left}</span> dia{"s" if days_left != 1 else ""} de prueba gratuita.</p>
             </div>
@@ -145,9 +150,9 @@ def plan_activated_template(business_name: str, plan_name: str, plan_features: l
     return base_template(
         f"Plan {plan_name} activado!",
         f"""
-        <p style="margin:0 0 14px">Hola <strong style="color:#F1F5F9">{business_name}</strong>,</p>
+        <p style="margin:0 0 14px">Hola <strong style="color:#F1F5F9">{_e(business_name)}</strong>,</p>
         <div style="background:rgba(20,187,166,0.08);border:1px solid rgba(20,187,166,0.15);border-radius:10px;padding:14px 18px;margin-bottom:18px">
-          <p style="color:#14BBA6;font-size:16px;font-weight:700;margin:0">Tu suscripcion <strong>Plan {plan_name}</strong> ({period}) esta activa.</p>
+          <p style="color:#14BBA6;font-size:16px;font-weight:700;margin:0">Tu suscripcion <strong>Plan {_e(plan_name)}</strong> ({_e(period)}) esta activa.</p>
         </div>
         <p style="margin:0 0 10px;color:#CBD5E1">Estos son tus beneficios:</p>
         <table cellpadding="0" cellspacing="0" style="margin-bottom:18px">

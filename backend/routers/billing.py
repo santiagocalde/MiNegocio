@@ -2,6 +2,8 @@ from fastapi import APIRouter, Request, HTTPException, Depends
 from pydantic import BaseModel
 import httpx
 import os
+import hmac
+import hashlib
 import logging
 from db import get_pool
 from jose import jwt
@@ -13,7 +15,8 @@ logger = logging.getLogger("NovaStock")
 billing_limiter = Limiter(key_func=get_remote_address)
 
 MP_ACCESS_TOKEN = os.environ.get("MP_ACCESS_TOKEN", "")
-JWT_SECRET = os.environ.get("JWT_SECRET", "ta1P4pMAryFH5_lDGf-8GmbTSBrMWg5uYheoWg93s1o")
+MP_WEBHOOK_SECRET = os.environ.get("MP_WEBHOOK_SECRET", "")
+JWT_SECRET = os.environ.get("JWT_SECRET", "dev-insecure-change-me")
 
 class SubscribeRequest(BaseModel):
     plan_id: str
@@ -96,19 +99,45 @@ async def create_subscription(body: SubscribeRequest, request: Request):
             logger.info(f"Preapproval MP creado: {preapproval_id} para {biz_id} (plan: {body.plan_id})")
         return {"init_point": data["init_point"], "subscription_id": preapproval_id}
 
+def _verify_mp_signature(request: Request, data_id: str) -> bool:
+    """Verifica la firma HMAC-SHA256 que MercadoPago envía en x-signature."""
+    if not MP_WEBHOOK_SECRET:
+        logger.warning("MP_WEBHOOK_SECRET no configurado — firma del webhook no verificada")
+        return True  # degradar con gracia hasta configurar el secret
+    sig_header = request.headers.get("x-signature", "")
+    request_id = request.headers.get("x-request-id", "")
+    ts = ""
+    v1 = ""
+    for part in sig_header.split(","):
+        part = part.strip()
+        if part.startswith("ts="):
+            ts = part[3:]
+        elif part.startswith("v1="):
+            v1 = part[3:]
+    if not ts or not v1:
+        return False
+    manifest = f"id:{data_id};request-id:{request_id};ts:{ts}"
+    expected = hmac.new(MP_WEBHOOK_SECRET.encode(), manifest.encode(), hashlib.sha256).hexdigest()
+    return hmac.compare_digest(expected, v1)
+
+
 @router.post("/webhook")
 async def mercadopago_webhook(request: Request):
     """
     Webhook que recibe notificaciones de MercadoPago.
-    Verifica el estado real del preapproval y actualiza la DB.
+    Verifica firma HMAC y luego consulta el estado real del preapproval.
     """
     try:
         body = await request.json()
     except Exception:
         body = {}
-        
+
     action = body.get("action")
     data_id = body.get("data", {}).get("id")
+
+    if data_id and not _verify_mp_signature(request, str(data_id)):
+        logger.warning(f"Webhook MP rechazado: firma inválida para data_id={data_id}")
+        raise HTTPException(status_code=400, detail="Firma inválida")
 
     if action in ("created", "updated"):
         if data_id and MP_ACCESS_TOKEN:
