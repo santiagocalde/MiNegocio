@@ -26,6 +26,41 @@ async def get_config() -> dict:
             return row_to_dict(row, cur.description) if row else {}
 
 
+@router.get("/api/catalogo", summary="Catálogo público de un comercio (sin auth)")
+async def public_catalogo(slug: str = Query("")) -> dict:
+    """Endpoint PÚBLICO (sin token). Devuelve solo datos no sensibles del catálogo
+    de un comercio que tenga el catálogo activado. Nunca expone costo, stock ni
+    datos internos del negocio."""
+    import re
+    slug = re.sub(r"[^a-z0-9-]", "", (slug or "").strip().lower())[:60]
+    if not slug:
+        raise HTTPException(404, detail="Catálogo no encontrado")
+    if not USE_PG:
+        return {"nombre": "Catálogo", "catalogo_whatsapp": "", "products": []}
+
+    from db_helpers import get_pg_pool
+    pool = await get_pg_pool()
+    async with pool.acquire() as conn:
+        cfg = await conn.fetchrow(
+            "SELECT business_id, nombre, catalogo_whatsapp FROM business_config "
+            "WHERE catalogo_slug = $1 AND catalogo_activo = 1 LIMIT 1",
+            slug,
+        )
+        if not cfg:
+            raise HTTPException(404, detail="Catálogo no disponible")
+        prods = await conn.fetch(
+            "SELECT id, name, price, category_id FROM products "
+            "WHERE business_id = $1 AND is_active = 1 AND price > 0 "
+            "ORDER BY name LIMIT 2000",
+            cfg["business_id"],
+        )
+        return {
+            "nombre": cfg["nombre"] or "Catálogo",
+            "catalogo_whatsapp": cfg["catalogo_whatsapp"] or "",
+            "products": [dict(p) for p in prods],
+        }
+
+
 @router.put("/api/config", summary="Actualizar configuracion del negocio")
 async def update_config(data: dict) -> dict:
     iva_rate_raw = data.get("iva_rate")
@@ -39,21 +74,34 @@ async def update_config(data: dict) -> dict:
         raise HTTPException(400, detail="CUIT demasiado largo")
     
     if USE_PG:
+        import re
         from db_helpers import get_pg_pool
+        # Alias de los nombres que usa el frontend del catálogo
+        if "name" in data and "nombre" not in data: data["nombre"] = data["name"]
+        if "whatsapp" in data and "catalogo_whatsapp" not in data: data["catalogo_whatsapp"] = data["whatsapp"]
+        if "slug" in data and "catalogo_slug" not in data: data["catalogo_slug"] = data["slug"]
+        if data.get("catalogo_slug"):
+            data["catalogo_slug"] = re.sub(r"[^a-z0-9-]", "", str(data["catalogo_slug"]).strip().lower())[:60]
+        if "catalogo_activo" in data:
+            data["catalogo_activo"] = 1 if data["catalogo_activo"] in (True, 1, "1", "true", "True") else 0
+
+        COLS = ["nombre", "subtitulo", "direccion", "telefono", "cuit", "condicion_iva",
+                "numero_caja", "mensaje_ticket", "iva_rate", "mp_access_token", "mp_collector_id",
+                "catalogo_activo", "catalogo_slug", "catalogo_whatsapp"]
         pool = await get_pg_pool()
         async with pool.acquire() as conn:
             b_id = _biz_id()
             async with conn.transaction():
-                await conn.execute("DELETE FROM business_config WHERE business_id = $1", b_id)
-                await conn.execute("""
-                    INSERT INTO business_config (business_id, nombre, subtitulo, direccion, telefono, cuit, condicion_iva, numero_caja, mensaje_ticket, iva_rate, mp_access_token, mp_collector_id)
-                    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
-                    ON CONFLICT (business_id) DO UPDATE SET
-                        nombre=$2, subtitulo=$3, direccion=$4, telefono=$5, cuit=$6, condicion_iva=$7, numero_caja=$8, mensaje_ticket=$9, iva_rate=$10, mp_access_token=$11, mp_collector_id=$12
-                """,
-                    b_id, data.get("nombre"), data.get("subtitulo"), data.get("direccion"), data.get("telefono"),
-                    data.get("cuit"), data.get("condicion_iva"), data.get("numero_caja"), data.get("mensaje_ticket"),
-                    data.get("iva_rate"), data.get("mp_access_token"), data.get("mp_collector_id")
+                # Merge no destructivo: lo enviado pisa, lo no enviado se conserva
+                existing = await conn.fetchrow("SELECT * FROM business_config WHERE business_id = $1", b_id)
+                cur = dict(existing) if existing else {}
+                merged = {c: (data[c] if c in data else cur.get(c)) for c in COLS}
+                placeholders = ", ".join(f"${i + 2}" for i in range(len(COLS)))
+                setters = ", ".join(f"{c}=EXCLUDED.{c}" for c in COLS)
+                await conn.execute(
+                    f"INSERT INTO business_config (business_id, {', '.join(COLS)}) VALUES ($1, {placeholders}) "
+                    f"ON CONFLICT (business_id) DO UPDATE SET {setters}",
+                    b_id, *[merged[c] for c in COLS]
                 )
         return {"success": True}
     else:
