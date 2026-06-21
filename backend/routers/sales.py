@@ -32,7 +32,8 @@ def _sqlite_now():
 
 
 def _pg_now():
-    return "now()"
+    # datetime real: _now() se usa como parámetro bind ($1), no interpolado en SQL
+    return datetime.now(timezone.utc)
 
 
 def _now():
@@ -313,25 +314,30 @@ async def create_sale(body: SaleCreate, idempotency_key: Optional[str] = Query(N
                     logger.warning(f"Venta #{sale_id}: total DB={db_total} vs frontend={total_sale} (diferencia={round(db_total-total_sale,2)})")
 
                 if body.is_fiado and body.fiado_name:
-                    cust = await conn.fetchrow("SELECT id FROM customers WHERE name = $1 AND business_id = $2", body.fiado_name, b_id)
-                    if not cust:
-                        cust_row = await conn.fetchrow(
-                            "INSERT INTO customers (business_id, name) VALUES ($1,$2) ON CONFLICT DO NOTHING RETURNING id",
-                            b_id, body.fiado_name
-                        )
-                        if not cust_row:
-                            cust_row = await conn.fetchrow("SELECT id FROM customers WHERE name = $1 AND business_id = $2", body.fiado_name, b_id)
-                        cust_id = cust_row["id"] if cust_row else None
-                    else:
-                        cust_id = cust["id"]
-                    if cust_id:
-                        await conn.execute("UPDATE customers SET balance = balance + $1 WHERE id = $2", total_sale, cust_id)
-                        await conn.execute(
-                            "INSERT INTO customer_transactions (business_id, customer_id, amount, type, description, turn_id, operator) VALUES ($1,$2,$3,'sale',$4,$5,$6)",
-                            b_id, cust_id, total_sale, f"Venta Fiada #{sale_id}", body.turn_id, body.operator
-                        )
+                    # Deuda = parte NO pagada (total - lo abonado ahora).
+                    # Fiado completo -> primary_payment 0 -> deuda = total.
+                    fiado_debt = round(total_sale - primary_payment, 2)
+                    fiado_name = body.fiado_name.strip()
+                    if fiado_debt > 0 and fiado_name:
+                        cust = await conn.fetchrow("SELECT id FROM customers WHERE name = $1 AND business_id = $2", fiado_name, b_id)
+                        if not cust:
+                            cust_row = await conn.fetchrow(
+                                "INSERT INTO customers (business_id, name) VALUES ($1,$2) ON CONFLICT DO NOTHING RETURNING id",
+                                b_id, fiado_name
+                            )
+                            if not cust_row:
+                                cust_row = await conn.fetchrow("SELECT id FROM customers WHERE name = $1 AND business_id = $2", fiado_name, b_id)
+                            cust_id = cust_row["id"] if cust_row else None
+                        else:
+                            cust_id = cust["id"]
+                        if cust_id:
+                            await conn.execute("UPDATE customers SET balance = balance + $1 WHERE id = $2", fiado_debt, cust_id)
+                            await conn.execute(
+                                "INSERT INTO customer_transactions (business_id, customer_id, amount, type, description, turn_id, operator) VALUES ($1,$2,$3,'sale',$4,$5,$6)",
+                                b_id, cust_id, fiado_debt, f"Venta Fiada #{sale_id}", body.turn_id, body.operator
+                            )
 
-                await events.emit("sale-created", {"id": sale_id, "business_id": b_id})
+                await events.emit("sale-created", {"id": sale_id, "business_id": b_id}, business_id=b_id)
                 return {"id": sale_id, "ticket": sale_id}
 
     else:
@@ -421,21 +427,24 @@ async def create_sale(body: SaleCreate, idempotency_key: Optional[str] = Query(N
                         )
 
                 if body.is_fiado and body.fiado_name:
-                    cur_c = await db.execute("SELECT id FROM customers WHERE name = ?", (body.fiado_name,))
-                    c_row = await cur_c.fetchone()
-                    if not c_row:
-                        ins_c = await db.execute("INSERT INTO customers (name) VALUES (?)", (body.fiado_name,))
-                        cust_id = ins_c.lastrowid
-                    else:
-                        cust_id = c_row[0]
-                    await db.execute("UPDATE customers SET balance = balance + ? WHERE id = ?", (total_sale, cust_id))
-                    await db.execute(
-                        "INSERT INTO customer_transactions (customer_id, amount, type, description, turn_id, operator) VALUES (?,?,?,?,?,?)",
-                        (cust_id, total_sale, 'sale', f"Venta Fiada #{sale_id}", body.turn_id, body.operator)
-                    )
+                    fiado_debt = round(total_sale - primary_payment, 2)
+                    fiado_name = body.fiado_name.strip()
+                    if fiado_debt > 0 and fiado_name:
+                        cur_c = await db.execute("SELECT id FROM customers WHERE name = ?", (fiado_name,))
+                        c_row = await cur_c.fetchone()
+                        if not c_row:
+                            ins_c = await db.execute("INSERT INTO customers (name) VALUES (?)", (fiado_name,))
+                            cust_id = ins_c.lastrowid
+                        else:
+                            cust_id = c_row[0]
+                        await db.execute("UPDATE customers SET balance = balance + ? WHERE id = ?", (fiado_debt, cust_id))
+                        await db.execute(
+                            "INSERT INTO customer_transactions (customer_id, amount, type, description, turn_id, operator) VALUES (?,?,?,?,?,?)",
+                            (cust_id, fiado_debt, 'sale', f"Venta Fiada #{sale_id}", body.turn_id, body.operator)
+                        )
 
                 await db.commit()
-                await events.emit("sale-created", {"id": sale_id, "business_id": b_id})
+                await events.emit("sale-created", {"id": sale_id, "business_id": b_id}, business_id=b_id)
                 return {"id": sale_id, "ticket": sale_id}
 
 
@@ -454,7 +463,7 @@ async def today_sales(sucursal_id: Optional[int] = Query(None)) -> dict:
                            COALESCE(SUM(CASE WHEN payment_method='tarjeta' THEN total ELSE 0 END),0) as total_tarjeta,
                            COALESCE(SUM(CASE WHEN payment_method='transferencia' THEN total ELSE 0 END),0) as total_transferencia,
                            COALESCE(SUM(CASE WHEN payment_method='mercadopago' THEN total ELSE 0 END),0) as total_mp
-                    FROM sales WHERE business_id = $1 AND timestamp::date=current_date AND sucursal_id = $2
+                    FROM sales WHERE business_id = $1 AND timestamp >= current_date AND timestamp < current_date + interval '1 day' AND sucursal_id = $2
                 """, b_id, sucursal_id)
             else:
                 row = await conn.fetchrow("""
@@ -464,7 +473,7 @@ async def today_sales(sucursal_id: Optional[int] = Query(None)) -> dict:
                            COALESCE(SUM(CASE WHEN payment_method='tarjeta' THEN total ELSE 0 END),0) as total_tarjeta,
                            COALESCE(SUM(CASE WHEN payment_method='transferencia' THEN total ELSE 0 END),0) as total_transferencia,
                            COALESCE(SUM(CASE WHEN payment_method='mercadopago' THEN total ELSE 0 END),0) as total_mp
-                    FROM sales WHERE business_id = $1 AND timestamp::date=current_date
+                    FROM sales WHERE business_id = $1 AND timestamp >= current_date AND timestamp < current_date + interval '1 day'
                 """, b_id)
             return dict(row) if row else {"total_tickets": 0, "total_vendido": 0, "total_fiado": 0, "total_efectivo": 0, "total_tarjeta": 0, "total_transferencia": 0, "total_mp": 0}
     else:
@@ -595,10 +604,14 @@ async def list_customers(q: Optional[str] = Query(None)) -> list:
 @router.get("/api/customers/{customer_id}/transactions", summary="Transacciones de cliente")
 async def customer_transactions(customer_id: int) -> list:
     if USE_PG:
+        b_id = _biz_id()
         from db_helpers import get_pg_pool
         pool = await get_pg_pool()
         async with pool.acquire() as conn:
-            rows = await conn.fetch("SELECT * FROM customer_transactions WHERE customer_id = $1 ORDER BY timestamp DESC", customer_id)
+            rows = await conn.fetch(
+                "SELECT * FROM customer_transactions WHERE customer_id = $1 AND business_id = $2 ORDER BY timestamp DESC",
+                customer_id, b_id
+            )
             return [dict(r) for r in rows]
     else:
         import aiosqlite
