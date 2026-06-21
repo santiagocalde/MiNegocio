@@ -127,7 +127,7 @@ async def admin_businesses(
         params.extend([limit, offset])
         rows = await conn.fetch(f"""
             SELECT b.id, b.email, b.business_name, b.plan, b.status, b.phone,
-                   b.created_at, b.updated_at,
+                   b.owner_name, b.business_type, b.created_at, b.updated_at,
                    (SELECT COUNT(*) FROM operators WHERE business_id = b.id) as operators_count,
                    (SELECT MAX(timestamp) FROM sales WHERE business_id = b.id) as last_sale
             FROM businesses b WHERE {where}
@@ -406,6 +406,30 @@ async def admin_metrics(admin: dict = Depends(verify_superadmin)) -> dict:
 # ────────────────────────────────────────────────────────────
 # NEGOCIOS EN RIESGO (atención comercial)
 # ────────────────────────────────────────────────────────────
+
+@router.get("/api/admin/insights", summary="Insights del onboarding")
+async def admin_insights(admin: dict = Depends(verify_superadmin)) -> dict:
+    """Distribución de lo que completan los negocios en el onboarding:
+    qué rubros, qué buscan resolver, si necesitan facturar y su experiencia previa."""
+    pool = await _get_pool()
+    async with pool.acquire() as conn:
+        async def distrib(col: str):
+            rows = await conn.fetch(
+                f"""SELECT COALESCE(NULLIF(TRIM({col}), ''), 'Sin completar') AS label,
+                           COUNT(*) AS count
+                    FROM businesses
+                    GROUP BY label
+                    ORDER BY count DESC, label ASC"""
+            )
+            return [{"label": r["label"], "count": r["count"]} for r in rows]
+
+        return {
+            "by_type": await distrib("business_type"),
+            "by_objective": await distrib("objective"),
+            "by_arca": await distrib("needs_arca"),
+            "by_prior_pos": await distrib("prior_pos"),
+        }
+
 
 @router.get("/api/admin/at-risk", summary="Negocios que requieren atención")
 async def admin_at_risk(admin: dict = Depends(verify_superadmin)) -> dict:

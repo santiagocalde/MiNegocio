@@ -24,9 +24,10 @@ async def get_pool() -> asyncpg.Pool:
             dsn = DATABASE_URL or f"postgresql://{PG_CONFIG['user']}:{PG_CONFIG['password']}@{PG_CONFIG['host']}:{PG_CONFIG['port']}/{PG_CONFIG['database']}"
             _pool = await asyncpg.create_pool(
                 dsn=dsn,
-                min_size=4,
-                max_size=20,
+                min_size=8,
+                max_size=50,  # headroom para 100+ kioscos (PG max_connections=100, 1 worker)
                 command_timeout=30,
+                max_inactive_connection_lifetime=300,  # recicla conexiones idle (5 min)
             )
             logger.info(f"Pool PostgreSQL creado en {PG_CONFIG['host']}:{PG_CONFIG['port']}/{PG_CONFIG['database']}")
         except Exception as e:
@@ -198,6 +199,8 @@ async def init_pg() -> None:
             CREATE INDEX IF NOT EXISTS idx_sales_business_id ON sales(business_id);
             CREATE INDEX IF NOT EXISTS idx_sales_timestamp ON sales(timestamp);
             CREATE INDEX IF NOT EXISTS idx_sales_idempotency ON sales(idempotency_key);
+            -- Compuesto: acelera /sales/today y reportes por rango (filtro tenant + fecha)
+            CREATE INDEX IF NOT EXISTS idx_sales_business_timestamp ON sales(business_id, timestamp);
 
             CREATE TABLE IF NOT EXISTS sale_items (
                 id              SERIAL PRIMARY KEY,
@@ -210,6 +213,7 @@ async def init_pg() -> None:
                 item_discount   REAL DEFAULT 0
             );
             CREATE INDEX IF NOT EXISTS idx_sale_items_sale_id ON sale_items(sale_id);
+            CREATE INDEX IF NOT EXISTS idx_sale_items_business ON sale_items(business_id);
 
             CREATE TABLE IF NOT EXISTS customers (
                 id              SERIAL PRIMARY KEY,
@@ -233,6 +237,7 @@ async def init_pg() -> None:
                 timestamp       TIMESTAMPTZ DEFAULT now()
             );
             CREATE INDEX IF NOT EXISTS idx_customer_transactions_customer ON customer_transactions(customer_id);
+            CREATE INDEX IF NOT EXISTS idx_customer_tx_business ON customer_transactions(business_id);
 
             CREATE TABLE IF NOT EXISTS suppliers (
                 id              SERIAL PRIMARY KEY,
@@ -341,6 +346,12 @@ async def init_pg() -> None:
                 print_config    TEXT
             );
             ALTER TABLE businesses ADD COLUMN IF NOT EXISTS phone TEXT DEFAULT '';
+            ALTER TABLE businesses ADD COLUMN IF NOT EXISTS terms_accepted_at TIMESTAMPTZ;
+            ALTER TABLE businesses ADD COLUMN IF NOT EXISTS owner_name TEXT DEFAULT '';
+            ALTER TABLE businesses ADD COLUMN IF NOT EXISTS business_type TEXT DEFAULT '';
+            ALTER TABLE businesses ADD COLUMN IF NOT EXISTS prior_pos TEXT DEFAULT '';
+            ALTER TABLE businesses ADD COLUMN IF NOT EXISTS needs_arca TEXT DEFAULT '';
+            ALTER TABLE businesses ADD COLUMN IF NOT EXISTS objective TEXT DEFAULT '';
             ALTER TABLE business_config ADD COLUMN IF NOT EXISTS print_config TEXT;
             ALTER TABLE sale_items ALTER COLUMN product_id DROP NOT NULL;
 

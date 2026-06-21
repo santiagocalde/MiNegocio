@@ -170,6 +170,7 @@ export default function AdminPage() {
               { key: 'products', label: 'Productos', icon: <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.3,7 12,12 20.7,7"/><line x1="12" y1="22" x2="12" y2="12"/></svg> },
               { key: 'activity', label: 'Actividad', icon: <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/></svg> },
               { key: 'audit', label: 'Auditoria', icon: <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> },
+              { key: 'insights', label: 'Insights', icon: <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path d="M2 12h4l3 8 4-16 3 8h4"/></svg> },
             ].map(t => (
               <button key={t.key} onClick={() => setTab(t.key)} style={S.btn(tab === t.key)}>
                 {t.icon} {t.label}
@@ -188,6 +189,7 @@ export default function AdminPage() {
         {tab === 'businesses' && <Businesses token={token} toast={s} />}
         {tab === 'activity' && <ActivityFeed token={token} />}
         {tab === 'audit' && <Audit token={token} />}
+        {tab === 'insights' && <Insights token={token} />}
         {tab === 'products' && <ProductsManager token={token} toast={s} />}
       </main>
     </div>
@@ -499,7 +501,7 @@ function Businesses({ token, toast }) {
               <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(20,187,166,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(20,187,166,0.15)' }}>
                 <svg width="18" height="18" fill="none" stroke={ACCENT} viewBox="0 0 24 24" strokeWidth="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
               </div>
-              <div><h2 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#F1F5F9', margin: 0 }}>{detail.business_name}</h2><span style={{ color: MUTED, fontSize: '0.8rem' }}>{detail.email}</span></div>
+              <div><h2 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#F1F5F9', margin: 0 }}>{detail.business_name}</h2><span style={{ color: MUTED, fontSize: '0.8rem' }}>{detail.owner_name ? `${detail.owner_name} · ` : ''}{detail.email}</span></div>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
               {[['Plan','plan','plan'],['Estado','status','status'],['WhatsApp','phone','phone'],['Productos','products_count'],['Ventas','sales_count'],['Operadores','operators_count'],['Creado','created_at','date'],['Ultima venta','last_sale','date']].map(([l,k,t]) => (
@@ -514,7 +516,20 @@ function Businesses({ token, toast }) {
                 </div>
               ))}
             </div>
-            <div style={{ marginTop: 18, padding: '14px 16px', background: 'rgba(20,187,166,0.03)', borderRadius: 10, border: '1px solid rgba(20,187,166,0.1)' }}>
+            {(detail.business_type || detail.objective || detail.needs_arca || detail.prior_pos) && (
+              <div style={{ marginTop: 16, padding: '14px 16px', background: 'rgba(96,165,250,0.04)', borderRadius: 10, border: '1px solid rgba(96,165,250,0.12)' }}>
+                <div style={{ color: '#94A3B8', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 10 }}>Qué dijo en el onboarding</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+                  {[['Rubro', detail.business_type], ['Quiere resolver', detail.objective], ['Facturación', detail.needs_arca], ['Experiencia previa', detail.prior_pos]].filter(([, v]) => v).map(([l, v]) => (
+                    <div key={l} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: '0.8rem' }}>
+                      <span style={{ color: MUTED, flexShrink: 0 }}>{l}</span>
+                      <span style={{ color: TEXT, fontWeight: 600, textAlign: 'right' }}>{v}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            <div style={{ marginTop: 16, padding: '14px 16px', background: 'rgba(20,187,166,0.03)', borderRadius: 10, border: '1px solid rgba(20,187,166,0.1)' }}>
               <div style={{ color: '#94A3B8', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 10 }}>Extender prueba / plan</div>
               <div style={{ display: 'flex', gap: 8 }}>
                 {[7, 15, 30].map(d => (
@@ -530,6 +545,77 @@ function Businesses({ token, toast }) {
   );
 }
 
+
+/* ─── Insights del Onboarding ─── */
+function DistribCard({ title, subtitle, rows }) {
+  const total = (rows || []).reduce((s, r) => s + (r.count || 0), 0) || 1;
+  const colors = ['#14BBA6', '#3B82F6', '#F59E0B', '#10B981', '#8B5CF6', '#EC4899', '#F97316', '#06B6D4'];
+  return (
+    <div style={S.card}>
+      <div style={{ marginBottom: 16 }}>
+        <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#F1F5F9', margin: 0 }}>{title}</h3>
+        {subtitle && <p style={{ color: MUTED, fontSize: '0.76rem', margin: '3px 0 0' }}>{subtitle}</p>}
+      </div>
+      {(!rows || rows.length === 0) ? (
+        <div style={{ color: MUTED, fontSize: '0.82rem', padding: '20px 0', textAlign: 'center' }}>Sin datos todavía</div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
+          {rows.map((r, i) => {
+            const pct = Math.round((r.count / total) * 100);
+            const isEmpty = r.label === 'Sin completar';
+            const color = isEmpty ? MUTED : colors[i % colors.length];
+            return (
+              <div key={r.label}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: '0.82rem' }}>
+                  <span style={{ color: isEmpty ? MUTED : TEXT, fontWeight: 600, fontStyle: isEmpty ? 'italic' : 'normal' }}>{r.label}</span>
+                  <span style={{ color: MUTED, fontWeight: 600 }}>{r.count} · {pct}%</span>
+                </div>
+                <div style={{ height: 7, background: 'rgba(255,255,255,0.04)', borderRadius: 4, overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: 4, transition: 'width 0.4s ease' }} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Insights({ token }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      setLoading(true);
+      try {
+        const res = await fetchAdmin(`${API}/insights`, token);
+        if (res.ok && alive) setData(await res.json());
+      } catch {}
+      if (alive) setLoading(false);
+    })();
+    return () => { alive = false; };
+  }, [token]);
+
+  if (loading) return <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 18 }}>{Array.from({ length: 4 }).map((_, i) => <div key={i} style={{ ...S.card, height: 200 }} />)}</div>;
+
+  return (
+    <div>
+      <div style={{ marginBottom: 20 }}>
+        <h2 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#F1F5F9', margin: 0 }}>Qué quieren los negocios</h2>
+        <p style={{ color: MUTED, fontSize: '0.82rem', margin: '4px 0 0' }}>Basado en lo que completan las personas durante el onboarding.</p>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 18 }}>
+        <DistribCard title="Rubros" subtitle="Tipo de negocio que abren" rows={data?.by_type} />
+        <DistribCard title="Qué buscan resolver" subtitle="Su objetivo principal" rows={data?.by_objective} />
+        <DistribCard title="Necesidad de facturar" subtitle="¿Necesitan ARCA / AFIP?" rows={data?.by_arca} />
+        <DistribCard title="Experiencia previa" subtitle="¿Usaron un sistema antes?" rows={data?.by_prior_pos} />
+      </div>
+    </div>
+  );
+}
 
 /* ─── Products Manager ─── */
 function ProductsManager({ token, toast }) {
