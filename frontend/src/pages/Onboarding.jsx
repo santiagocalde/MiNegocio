@@ -56,6 +56,17 @@ export default function Onboarding() {
   const [registerLoading, setRegisterLoading] = useState(false);
   const [registerError, setRegisterError] = useState('');
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [showPwd, setShowPwd] = useState(false);
+
+  // Requisitos de contraseña (deben coincidir con el backend)
+  const pwdChecks = {
+    len: formData.password.length >= 10,
+    upper: /[A-Z]/.test(formData.password),
+    lower: /[a-z]/.test(formData.password),
+    digit: /[0-9]/.test(formData.password),
+    special: /[!@#$%^&*()_+\-=\[\]{}|;:,.<>?/~]/.test(formData.password),
+  };
+  const passwordValid = Object.values(pwdChecks).every(Boolean);
   const [formData, setFormData] = useState(() => {
     try {
       const saved = localStorage.getItem('minegocio_onboarding_form');
@@ -64,7 +75,7 @@ export default function Onboarding() {
         if (parsed && typeof parsed === 'object') return parsed;
       }
     } catch {}
-    return { prefijo: '+54', telefono: '', email: '', nombre: '', negocio: '', tipo: '', posPrevio: '', arca: '', objetivo: '' };
+    return { prefijo: '+54', telefono: '', email: '', password: '', nombre: '', negocio: '', tipo: '', posPrevio: '', arca: '', objetivo: '' };
   });
 
   const TOTAL_STEPS = 9;
@@ -73,7 +84,10 @@ export default function Onboarding() {
   const isLoggedIn = !!localStorage.getItem('saas_token');
 
   useEffect(() => {
-    try { localStorage.setItem('minegocio_onboarding_form', JSON.stringify(formData)); } catch {}
+    try {
+      const { password, ...persist } = formData; // no persistir la contraseña en texto plano
+      localStorage.setItem('minegocio_onboarding_form', JSON.stringify(persist));
+    } catch {}
   }, [formData]);
 
   useEffect(() => {
@@ -134,13 +148,12 @@ export default function Onboarding() {
         localStorage.removeItem('minegocio_onboarding_pending');
         window.location.href = '/panel';
       } else {
-        const registerPassword = formData.telefono.replace(/[^0-9]/g, '').slice(-8).padStart(8, '0') + 'Aa1!';
         const res = await fetch(`${baseUrl}/api/auth/register`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             email: formData.email,
-            password: registerPassword,
+            password: formData.password,
             name: formData.nombre,
             business_name: formData.negocio,
             phone: `${formData.prefijo} ${formData.telefono}`,
@@ -209,10 +222,21 @@ export default function Onboarding() {
         if (isLoggedIn) return null;
         return (
           <div style={{ animation: 'fadeIn 0.3s ease' }}>
-            <h2 style={{ fontSize: '1.8rem', fontWeight: 800, color: '#fff', marginBottom: 12 }}>Tu correo electrónico</h2>
-            <p style={{ color: 'var(--lp-text-muted)', fontSize: '0.95rem', marginBottom: 32 }}>Este será el mail que uses para iniciar sesión en tu cuenta todos los días.</p>
-            <input type="email" placeholder="kiosco@ejemplo.com" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} style={{ width: '100%', padding: '16px 20px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, color: '#fff', fontSize: '1.1rem', outline: 'none', transition: 'all 0.2s', marginBottom: 32 }} onFocus={e => e.target.style.borderColor = 'var(--lp-primary)'} onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'} autoFocus />
-            <button onClick={handleNext} disabled={!formData.email.includes('@')} className="lp-btn lp-btn--primary" style={{ width: '100%', padding: '16px', fontSize: '1.1rem', opacity: !formData.email.includes('@') ? 0.5 : 1 }}>Continuar</button>
+            <h2 style={{ fontSize: '1.8rem', fontWeight: 800, color: '#fff', marginBottom: 12 }}>Creá tu acceso</h2>
+            <p style={{ color: 'var(--lp-text-muted)', fontSize: '0.95rem', marginBottom: 24 }}>Con estos datos vas a entrar a tu cuenta todos los días. Anotá la contraseña en un lugar seguro.</p>
+            <input type="email" placeholder="kiosco@ejemplo.com" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} style={{ width: '100%', padding: '16px 20px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, color: '#fff', fontSize: '1.1rem', outline: 'none', transition: 'all 0.2s', marginBottom: 14 }} onFocus={e => e.target.style.borderColor = 'var(--lp-primary)'} onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'} autoFocus />
+            <div style={{ position: 'relative', marginBottom: 16 }}>
+              <input type={showPwd ? 'text' : 'password'} placeholder="Tu contraseña" value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} style={{ width: '100%', padding: '16px 52px 16px 20px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, color: '#fff', fontSize: '1.1rem', outline: 'none', transition: 'all 0.2s' }} onFocus={e => e.target.style.borderColor = 'var(--lp-primary)'} onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'} />
+              <button type="button" onClick={() => setShowPwd(v => !v)} style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--lp-text-muted)', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}>{showPwd ? 'Ocultar' : 'Ver'}</button>
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 16px', marginBottom: 32 }}>
+              {[['len', '10+ caracteres'], ['upper', '1 mayúscula'], ['lower', '1 minúscula'], ['digit', '1 número'], ['special', '1 símbolo (!@#$)']].map(([k, l]) => (
+                <span key={k} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: '0.78rem', color: pwdChecks[k] ? '#10b981' : 'rgba(255,255,255,0.4)', transition: 'color 0.2s' }}>
+                  <span style={{ fontSize: '0.7rem' }}>{pwdChecks[k] ? '✓' : '○'}</span>{l}
+                </span>
+              ))}
+            </div>
+            <button onClick={handleNext} disabled={!formData.email.includes('@') || !passwordValid} className="lp-btn lp-btn--primary" style={{ width: '100%', padding: '16px', fontSize: '1.1rem', opacity: (!formData.email.includes('@') || !passwordValid) ? 0.5 : 1 }}>Continuar</button>
           </div>
         );
       case 3:
