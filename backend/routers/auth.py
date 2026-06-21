@@ -101,6 +101,30 @@ async def get_current_business(request: Request) -> dict | None:
         return None
 
 
+async def _preload_starter_catalog(conn, biz_id: str, business_type: str) -> int:
+    """Inserta categorías y productos típicos del rubro. Precios en 0 para que
+    el dueño los ajuste. Devuelve la cantidad de productos creados."""
+    from services.starter_catalog import get_starter_products
+    productos = get_starter_products(business_type)
+    if not productos:
+        return 0
+    cat_ids: dict = {}
+    creados = 0
+    for categoria, nombre in productos:
+        if categoria not in cat_ids:
+            cat_ids[categoria] = await conn.fetchval(
+                "INSERT INTO categories (business_id, name) VALUES ($1, $2) RETURNING id",
+                biz_id, categoria,
+            )
+        creados += 1
+        await conn.execute(
+            """INSERT INTO products (business_id, code, name, price, stock, category_id, is_active)
+               VALUES ($1, $2, $3, 0, 0, $4, 1)""",
+            biz_id, f"INIT-{creados:03d}", nombre, cat_ids[categoria],
+        )
+    return creados
+
+
 @router.post("/register", summary="Registro de nuevo comercio (SaaS)")
 @auth_limiter.limit("3/minute")
 async def auth_register(request: Request, body: BusinessCreate) -> dict:
@@ -118,15 +142,27 @@ async def auth_register(request: Request, body: BusinessCreate) -> dict:
         hashed_pw = bcrypt.hashpw(body.password.encode(), bcrypt.gensalt()).decode()
 
         row = await conn.fetchrow(
-            """INSERT INTO businesses (email, password_hash, business_name, plan, phone)
-               VALUES ($1, $2, $3, 'trial', $4)
+            """INSERT INTO businesses (email, password_hash, business_name, plan, phone, terms_accepted_at,
+                                       owner_name, business_type, prior_pos, needs_arca, objective)
+               VALUES ($1, $2, $3, 'trial', $4, now(), $5, $6, $7, $8, $9)
                RETURNING id, email, business_name, plan, status, phone""",
             body.email.lower().strip(),
             hashed_pw,
             body.business_name.strip() or body.name.strip() or "Mi Kiosco",
             body.phone or "",
+            body.name.strip(),
+            (body.business_type or "").strip(),
+            (body.prior_pos or "").strip(),
+            (body.needs_arca or "").strip(),
+            (body.objective or "").strip(),
         )
         biz_id, biz_email, biz_name, biz_plan, biz_status, biz_phone = row
+
+        # Precargar catálogo inicial según el rubro (nunca debe frenar el registro)
+        try:
+            await _preload_starter_catalog(conn, biz_id, body.business_type)
+        except Exception as e:
+            logger.warning(f"No se pudo precargar catálogo inicial para {biz_id}: {e}")
 
         default_pin = str(random.randint(1000, 9999))
         hashed_pin = bcrypt.hashpw(default_pin.encode(), bcrypt.gensalt()).decode()
@@ -203,10 +239,25 @@ async def complete_onboarding(body: CompleteOnboarding, business: dict = Depends
     pool = await get_pool()
     async with pool.acquire() as conn:
         await conn.execute(
-            "UPDATE businesses SET business_name = $1, phone = COALESCE(NULLIF($2, ''), phone) WHERE id = $3",
-            body.business_name.strip(), body.phone.strip(), business["sub"]
+            """UPDATE businesses SET business_name = $1,
+                   phone = COALESCE(NULLIF($2, ''), phone),
+                   business_type = $3, prior_pos = $4, needs_arca = $5, objective = $6
+               WHERE id = $7""",
+            body.business_name.strip(), body.phone.strip(),
+            (body.business_type or "").strip(), (body.prior_pos or "").strip(),
+            (body.needs_arca or "").strip(), (body.objective or "").strip(),
+            business["sub"],
         )
-    
+        # Precargar catálogo del rubro si el negocio todavía no tiene productos
+        try:
+            existing_prods = await conn.fetchval(
+                "SELECT COUNT(*) FROM products WHERE business_id = $1", business["sub"]
+            )
+            if not existing_prods:
+                await _preload_starter_catalog(conn, business["sub"], body.business_type)
+        except Exception as e:
+            logger.warning(f"No se pudo precargar catálogo en onboarding para {business['sub']}: {e}")
+
     import main
     import aiosqlite
     tenant_db_path = os.path.join(main.DATA_DIR, f"novastock_{business['sub']}.db")

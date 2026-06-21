@@ -13,7 +13,7 @@ const NAV_ITEMS = [
     items: [
       { label: 'Punto de Venta', path: '/panel/ventas', icon: 'ShoppingCart', roles: ['admin', 'manager', 'operator'] },
       { label: 'Compras', path: '/panel/compras', icon: 'Truck', roles: ['admin', 'manager'], minPlan: 'simple' },
-      { label: 'Clientes', path: '/panel/clientes', icon: 'Book', roles: ['admin', 'manager', 'operator'] },
+      { label: 'Fiados / Clientes', path: '/panel/clientes', icon: 'Book', roles: ['admin', 'manager', 'operator'] },
     ],
   },
   {
@@ -30,7 +30,7 @@ const NAV_ITEMS = [
     items: [
       { label: 'Reportes', path: '/panel/reportes', icon: 'Chart' },
       { label: 'Promociones', path: '/panel/promociones', icon: 'Tag' },
-      { label: 'Recomendaciones', path: '/panel/recomendaciones', icon: 'AI', minPlan: 'ia' },
+      { label: 'Sugerencias IA', path: '/panel/recomendaciones', icon: 'AI', minPlan: 'ia' },
     ],
   },
   {
@@ -200,6 +200,13 @@ export default function Sidebar({
               </button>
             </Tooltip>
           )}
+        </div>
+
+        {/* Legal footer */}
+        <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'center', gap: 12 }}>
+          <a href="/terminos" target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', textDecoration: 'none', opacity: 0.6 }} onMouseEnter={e => e.target.style.opacity = '1'} onMouseLeave={e => e.target.style.opacity = '0.6'}>Términos</a>
+          <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', opacity: 0.3 }}>·</span>
+          <a href="/privacidad" target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', textDecoration: 'none', opacity: 0.6 }} onMouseEnter={e => e.target.style.opacity = '1'} onMouseLeave={e => e.target.style.opacity = '0.6'}>Privacidad</a>
         </div>
       </div>
     </aside>
