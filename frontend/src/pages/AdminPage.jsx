@@ -15,11 +15,12 @@ function fmtPesos(n) { return '$' + Number(n || 0).toLocaleString('es-AR'); }
 function fmtNum(n) { return Number(n || 0).toLocaleString('es-AR'); }
 function fmtTime(d) { if (!d) return '—'; try { const t = new Date(d); return `${t.getHours().toString().padStart(2,'0')}:${t.getMinutes().toString().padStart(2,'0')}`; } catch { return '—'; } }
 
-const BG = '#060913';
-const CARD = '#0B1120';
-const BORDER = 'rgba(20,187,166,0.06)';
-const TEXT = '#E2E8F0';
-const MUTED = '#64748B';
+// Paleta Ocean Dark — alineada con el panel del operador (var(--bg-main)/--bg-card)
+const BG = '#0B132B';
+const CARD = '#121E36';
+const BORDER = 'rgba(255,255,255,0.06)';
+const TEXT = '#E6FFFB';
+const MUTED = 'rgba(230,255,251,0.5)';
 const ACCENT = '#14BBA6';
 
 const S = {
