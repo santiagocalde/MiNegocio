@@ -135,7 +135,8 @@ async def update_promotion(promotion_id: int, body: dict) -> dict:
                     updates.append(f"{k} = ${n}"); params.append(body[k]); n += 1
             if updates:
                 params.append(promotion_id)
-                await conn.execute(f"UPDATE promotions SET {', '.join(updates)} WHERE id = ${n}", *params)
+                params.append(_biz_id())
+                await conn.execute(f"UPDATE promotions SET {', '.join(updates)} WHERE id = ${n} AND business_id = ${n+1}", *params)
             return {"success": True}
     else:
         import aiosqlite
@@ -157,7 +158,7 @@ async def delete_promotion(promotion_id: int) -> dict:
         from db_helpers import get_pg_pool
         pool = await get_pg_pool()
         async with pool.acquire() as conn:
-            await conn.execute("DELETE FROM promotions WHERE id = $1", promotion_id)
+            await conn.execute("DELETE FROM promotions WHERE id = $1 AND business_id = $2", promotion_id, _biz_id())
             return {"success": True}
     else:
         import aiosqlite
