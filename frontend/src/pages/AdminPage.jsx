@@ -199,11 +199,13 @@ function Dashboard({ token }) {
   const [m, setM] = useState(null);
   const [revenue, setRevenue] = useState(null);
   const [signups, setSignups] = useState(null);
+  const [atRisk, setAtRisk] = useState(null);
 
   useEffect(() => {
     fetchAdmin(`${API}/metrics`, token).then(r => r.ok ? r.json() : null).then(d => d && setM(d)).catch(() => {});
     fetchAdmin(`${API}/analytics/revenue`, token).then(r => r.ok ? r.json() : null).then(d => d && setRevenue(d)).catch(() => {});
     fetchAdmin(`${API}/analytics/signups`, token).then(r => r.ok ? r.json() : null).then(d => d && setSignups(d)).catch(() => {});
+    fetchAdmin(`${API}/at-risk`, token).then(r => r.ok ? r.json() : null).then(d => d && setAtRisk(d)).catch(() => {});
   }, [token]);
 
   if (!m) return (
@@ -226,8 +228,39 @@ function Dashboard({ token }) {
         <StatCard color={m.suspended > 0 ? '#EF4444' : '#10B981'} label="Suspendidos" value={fmtNum(m.suspended)} sub={`${m.churn_this_month} churn 30d`} />
         <StatCard color="#F59E0B" label="Conversion" value={`${m.trial_conversions}%`} sub="Trial a pago" />
         <StatCard color="#8B5CF6" label="Ventas Totales" value={fmtNum(m.top_features_used?.[0]?.count || 0)} sub="Transacciones" />
-        <StatCard color="#EC4899" label="Proveedores" value={fmtNum(m.top_features_used?.[1]?.count || 0)} sub="Registrados" />
+        <StatCard color="#EC4899" label="Productos" value={fmtNum(m.total_products)} sub="En todos los negocios" />
       </div>
+
+      {atRisk && (atRisk.expiring?.length > 0 || atRisk.inactive?.length > 0) && (
+        <div style={{ ...S.card, marginBottom: 24, border: '1px solid rgba(245,158,11,0.15)', background: 'linear-gradient(135deg, #0B1120, rgba(245,158,11,0.03))' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+            <svg width="16" height="16" fill="none" stroke="#F59E0B" viewBox="0 0 24 24" strokeWidth="2.2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <h3 style={{ color: '#F59E0B', fontSize: '0.78rem', fontWeight: 700, margin: 0, textTransform: 'uppercase', letterSpacing: '0.6px' }}>Atención requerida</h3>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
+            <div>
+              <div style={{ color: MUTED, fontSize: '0.72rem', fontWeight: 600, marginBottom: 8 }}>⏰ Prueba/plan por vencer ({atRisk.expiring.length})</div>
+              {atRisk.expiring.length === 0 ? <div style={{ color: MUTED, fontSize: '0.78rem', opacity: 0.6 }}>Ninguno</div> :
+                atRisk.expiring.slice(0, 5).map(b => (
+                  <div key={b.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.02)' }}>
+                    <span style={{ color: TEXT, fontSize: '0.8rem', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 180 }}>{b.business_name}</span>
+                    <span style={{ ...S.pill(b.days_left <= 1 ? '#EF4444' : '#F59E0B'), fontSize: '0.66rem' }}>{b.days_left <= 0 ? 'Hoy' : `${b.days_left}d`}</span>
+                  </div>
+                ))}
+            </div>
+            <div>
+              <div style={{ color: MUTED, fontSize: '0.72rem', fontWeight: 600, marginBottom: 8 }}>💤 Inactivos (sin ventas 14d) ({atRisk.inactive.length})</div>
+              {atRisk.inactive.length === 0 ? <div style={{ color: MUTED, fontSize: '0.78rem', opacity: 0.6 }}>Ninguno</div> :
+                atRisk.inactive.slice(0, 5).map(b => (
+                  <div key={b.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.02)' }}>
+                    <span style={{ color: TEXT, fontSize: '0.8rem', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 180 }}>{b.business_name}</span>
+                    <span style={{ color: MUTED, fontSize: '0.7rem' }}>{b.last_sale ? fmtDate(b.last_sale) : 'Nunca'}</span>
+                  </div>
+                ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
         <div style={S.card}>
@@ -358,6 +391,7 @@ function Businesses({ token, toast }) {
   const doSearch = e => { e.preventDefault(); setPage(1); load(); };
   const chPlan = async (id, np) => { if (!window.confirm(`Cambiar plan a ${PLAN[np]?.label || np}?`)) return; const r = await fetchAdmin(`${API}/businesses/${id}/plan`, token, { method: 'PUT', body: JSON.stringify({ new_plan: np, notes: 'Actualizacion manual' }) }); if (r.ok) { toast('Plan actualizado'); load(); } };
   const chStatus = async (id, ns) => { const r = await fetchAdmin(`${API}/businesses/${id}/status`, token, { method: 'PUT', body: JSON.stringify({ status: ns, reason: 'Accion administrativa' }) }); if (r.ok) { toast('Estado actualizado'); load(); } };
+  const extendPlan = async (id, days) => { const r = await fetchAdmin(`${API}/businesses/${id}/extend`, token, { method: 'POST', body: JSON.stringify({ days, notes: `Extensión manual +${days}d` }) }); if (r.ok) { const d = await r.json(); toast(`+${days} días concedidos`); setDetail(null); load(); } else toast('Error al extender'); };
   const doDelete = async (id, name) => {
     if (!window.confirm(`Eliminar "${name}"?\n\nBorra todos los datos: productos, ventas, operadores, config. No se puede deshacer.`)) return;
     setDel(id); const r = await fetchAdmin(`${API}/businesses/${id}`, token, { method: 'DELETE' }); setDel(null);
@@ -470,7 +504,15 @@ function Businesses({ token, toast }) {
                 </div>
               ))}
             </div>
-            <button onClick={() => setDetail(null)} style={{ ...S.primaryBtn, width: '100%', marginTop: 18, justifyContent: 'center', padding: '11px' }}>Cerrar</button>
+            <div style={{ marginTop: 18, padding: '14px 16px', background: 'rgba(20,187,166,0.03)', borderRadius: 10, border: '1px solid rgba(20,187,166,0.1)' }}>
+              <div style={{ color: '#94A3B8', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 10 }}>Extender prueba / plan</div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {[7, 15, 30].map(d => (
+                  <button key={d} onClick={() => extendPlan(detail.id, d)} style={{ ...S.ghostBtn, flex: 1, justifyContent: 'center', color: ACCENT, background: 'rgba(20,187,166,0.06)', borderColor: 'rgba(20,187,166,0.18)', fontWeight: 700 }}>+{d} días</button>
+                ))}
+              </div>
+            </div>
+            <button onClick={() => setDetail(null)} style={{ ...S.primaryBtn, width: '100%', marginTop: 12, justifyContent: 'center', padding: '11px' }}>Cerrar</button>
           </div>
         </div>
       )}
@@ -528,6 +570,27 @@ function ProductsManager({ token, toast }) {
     fetchAdmin(`${API}/businesses/${bizId}/products?page=1&limit=50`, token).then(r => r.json()).then(setProducts);
   };
 
+  const handleExportProducts = async () => {
+    if (!bizId) return;
+    try {
+      const r = await fetchAdmin(`${API}/businesses/${bizId}/products/export`, token);
+      if (!r.ok) { toast('Error al exportar'); return; }
+      const blob = await r.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = `productos_${new Date().toISOString().slice(0,10)}.csv`; a.click();
+      URL.revokeObjectURL(url);
+      toast('Productos exportados');
+    } catch { toast('Error al exportar'); }
+  };
+
+  const downloadTemplate = () => {
+    const csv = '﻿code,name,price,cost_price,stock,min_stock,iva\n7791234567890,Coca Cola 500ml,850,500,24,6,21%\n7790987654321,Alfajor Jorgito,400,250,40,10,21%';
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'plantilla_productos.csv'; a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const filteredBiz = businesses.filter(b => !bizSearch || b.business_name.toLowerCase().includes(bizSearch.toLowerCase()) || b.email.toLowerCase().includes(bizSearch.toLowerCase()));
 
   return (
@@ -555,7 +618,9 @@ function ProductsManager({ token, toast }) {
                 <span style={{ color: TEXT, fontWeight: 600, fontSize: '0.9rem' }}>
                   {products ? `${products.total} productos` : 'Cargando...'}
                 </span>
-                <div style={{ display: 'flex', gap: 6 }}>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  <button onClick={downloadTemplate} style={{ ...S.ghostBtn, padding: '5px 12px', fontSize: '0.72rem' }} title="Descargar plantilla CSV de ejemplo">Plantilla</button>
+                  <button onClick={handleExportProducts} disabled={!products?.total} style={{ ...S.ghostBtn, padding: '5px 12px', fontSize: '0.72rem', opacity: products?.total ? 1 : 0.4 }}>Exportar</button>
                   <button onClick={handleClear} style={{ ...S.ghostBtn, color: '#EF4444', padding: '5px 12px', fontSize: '0.72rem' }}>Limpiar Todo</button>
                   <button onClick={() => document.getElementById('csv-file-input')?.click()} style={S.ghostBtn}>
                     <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17,8 12,3 7,8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>

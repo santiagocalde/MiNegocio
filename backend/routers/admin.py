@@ -12,7 +12,7 @@ import main
 router = APIRouter()
 logger = logging.getLogger("NovaStock.Admin")
 
-JWT_SECRET = os.environ.get("JWT_SECRET", "ta1P4pMAryFH5_lDGf-8GmbTSBrMWg5uYheoWg93s1o")
+JWT_SECRET = os.environ.get("JWT_SECRET", "dev-insecure-change-me")
 JWT_ALGORITHM = "HS256"
 
 from slowapi import Limiter
@@ -160,7 +160,7 @@ async def admin_change_plan(
     
     pool = await _get_pool()
     async with pool.acquire() as conn:
-        old = await conn.fetchrow("SELECT plan, status FROM businesses WHERE id = $1", business_id)
+        old = await conn.fetchrow("SELECT plan, status, email, business_name FROM businesses WHERE id = $1", business_id)
         if not old:
             raise HTTPException(404, detail="Negocio no encontrado")
         
@@ -190,11 +190,23 @@ async def admin_change_plan(
             )
     
     logger.info(f"SuperAdmin {admin['email']} cambió plan de {business_id}: {old['plan']} → {new_plan}")
+
+    # Email de bienvenida al plan (solo al activar un plan pago, no en downgrade a trial)
+    email_sent = False
+    if new_plan in ("simple", "pro", "ia") and new_plan != old["plan"]:
+        try:
+            from services.email_service import send_plan_activated
+            await send_plan_activated(old["email"], old["business_name"] or "tu negocio", new_plan)
+            email_sent = True
+        except Exception as e:
+            logger.error(f"No se pudo enviar email de plan activado a {old['email']}: {e}")
+
     return {
         "success": True,
         "message": "Plan actualizado",
         "old_plan": old["plan"],
         "new_plan": new_plan,
+        "email_sent": email_sent,
         "audit_id": str(audit_id),
     }
 
@@ -236,6 +248,56 @@ async def admin_change_status(
     
     logger.info(f"SuperAdmin {admin['email']} cambió status de {business_id}: {old['status']} → {new_status}")
     return {"success": True, "new_status": new_status, "old_status": old["status"]}
+
+
+# ────────────────────────────────────────────────────────────
+# EXTEND TRIAL / PLAN (retención comercial)
+# ────────────────────────────────────────────────────────────
+
+@router.post("/api/admin/businesses/{business_id}/extend", summary="Extender prueba o plan N días")
+async def admin_extend_plan(
+    business_id: str,
+    body: dict = Body(...),
+    admin: dict = Depends(verify_superadmin),
+) -> dict:
+    try:
+        days = int(body.get("days", 7))
+    except (TypeError, ValueError):
+        raise HTTPException(400, detail="Días inválidos")
+    if days < 1 or days > 365:
+        raise HTTPException(400, detail="Los días deben estar entre 1 y 365")
+    notes = body.get("notes", "")
+
+    pool = await _get_pool()
+    async with pool.acquire() as conn:
+        biz = await conn.fetchrow("SELECT plan, status, plan_end_date, created_at FROM businesses WHERE id = $1", business_id)
+        if not biz:
+            raise HTTPException(404, detail="Negocio no encontrado")
+
+        # Base: la fecha de fin actual si está vigente, si no, desde hoy
+        base = biz["plan_end_date"]
+        if not base or base < _now():
+            base = _now()
+        new_end = base + timedelta(days=days)
+
+        async with conn.transaction():
+            # Si estaba suspendido/expirado por falta de pago, reactivar
+            new_status = "active" if biz["status"] in ("suspended", "expired", "past_due") else biz["status"]
+            await conn.execute(
+                "UPDATE businesses SET plan_end_date = $1, status = $2, updated_at = $3 WHERE id = $4",
+                new_end, new_status, _now(), business_id
+            )
+            await conn.fetchval(
+                """INSERT INTO admin_audit_log (superadmin_id, business_id, action, old_value, new_value, notes)
+                   VALUES ($1, $2, 'extend_plan', $3::jsonb, $4::jsonb, $5) RETURNING id""",
+                admin["sub"], business_id,
+                f'{{"plan_end_date": "{biz["plan_end_date"]}"}}',
+                f'{{"plan_end_date": "{new_end.isoformat()}", "days_added": {days}}}',
+                notes or ""
+            )
+
+    logger.info(f"SuperAdmin {admin['email']} extendió {days} días a {business_id} (nuevo fin: {new_end.date()})")
+    return {"success": True, "days_added": days, "new_end_date": new_end.isoformat()}
 
 
 # ────────────────────────────────────────────────────────────
@@ -315,7 +377,14 @@ async def admin_metrics(admin: dict = Depends(verify_superadmin)) -> dict:
         sales_count = await conn.fetchval("SELECT COUNT(*) FROM sales") or 0
         suppliers_count = await conn.fetchval("SELECT COUNT(*) FROM suppliers") or 0
         promotions_count = await conn.fetchval("SELECT COUNT(*) FROM promotions") or 0
-        
+        total_products = await conn.fetchval("SELECT COUNT(*) FROM products") or 0
+
+        # Negocios que requieren atención: trial/plan venciendo en <=3 días
+        expiring_soon = await conn.fetchval(
+            "SELECT COUNT(*) FROM businesses WHERE status = 'active' AND plan_end_date IS NOT NULL AND plan_end_date BETWEEN $1 AND $2",
+            _now(), _now() + timedelta(days=3)
+        ) or 0
+
         return {
             "total_businesses": total,
             "active_subscriptions": active,
@@ -324,11 +393,48 @@ async def admin_metrics(admin: dict = Depends(verify_superadmin)) -> dict:
             "churn_this_month": churn,
             "trial_conversions": round(converted / max(total_trial_ever, 1) * 100, 1),
             "breakdown_by_plan": breakdown,
+            "total_products": total_products,
+            "expiring_soon": expiring_soon,
             "top_features_used": [
                 {"feature": "POS / Ventas", "count": sales_count},
                 {"feature": "Proveedores", "count": suppliers_count},
                 {"feature": "Promociones", "count": promotions_count},
             ],
+        }
+
+
+# ────────────────────────────────────────────────────────────
+# NEGOCIOS EN RIESGO (atención comercial)
+# ────────────────────────────────────────────────────────────
+
+@router.get("/api/admin/at-risk", summary="Negocios que requieren atención")
+async def admin_at_risk(admin: dict = Depends(verify_superadmin)) -> dict:
+    """Devuelve negocios en riesgo: prueba/plan por vencer, o inactivos (sin ventas recientes)."""
+    pool = await _get_pool()
+    async with pool.acquire() as conn:
+        # Vencen en los próximos 3 días
+        expiring = await conn.fetch("""
+            SELECT id, business_name, email, plan, plan_end_date,
+                   EXTRACT(DAY FROM (plan_end_date - now()))::int as days_left
+            FROM businesses
+            WHERE status = 'active' AND plan_end_date IS NOT NULL
+              AND plan_end_date BETWEEN now() AND now() + INTERVAL '3 days'
+            ORDER BY plan_end_date ASC LIMIT 50
+        """)
+        # Activos sin ninguna venta en los últimos 14 días (pero con cuenta de >3 días)
+        inactive = await conn.fetch("""
+            SELECT b.id, b.business_name, b.email, b.plan,
+                   (SELECT MAX(timestamp) FROM sales WHERE business_id = b.id) as last_sale
+            FROM businesses b
+            WHERE b.status = 'active' AND b.created_at < now() - INTERVAL '3 days'
+              AND NOT EXISTS (
+                  SELECT 1 FROM sales s WHERE s.business_id = b.id AND s.timestamp > now() - INTERVAL '14 days'
+              )
+            ORDER BY b.created_at DESC LIMIT 50
+        """)
+        return {
+            "expiring": [dict(r) for r in expiring],
+            "inactive": [dict(r) for r in inactive],
         }
 
 
@@ -356,7 +462,7 @@ async def admin_audit_log(
             clauses.append(f"a.action = ${n}")
             params.append(action); n += 1
         
-        clauses.append(f"a.timestamp >= ${{{n}}}")
+        clauses.append(f"a.timestamp >= ${n}")
         params.append(_now() - timedelta(days=days)); n += 1
         
         where = " AND ".join(clauses)
@@ -497,6 +603,32 @@ async def admin_clear_products(
         return {"success": True, "deleted_count": count}
 
 
+@router.get("/api/admin/businesses/{business_id}/products/export", summary="Exportar productos a CSV")
+async def admin_export_products(
+    business_id: str,
+    admin: dict = Depends(verify_superadmin),
+):
+    from fastapi.responses import StreamingResponse
+    pool = await _get_pool()
+    async with pool.acquire() as conn:
+        rows = await conn.fetch(
+            "SELECT code, name, price, cost_price, stock, min_stock, iva FROM products WHERE business_id = $1 ORDER BY name",
+            business_id
+        )
+    out = io.StringIO()
+    writer = csv.writer(out)
+    writer.writerow(["code", "name", "price", "cost_price", "stock", "min_stock", "iva"])
+    for r in rows:
+        writer.writerow([r["code"], r["name"], r["price"], r["cost_price"], r["stock"], r["min_stock"], r["iva"]])
+    out.seek(0)
+    fname = f"productos_{business_id[:8]}_{_now().date()}.csv"
+    return StreamingResponse(
+        iter(['﻿' + out.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f'attachment; filename="{fname}"'}
+    )
+
+
 # ────────────────────────────────────────────────────────────
 # ANALYTICS ENDPOINTS
 # ────────────────────────────────────────────────────────────
@@ -592,17 +724,29 @@ async def admin_recent_activity(admin: dict = Depends(verify_superadmin)) -> lis
 # ────────────────────────────────────────────────────────────
 
 async def seed_superadmin():
-    """Crea el superadmin por defecto si no existe."""
+    """Crea el superadmin inicial solo si se definen credenciales por env.
+
+    Evita credenciales hardcodeadas: requiere SUPERADMIN_EMAIL y
+    SUPERADMIN_PASSWORD en el entorno. Si no están, no crea nada
+    (el superadmin se gestiona con create_admin.py).
+    """
     try:
+        seed_email = (os.environ.get("SUPERADMIN_EMAIL") or "").lower().strip()
+        seed_pw = os.environ.get("SUPERADMIN_PASSWORD") or ""
+        if not seed_email or not seed_pw:
+            return
+        if len(seed_pw) < 10:
+            logger.warning("SUPERADMIN_PASSWORD demasiado corta (<10), no se crea el superadmin seed")
+            return
         pool = await _get_pool()
         async with pool.acquire() as conn:
-            exists = await conn.fetchval("SELECT COUNT(*) FROM superadmins")
+            exists = await conn.fetchval("SELECT COUNT(*) FROM superadmins WHERE email = $1", seed_email)
             if not exists:
-                pw_hash = bcrypt.hashpw("admin123".encode(), bcrypt.gensalt()).decode()
+                pw_hash = bcrypt.hashpw(seed_pw.encode(), bcrypt.gensalt()).decode()
                 await conn.execute(
                     "INSERT INTO superadmins (email, password_hash, role) VALUES ($1, $2, 'superadmin')",
-                    "admin@minegocio.app", pw_hash
+                    seed_email, pw_hash
                 )
-                logger.info("SuperAdmin default creado: admin@minegocio.app / admin123")
+                logger.info(f"SuperAdmin seed creado: {seed_email}")
     except Exception as e:
-        logger.warning(f"No se pudo crear superadmin default: {e}")
+        logger.warning(f"No se pudo crear superadmin seed: {e}")
