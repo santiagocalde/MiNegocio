@@ -1,6 +1,6 @@
 import React from 'react';
 import { Icons } from '../ui/Icons';
-import { apiPost } from '../../services/apiClient';
+import { apiPost, apiPut } from '../../services/apiClient';
 import { formatMoney } from '../../utils/format';
 
 export default function PaymentPanel({
@@ -18,10 +18,23 @@ export default function PaymentPanel({
   saleConfirm,
   mpQrData, setMpQrData, mpPaymentUrl, setMpPaymentUrl,
   mpLoading, setMpLoading, mpPaymentStatus, setMpPaymentStatus, setMpIntentId,
-  businessConfig, addToast, currentOperator,
+  businessConfig, setBusinessConfig, addToast, currentOperator,
   promotionSavings,
   handleQuickAdd
 }) {
+  const ivaActual = String(businessConfig?.iva_rate ?? '0');
+
+  const cambiarIva = async (nuevoIva) => {
+    const updated = { ...businessConfig, iva_rate: nuevoIva };
+    setBusinessConfig?.(updated); // recalcula al instante
+    try {
+      await apiPut('/config', updated);
+      try { new BroadcastChannel('minegocio-sync').postMessage('config-changed'); } catch {}
+      addToast(nuevoIva === '0' ? 'IVA desactivado: precios finales sin discriminar' : `IVA configurado en ${nuevoIva}%`, 'success');
+    } catch {
+      addToast('No se pudo guardar el IVA', 'error');
+    }
+  };
   const defaultQuickButtons = [
     { id: 1, name: 'Carga SUBE', price: 1000 },
     { id: 2, name: 'Saldo Virtual', price: 500 },
@@ -51,12 +64,19 @@ export default function PaymentPanel({
           <span>Subtotal:</span>
           <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{formatMoney(subtotal)}</span>
         </div>
-        {iva > 0 && (
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', fontSize: '0.95rem', color: 'var(--text-secondary)' }}>
-            <span>IVA ({ivaRate}%):</span>
-            <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{formatMoney(iva)}</span>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', fontSize: '0.95rem', color: 'var(--text-secondary)' }}>
+          <span>IVA{iva > 0 ? ` (${ivaRate}%)` : ''}:</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            {iva > 0 && <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{formatMoney(iva)}</span>}
+            <select value={ivaActual} onChange={e => cambiarIva(e.target.value)} title="Cambiar el IVA del negocio"
+              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border-color)', color: ivaActual === '0' ? 'var(--text-secondary)' : 'var(--accent-primary)', borderRadius: '6px', padding: '3px 6px', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', outline: 'none' }}>
+              <option value="0">No discrimina</option>
+              <option value="21">21%</option>
+              <option value="10.5">10,5%</option>
+              <option value="27">27%</option>
+            </select>
           </div>
-        )}
+        </div>
         {discount > 0 && (
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', fontSize: '0.95rem', color: 'var(--accent-success)' }}>
             <span>{promotionSavings > 0 ? 'Descuento + Promo:' : 'Descuento:'}</span>
