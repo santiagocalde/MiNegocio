@@ -7,6 +7,8 @@ import LogoWhatsApp from '../assets/images/whatsapp_logo.png';
 
 import LandingNav from './landing/LandingNav';
 import LandingHero from './landing/LandingHero';
+import LandingSocialProof from './landing/LandingSocialProof';
+import LandingDemo from './landing/LandingDemo';
 import LandingComparativa from './landing/LandingComparativa';
 import LandingFeatures from './landing/LandingFeatures';
 import LandingSoporteHumano from './landing/LandingSoporteHumano';
@@ -247,6 +249,9 @@ export default function LandingPage() {
       />
 
       <LandingHero isLoggedIn={isLoggedIn} goPanel={goPanel} goOnboard={goOnboard} />
+      <LandingSocialProof />
+      <div className="lp-divider" />
+      <LandingDemo />
       <div className="lp-divider" />
       <LandingComparativa />
       <LandingFeatures />

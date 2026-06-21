@@ -24,9 +24,9 @@ export default function LandingFeatures() {
       <div className="lp-container">
         <Reveal>
           <div style={{ textAlign: 'center', marginBottom: 56 }}>
-            <h2 className="lp-section-title" style={{ fontSize: '2.5rem', marginBottom: 12 }}>El sistema te falla cuando más lo necesitás</h2>
+            <h2 className="lp-section-title" style={{ fontSize: '2.5rem', marginBottom: 12 }}>Pensado para los problemas reales de tu kiosco</h2>
             <p className="lp-section-sub" style={{ fontSize: '1.1rem', color: 'rgba(230,255,251, 0.65)' }}>
-              Con MiNegocio tenés soporte real, de personas reales. No un chatbot.
+              Cada función resuelve algo que te pasa todos los días. Sin vueltas.
             </p>
           </div>
         </Reveal>

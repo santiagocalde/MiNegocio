@@ -32,7 +32,7 @@ export default function LandingNav({
       <div className="lp-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', maxWidth: 1400, margin: '0 auto' }}>
         <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
           <span onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} role="button" tabIndex={0} onKeyDown={e => { if (e.key === 'Enter') window.scrollTo({ top: 0, behavior: 'smooth' }); }} style={{ cursor: 'pointer', display: 'inline-block' }} aria-label="MiNegocio - Ir al inicio">
-            <img src={logoImg} alt="MiNegocio" loading="lazy" style={{ height: 80, objectFit: 'contain', filter: 'drop-shadow(0 0 15px rgba(20,187,166, 0.25))', transform: 'scale(1.8)', transformOrigin: 'left 35%' }} />
+            <img src={logoImg} alt="MiNegocio" fetchpriority="high" decoding="async" style={{ height: 80, objectFit: 'contain', filter: 'drop-shadow(0 0 15px rgba(20,187,166, 0.25))', transform: 'scale(1.8)', transformOrigin: 'left 35%' }} />
           </span>
         </div>
 
