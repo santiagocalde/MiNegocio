@@ -346,7 +346,9 @@ async def list_purchases(limit: int = 50) -> list:
             return purchases
     else:
         async with aiosqlite.connect(main.DB_PATH) as db:
-            cur = await db.execute("SELECT * FROM purchases ORDER BY created_at DESC LIMIT ?", (limit,))
+            # SQLite usa 'timestamp'; PG usa 'created_at'. Aliaseamos para que el
+            # frontend reciba created_at igual y no crashee en modo local/offline.
+            cur = await db.execute("SELECT *, timestamp AS created_at FROM purchases ORDER BY timestamp DESC LIMIT ?", (limit,))
             rows = await cur.fetchall()
             purchases = [row_to_dict(r, cur.description) for r in rows]
             for p in purchases:
