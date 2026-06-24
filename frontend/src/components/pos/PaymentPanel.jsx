@@ -62,12 +62,12 @@ export default function PaymentPanel({
 
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', fontSize: '0.95rem', color: 'var(--text-secondary)' }}>
           <span>Subtotal:</span>
-          <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{formatMoney(subtotal)}</span>
+          <span style={{ color: 'var(--text-primary)', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{formatMoney(subtotal)}</span>
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', fontSize: '0.95rem', color: 'var(--text-secondary)' }}>
           <span>IVA{iva > 0 ? ` (${ivaRate}%)` : ''}:</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            {iva > 0 && <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{formatMoney(iva)}</span>}
+            {iva > 0 && <span style={{ color: 'var(--text-primary)', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{formatMoney(iva)}</span>}
             <select value={ivaActual} onChange={e => cambiarIva(e.target.value)} title="Cambiar el IVA del negocio"
               style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border-color)', color: ivaActual === '0' ? 'var(--text-secondary)' : 'var(--accent-primary)', borderRadius: '6px', padding: '3px 6px', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', outline: 'none' }}>
               <option value="0">No discrimina</option>
@@ -86,9 +86,9 @@ export default function PaymentPanel({
 
         <div style={{ height: '1px', background: 'var(--border-color)', margin: '12px 0' }}></div>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px', fontSize: '1.2rem', color: 'var(--text-primary)', fontWeight: 800 }}>
-          <span>Total:</span>
-          <span>{formatMoney(adjustedTotal ?? total)}</span>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '18px' }}>
+          <span style={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px', color: 'var(--text-secondary)' }}>Total a cobrar</span>
+          <span style={{ fontSize: '1.9rem', fontWeight: 800, lineHeight: 1, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.5px' }}>{formatMoney(adjustedTotal ?? total)}</span>
         </div>
 
         <button
