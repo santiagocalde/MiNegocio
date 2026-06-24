@@ -201,26 +201,89 @@ async def test_sale_idempotency_no_double_charge(test_db, client):
 
 
 # ── Cierre de caja ────────────────────────────────────────────
+# El efectivo esperado lo calcula el backend = base_inicial + ventas_efectivo
+# (no fiado) - egresos. NO se confía en el total que manda el front (que sumaba
+# todos los métodos -> faltante falso). Estos tests cubren ese bug real.
+
+async def _egreso(ac, turn_id, monto):
+    r = await ac.post("/api/egresos", json={"turn_id": turn_id, "monto": monto, "motivo": "Retiro test"})
+    assert r.status_code in (200, 201), r.text
+
+
+async def _faltante_egresos(db_path):
+    async with aiosqlite.connect(db_path) as db:
+        cur = await db.execute("SELECT COUNT(*) FROM egresos_caja WHERE motivo LIKE 'Ajuste por Faltante%'")
+        return (await cur.fetchone())[0]
+
 
 @pytest.mark.asyncio
-async def test_turn_close_balanced(test_db, client):
+async def test_turn_close_balanced_with_cash_sale(test_db, client):
+    """Venta en efectivo de 1000, cuento 1000 -> cuadra."""
     async with client as ac:
         turn = await _open_turn(ac)
+        pid = await _create_product(ac, "C1", "Agua", 1000, 10)
+        await ac.post("/api/sales", json=_sale(turn, [{"product_id": pid, "product_name": "Agua", "quantity": 1, "unit_price": 1000}], total=1000, payment=1000))
         r = await ac.patch(f"/api/turns/{turn}/close", json={"sales_total": 1000, "counted_cash": 1000})
         assert r.status_code == 200, r.text
         data = r.json()
-        assert data["difference"] == 0
+        assert data["difference"] == 0, data
         assert data["status"] == "perfecto"
 
 
 @pytest.mark.asyncio
 async def test_turn_close_shortage_detected(test_db, client):
+    """Venta efectivo 1000, cuento 800 -> faltante de 200."""
     async with client as ac:
         turn = await _open_turn(ac)
+        pid = await _create_product(ac, "C2", "Coca", 1000, 10)
+        await ac.post("/api/sales", json=_sale(turn, [{"product_id": pid, "product_name": "Coca", "quantity": 1, "unit_price": 1000}], total=1000, payment=1000))
         r = await ac.patch(f"/api/turns/{turn}/close", json={"sales_total": 1000, "counted_cash": 800})
         assert r.status_code == 200, r.text
-        assert r.json()["difference"] == -200
+        assert r.json()["difference"] == -200, r.json()
         assert r.json()["status"] == "faltante"
+
+
+@pytest.mark.asyncio
+async def test_turn_close_ignores_noncash_payments(test_db, client):
+    """BUG REAL: tarjeta y fiado NO van al cajón. Solo cuenta el efectivo.
+    Efectivo 1000 + tarjeta 5000 + fiado 3000, cuento 1000 -> cuadra (no faltante)."""
+    async with client as ac:
+        turn = await _open_turn(ac)
+        p1 = await _create_product(ac, "N1", "P1", 1000, 10)
+        p2 = await _create_product(ac, "N2", "P2", 5000, 10)
+        p3 = await _create_product(ac, "N3", "P3", 3000, 10)
+        await ac.post("/api/sales", json=_sale(turn, [{"product_id": p1, "product_name": "P1", "quantity": 1, "unit_price": 1000}], total=1000, payment=1000, payment_method="efectivo"))
+        await ac.post("/api/sales", json=_sale(turn, [{"product_id": p2, "product_name": "P2", "quantity": 1, "unit_price": 5000}], total=5000, payment=5000, payment_method="tarjeta"))
+        await ac.post("/api/sales", json=_sale(turn, [{"product_id": p3, "product_name": "P3", "quantity": 1, "unit_price": 3000}], total=3000, payment=0, is_fiado=True, fiado_name="Fiado Test", payment_method="fiado"))
+        r = await ac.patch(f"/api/turns/{turn}/close", json={"sales_total": 9000, "counted_cash": 1000})
+        assert r.status_code == 200, r.text
+        assert r.json()["difference"] == 0, r.json()
+        assert r.json()["status"] == "perfecto"
+    # y NO se creó ningún egreso falso "Ajuste por Faltante"
+    assert await _faltante_egresos(test_db) == 0
+
+
+@pytest.mark.asyncio
+async def test_turn_close_respects_initial_cash(test_db, client):
+    """Base inicial 5000, sin ventas, cuento 5000 -> cuadra (el bug la ignoraba)."""
+    async with client as ac:
+        turn = await _open_turn(ac, initial_cash=5000)
+        r = await ac.patch(f"/api/turns/{turn}/close", json={"sales_total": 0, "counted_cash": 5000})
+        assert r.status_code == 200, r.text
+        assert r.json()["difference"] == 0, r.json()
+
+
+@pytest.mark.asyncio
+async def test_turn_close_subtracts_egresos(test_db, client):
+    """Venta efectivo 1000, egreso 300, cuento 700 -> cuadra."""
+    async with client as ac:
+        turn = await _open_turn(ac)
+        pid = await _create_product(ac, "E1", "Pan", 1000, 10)
+        await ac.post("/api/sales", json=_sale(turn, [{"product_id": pid, "product_name": "Pan", "quantity": 1, "unit_price": 1000}], total=1000, payment=1000))
+        await _egreso(ac, turn, 300)
+        r = await ac.patch(f"/api/turns/{turn}/close", json={"sales_total": 1000, "counted_cash": 700})
+        assert r.status_code == 200, r.text
+        assert r.json()["difference"] == 0, r.json()
 
 
 @pytest.mark.asyncio
