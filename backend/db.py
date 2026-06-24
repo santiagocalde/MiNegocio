@@ -17,6 +17,26 @@ DATABASE_URL = os.getenv("DATABASE_URL", "")
 _pool: Optional[asyncpg.Pool] = None
 
 
+async def _init_connection(conn: asyncpg.Connection) -> None:
+    """Inicializa cada conexión del pool.
+
+    Codec NUMERIC -> float: las columnas de dinero se migraron de REAL a
+    NUMERIC(12,2) para guardar montos con 2 decimales exactos (sin la deriva
+    de los float). Pero asyncpg, por defecto, devuelve NUMERIC como Decimal,
+    y Decimal NO es serializable a JSON con json.dumps -> rompería los
+    endpoints. Este codec hace que NUMERIC se lea/escriba como float, así el
+    resto del código (modelos Pydantic con float, serialización, etc.) sigue
+    funcionando EXACTAMENTE igual que con REAL. La precisión vive en la base.
+    """
+    await conn.set_type_codec(
+        "numeric",
+        schema="pg_catalog",
+        encoder=str,
+        decoder=float,
+        format="text",
+    )
+
+
 async def get_pool() -> asyncpg.Pool:
     global _pool
     if _pool is None:
@@ -28,6 +48,7 @@ async def get_pool() -> asyncpg.Pool:
                 max_size=50,  # headroom para 100+ kioscos (PG max_connections=100, 1 worker)
                 command_timeout=30,
                 max_inactive_connection_lifetime=300,  # recicla conexiones idle (5 min)
+                init=_init_connection,
             )
             logger.info(f"Pool PostgreSQL creado en {PG_CONFIG['host']}:{PG_CONFIG['port']}/{PG_CONFIG['database']}")
         except Exception as e:
@@ -124,8 +145,8 @@ async def init_pg() -> None:
                 business_id     TEXT NOT NULL REFERENCES businesses(id),
                 code            TEXT NOT NULL,
                 name            TEXT NOT NULL,
-                price           REAL NOT NULL DEFAULT 0,
-                cost_price      REAL NOT NULL DEFAULT 0,
+                price           NUMERIC(12,2) NOT NULL DEFAULT 0,
+                cost_price      NUMERIC(12,2) NOT NULL DEFAULT 0,
                 stock           INTEGER NOT NULL DEFAULT 0,
                 min_stock       INTEGER NOT NULL DEFAULT 5,
                 iva             TEXT NOT NULL DEFAULT '21%',
@@ -179,9 +200,9 @@ async def init_pg() -> None:
                 id              SERIAL PRIMARY KEY,
                 business_id     TEXT NOT NULL REFERENCES businesses(id),
                 turn_id         INTEGER,
-                total           REAL NOT NULL,
-                payment         REAL NOT NULL DEFAULT 0,
-                change_given    REAL NOT NULL DEFAULT 0,
+                total           NUMERIC(12,2) NOT NULL,
+                payment         NUMERIC(12,2) NOT NULL DEFAULT 0,
+                change_given    NUMERIC(12,2) NOT NULL DEFAULT 0,
                 operator        TEXT,
                 is_fiado        INTEGER NOT NULL DEFAULT 0,
                 fiado_name      TEXT,
@@ -214,8 +235,8 @@ async def init_pg() -> None:
                 product_id      INTEGER,
                 product_name    TEXT,
                 quantity        REAL NOT NULL,
-                unit_price      REAL NOT NULL,
-                item_discount   REAL DEFAULT 0
+                unit_price      NUMERIC(12,2) NOT NULL,
+                item_discount   NUMERIC(12,2) DEFAULT 0
             );
             CREATE INDEX IF NOT EXISTS idx_sale_items_sale_id ON sale_items(sale_id);
             CREATE INDEX IF NOT EXISTS idx_sale_items_business ON sale_items(business_id);
