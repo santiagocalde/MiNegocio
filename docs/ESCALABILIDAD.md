@@ -94,3 +94,61 @@ de tiempo es complejidad innecesaria. Orden por prioridad.
 - **PG `max_connections=100`**, pool de la app `max_size=50` → headroom cómodo con 1 worker.
 - Las verificaciones se hicieron con tests E2E efímeros (cuenta de prueba creada y
   borrada) y `EXPLAIN ANALYZE` con datos sintéticos. No tocan datos de producción.
+
+---
+
+## 🔎 Hallazgos 2026-06-24 — riesgos reales medidos en producción
+
+Análisis sobre la base real (negocio "Kiosco de la Tía", `kiosco1@gmail.com`).
+**Conclusión de fondo: los datos de ventas NO son el problema; el riesgo está en el
+mantenimiento de índices y en dos decisiones de esquema.**
+
+### Lo que mostró la medición
+- Ventas reales del kiosco: **112 ventas en 7 días (~16/día)**. Datos crudos: ~21 KB.
+  Heap real de la tabla `sales`: **32 KB**. Minúsculo.
+- Pero la tabla `sales` ocupa **18 MB**, **todo en índices hinchados** (no en datos):
+  `idx_sales_idempotency` 7.8 MB · `idx_sales_business_timestamp` 4.4 MB ·
+  `idx_sales_timestamp` 2.8 MB · `sales_pkey` 2.3 MB.
+- **Causa:** la secuencia de IDs llegó a **105.342** con solo 114 filas vivas →
+  se insertaron y borraron **~105.000 ventas fantasma**. Patrón típico de un
+  **test de estrés corrido contra la base de PRODUCCIÓN** (encaja con `test_stress.py`).
+  ⚠️ Esto contradice la nota de arriba ("los tests no tocan producción"): al menos
+  una corrida sí lo hizo.
+- VACUUM recuperó el heap, pero **los índices no se achican con VACUUM** → quedan
+  hinchados hasta un `REINDEX`.
+
+### Proyección a 100 negocios/día
+- Datos legítimos: ~9 KB/día por negocio → **~1 a 1.5 GB/año** con 100 negocios.
+  En el disco de 40 GB sobra para años. El volumen de ventas no preocupa.
+- El verdadero costo a escala es **tamaño y amplificación de escritura de los índices**
+  + el bloat si hay churn (rollbacks, reintentos del outbox, tests).
+
+### Plan de remediación (por prioridad)
+
+**P0 — inmediato, bajo riesgo, alto valor**
+1. Asegurar que **los stress tests JAMÁS apunten a producción**: `DATABASE_URL`
+   separada para tests + guard en `conftest.py`/`test_stress.py` que aborte si la URL
+   contiene el host/DB de prod. (Bug operativo que ya ensució la base real.)
+2. `REINDEX TABLE CONCURRENTLY sales;` en horario de baja carga → recupera ~18 MB ya.
+   (No lo ejecuto: requiere ventana en producción y tu OK.)
+3. Verificar `autovacuum` activo y bajar el umbral en tablas calientes
+   (`sales`, `stock_movements`): `autovacuum_vacuum_scale_factor=0.05`.
+
+**P1 — antes de onboardear muchos negocios**
+4. **Dinero en `real` (float) → bug de correctitud.** `total`, `payment`,
+   `change_given` deben ser `numeric(12,2)` (o centavos enteros). Float da errores de
+   redondeo en plata. Migración con backfill.
+5. Revisar el índice `idx_sales_idempotency` (el más pesado, sobre texto): hacerlo
+   **parcial** (solo donde `idempotency_key IS NOT NULL`) o acortar la clave.
+6. Auditar los 5 índices de `sales`: cada INSERT escribe los 5 (amplificación de
+   escritura). Eliminar los redundantes (`idx_sales_timestamp` queda cubierto por el
+   compuesto `(business_id, timestamp)` para la mayoría de queries).
+
+**P2 — eficiencia de esquema**
+7. `business_id` es `text` (UUID como string de 36 bytes) en toda fila e índice.
+   Migrar a tipo `uuid` nativo (16 bytes) ≈ achica los índices a la mitad. Migración
+   grande (toca todas las tablas multi-tenant) → planificar con cuidado.
+
+**P3 — observabilidad**
+8. Job/consulta de monitoreo de bloat (`pg_stat_user_tables`, `pgstattuple`) + alerta
+   de disco. Detectar churn anómalo antes de que hinche la base.
