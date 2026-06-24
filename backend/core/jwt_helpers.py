@@ -2,11 +2,14 @@
 Helpers de JWT: creación de tokens y dependencia get_current_business.
 """
 import os
+import logging
 from datetime import datetime, timedelta
 from typing import Optional
 
 from fastapi import Header, HTTPException
 from jose import JWTError, jwt
+
+logger = logging.getLogger("MiNegocio.auth")
 
 JWT_SECRET    = os.getenv("JWT_SECRET", "dev-insecure-change-me")
 JWT_ALGORITHM = "HS256"
@@ -43,7 +46,10 @@ async def get_current_business(authorization: Optional[str] = Header(None)) -> O
             async with pool.acquire() as conn:
                 row = await conn.fetchrow("SELECT plan FROM businesses WHERE id = $1", payload["sub"])
             payload["plan"] = row["plan"] if row else "trial"
-        except Exception:
+        except Exception as e:
+            # No pudimos leer el plan (DB caída/lenta). Caemos a "trial" para no
+            # bloquear, pero lo logueamos: un cliente PAGO podría quedar capado.
+            logger.warning(f"No se pudo leer el plan de {payload.get('sub')}: {e} — usando 'trial' temporal")
             payload["plan"] = "trial"
         return payload
     except JWTError:
