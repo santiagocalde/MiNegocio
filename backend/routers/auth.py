@@ -9,7 +9,7 @@ from jose import jwt, JWTError
 
 from db import get_pool
 from main import JWT_SECRET, JWT_ALGORITHM
-from services.email_templates import base_template
+from services.email_templates import base_template, _e
 
 logger = logging.getLogger("NovaStock.Auth")
 router = APIRouter(prefix="/api/auth", tags=["Auth"])
@@ -445,7 +445,7 @@ async def forgot_password(request: Request, body: ForgotPasswordRequest) -> dict
                                 "subject": "MiNegocio — Recupera tu contrasena",
                                 "html": base_template(
                                     "Recuperar Contrasena",
-                                    f"""<p style="margin:0 0 14px">Hola <strong style="color:#F1F5F9">{row["business_name"]}</strong>,</p>
+                                    f"""<p style="margin:0 0 14px">Hola <strong style="color:#F1F5F9">{_e(row["business_name"])}</strong>,</p>
                                     <p style="margin:0 0 16px;color:#CBD5E1">Recibimos una solicitud para restablecer tu contrasena. Hace clic en el boton de abajo para crear una nueva:</p>
                                     <div style="background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.12);border-radius:8px;padding:10px 14px;margin-bottom:8px">
                                       <p style="color:#FBBF24;font-size:12px;font-weight:600;margin:0">Este enlace expira en 1 hora. Si no solicitaste este cambio, ignora este mensaje.</p>
@@ -537,7 +537,7 @@ async def forgot_pin(request: Request, body: ForgotPasswordRequest) -> dict:
                             "subject": "MiNegocio — Tu nuevo PIN de acceso",
                             "html": base_template(
                                 "Nuevo PIN de Acceso",
-                                f"""<p style="margin:0 0 14px">Hola <strong style="color:#F1F5F9">{row["business_name"]}</strong>,</p>
+                                f"""<p style="margin:0 0 14px">Hola <strong style="color:#F1F5F9">{_e(row["business_name"])}</strong>,</p>
                                 <p style="margin:0 0 16px;color:#CBD5E1">Tu nuevo PIN para abrir la caja es:</p>
                                 <div style="background:rgba(20,187,166,0.08);border:1px solid rgba(20,187,166,0.15);border-radius:12px;padding:20px;text-align:center;margin-bottom:20px">
                                   <span style="font-size:36px;font-weight:800;color:#14BBA6;letter-spacing:10px;font-family:monospace">{new_pin}</span>

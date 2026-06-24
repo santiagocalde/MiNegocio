@@ -238,7 +238,8 @@ async def test_idempotency_key_dedup(setup_db):
             res = await ac.post("/api/sales?idempotency_key=dup-test-key", json=payload)
             assert res.status_code in (200, 201), f"Request {i}: status {res.status_code}"
             data = res.json()
-            if data.get("reprocessed"):
+            # La API marca las repeticiones con "duplicate" (no "reprocessed")
+            if data.get("duplicate"):
                 duplicates += 1
 
     async with aiosqlite.connect(setup_db) as db:

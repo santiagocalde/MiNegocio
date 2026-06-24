@@ -44,10 +44,10 @@ export default function useAuth(addToast) {
         localStorage.setItem(K_OPERATOR, JSON.stringify(operatorObj));
         localStorage.setItem(K_TURN_ID, String(data.turn_id || ''));
         localStorage.removeItem('minegocio_onboarding_pin');
-        setIsAuthenticated(true);
-        if (data.turn_auto_opened && addToast) {
-          addToast(`Turno abierto — bienvenido ${operatorObj.name}`);
+        if (data.turn_auto_opened) {
+          localStorage.setItem('minegocio_onboarding_pending', 'true');
         }
+        setIsAuthenticated(true);
       } else {
         addToast('PIN incorrecto', 'error');
         setPin('');

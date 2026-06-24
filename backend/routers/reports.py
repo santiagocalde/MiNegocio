@@ -1,11 +1,17 @@
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from typing import Optional
+from datetime import date, timedelta
 import io
 import main
 from main import USE_PG, row_to_dict
 
 router = APIRouter()
+
+# Tope duro de filas por export — evita picos de memoria con historiales largos
+_EXPORT_ROW_CAP = 50000
+# Si no se especifica rango, exportar solo los ultimos N dias por defecto
+_DEFAULT_EXPORT_DAYS = 90
 
 try:
     from openpyxl import Workbook
@@ -24,21 +30,44 @@ async def export_sales_excel(desde: Optional[str] = None, hasta: Optional[str] =
         raise HTTPException(501, detail="openpyxl no instalado")
 
     b_id = _biz_id()
+
+    def _to_date(s, default=None):
+        if not s:
+            return default
+        try:
+            return date.fromisoformat(str(s)[:10])
+        except ValueError:
+            return default
+
+    # Sin rango explícito → últimos 90 días (evita exportar todo el historial)
+    desde_d = _to_date(desde, date.today() - timedelta(days=_DEFAULT_EXPORT_DAYS))
+    hasta_d = _to_date(hasta, None)
+    desde = desde_d.isoformat()  # para el branch SQLite (comparación textual)
+
     if USE_PG:
         from db_helpers import get_pg_pool
         pool = await get_pg_pool()
         async with pool.acquire() as conn:
-            clauses = ["s.business_id = $1"]; params = [b_id]; n = 2
-            if desde: clauses.append(f"date(s.timestamp) >= ${n}"); params.append(desde); n += 1
-            if hasta: clauses.append(f"date(s.timestamp) <= ${n}"); params.append(hasta); n += 1
+            # Comparaciones sargables (usan idx_sales_business_timestamp); params como date()
+            clauses = ["s.business_id = $1", "s.timestamp >= $2"]; params = [b_id, desde_d]; n = 3
+            if hasta_d: clauses.append(f"s.timestamp < (${n}::date + interval '1 day')"); params.append(hasta_d); n += 1
             if sucursal_id: clauses.append(f"s.sucursal_id = ${n}"); params.append(sucursal_id); n += 1
             where = " AND ".join(clauses)
-            rows = await conn.fetch(f"SELECT s.*, t.operator as turn_operator FROM sales s LEFT JOIN turns t ON s.turn_id = t.id WHERE {where} ORDER BY s.timestamp DESC", *params)
+            rows = await conn.fetch(
+                f"SELECT s.*, t.operator as turn_operator FROM sales s LEFT JOIN turns t ON s.turn_id = t.id WHERE {where} ORDER BY s.timestamp DESC LIMIT {_EXPORT_ROW_CAP}",
+                *params
+            )
             sales_data = [dict(r) for r in rows]
     else:
         import aiosqlite
         async with aiosqlite.connect(main.DB_PATH) as db:
-            cur = await db.execute("SELECT s.*, t.operator as turn_operator FROM sales s LEFT JOIN turns t ON s.turn_id = t.id ORDER BY s.timestamp DESC")
+            clauses = ["s.timestamp >= ?"]; params = [desde]
+            if hasta: clauses.append("s.timestamp < date(?, '+1 day')"); params.append(hasta)
+            where = " AND ".join(clauses)
+            cur = await db.execute(
+                f"SELECT s.*, t.operator as turn_operator FROM sales s LEFT JOIN turns t ON s.turn_id = t.id WHERE {where} ORDER BY s.timestamp DESC LIMIT {_EXPORT_ROW_CAP}",
+                tuple(params)
+            )
             sales_data = [row_to_dict(r, cur.description) for r in await cur.fetchall()]
 
     wb = Workbook(); ws = wb.active; ws.title = "Ventas"

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, forwardRef } from 'react';
 import { TableVirtuoso } from 'react-virtuoso';
 import { usePanelContext } from '../context/PanelContext';
-import { apiGet, apiPost, apiPatch, SERVER_URL } from '../services/apiClient';
+import { apiGet, apiPost, apiPatch, apiPut, SERVER_URL } from '../services/apiClient';
 import { SkeletonTable } from '../components/ui/Skeleton';
 import EmptyState from '../components/ui/EmptyState';
 import useSortable from '../hooks/useSortable.jsx';
@@ -357,23 +357,20 @@ export default function StockModule() {
   };
 
   return (
-    <div style={{ padding: '22px 28px', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflowY: 'auto' }}>
-      
+    <div style={{ padding: '12px 20px', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflowY: 'auto' }}>
+
       {/* HEADER */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', flexShrink: 0 }}>
-        <div>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, margin: '0 0 4px 0', color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>Inventario</h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', margin: 0 }}>Control y seguimiento de stock de productos.</p>
-        </div>
-        <div style={{ display: 'flex', gap: '12px' }}>
-           <button onClick={() => setShowNuevoProducto(true)} style={{ background: 'var(--gradient-primary)', color: 'white', border: 'none', borderRadius: '8px', padding: '10px 20px', fontSize: '0.95rem', fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexShrink: 0 }}>
+        <h2 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>Inventario</h2>
+        <div style={{ display: 'flex', gap: '8px' }}>
+           <button onClick={() => setShowNuevoProducto(true)} style={{ background: 'var(--gradient-primary)', color: 'white', border: 'none', borderRadius: '8px', padding: '10px 20px', fontSize: '0.95rem', fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 16px rgba(20,187,166,0.35)', whiteSpace: 'nowrap' }}>
               + Nuevo Producto
             </button>
-            <button onClick={() => setShowAumentoMasivo(true)} style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', color: 'var(--accent-danger)', padding: '10px 16px', borderRadius: '8px', fontSize: '0.95rem', fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            <button onClick={() => setShowAumentoMasivo(true)} style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', color: 'var(--accent-danger)', padding: '10px 16px', borderRadius: '8px', fontSize: '0.95rem', fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}>
               <Icons.Chart /> Aumento Masivo
             </button>
             <input type="file" ref={fileInputRef} accept=".csv" style={{ display: 'none' }} onChange={handleImportCsv} />
-            <button onClick={() => fileInputRef.current?.click()} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '10px 16px', borderRadius: '8px', fontSize: '0.95rem', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            <button onClick={() => fileInputRef.current?.click()} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '10px 16px', borderRadius: '8px', fontSize: '0.95rem', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}>
               <Icons.Download /> Importar CSV
             </button>
         </div>
@@ -393,7 +390,7 @@ export default function StockModule() {
       )}
 
       {/* SEARCH BAR FULL WIDTH */}
-      <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexShrink: 0 }}>
+      <div style={{ display: 'flex', gap: '12px', marginBottom: '12px', flexShrink: 0 }}>
         <div style={{ flex: 1, position: 'relative' }}>
           <span style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }}><Icons.Search /></span>
           <input 
@@ -434,9 +431,10 @@ export default function StockModule() {
 
       {/* MAIN TABLE */}
       <div style={{ flex: 1, background: 'var(--bg-card)', borderRadius: '16px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        <div style={{ padding: '24px', borderBottom: '1px solid var(--border-color)' }}>
-          <h2 style={{ fontSize: '1.6rem', fontWeight: 800, margin: '0 0 4px 0', color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>Productos</h2>
-          <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', margin: 0 }}>Control y seguimiento de inventario de productos</p>
+        <div style={{ padding: '10px 20px', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Productos</span>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>·</span>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{filteredProducts.length} resultados</span>
         </div>
 
         <div style={{ flex: 1 }}>
@@ -447,45 +445,45 @@ export default function StockModule() {
               className="virtuoso-stock-table"
               fixedHeaderContent={() => (
                 <tr style={{ color: 'var(--text-primary)', fontSize: '0.8rem', fontWeight: 700, borderBottom: '1px solid var(--border-color)' }}>
-                  <th style={{ padding: '16px 24px', width: '80px', background: 'var(--bg-main)' }}>Imagen</th>
-                  <th style={{ padding: '16px 24px', background: 'var(--bg-main)', cursor: 'pointer' }} onClick={() => toggleSort('name')}>Producto<SortIcon columnKey="name" /></th>
-                  <th style={{ padding: '16px 24px', background: 'var(--bg-main)', cursor: 'pointer' }} onClick={() => toggleSort('category_name')}>Categoría<SortIcon columnKey="category_name" /></th>
-                  <th style={{ padding: '16px 24px', background: 'var(--bg-main)', cursor: 'pointer' }} onClick={() => toggleSort('price')}>Precio<SortIcon columnKey="price" /></th>
-                  <th style={{ padding: '16px 24px', background: 'var(--bg-main)' }}>Estado</th>
-                  <th style={{ padding: '16px 24px', background: 'var(--bg-main)', cursor: 'pointer' }} onClick={() => toggleSort('stock')}>Stock<SortIcon columnKey="stock" /></th>
-                  <th style={{ padding: '16px 24px', background: 'var(--bg-main)' }}>Proveedor</th>
-                  <th style={{ padding: '16px 24px', textAlign: 'center', background: 'var(--bg-main)' }}>Acciones</th>
+                  <th style={{ padding: '10px 16px', width: '64px', background: 'var(--bg-main)' }}>Imagen</th>
+                  <th style={{ padding: '10px 16px', background: 'var(--bg-main)', cursor: 'pointer' }} onClick={() => toggleSort('name')}>Producto<SortIcon columnKey="name" /></th>
+                  <th style={{ padding: '10px 16px', background: 'var(--bg-main)', cursor: 'pointer' }} onClick={() => toggleSort('category_name')}>Categoría<SortIcon columnKey="category_name" /></th>
+                  <th style={{ padding: '10px 16px', background: 'var(--bg-main)', cursor: 'pointer' }} onClick={() => toggleSort('price')}>Precio<SortIcon columnKey="price" /></th>
+                  <th style={{ padding: '10px 16px', background: 'var(--bg-main)' }}>Estado</th>
+                  <th style={{ padding: '10px 16px', background: 'var(--bg-main)', cursor: 'pointer' }} onClick={() => toggleSort('stock')}>Stock<SortIcon columnKey="stock" /></th>
+                  <th style={{ padding: '10px 16px', background: 'var(--bg-main)' }}>Proveedor</th>
+                  <th style={{ padding: '10px 16px', textAlign: 'center', background: 'var(--bg-main)' }}>Acciones</th>
                 </tr>
               )}
               itemContent={(index, p) => (
                 <>
-                  <td style={{ padding: '16px 24px' }}>
-                    <div style={{ width: '48px', height: '48px', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}>
+                  <td style={{ padding: '8px 16px' }}>
+                    <div style={{ width: '40px', height: '40px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}>
                       <Icons.Image />
                     </div>
                   </td>
-                  <td style={{ padding: '16px 24px' }}>
-                    <div style={{ fontWeight: 600, fontSize: '1.05rem', color: 'var(--text-primary)', marginBottom: '4px' }}>{p.name}</div>
-                    <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontFamily: 'var(--font-mono)' }}>{p.code}</div>
+                  <td style={{ padding: '8px 16px' }}>
+                    <div style={{ fontWeight: 600, fontSize: '0.95rem', color: 'var(--text-primary)', marginBottom: '2px' }}>{p.name}</div>
+                    <div style={{ color: 'var(--text-secondary)', fontSize: '0.72rem', fontFamily: 'var(--font-mono)' }}>{p.code}</div>
                   </td>
-                  <td style={{ padding: '16px 24px' }}>
-                    <span style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--text-secondary)', borderRadius: '12px', padding: '4px 10px', fontSize: '0.75rem', fontWeight: 600 }}>
+                  <td style={{ padding: '8px 16px' }}>
+                    <span style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--text-secondary)', borderRadius: '10px', padding: '3px 8px', fontSize: '0.72rem', fontWeight: 600 }}>
                       {p.category_name || 'Sin categoría'}
                     </span>
                   </td>
-                  <td style={{ padding: '16px 24px', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.95rem' }}>
+                  <td style={{ padding: '8px 16px', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.9rem' }}>
                     ${(p.price ?? 0).toLocaleString('es-AR')}
                   </td>
-                  <td style={{ padding: '16px 24px' }}>
-                    <span style={{ background: p.stock > 0 ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)', color: p.stock > 0 ? 'var(--accent-success)' : 'var(--accent-danger)', padding: '4px 10px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                  <td style={{ padding: '8px 16px' }}>
+                    <span style={{ background: p.stock > 0 ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)', color: p.stock > 0 ? 'var(--accent-success)' : 'var(--accent-danger)', padding: '3px 8px', borderRadius: '10px', fontSize: '0.72rem', fontWeight: 700, whiteSpace: 'nowrap' }}>
                       {p.stock > 0 ? 'Con Stock' : 'Sin Stock'}
                     </span>
                   </td>
-                  <td style={{ padding: '16px 24px' }}>
-                    <div style={{ fontWeight: 800, fontSize: '0.95rem', color: (p.stock ?? 0) === 0 ? 'var(--accent-danger)' : 'var(--text-primary)', marginBottom: '2px' }}>{p.stock ?? 0} u</div>
-                    <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>Alerta: {p.min_stock ?? 0} u</div>
+                  <td style={{ padding: '8px 16px' }}>
+                    <div style={{ fontWeight: 800, fontSize: '0.9rem', color: (p.stock ?? 0) === 0 ? 'var(--accent-danger)' : 'var(--text-primary)', marginBottom: '1px' }}>{p.stock ?? 0} u</div>
+                    <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem' }}>Alerta: {p.min_stock ?? 0} u</div>
                   </td>
-                  <td style={{ padding: '16px 24px', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                  <td style={{ padding: '8px 16px', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
                     Sin proveedor
                   </td>
                   <td style={{ padding: '16px 24px', textAlign: 'center' }}>
@@ -513,7 +511,7 @@ export default function StockModule() {
                             }
                           }
                         });
-                      }} style={{ background: 'transparent', color: 'var(--text-secondary)', border: '1px solid var(--border-color)', padding: '8px 12px', borderRadius: '6px', fontSize: '0.85rem', cursor: 'pointer', fontWeight: 600 }}>$ Precio</button>
+                      }} style={{ background: 'rgba(20, 187, 166, 0.15)', color: '#14BBA6', border: '1px solid rgba(20, 187, 166, 0.45)', padding: '6px 12px', borderRadius: '6px', fontSize: '0.82rem', cursor: 'pointer', fontWeight: 700, whiteSpace: 'nowrap' }}>$ Precio</button>
                       <button onClick={() => {
                         setPromptState({
                           isOpen: true,
@@ -537,7 +535,7 @@ export default function StockModule() {
                             }
                           }
                         });
-                      }} style={{ background: 'transparent', color: 'var(--text-secondary)', border: '1px solid var(--border-color)', padding: '8px 12px', borderRadius: '6px', fontSize: '0.85rem', cursor: 'pointer', fontWeight: 600 }}>Stock</button>
+                      }} style={{ background: 'rgba(59, 130, 246, 0.15)', color: '#60A5FA', border: '1px solid rgba(59, 130, 246, 0.45)', padding: '6px 12px', borderRadius: '6px', fontSize: '0.82rem', cursor: 'pointer', fontWeight: 700, whiteSpace: 'nowrap' }}>Stock</button>
                       <button onClick={() => {
                         setPromptState({
                           isOpen: true,
@@ -547,13 +545,13 @@ export default function StockModule() {
                             setPromptState(prev => ({...prev, isOpen: false}));
                             if (newName !== null && newName.trim()) {
                               try {
-                                const res = await apiPatch(`/products/${p.id}`, { name: newName.trim() });
+                                const res = await apiPut(`/products/${p.id}`, { name: newName.trim() });
                                 if (res.ok) {
                                   if (addToast) addToast(`Nombre de ${p.name} actualizado.`, 'success');
                                   fetchProducts();
                                   if (onProductsUpdated) onProductsUpdated();
                                 } else {
-                                  if (addToast) addToast('Error al actualizar nombre.', 'error');
+                                  if (addToast) addToast(`Error al actualizar nombre (${res.status}).`, 'error');
                                 }
                               } catch {
                                 if (addToast) addToast('Error de conexión.', 'error');
@@ -561,7 +559,7 @@ export default function StockModule() {
                             }
                           }
                         });
-                      }} style={{ background: 'transparent', color: 'var(--text-secondary)', border: '1px solid var(--border-color)', padding: '8px 12px', borderRadius: '6px', fontSize: '0.85rem', cursor: 'pointer', fontWeight: 600 }}>Nombre</button>
+                      }} style={{ background: 'rgba(168, 85, 247, 0.15)', color: '#C084FC', border: '1px solid rgba(168, 85, 247, 0.45)', padding: '6px 12px', borderRadius: '6px', fontSize: '0.82rem', cursor: 'pointer', fontWeight: 700, whiteSpace: 'nowrap' }}>Nombre</button>
                       {p.is_virtual === 1 && p.stock > 0 && (
                         <button onClick={() => handleUnpack(p.id)} style={{ background: 'rgba(59, 130, 246, 0.1)', color: 'var(--accent-primary)', border: '1px solid rgba(59, 130, 246, 0.2)', padding: '6px 12px', borderRadius: '6px', fontSize: '0.8rem', cursor: 'pointer', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Icons.Package style={{ width: '14px', height: '14px' }} /> Desarmar</button>
                       )}
