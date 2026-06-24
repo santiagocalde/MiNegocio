@@ -259,15 +259,12 @@ export default function PurchasesModule() {
 
   return (
     <FeatureGate isLocked={isLocked} requiredPlan="Simple">
-      <div style={{ padding: '22px 28px', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
-      
+      <div style={{ padding: '12px 20px', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
+
       {/* HEADER COMPARTIDO */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', flexShrink: 0 }}>
-        <div>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, margin: '0 0 4px 0', color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>Gestión de Compras</h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', margin: 0 }}>Registro de facturas, ingresos de stock y control de gastos.</p>
-        </div>
-        
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexShrink: 0 }}>
+        <h2 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>Gestión de Compras</h2>
+
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           {activeTab === 'history' ? (
             <>

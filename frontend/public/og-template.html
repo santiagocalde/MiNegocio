@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=1200" />
+  <title>OG Image Template — MiNegocio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      width: 1200px;
+      height: 630px;
+      overflow: hidden;
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: #060913;
+      color: #fff;
+    }
+
+    .card {
+      position: relative;
+      width: 1200px;
+      height: 630px;
+      background: radial-gradient(ellipse 80% 70% at 15% 50%, rgba(20,187,166,0.18) 0%, transparent 55%),
+                  radial-gradient(ellipse 60% 80% at 85% 20%, rgba(99,102,241,0.12) 0%, transparent 55%),
+                  linear-gradient(135deg, #0B132B 0%, #060913 60%, #0a0d1e 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 60px 80px;
+      overflow: hidden;
+    }
+
+    /* Grid decorativo de fondo */
+    .card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(20,187,166,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(20,187,166,0.04) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+    }
+
+    /* Orbe teal izquierda */
+    .orb-left {
+      position: absolute;
+      left: -120px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 420px;
+      height: 420px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(20,187,166,0.25) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    /* Orbe púrpura derecha */
+    .orb-right {
+      position: absolute;
+      right: -80px;
+      bottom: -80px;
+      width: 360px;
+      height: 360px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(99,102,241,0.18) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .content {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    /* Badge */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 18px;
+      background: rgba(20,187,166,0.12);
+      border: 1px solid rgba(20,187,166,0.3);
+      border-radius: 100px;
+      width: fit-content;
+      margin-bottom: 28px;
+    }
+    .badge-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #14BBA6;
+      box-shadow: 0 0 10px #14BBA6;
+      flex-shrink: 0;
+    }
+    .badge-text {
+      font-size: 13px;
+      font-weight: 700;
+      color: #14BBA6;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+    }
+
+    /* Headline */
+    .headline {
+      font-size: 72px;
+      font-weight: 900;
+      line-height: 1.08;
+      letter-spacing: -2.5px;
+      color: #fff;
+      margin-bottom: 22px;
+    }
+    .headline .gradient {
+      background: linear-gradient(90deg, #14BBA6 0%, #6366F1 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* Sub */
+    .sub {
+      font-size: 26px;
+      font-weight: 500;
+      color: rgba(230,255,251,0.65);
+      line-height: 1.4;
+      max-width: 640px;
+      margin-bottom: 40px;
+    }
+    .sub strong {
+      color: rgba(230,255,251,0.92);
+      font-weight: 700;
+    }
+
+    /* Pills de features */
+    .pills {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .pill {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 9px 18px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 100px;
+      font-size: 15px;
+      font-weight: 600;
+      color: rgba(230,255,251,0.8);
+    }
+    .pill-check {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: rgba(20,187,166,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      color: #14BBA6;
+      font-size: 11px;
+    }
+
+    /* Logo + dominio — esquina inferior derecha */
+    .branding {
+      position: absolute;
+      bottom: 48px;
+      right: 80px;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 6px;
+    }
+    .logo-img {
+      height: 52px;
+      width: auto;
+      filter: brightness(1.1);
+    }
+    .domain {
+      font-size: 15px;
+      font-weight: 600;
+      color: rgba(230,255,251,0.4);
+      letter-spacing: 0.3px;
+    }
+
+    /* Mini POS widget — esquina derecha */
+    .pos-widget {
+      position: absolute;
+      right: 80px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 310px;
+      background: rgba(20,40,80,0.55);
+      border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 18px;
+      overflow: hidden;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 24px 60px rgba(11,19,43,0.7), 0 0 0 1px rgba(20,187,166,0.1);
+    }
+    .pos-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      background: rgba(255,255,255,0.02);
+    }
+    .pos-dot {
+      width: 9px; height: 9px; border-radius: 50%;
+      background: #14BBA6;
+      box-shadow: 0 0 8px #14BBA6;
+    }
+    .pos-title {
+      font-weight: 800;
+      font-size: 13px;
+      color: #fff;
+      letter-spacing: 0.4px;
+    }
+    .pos-live {
+      margin-left: auto;
+      font-size: 10px;
+      color: rgba(20,187,166,0.7);
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    .pos-items {
+      padding: 8px 0;
+    }
+    .pos-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 16px;
+    }
+    .pos-emoji {
+      font-size: 20px;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255,255,255,0.05);
+      border-radius: 8px;
+      flex-shrink: 0;
+    }
+    .pos-name {
+      flex: 1;
+      font-size: 13px;
+      font-weight: 600;
+      color: #fff;
+    }
+    .pos-price {
+      font-size: 13px;
+      font-weight: 700;
+      color: rgba(230,255,251,0.8);
+      font-variant-numeric: tabular-nums;
+    }
+    .pos-footer {
+      padding: 14px 16px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      background: rgba(0,0,0,0.12);
+    }
+    .pos-total-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 10px;
+    }
+    .pos-total-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: rgba(230,255,251,0.45);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .pos-total-value {
+      font-size: 26px;
+      font-weight: 900;
+      color: #fff;
+      letter-spacing: -1px;
+    }
+    .pos-btn {
+      width: 100%;
+      padding: 11px 0;
+      border-radius: 10px;
+      border: none;
+      background: linear-gradient(90deg, #14BBA6, #6366F1);
+      color: #fff;
+      font-weight: 800;
+      font-size: 14px;
+      cursor: pointer;
+      text-align: center;
+    }
+    .pos-success {
+      text-align: center;
+      font-size: 11px;
+      color: rgba(20,187,166,0.8);
+      margin-top: 8px;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="orb-left"></div>
+    <div class="orb-right"></div>
+
+    <div class="content">
+      <div class="badge">
+        <div class="badge-dot"></div>
+        <span class="badge-text">Sistema de Kioscos #1 de Argentina</span>
+      </div>
+
+      <h1 class="headline">
+        Digitalizá<br />
+        tu <span class="gradient">kiosco</span> hoy
+      </h1>
+
+      <p class="sub">
+        <strong>Vendé sin internet.</strong> Controlá stock, caja<br />y fiados desde una sola pantalla.
+      </p>
+
+      <div class="pills">
+        <div class="pill"><div class="pill-check">✓</div>Sin internet</div>
+        <div class="pill"><div class="pill-check">✓</div>7 días gratis</div>
+        <div class="pill"><div class="pill-check">✓</div>Sin tarjeta de crédito</div>
+        <div class="pill"><div class="pill-check">✓</div>Soporte en WhatsApp</div>
+      </div>
+    </div>
+
+    <!-- Mini POS widget -->
+    <div class="pos-widget">
+      <div class="pos-bar">
+        <div class="pos-dot"></div>
+        <span class="pos-title">Caja — MiNegocio</span>
+        <span class="pos-live">● EN VIVO</span>
+      </div>
+      <div class="pos-items">
+        <div class="pos-item">
+          <div class="pos-emoji">🥤</div>
+          <span class="pos-name">Coca-Cola 2.25L</span>
+          <span class="pos-price">$2.500</span>
+        </div>
+        <div class="pos-item">
+          <div class="pos-emoji">🍞</div>
+          <span class="pos-name">Pan lactal</span>
+          <span class="pos-price">$1.800</span>
+        </div>
+        <div class="pos-item">
+          <div class="pos-emoji">🧉</div>
+          <span class="pos-name">Yerba 1kg</span>
+          <span class="pos-price">$3.200</span>
+        </div>
+      </div>
+      <div class="pos-footer">
+        <div class="pos-total-row">
+          <span class="pos-total-label">Total</span>
+          <span class="pos-total-value">$7.500</span>
+        </div>
+        <div class="pos-btn">✓ Venta registrada</div>
+        <div class="pos-success">Stock y caja actualizados solos</div>
+      </div>
+    </div>
+
+    <!-- Branding -->
+    <div class="branding">
+      <img class="logo-img" src="/MiNegocio_transparente_real.png" alt="MiNegocio" onerror="this.style.display='none'" />
+      <span class="domain">mi-negocio.app</span>
+    </div>
+  </div>
+</body>
+</html>

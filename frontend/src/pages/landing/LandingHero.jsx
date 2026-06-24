@@ -27,7 +27,7 @@ export default function LandingHero({ isLoggedIn, goPanel, goOnboard }) {
             color: '#ffffff'
           }}>
             ¿Seguís usando<br />
-            <span className="lp-gradient-text" style={{ fontStyle: 'italic', paddingRight: '5px' }}>hoja y lápiz?</span>
+            <span className="lp-gradient-text" style={{ fontStyle: 'italic' }}>hoja y lápiz?</span>
           </h1>
         </Reveal>
         <Reveal delay={2}>
@@ -47,7 +47,7 @@ export default function LandingHero({ isLoggedIn, goPanel, goOnboard }) {
             fontSize: '1.25rem', color: 'rgba(230,255,251, 0.7)',
             lineHeight: 1.6, maxWidth: 650, margin: '0 auto 48px', fontWeight: 500
           }}>
-            Dejá de perder plata por cuentas mal hechas. Automatizá tus ventas, controlá tu stock y recuperá las horas que perdés cerrando caja.
+            <strong style={{ color: '#fff', fontWeight: 700 }}>El sistema de ventas para tu kiosco que funciona sin internet.</strong> Dejá de perder plata por cuentas mal hechas y recuperá las horas que perdés cerrando caja.
           </p>
         </Reveal>
         <Reveal delay={4}>
@@ -86,12 +86,15 @@ export default function LandingHero({ isLoggedIn, goPanel, goOnboard }) {
               animation: shine-sweep 3.5s infinite;
             }
           `}</style>
-          <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <button onClick={isLoggedIn ? goPanel : goOnboard} className="lp-btn lp-btn--primary btn-nuevo" style={{ padding: '16px 40px', fontSize: '1.1rem', fontWeight: 700, border: 'none' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
+            <button onClick={isLoggedIn ? goPanel : goOnboard} className="lp-btn lp-btn--primary btn-nuevo" style={{ padding: '18px 48px', fontSize: '1.15rem', fontWeight: 700, border: 'none' }}>
               {isLoggedIn ? 'Ir a mi Panel' : 'Probar Gratis 7 Días'} <Svg.ArrowRight />
             </button>
-            <a href="#planes" className="lp-btn lp-btn--ghost" style={{ padding: '16px 40px', fontSize: '1rem', borderRadius: '100px', border: '1px solid rgba(255,255,255,0.1)' }}>
-              Ver Planes
+            <div style={{ fontSize: '0.85rem', color: 'rgba(230,255,251,0.55)', fontWeight: 500 }}>
+              Sin tarjeta de crédito · Cancelás cuando quieras
+            </div>
+            <a href="#planes" style={{ fontSize: '0.95rem', color: 'rgba(230,255,251,0.7)', textDecoration: 'none', fontWeight: 600, borderBottom: '1px solid rgba(230,255,251,0.2)', paddingBottom: 2, marginTop: 4 }}>
+              o mirá los planes
             </a>
           </div>
         </Reveal>
