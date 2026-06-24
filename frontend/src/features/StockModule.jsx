@@ -25,14 +25,12 @@ const Icons = {
 
 function AlertAccordion({ icon: Icon, title, subtitle, data, isOpen, onToggle, columns, renderRow }) {
   return (
-    <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', marginBottom: '8px', overflow: 'hidden' }}>
-      <div onClick={onToggle} style={{ padding: '6px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', transition: 'background 0.2s' }} onMouseEnter={e=>e.currentTarget.style.background='var(--bg-hover)'} onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <div style={{ color: 'var(--text-secondary)', transform: 'scale(0.7)' }}><Icon /></div>
-          <div>
-            <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.85rem' }}>{title}</div>
-            <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem' }}>{subtitle}</div>
-          </div>
+    <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', marginBottom: '6px', overflow: 'hidden' }}>
+      <div onClick={onToggle} style={{ padding: '5px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', transition: 'background 0.2s' }} onMouseEnter={e=>e.currentTarget.style.background='var(--bg-hover)'} onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+          <div style={{ color: 'var(--text-secondary)', transform: 'scale(0.6)', alignSelf: 'center' }}><Icon /></div>
+          <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.82rem' }}>{title}</div>
+          <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem' }}>{subtitle}</div>
         </div>
         <div style={{ color: 'var(--text-secondary)' }}>
           {isOpen ? <Icons.ChevronUp /> : <Icons.ChevronDown />}
@@ -579,7 +577,7 @@ export default function StockModule() {
       </div>
 
       {/* ACCORDIONS ALERTAS */}
-      <div style={{ marginTop: '24px', flexShrink: 0 }}>
+      <div style={{ marginTop: '10px', flexShrink: 0 }}>
         <AlertAccordion
           icon={Icons.Clock} title="Productos por vencer" subtitle={`${nearExpiry.length} alerta dentro de los próximos 15 días`}
           isOpen={openAccordion === 'vencer'} onToggle={() => toggleAccordion('vencer')}

@@ -55,18 +55,24 @@ async def create_category(body: dict = Body(...)) -> dict:
 @router.get("/api/products", summary="Listar productos")
 async def list_products(q: Optional[str] = Query(None), limit: int = Query(500), sucursal_id: Optional[int] = Query(None)) -> list:
     b_id = _biz_id()
+    # LEFT JOIN a categories para devolver category_name (la tabla de inventario
+    # lo muestra; antes el SELECT * no lo traía y siempre salía "Sin categoría").
     if USE_PG:
         from db_helpers import get_pg_pool
         pool = await get_pg_pool()
         async with pool.acquire() as conn:
             if q:
                 rows = await conn.fetch(
-                    "SELECT * FROM products WHERE business_id = $1 AND is_active = 1 AND (code ILIKE $2 OR name ILIKE $2) ORDER BY name LIMIT $3",
+                    "SELECT p.*, c.name AS category_name FROM products p "
+                    "LEFT JOIN categories c ON c.id = p.category_id "
+                    "WHERE p.business_id = $1 AND p.is_active = 1 AND (p.code ILIKE $2 OR p.name ILIKE $2) ORDER BY p.name LIMIT $3",
                     b_id, f"%{q}%", limit
                 )
             else:
                 rows = await conn.fetch(
-                    "SELECT * FROM products WHERE business_id = $1 AND is_active = 1 ORDER BY name LIMIT $2",
+                    "SELECT p.*, c.name AS category_name FROM products p "
+                    "LEFT JOIN categories c ON c.id = p.category_id "
+                    "WHERE p.business_id = $1 AND p.is_active = 1 ORDER BY p.name LIMIT $2",
                     b_id, limit
                 )
             return [dict(r) for r in rows]
@@ -74,11 +80,16 @@ async def list_products(q: Optional[str] = Query(None), limit: int = Query(500),
         async with aiosqlite.connect(main.DB_PATH) as db:
             if q:
                 cur = await db.execute(
-                    "SELECT * FROM products WHERE is_active = 1 AND (code LIKE ? OR name LIKE ?) ORDER BY name LIMIT ?",
+                    "SELECT p.*, c.name AS category_name FROM products p "
+                    "LEFT JOIN categories c ON c.id = p.category_id "
+                    "WHERE p.is_active = 1 AND (p.code LIKE ? OR p.name LIKE ?) ORDER BY p.name LIMIT ?",
                     (f"%{q}%", f"%{q}%", limit)
                 )
             else:
-                cur = await db.execute("SELECT * FROM products WHERE is_active = 1 ORDER BY name LIMIT ?", (limit,))
+                cur = await db.execute(
+                    "SELECT p.*, c.name AS category_name FROM products p "
+                    "LEFT JOIN categories c ON c.id = p.category_id "
+                    "WHERE p.is_active = 1 ORDER BY p.name LIMIT ?", (limit,))
             rows = await cur.fetchall()
             return [row_to_dict(r, cur.description) for r in rows]
 

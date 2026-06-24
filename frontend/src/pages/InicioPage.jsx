@@ -21,6 +21,13 @@ export default function InicioPage() {
   const navigate = useNavigate();
   const { backend, auth } = usePanelContext();
 
+  // Reloj liviano: refresca saludo y fecha cada minuto (cubre el paso día→tarde→noche)
+  const [now, setNow] = React.useState(() => new Date());
+  React.useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 60000);
+    return () => clearInterval(t);
+  }, []);
+
   const r = backend.resumenData || {};
   const vendido = r.total_vendido ?? ((r.total_efectivo || 0) + (r.total_tarjeta || 0) + (r.total_transferencia || 0) + (r.total_mp || 0) + (r.total_fiado || 0));
   const tickets = r.total_tickets || 0;
@@ -30,7 +37,9 @@ export default function InicioPage() {
 
   const operador = auth.currentOperator?.name || 'Dueño';
   const negocio = backend.businessConfig?.nombre || 'tu negocio';
-  const hoy = new Date().toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' });
+  const hora = now.getHours();
+  const saludoHora = hora < 12 ? 'buen día' : hora < 20 ? 'buenas tardes' : 'buenas noches';
+  const hoy = now.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' });
 
   const sa = backend.stockAlerts?.stock || {};
   const porAgotarse = [
@@ -43,7 +52,7 @@ export default function InicioPage() {
       {/* Saludo */}
       <div style={{ marginBottom: 20 }}>
         <h1 style={{ fontSize: '1.6rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)', letterSpacing: '-0.4px' }}>
-          Hola, {operador} 👋
+          Hola {operador}, {saludoHora}
         </h1>
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: '4px 0 0', textTransform: 'capitalize' }}>{hoy} · {negocio}</p>
       </div>
