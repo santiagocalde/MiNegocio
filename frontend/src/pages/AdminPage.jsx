@@ -230,9 +230,37 @@ function Dashboard({ token }) {
         <StatCard color="#10B981" label="MRR Mensual" value={fmtPesos(m.mrr)} sub="Ingresos recurrentes" />
         <StatCard color={m.suspended > 0 ? '#EF4444' : '#10B981'} label="Suspendidos" value={fmtNum(m.suspended)} sub={`${m.churn_this_month} churn 30d`} />
         <StatCard color="#F59E0B" label="Conversion" value={`${m.trial_conversions}%`} sub="Trial a pago" />
-        <StatCard color="#8B5CF6" label="Ventas Totales" value={fmtNum(m.top_features_used?.[0]?.count || 0)} sub="Transacciones" />
+        <StatCard color="#8B5CF6" label="Ventas Totales" value={fmtNum(m.total_sales ?? m.top_features_used?.[0]?.count ?? 0)} sub="Transacciones" />
         <StatCard color="#EC4899" label="Productos" value={fmtNum(m.total_products)} sub="En todos los negocios" />
       </div>
+
+      {m.activation_funnel && (
+        <div style={{ ...S.card, marginBottom: 24 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <h3 style={{ color: '#94A3B8', fontSize: '0.7rem', fontWeight: 700, margin: 0, textTransform: 'uppercase', letterSpacing: '0.7px' }}>Embudo de activación</h3>
+            <span style={{ ...S.pill(m.activation_funnel.activation_rate >= 50 ? '#10B981' : '#F59E0B') }}>{m.activation_funnel.activation_rate}% activados</span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10 }}>
+            {[
+              { label: 'Cargaron productos', value: m.activation_funnel.with_products, color: '#3B82F6' },
+              { label: 'Abrieron caja', value: m.activation_funnel.opened_register, color: '#F59E0B' },
+              { label: 'Hicieron ≥1 venta', value: m.activation_funnel.activated, color: '#10B981' },
+            ].map((s, i) => {
+              const pct = Math.round((s.value / total) * 100);
+              return (
+                <div key={i} style={{ background: 'rgba(255,255,255,0.012)', borderRadius: 12, padding: '16px', border: `1px solid ${BORDER}` }}>
+                  <div style={{ fontSize: '1.6rem', fontWeight: 800, color: s.color, lineHeight: 1 }}>{fmtNum(s.value)}</div>
+                  <div style={{ color: '#94A3B8', fontSize: '0.74rem', fontWeight: 600, marginTop: 5 }}>{s.label}</div>
+                  <div style={{ marginTop: 8, height: 4, background: 'rgba(255,255,255,0.03)', borderRadius: 2, overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: `${pct}%`, background: s.color, borderRadius: 2, transition: 'width 0.6s ease' }} />
+                  </div>
+                  <div style={{ color: MUTED, fontSize: '0.66rem', marginTop: 4 }}>{pct}% de los negocios</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {atRisk && (atRisk.expiring?.length > 0 || atRisk.inactive?.length > 0) && (
         <div style={{ ...S.card, marginBottom: 24, border: '1px solid rgba(245,158,11,0.15)', background: 'linear-gradient(135deg, #0B1120, rgba(245,158,11,0.03))' }}>
@@ -271,7 +299,7 @@ function Dashboard({ token }) {
           {signups && <BarChart data={signups} color="#3B82F6" height={120} />}
         </div>
         <div style={S.card}>
-          <h3 style={{ color: '#94A3B8', fontSize: '0.7rem', fontWeight: 700, margin: '0 0 16px 0', textTransform: 'uppercase', letterSpacing: '0.7px' }}>Ventas / MRR (12 meses)</h3>
+          <h3 style={{ color: '#94A3B8', fontSize: '0.7rem', fontWeight: 700, margin: '0 0 16px 0', textTransform: 'uppercase', letterSpacing: '0.7px' }}>Ventas por mes (12m)</h3>
           {revenue && <BarChart data={revenue.map(r => ({ count: r.sales }))} color="#14BBA6" height={120} />}
         </div>
       </div>
@@ -316,11 +344,13 @@ function ActivityFeed({ token }) {
   const [autoRefresh, setAutoRefresh] = useState(true);
 
   useEffect(() => {
-    fetchAdmin(`${API}/analytics/activity`, token).then(r => r.json()).then(setEvents);
+    const load = () => fetchAdmin(`${API}/analytics/activity`, token)
+      .then(r => r.ok ? r.json() : [])
+      .then(d => setEvents(Array.isArray(d) ? d : []))
+      .catch(() => setEvents([]));
+    load();
     if (!autoRefresh) return;
-    const interval = setInterval(() => {
-      fetchAdmin(`${API}/analytics/activity`, token).then(r => r.json()).then(setEvents);
-    }, 30000);
+    const interval = setInterval(load, 30000);
     return () => clearInterval(interval);
   }, [token, autoRefresh]);
 
@@ -517,11 +547,11 @@ function Businesses({ token, toast }) {
                 </div>
               ))}
             </div>
-            {(detail.business_type || detail.objective || detail.needs_arca || detail.prior_pos) && (
+            {(detail.business_type || detail.objective || detail.needs_arca || detail.prior_pos || detail.source) && (
               <div style={{ marginTop: 16, padding: '14px 16px', background: 'rgba(96,165,250,0.04)', borderRadius: 10, border: '1px solid rgba(96,165,250,0.12)' }}>
                 <div style={{ color: '#94A3B8', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 10 }}>Qué dijo en el onboarding</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-                  {[['Rubro', detail.business_type], ['Quiere resolver', detail.objective], ['Facturación', detail.needs_arca], ['Experiencia previa', detail.prior_pos]].filter(([, v]) => v).map(([l, v]) => (
+                  {[['Rubro', detail.business_type], ['Quiere resolver', detail.objective], ['Facturación', detail.needs_arca], ['Experiencia previa', detail.prior_pos], ['Cómo llegó', detail.source]].filter(([, v]) => v).map(([l, v]) => (
                     <div key={l} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: '0.8rem' }}>
                       <span style={{ color: MUTED, flexShrink: 0 }}>{l}</span>
                       <span style={{ color: TEXT, fontWeight: 600, textAlign: 'right' }}>{v}</span>
@@ -613,6 +643,7 @@ function Insights({ token }) {
         <DistribCard title="Qué buscan resolver" subtitle="Su objetivo principal" rows={data?.by_objective} />
         <DistribCard title="Necesidad de facturar" subtitle="¿Necesitan ARCA / AFIP?" rows={data?.by_arca} />
         <DistribCard title="Experiencia previa" subtitle="¿Usaron un sistema antes?" rows={data?.by_prior_pos} />
+        <DistribCard title="Canal de origen" subtitle="De dónde llegaron al registrarse" rows={data?.by_source} />
       </div>
     </div>
   );
@@ -805,12 +836,18 @@ function ProductsManager({ token, toast }) {
 function Audit({ token }) {
   const [logs, setLogs] = useState([]);
   const [days, setDays] = useState(60);
-  useEffect(() => { fetchAdmin(`${API}/audit-log?days=${days}`, token).then(r => r.json()).then(setLogs); }, [token, days]);
+  useEffect(() => {
+    fetchAdmin(`${API}/audit-log?days=${days}`, token)
+      .then(r => r.ok ? r.json() : [])
+      .then(d => setLogs(Array.isArray(d) ? d : []))
+      .catch(() => setLogs([]));
+  }, [token, days]);
 
   const getActionBadge = (action) => {
-    if (action.includes('plan')) return <span style={S.pill('#F59E0B')}>Plan</span>;
-    if (action.includes('status')) return <span style={S.pill('#3B82F6')}>Estado</span>;
-    return <span style={S.pill(ACCENT)}>{action}</span>;
+    const a = action || '';
+    if (a.includes('plan')) return <span style={S.pill('#F59E0B')}>Plan</span>;
+    if (a.includes('status')) return <span style={S.pill('#3B82F6')}>Estado</span>;
+    return <span style={S.pill(ACCENT)}>{a || '—'}</span>;
   };
 
   return (

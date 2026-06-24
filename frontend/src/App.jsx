@@ -4,8 +4,12 @@ import { PanelProvider } from './context/PanelContext';
 import PanelLayout from './layouts/PanelLayout';
 import LandingPage from './pages/LandingPage';
 import ErrorBoundary from './components/ui/ErrorBoundary';
+import { captureSource } from './utils/attribution';
 import './index.css';
 import './App.css';
+
+// Atribución first-touch: registrar el canal de origen al cargar la app.
+captureSource();
 
 const InicioPage = lazy(() => import('./pages/InicioPage'));
 const VentasPage = lazy(() => import('./pages/VentasPage'));
