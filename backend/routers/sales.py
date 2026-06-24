@@ -188,25 +188,36 @@ async def close_turn(turn_id: int, body: TurnClose) -> dict:
                     if not (not op_row[0].startswith("$2b$") and body.pin == op_row[0]):
                         raise HTTPException(403, detail="PIN incorrecto")
 
-        difference = body.counted_cash - body.sales_total
         async with main.db_write_lock:
             async with aiosqlite.connect(main.DB_PATH) as db:
                 await db.execute("BEGIN IMMEDIATE")
-                cur = await db.execute("SELECT closed_at FROM turns WHERE id=?", (turn_id,))
+                cur = await db.execute("SELECT closed_at, initial_cash FROM turns WHERE id=?", (turn_id,))
                 turn = await cur.fetchone()
                 if not turn: raise HTTPException(404, detail="Turno no encontrado")
                 if turn[0] is not None: raise HTTPException(400, detail="Este turno ya esta cerrado")
+                # Efectivo esperado = base inicial + ventas EN EFECTIVO (no fiado) - egresos.
+                # (mismo criterio que la rama PG; no se confía en el total del front)
+                cur2 = await db.execute(
+                    "SELECT COALESCE(SUM(total),0) FROM sales WHERE turn_id=? AND payment_method='efectivo' AND is_fiado=0",
+                    (turn_id,)
+                )
+                cash_sales = (await cur2.fetchone())[0] or 0
+                cur3 = await db.execute("SELECT COALESCE(SUM(monto),0) FROM egresos_caja WHERE turn_id=?", (turn_id,))
+                egresos = (await cur3.fetchone())[0] or 0
+                expected_cash = round(float(turn[1] or 0) + float(cash_sales) - float(egresos), 2)
+                difference = round(body.counted_cash - expected_cash, 2)
                 await db.execute(
                     "UPDATE turns SET closed_at=datetime('now','localtime'), sales_total=?, counted_cash=?, difference=?, notes=? WHERE id=?",
                     (body.sales_total, body.counted_cash, difference, body.notes, turn_id)
                 )
-                if difference < 0:
+                if difference < -0.01:
                     await db.execute(
                         "INSERT INTO egresos_caja (monto, motivo, type, turn_id) VALUES (?,?,?,?)",
                         (abs(difference), f"Ajuste por Faltante de Caja (Turno {turn_id})", "gasto", turn_id)
                     )
                 await db.commit()
-        return {"success": True, "difference": difference, "status": "perfecto" if difference == 0 else ("sobrante" if difference > 0 else "faltante")}
+        return {"success": True, "difference": difference, "expected_cash": expected_cash,
+                "status": "perfecto" if abs(difference) < 0.01 else ("sobrante" if difference > 0 else "faltante")}
 
 
 @router.get("/api/turns", summary="Historial de turnos")
