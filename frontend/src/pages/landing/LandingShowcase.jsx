@@ -53,7 +53,7 @@ export default function LandingShowcase() {
         </Reveal>
 
         <Reveal delay={1}>
-          <div style={{ maxWidth: 980, margin: '0 auto' }}
+          <div className="lp-showcase-wrap" style={{ margin: '0 auto' }}
             onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
 
             {/* Tabs */}
@@ -73,9 +73,9 @@ export default function LandingShowcase() {
               ))}
             </div>
 
-            {/* Browser mockup */}
-            <div className="lp-glass" style={{ borderRadius: 16, overflow: 'hidden', padding: 0, boxShadow: '0 30px 80px rgba(0,0,0,0.45)', border: '1px solid rgba(255,255,255,0.08)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px', background: 'rgba(255,255,255,0.025)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+            {/* Mockup (con barra de navegador en celular; en PC se muestra discreto, solo la imagen) */}
+            <div className="lp-glass lp-showcase-mockup" style={{ overflow: 'hidden', padding: 0 }}>
+              <div className="lp-showcase-chrome" style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px', background: 'rgba(255,255,255,0.025)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
                 <span style={{ width: 11, height: 11, borderRadius: '50%', background: '#ff5f57' }} />
                 <span style={{ width: 11, height: 11, borderRadius: '50%', background: '#febc2e' }} />
                 <span style={{ width: 11, height: 11, borderRadius: '50%', background: '#28c840' }} />
