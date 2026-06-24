@@ -37,7 +37,7 @@ export default function LandingNav({
         </div>
 
         <div className="nav-links" style={{ display: 'flex', alignItems: 'center', gap: 40, justifyContent: 'center', position: 'relative', zIndex: 10 }}>
-          {['Funciones', 'Planes', 'Contacto'].map(link => (
+          {['Funciones', 'Sistema', 'Planes', 'Contacto'].map(link => (
             <a key={link} 
                href={link === 'Contacto' ? '#' : `#${link.toLowerCase()}`} 
                className={`lp-nav-link${activeSection === link.toLowerCase() ? ' lp-nav-link--active' : ''}`}
@@ -113,7 +113,7 @@ export default function LandingNav({
       </div>
       {mobileMenu && (
         <div className="nav-mobile-menu" style={{ flexDirection: 'column', alignItems: 'center', gap: 16, padding: '20px 0', marginTop: 12, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-          {['Funciones', 'Planes', 'Contacto'].map(link => (
+          {['Funciones', 'Sistema', 'Planes', 'Contacto'].map(link => (
             <a key={link} 
                href={link === 'Contacto' ? '#' : `#${link.toLowerCase()}`} 
                onClick={(e) => {

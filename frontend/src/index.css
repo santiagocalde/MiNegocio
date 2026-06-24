@@ -976,6 +976,10 @@ main > * {
 @keyframes scaleIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
 @keyframes skeleton-shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
 @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+/* Showcase de la landing: crossfade entre capturas + hover de flechas */
+@keyframes lp-fade-in { from { opacity: 0; } to { opacity: 1; } }
+.lp-show-arrow { transition: background 0.2s, border-color 0.2s, color 0.2s; }
+.lp-show-arrow:hover { background: rgba(20,187,166,0.12) !important; border-color: rgba(20,187,166,0.4) !important; color: var(--lp-primary) !important; }
 @keyframes bounce-subtle { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
 
 /* ── Scroll margin for anchor sections ── */
