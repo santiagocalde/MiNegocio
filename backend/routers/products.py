@@ -266,9 +266,22 @@ async def update_price(product_id: int, body: dict) -> dict:
             return {"success": True, "old_price": row[0], "new_price": price}
 
 
-@router.patch("/api/products/{product_id}/stock", summary="Actualizar stock")
+@router.patch("/api/products/{product_id}/stock", summary="Fijar stock absoluto")
 async def update_stock(product_id: int, body: dict) -> dict:
-    stock = body.get("stock", 0)
+    """Fija el stock ABSOLUTO del producto (no es un movimiento sumable).
+
+    El valor es obligatorio: antes defaulteaba a 0, por lo que un body sin
+    `stock` (o con valor no numérico) podía vaciar el inventario real en silencio.
+    Ahora se rechaza con 422 si falta o no es un número >= 0.
+    """
+    if "stock" not in body or body.get("stock") is None:
+        raise HTTPException(422, detail="Falta el campo 'stock' (valor absoluto a fijar)")
+    try:
+        stock = float(body["stock"])
+    except (TypeError, ValueError):
+        raise HTTPException(422, detail="'stock' debe ser numérico")
+    if stock < 0:
+        raise HTTPException(422, detail="'stock' no puede ser negativo")
     operator = body.get("operator", "Sistema")
     b_id = _biz_id()
     if USE_PG:

@@ -27,7 +27,7 @@ import DogEasterEgg from './landing/DogEasterEgg';
 export default function LandingPage() {
   const navigate = useNavigate();
   const [isScrolled, setIsScrolled] = useState(false);
-  const [isYearly, setIsYearly] = useState(false);
+  const [isYearly, setIsYearly] = useState(true); // anual por default: resalta el ahorro del 20%
   const [mobileMenu, setMobileMenu] = useState(false);
   const [checkoutPlan, setCheckoutPlan] = useState(null);
 

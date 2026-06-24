@@ -96,7 +96,7 @@ function PlanCard({ plan, isYearly, currentPlan, onSubscribe }) {
 
 export default function PlanPage() {
   const { currentPlan, trialDaysRemaining, isTrialExpired } = usePanelContext();
-  const [isYearly, setIsYearly] = useState(false);
+  const [isYearly, setIsYearly] = useState(true); // anual por default: resalta el ahorro del 20%
   const [plans, setPlans] = useState(FALLBACK_PLANS);
   const [planPageLoading, setPlanPageLoading] = useState(false);
   const [planPageError, setPlanPageError] = useState('');
