@@ -187,11 +187,11 @@ async def init_pg() -> None:
                 operator        TEXT NOT NULL,
                 opened_at       TIMESTAMPTZ DEFAULT now(),
                 closed_at       TIMESTAMPTZ,
-                sales_total     REAL DEFAULT 0,
-                counted_cash    REAL,
-                difference      REAL,
+                sales_total     NUMERIC(12,2) DEFAULT 0,
+                counted_cash    NUMERIC(12,2),
+                difference      NUMERIC(12,2),
                 notes           TEXT,
-                initial_cash    REAL DEFAULT 0,
+                initial_cash    NUMERIC(12,2) DEFAULT 0,
                 sucursal_id     INTEGER DEFAULT 1
             );
             CREATE INDEX IF NOT EXISTS idx_turns_business_id ON turns(business_id);
@@ -246,7 +246,7 @@ async def init_pg() -> None:
                 business_id     TEXT NOT NULL REFERENCES businesses(id),
                 name            TEXT NOT NULL,
                 phone           TEXT,
-                balance         REAL DEFAULT 0,
+                balance         NUMERIC(12,2) DEFAULT 0,
                 created_at      TIMESTAMPTZ DEFAULT now()
             );
             CREATE INDEX IF NOT EXISTS idx_customers_business_id ON customers(business_id);
@@ -255,7 +255,7 @@ async def init_pg() -> None:
                 id              SERIAL PRIMARY KEY,
                 business_id     TEXT NOT NULL REFERENCES businesses(id),
                 customer_id     INTEGER NOT NULL REFERENCES customers(id),
-                amount          REAL,
+                amount          NUMERIC(12,2),
                 type            TEXT,
                 description     TEXT,
                 turn_id         INTEGER,
@@ -279,7 +279,7 @@ async def init_pg() -> None:
                 business_id     TEXT NOT NULL REFERENCES businesses(id),
                 supplier_id     INTEGER REFERENCES suppliers(id),
                 invoice_number  TEXT,
-                total_cost      REAL,
+                total_cost      NUMERIC(12,2),
                 operator        TEXT,
                 created_at      TIMESTAMPTZ DEFAULT now()
             );
@@ -292,7 +292,7 @@ async def init_pg() -> None:
                 product_id      INTEGER,
                 product_name    TEXT,
                 quantity        REAL,
-                unit_cost       REAL
+                unit_cost       NUMERIC(12,2)
             );
             CREATE INDEX IF NOT EXISTS idx_purchase_items_purchase ON purchase_items(purchase_id);
 
@@ -318,7 +318,7 @@ async def init_pg() -> None:
                 id              SERIAL PRIMARY KEY,
                 business_id     TEXT NOT NULL REFERENCES businesses(id),
                 turn_id         INTEGER,
-                monto           REAL,
+                monto           NUMERIC(12,2),
                 motivo          TEXT,
                 type            TEXT DEFAULT 'gasto',
                 operator        TEXT,
@@ -333,7 +333,7 @@ async def init_pg() -> None:
                 description     TEXT DEFAULT '',
                 type            TEXT DEFAULT 'combo',
                 discount_percent REAL DEFAULT 0,
-                combo_price     REAL DEFAULT 0,
+                combo_price     NUMERIC(12,2) DEFAULT 0,
                 is_active       INTEGER NOT NULL DEFAULT 1,
                 created_at      TIMESTAMPTZ DEFAULT now()
             );
