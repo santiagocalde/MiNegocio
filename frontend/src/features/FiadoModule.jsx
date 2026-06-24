@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { usePanelContext } from '../context/PanelContext';
 import { apiGet, apiPost } from '../services/apiClient';
+import { useStaleData } from '../hooks/useStaleData';
 import { SkeletonCard } from '../components/ui/Skeleton';
 import EmptyState from '../components/ui/EmptyState';
 
@@ -15,8 +16,14 @@ const Icons = {
 
 export default function FiadoModule() {
   const { addToast } = usePanelContext();
-  const [customers, setCustomers] = useState([]);
-  const [loading, setLoading] = useState(true);
+  // Stale-while-revalidate: al volver a esta pantalla los clientes aparecen al
+  // instante desde caché y se revalidan en segundo plano (clave con latencia de región).
+  const { data: customersData, loading, refresh: fetchCustomers } = useStaleData('/customers', async () => {
+    const res = await apiGet('/customers');
+    if (!res.ok) throw new Error('No se pudieron cargar los clientes');
+    return res.json();
+  });
+  const customers = customersData || [];
   const [expandedClient, setExpandedClient] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [transactionsMap, setTransactionsMap] = useState({});
@@ -25,23 +32,6 @@ export default function FiadoModule() {
   const [newClientModal, setNewClientModal] = useState(false);
   const [newClientName, setNewClientName] = useState('');
   const [newClientPhone, setNewClientPhone] = useState('');
-
-  const fetchCustomers = async () => {
-    setLoading(true);
-    try {
-      const res = await apiGet('/customers');
-      if (res.ok) {
-        const data = await res.json();
-        setCustomers(data);
-      }
-    } catch {
-      setCustomers([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => { fetchCustomers(); }, []);
 
   const loadTransactions = async (customerId) => {
     if (transactionsMap[customerId]) return;
