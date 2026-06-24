@@ -141,25 +141,41 @@ async def close_turn(turn_id: int, body: TurnClose) -> dict:
                     if not (not op_row["pin"].startswith("$2b$") and body.pin == op_row["pin"]):
                         raise HTTPException(403, detail="PIN incorrecto")
 
-        difference = body.counted_cash - body.sales_total
         async with pool.acquire() as conn:
             async with conn.transaction():
-                row = await conn.fetchrow("SELECT closed_at FROM turns WHERE id = $1 AND business_id = $2", turn_id, b_id)
+                row = await conn.fetchrow("SELECT closed_at, initial_cash FROM turns WHERE id = $1 AND business_id = $2", turn_id, b_id)
                 if not row:
                     raise HTTPException(404, detail="Turno no encontrado")
                 if row["closed_at"] is not None:
                     raise HTTPException(400, detail="Este turno ya esta cerrado")
 
+                # Efectivo esperado en el cajón = base inicial + ventas EN EFECTIVO (no fiado)
+                # - egresos de caja del turno. NO se cuentan tarjeta/transferencia/MP (no van
+                # al cajón) ni fiado (no se cobró). Se calcula en el backend, no se confía en
+                # el total que manda el front (que incluía todos los métodos = faltante falso).
+                cash_sales = await conn.fetchval(
+                    "SELECT COALESCE(SUM(total),0) FROM sales WHERE turn_id = $1 AND business_id = $2 "
+                    "AND payment_method = 'efectivo' AND is_fiado = 0",
+                    turn_id, b_id
+                )
+                egresos = await conn.fetchval(
+                    "SELECT COALESCE(SUM(monto),0) FROM egresos_caja WHERE turn_id = $1 AND business_id = $2",
+                    turn_id, b_id
+                )
+                expected_cash = round(float(row["initial_cash"] or 0) + float(cash_sales) - float(egresos), 2)
+                difference = round(body.counted_cash - expected_cash, 2)
+
                 await conn.execute(
                     "UPDATE turns SET closed_at = now(), sales_total = $1, counted_cash = $2, difference = $3, notes = $4 WHERE id = $5",
                     body.sales_total, body.counted_cash, difference, body.notes, turn_id
                 )
-                if difference < 0:
+                if difference < -0.01:
                     await conn.execute(
                         "INSERT INTO egresos_caja (business_id, monto, motivo, type, turn_id) VALUES ($1,$2,$3,$4,$5)",
                         b_id, abs(difference), f"Ajuste por Faltante de Caja (Turno {turn_id})", "gasto", turn_id
                     )
-        return {"success": True, "difference": difference, "status": "perfecto" if difference == 0 else ("sobrante" if difference > 0 else "faltante")}
+        return {"success": True, "difference": difference, "expected_cash": expected_cash,
+                "status": "perfecto" if abs(difference) < 0.01 else ("sobrante" if difference > 0 else "faltante")}
     else:
         import aiosqlite
         if body.operator_id and body.pin:
@@ -244,7 +260,7 @@ async def create_sale(body: SaleCreate, idempotency_key: Optional[str] = Query(N
                 is_split = len(body.payments) > 0
                 primary_method = 'split' if is_split else body.payment_method
                 primary_payment = round(sum(p.amount for p in body.payments), 2) if is_split else round(body.payment, 2)
-                total_sale = round(body.total, 2) if body.total else round(primary_payment, 2)
+                total_sale = round(body.total, 2) if body.total is not None else round(primary_payment, 2)
                 is_cash = primary_method == 'efectivo' or any(p.method == 'efectivo' for p in body.payments)
                 change_sale = round(body.change_given, 2) if is_cash else 0
 
@@ -310,8 +326,13 @@ async def create_sale(body: SaleCreate, idempotency_key: Optional[str] = Query(N
                             b_id, item.product_id, item.quantity, f"Venta #{sale_id}", body.operator, f"sale-{sale_id}-{item.product_id}"
                         )
 
-                if abs(db_total - total_sale) > 0.02:
-                    logger.warning(f"Venta #{sale_id}: total DB={db_total} vs frontend={total_sale} (diferencia={round(db_total-total_sale,2)})")
+                # Nota: db_total no incluye descuentos/promos (que sí están en total_sale),
+                # así que una diferencia es normal en ventas con descuento. Se deja en debug
+                # como diagnóstico; solo es señal de alarma si el front cobró MÁS que los ítems.
+                if total_sale - db_total > 0.02:
+                    logger.warning(f"Venta #{sale_id}: cobrado ({total_sale}) > suma de items en DB ({db_total}) — revisar")
+                elif abs(db_total - total_sale) > 0.02:
+                    logger.debug(f"Venta #{sale_id}: total DB={db_total} vs cobrado={total_sale} (descuento/promo)")
 
                 if body.is_fiado and body.fiado_name:
                     # Deuda = parte NO pagada (total - lo abonado ahora).
@@ -363,7 +384,7 @@ async def create_sale(body: SaleCreate, idempotency_key: Optional[str] = Query(N
                 is_split = len(body.payments) > 0
                 primary_method = 'split' if is_split else body.payment_method
                 primary_payment = round(sum(p.amount for p in body.payments), 2) if is_split else round(body.payment, 2)
-                total_sale = round(body.total, 2) if body.total else round(primary_payment, 2)
+                total_sale = round(body.total, 2) if body.total is not None else round(primary_payment, 2)
                 change_sale = round(body.change_given, 2)
 
                 cur = await db.execute(

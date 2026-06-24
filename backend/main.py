@@ -313,7 +313,11 @@ async def sse_event_stream(
             raise HTTPException(status_code=401, detail="Token requerido para SSE")
         try:
             payload = jwt.decode(raw, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+            if payload.get("type") != "access":
+                raise HTTPException(status_code=401, detail="Token SSE inválido (tipo)")
             biz_id = payload.get("sub")
+        except HTTPException:
+            raise
         except Exception:
             raise HTTPException(status_code=401, detail="Token SSE inválido o expirado")
 

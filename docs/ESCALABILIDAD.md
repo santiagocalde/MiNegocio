@@ -155,10 +155,38 @@ conteo de filas de cada tabla quedó intacto. **Sin pérdida de datos.**
    el resto del código sigue idéntico, la precisión vive en la base. Aplicado en producción
    con backup previo (`/root/backups/minegocio_premoney_*.dump`); suma de ventas verificada
    antes/después (699640.00, 114 ventas) — sin pérdida de datos.
-   **Pendiente (follow-up):** convertir el resto de columnas de dinero (`purchases`,
-   `egresos_caja`, `customers.balance`, `customer_transactions`, `turns.*`, `promotions`)
-   y, a largo plazo, evaluar centavos enteros end-to-end (frontend incluido) para el modo
-   SQLite offline, donde `NUMERIC` igual almacena como float.
+   **Ampliado (2026-06-24):** migradas también las columnas de dinero del flujo diario e
+   inventario — `turns` (sales_total/counted_cash/difference/initial_cash), `customers.balance`,
+   `customer_transactions.amount`, `egresos_caja.monto`, `purchases.total_cost`,
+   `purchase_items.unit_cost`, `promotions.combo_price` — con verificación de invariantes.
+   **Pendiente:** billing (`payment_events.amount`, `payment_intents.total` — tocan
+   conciliación con MercadoPago, requieren revisar billing.py) y centavos enteros
+   end-to-end para el modo SQLite offline.
+
+## 🐛 Bugs de flujo diario corregidos (2026-06-24)
+
+- 🔴 **CRÍTICO — cierre de caja mal calculado.** `close_turn` hacía
+  `diferencia = efectivo_contado − total_de_TODAS_las_ventas`, ignorando la **base
+  inicial** y mezclando ventas con **tarjeta/transferencia/MP/fiado** (que no van al
+  cajón). Generaba faltantes falsos y **auto-insertaba un egreso "Ajuste por Faltante"**
+  por ese monto cada cierre. Confirmado en datos reales (turnos con base $100.000 que se
+  ignoraba). **Fix:** el backend ahora calcula el efectivo esperado
+  (`base_inicial + ventas_efectivo − egresos`) en vez de confiar en el total del front.
+  Para un kiosco solo-efectivo sin base, el resultado es idéntico (cero regresión).
+  Follow-up frontend: `CloseTurnModal`/`CierresAnterioresModal` muestran `sales_total`
+  (todas las ventas) como "Sistema dice" — deberían mostrar el efectivo esperado que
+  devuelve el backend.
+- 🟠 **SSE sin validar tipo de token** (`/api/events`): aceptaba refresh tokens. Corregido.
+- 🟡 **Venta total $0** (100% descuento) guardaba el pago en vez de 0 (`if body.total`
+  → `is not None`). Corregido.
+- 🟡 **Warning de "total DB vs front"** spammeaba en cada venta con descuento. Bajado a
+  debug; solo alerta si se cobró MÁS que la suma de ítems.
+- 🟡 **Plan → "trial" silencioso** si la DB falla al leer el plan: ahora se loguea.
+
+### Deuda evaluada y descartada (no vale el riesgo ahora)
+- `db_helpers.py` ya es un shim que delega a `db.get_pool` (el riesgo real —pool
+  duplicado— ya estaba resuelto). Borrarlo implica tocar ~10 routers en producción por
+  algo cosmético → se deja documentado.
 
 **P2 — ⏸️ DIFERIDO (recomendado NO hacer ahora)**
 7. `business_id` text → `uuid`. Tras el REINDEX los índices ya pesan 16 kB; el ahorro
