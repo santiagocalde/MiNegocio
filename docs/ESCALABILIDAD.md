@@ -123,32 +123,43 @@ mantenimiento de índices y en dos decisiones de esquema.**
 - El verdadero costo a escala es **tamaño y amplificación de escritura de los índices**
   + el bloat si hay churn (rollbacks, reintentos del outbox, tests).
 
-### Plan de remediación (por prioridad)
+### Plan de remediación — estado al 2026-06-24
 
-**P0 — inmediato, bajo riesgo, alto valor**
-1. Asegurar que **los stress tests JAMÁS apunten a producción**: `DATABASE_URL`
-   separada para tests + guard en `conftest.py`/`test_stress.py` que aborte si la URL
-   contiene el host/DB de prod. (Bug operativo que ya ensució la base real.)
-2. `REINDEX TABLE CONCURRENTLY sales;` en horario de baja carga → recupera ~18 MB ya.
-   (No lo ejecuto: requiere ventana en producción y tu OK.)
-3. Verificar `autovacuum` activo y bajar el umbral en tablas calientes
-   (`sales`, `stock_movements`): `autovacuum_vacuum_scale_factor=0.05`.
+Ejecutado sobre producción con backup previo (`pg_dump`) y verificando que el
+conteo de filas de cada tabla quedó intacto. **Sin pérdida de datos.**
 
-**P1 — antes de onboardear muchos negocios**
-4. **Dinero en `real` (float) → bug de correctitud.** `total`, `payment`,
-   `change_given` deben ser `numeric(12,2)` (o centavos enteros). Float da errores de
-   redondeo en plata. Migración con backfill.
-5. Revisar el índice `idx_sales_idempotency` (el más pesado, sobre texto): hacerlo
-   **parcial** (solo donde `idempotency_key IS NOT NULL`) o acortar la clave.
-6. Auditar los 5 índices de `sales`: cada INSERT escribe los 5 (amplificación de
-   escritura). Eliminar los redundantes (`idx_sales_timestamp` queda cubierto por el
-   compuesto `(business_id, timestamp)` para la mayoría de queries).
+**P0 — ✅ HECHO**
+1. ✅ **Stress tests blindados.** `conftest.py` ya forzaba SQLite (limpia
+   `DATABASE_URL` antes de importar `main`). Se agregó un guard extra en
+   `test_stress.py` que aborta si detecta una `DATABASE_URL` de Postgres (protege el
+   caso de correrlo directo, sin pytest). Causa raíz del churn de 105k filas: se
+   corrieron tests dentro del contenedor de prod **antes** de que existiera `conftest.py`.
+2. ✅ **REINDEX.** `REINDEX TABLE CONCURRENTLY sales` (online, sin bloquear ventas).
+   `sales`: **18 MB → 136 kB**. Base: **27 MB → 10 MB**.
+3. ✅ **Autovacuum afinado** en `sales` y `stock_movements`
+   (`autovacuum_vacuum_scale_factor=0.05`). Aplicado en vivo y agregado al esquema
+   en `db.py` para deploys nuevos.
 
-**P2 — eficiencia de esquema**
-7. `business_id` es `text` (UUID como string de 36 bytes) en toda fila e índice.
-   Migrar a tipo `uuid` nativo (16 bytes) ≈ achica los índices a la mitad. Migración
-   grande (toca todas las tablas multi-tenant) → planificar con cuidado.
+**P1 — parcial**
+5/6. ✅ **Índice redundante eliminado.** Se dropeó `idx_sales_business_id` (lo cubre el
+   compuesto `(business_id, timestamp)`) → un índice menos por escritura. **Corrección
+   al plan original:** `idx_sales_timestamp` se MANTIENE (lo usan queries globales por
+   fecha; en prod tiene 2945 usos). El índice de idempotencia NO es UNIQUE en la base
+   real (la dedup es a nivel app) → no se tocó su semántica; el REINDEX ya le quitó el bloat.
+4. ⏸️ **DIFERIDO — dinero en `float`.** Es un bug de correctitud real, PERO no es un
+   cambio drop-in: pasar a `numeric` devuelve `Decimal` y rompería la serialización JSON
+   actual (los modelos usan `float`), y en modo SQLite (offline) `NUMERIC` igual guarda
+   float. Requiere refactor coordinado (centavos enteros end-to-end o manejo de Decimal)
+   + tests. **No se hace en caliente.** Planificar en rama con suite de tests de plata.
 
-**P3 — observabilidad**
-8. Job/consulta de monitoreo de bloat (`pg_stat_user_tables`, `pgstattuple`) + alerta
-   de disco. Detectar churn anómalo antes de que hinche la base.
+**P2 — ⏸️ DIFERIDO (recomendado NO hacer ahora)**
+7. `business_id` text → `uuid`. Tras el REINDEX los índices ya pesan 16 kB; el ahorro
+   del tipo `uuid` es **insignificante con 3 negocios**, mientras que la migración es
+   enorme (toca todas las tablas, FKs y TODO el código: JWT, contextvar, cada query).
+   Riesgo alto, beneficio actual nulo. Reevaluar a varios miles de negocios, como
+   migración planificada y testeada.
+
+**P3 — ✅ HECHO**
+8. ✅ Script de monitoreo en `ops/db_monitoring.sql` (tamaños, dead tuples, detección de
+   churn anómalo, tamaño de índices de `sales`). Correr periódicamente. Pendiente de
+   infra: alerta de disco vía cron (específica del VPS).

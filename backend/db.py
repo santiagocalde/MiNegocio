@@ -196,11 +196,16 @@ async def init_pg() -> None:
                 sucursal_id     INTEGER DEFAULT 1,
                 timestamp       TIMESTAMPTZ DEFAULT now()
             );
-            CREATE INDEX IF NOT EXISTS idx_sales_business_id ON sales(business_id);
+            -- NOTA: idx_sales_business_id (business_id) se eliminó por redundante:
+            -- el compuesto idx_sales_business_timestamp ya cubre los filtros por
+            -- business_id. Menos índices = menos amplificación de escritura por venta.
             CREATE INDEX IF NOT EXISTS idx_sales_timestamp ON sales(timestamp);
             CREATE INDEX IF NOT EXISTS idx_sales_idempotency ON sales(idempotency_key);
             -- Compuesto: acelera /sales/today y reportes por rango (filtro tenant + fecha)
             CREATE INDEX IF NOT EXISTS idx_sales_business_timestamp ON sales(business_id, timestamp);
+            -- Autovacuum más agresivo: 'sales' sufre churn (rollbacks/idempotencia) y
+            -- los índices se hinchan si el vacuum no corre seguido.
+            ALTER TABLE sales SET (autovacuum_vacuum_scale_factor=0.05, autovacuum_analyze_scale_factor=0.02);
 
             CREATE TABLE IF NOT EXISTS sale_items (
                 id              SERIAL PRIMARY KEY,
@@ -285,6 +290,8 @@ async def init_pg() -> None:
             );
             CREATE INDEX IF NOT EXISTS idx_stock_movements_business ON stock_movements(business_id);
             CREATE UNIQUE INDEX IF NOT EXISTS idx_stock_movements_source ON stock_movements(source_id, business_id);
+            -- Autovacuum agresivo: una fila por ítem por venta, la tabla que más crece.
+            ALTER TABLE stock_movements SET (autovacuum_vacuum_scale_factor=0.05, autovacuum_analyze_scale_factor=0.02);
 
             CREATE TABLE IF NOT EXISTS egresos_caja (
                 id              SERIAL PRIMARY KEY,
