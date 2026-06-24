@@ -28,6 +28,7 @@ class BusinessCreate(BaseModel):
     prior_pos: str = ""
     needs_arca: str = ""
     objective: str = ""
+    source: str = ""  # atribución: de dónde vino el registro (utm_source / ref / referrer)
 
     @field_validator("password")
     @classmethod
@@ -143,8 +144,8 @@ async def auth_register(request: Request, body: BusinessCreate) -> dict:
 
         row = await conn.fetchrow(
             """INSERT INTO businesses (email, password_hash, business_name, plan, phone, terms_accepted_at,
-                                       owner_name, business_type, prior_pos, needs_arca, objective)
-               VALUES ($1, $2, $3, 'trial', $4, now(), $5, $6, $7, $8, $9)
+                                       owner_name, business_type, prior_pos, needs_arca, objective, source)
+               VALUES ($1, $2, $3, 'trial', $4, now(), $5, $6, $7, $8, $9, $10)
                RETURNING id, email, business_name, plan, status, phone""",
             body.email.lower().strip(),
             hashed_pw,
@@ -155,6 +156,7 @@ async def auth_register(request: Request, body: BusinessCreate) -> dict:
             (body.prior_pos or "").strip(),
             (body.needs_arca or "").strip(),
             (body.objective or "").strip(),
+            (body.source or "").strip()[:120],  # acotar para no guardar URLs gigantes
         )
         biz_id, biz_email, biz_name, biz_plan, biz_status, biz_phone = row
 

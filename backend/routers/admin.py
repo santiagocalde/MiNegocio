@@ -390,6 +390,19 @@ async def admin_metrics(admin: dict = Depends(verify_superadmin)) -> dict:
             _now(), _now() + timedelta(days=3)
         ) or 0
 
+        # Embudo de activación: cuántos negocios realmente empezaron a usar el sistema.
+        # Sirve para ver dónde se traba el onboarding (cargar productos → abrir caja → vender).
+        with_products = await conn.fetchval(
+            "SELECT COUNT(DISTINCT business_id) FROM products"
+        ) or 0
+        opened_register = await conn.fetchval(
+            "SELECT COUNT(DISTINCT business_id) FROM turns"
+        ) or 0
+        activated = await conn.fetchval(
+            "SELECT COUNT(DISTINCT business_id) FROM sales"
+        ) or 0
+        activation_rate = round(activated / max(total, 1) * 100, 1)
+
         return {
             "total_businesses": total,
             "active_subscriptions": active,
@@ -400,6 +413,13 @@ async def admin_metrics(admin: dict = Depends(verify_superadmin)) -> dict:
             "breakdown_by_plan": breakdown,
             "total_products": total_products,
             "expiring_soon": expiring_soon,
+            "total_sales": sales_count,
+            "activation_funnel": {
+                "with_products": with_products,
+                "opened_register": opened_register,
+                "activated": activated,
+                "activation_rate": activation_rate,
+            },
             "top_features_used": [
                 {"feature": "POS / Ventas", "count": sales_count},
                 {"feature": "Proveedores", "count": suppliers_count},
@@ -433,6 +453,7 @@ async def admin_insights(admin: dict = Depends(verify_superadmin)) -> dict:
             "by_objective": await distrib("objective"),
             "by_arca": await distrib("needs_arca"),
             "by_prior_pos": await distrib("prior_pos"),
+            "by_source": await distrib("source"),
         }
 
 
