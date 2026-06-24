@@ -146,11 +146,19 @@ conteo de filas de cada tabla quedó intacto. **Sin pérdida de datos.**
    al plan original:** `idx_sales_timestamp` se MANTIENE (lo usan queries globales por
    fecha; en prod tiene 2945 usos). El índice de idempotencia NO es UNIQUE en la base
    real (la dedup es a nivel app) → no se tocó su semántica; el REINDEX ya le quitó el bloat.
-4. ⏸️ **DIFERIDO — dinero en `float`.** Es un bug de correctitud real, PERO no es un
-   cambio drop-in: pasar a `numeric` devuelve `Decimal` y rompería la serialización JSON
-   actual (los modelos usan `float`), y en modo SQLite (offline) `NUMERIC` igual guarda
-   float. Requiere refactor coordinado (centavos enteros end-to-end o manejo de Decimal)
-   + tests. **No se hace en caliente.** Planificar en rama con suite de tests de plata.
+4. ✅ **HECHO — dinero a `numeric(12,2)`.** Columnas migradas en `sales`
+   (`total`, `payment`, `change_given`), `sale_items` (`unit_price`, `item_discount`) y
+   `products` (`price`, `cost_price`): de `REAL` (float, con deriva de redondeo) a
+   `NUMERIC(12,2)` (2 decimales exactos en la base). Para no romper la serialización JSON
+   (asyncpg devuelve `numeric` como `Decimal`, que `json.dumps` no serializa) se registró
+   un **codec en el pool (`db._init_connection`) que lee/escribe `numeric` como `float`** →
+   el resto del código sigue idéntico, la precisión vive en la base. Aplicado en producción
+   con backup previo (`/root/backups/minegocio_premoney_*.dump`); suma de ventas verificada
+   antes/después (699640.00, 114 ventas) — sin pérdida de datos.
+   **Pendiente (follow-up):** convertir el resto de columnas de dinero (`purchases`,
+   `egresos_caja`, `customers.balance`, `customer_transactions`, `turns.*`, `promotions`)
+   y, a largo plazo, evaluar centavos enteros end-to-end (frontend incluido) para el modo
+   SQLite offline, donde `NUMERIC` igual almacena como float.
 
 **P2 — ⏸️ DIFERIDO (recomendado NO hacer ahora)**
 7. `business_id` text → `uuid`. Tras el REINDEX los índices ya pesan 16 kB; el ahorro
