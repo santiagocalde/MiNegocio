@@ -90,6 +90,7 @@ async def init_pg() -> None:
                 plan_pending    TEXT,
                 mp_subscription_id TEXT,
                 phone           TEXT DEFAULT '',
+                source          TEXT DEFAULT '',
                 status          TEXT NOT NULL DEFAULT 'active',
                 reset_token     TEXT,
                 reset_token_expires TIMESTAMPTZ,
@@ -380,6 +381,7 @@ async def init_pg() -> None:
             ALTER TABLE businesses ADD COLUMN IF NOT EXISTS prior_pos TEXT DEFAULT '';
             ALTER TABLE businesses ADD COLUMN IF NOT EXISTS needs_arca TEXT DEFAULT '';
             ALTER TABLE businesses ADD COLUMN IF NOT EXISTS objective TEXT DEFAULT '';
+            ALTER TABLE businesses ADD COLUMN IF NOT EXISTS source TEXT DEFAULT '';
             ALTER TABLE business_config ADD COLUMN IF NOT EXISTS print_config TEXT;
             ALTER TABLE sale_items ALTER COLUMN product_id DROP NOT NULL;
 
