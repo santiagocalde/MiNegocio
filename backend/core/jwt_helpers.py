@@ -8,7 +8,7 @@ from typing import Optional
 from fastapi import Header, HTTPException
 from jose import JWTError, jwt
 
-JWT_SECRET    = os.getenv("JWT_SECRET", "ta1P4pMAryFH5_lDGf-8GmbTSBrMWg5uYheoWg93s1o")
+JWT_SECRET    = os.getenv("JWT_SECRET", "dev-insecure-change-me")
 JWT_ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 REFRESH_TOKEN_EXPIRE_DAYS   = 7

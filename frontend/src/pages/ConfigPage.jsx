@@ -70,9 +70,9 @@ export default function ConfigPage() {
   };
 
   return (
-    <div style={{ padding: '22px 28px', width: '100%', height: '100%', overflowY: 'auto', boxSizing: 'border-box' }}>
-      <div style={{ maxWidth: '800px', margin: '0 auto', background: 'var(--bg-card)', padding: '32px', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.2)', border: '1px solid var(--border-color)' }}>
-        <h2 style={{ fontSize: '1.8rem', color: 'var(--text-primary)', marginBottom: '8px' }}><Icons.Settings /> Ajustes y Configuración</h2>
+    <div style={{ padding: '12px 20px', width: '100%', height: '100%', overflowY: 'auto', boxSizing: 'border-box' }}>
+      <div style={{ maxWidth: '800px', margin: '0 auto', background: 'var(--bg-card)', padding: '24px', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.2)', border: '1px solid var(--border-color)' }}>
+        <h2 style={{ fontSize: '1.3rem', color: 'var(--text-primary)', marginBottom: '8px' }}><Icons.Settings /> Ajustes y Configuración</h2>
         <p style={{ color: 'var(--text-secondary)', textAlign: 'center', marginBottom: '24px', fontSize: '0.9rem' }}>
           Estos datos aparecen en los tickets impresos y en el encabezado del sistema.
         </p>

@@ -8,6 +8,7 @@ from typing import Optional
 
 import aiosqlite
 import bcrypt
+import main
 from fastapi import APIRouter, HTTPException, Request
 from slowapi import Limiter
 from slowapi.util import get_remote_address
@@ -22,6 +23,9 @@ router = APIRouter()
 limiter = Limiter(key_func=get_remote_address)
 
 USE_PG  = bool(os.getenv("DATABASE_URL", ""))
+# DB_PATH se lee dinámico desde main.DB_PATH en cada handler (igual que el resto
+# de routers). Capturarlo acá al importar rompía los tests y cualquier cambio de
+# path en runtime. Se deja solo como fallback histórico, no se usa en los handlers.
 DB_PATH = os.getenv("DB_PATH") or os.path.join(os.path.dirname(__file__), "..", "data", "minegocio.db")
 
 
@@ -58,7 +62,7 @@ async def _ensure_open_turn_pg(conn, operator: str, b_id: str) -> dict:
 
 
 async def _ensure_open_turn(operator: str) -> dict:
-    async with aiosqlite.connect(DB_PATH) as db:
+    async with aiosqlite.connect(main.DB_PATH) as db:
         async with db.execute(
             "SELECT id, opened_at FROM turns WHERE closed_at IS NULL ORDER BY opened_at DESC LIMIT 1"
         ) as cur:
@@ -115,7 +119,7 @@ async def login(request: Request, data: dict) -> dict:
                         return {**_base_op(row), **t}
         raise HTTPException(status_code=401, detail="PIN incorrecto")
     else:
-        async with aiosqlite.connect(DB_PATH) as db:
+        async with aiosqlite.connect(main.DB_PATH) as db:
             async with db.execute("SELECT id, name, pin, role FROM operators") as cur:
                 rows = await cur.fetchall()
         for op_id, op_name, op_pin_hash, op_role in rows:
@@ -148,7 +152,7 @@ async def list_operators() -> list:
             )
             return [dict(r) for r in rows]
     else:
-        async with aiosqlite.connect(DB_PATH) as db:
+        async with aiosqlite.connect(main.DB_PATH) as db:
             async with db.execute("SELECT id, name, role FROM operators") as cur:
                 rows = await cur.fetchall()
                 return [_row_to_dict(r, cur.description) for r in rows]
@@ -178,7 +182,7 @@ async def update_operators(request: Request, data: list[dict]) -> dict:
                 )
         return {"success": True}
     else:
-        async with aiosqlite.connect(DB_PATH) as db:
+        async with aiosqlite.connect(main.DB_PATH) as db:
             await db.execute("DELETE FROM operators")
             for op in data:
                 pin_to_store = _hash_pin(op.get("pin", ""))
@@ -231,7 +235,7 @@ async def create_operator(request: Request, data: dict) -> dict:
             )
             return {"id": row["id"], "name": name, "role": role}
     else:
-        async with aiosqlite.connect(DB_PATH) as db:
+        async with aiosqlite.connect(main.DB_PATH) as db:
             cur = await db.execute(
                 "INSERT INTO operators (name, pin, role) VALUES (?,?,?)", (name, _hash_pin(pin), role)
             )
@@ -269,7 +273,7 @@ async def patch_operator(operator_id: int, data: dict) -> dict:
             await conn.execute(f"UPDATE operators SET {', '.join(updates)} WHERE id = ${n}", *params)
             return {"success": True}
     else:
-        async with aiosqlite.connect(DB_PATH) as db:
+        async with aiosqlite.connect(main.DB_PATH) as db:
             cur = await db.execute("SELECT id FROM operators WHERE id = ?", (operator_id,))
             if not await cur.fetchone():
                 raise HTTPException(404, detail="Operador no encontrado")
@@ -308,7 +312,7 @@ async def delete_operator(operator_id: int) -> dict:
                 raise HTTPException(status_code=404, detail="Operador no encontrado")
             return {"success": True}
     else:
-        async with aiosqlite.connect(DB_PATH) as db:
+        async with aiosqlite.connect(main.DB_PATH) as db:
             cur = await db.execute("SELECT id FROM operators WHERE id = ?", (operator_id,))
             if not await cur.fetchone():
                 raise HTTPException(status_code=404, detail="Operador no encontrado")

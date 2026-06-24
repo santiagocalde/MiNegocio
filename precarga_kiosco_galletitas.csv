@@ -1,0 +1,81 @@
+code,name,price,cost_price,stock,min_stock,iva
+K0001,Bizcochito Jorgito 200g,1900,1330,50,5,21%
+K0002,Bizcochito Jorgito 400g,3200,2240,50,5,21%
+K0003,Celosas 230g,2100,1470,50,5,21%
+K0004,Celosas 350g,2900,2030,50,5,21%
+K0005,Frutigram Chocolate 255g,2400,1680,50,5,21%
+K0006,Frutigram Avena y Pasas 255g,2400,1680,50,5,21%
+K0007,Minicoronitas 140g,1700,1190,50,5,21%
+K0008,Surtidos 400g,3300,2310,50,5,21%
+K0009,Minimantecada 170g,1800,1260,50,5,21%
+K0010,Diversion Surtidos 400g,3300,2310,50,5,21%
+K0011,Pitusas Mus Chocolate 160g,1900,1330,50,5,21%
+K0012,Pitusas Frutilla 160g,1900,1330,50,5,21%
+K0013,Pitusas Chocolate 160g,1900,1330,50,5,21%
+K0014,Pitusas Vainilla 160g,1900,1330,50,5,21%
+K0015,Pitusas Limon 160g,1900,1330,50,5,21%
+K0016,Azucar Independencia 1kg,1800,1260,50,5,21%
+K0017,Chocolate Rodhesia 60g,1200,840,50,5,21%
+K0018,Trio Scon 320g,2600,1820,50,5,21%
+K0019,Pepas Treinta 200g,2000,1400,50,5,21%
+K0020,Pepas Trepin 400g,3400,2380,50,5,21%
+K0021,Suavecitas 140g,1600,1120,50,5,21%
+K0022,Don Satur Dulce 200g,2200,1540,50,5,21%
+K0023,Don Satur Salado 200g,2200,1540,50,5,21%
+K0024,Don Satur Vegetal 200g,2200,1540,50,5,21%
+K0025,Criollitas x3 300g,2700,1890,50,5,21%
+K0026,Mediatarde Sandwich x4 321g,3100,2170,50,5,21%
+K0027,Mediatarde Clasica x3 315g,2900,2030,50,5,21%
+K0028,Cafe Dolca 100g,6500,4550,50,5,21%
+K0029,Cafe Arlistas 50g,3200,2240,50,5,21%
+K0030,Cafe Arlistas 100g,5800,4060,50,5,21%
+K0031,Caja Saquitos de Cafe,4200,2940,50,5,21%
+K0032,Planta de Cafe x18,7500,5250,50,5,21%
+K0033,Cabrales x18 Saquitos,6800,4760,50,5,21%
+K0034,Pepas Trio Choc 300g,2700,1890,50,5,21%
+K0035,Pepas Trio Choc 500g,3900,2730,50,5,21%
+K0036,Trip Pepas 200g,2000,1400,50,5,21%
+K0037,Trip Pepas 320g,2800,1960,50,5,21%
+K0038,Opera 55g,1100,770,50,5,21%
+K0039,Cerealitas 212g,2300,1610,50,5,21%
+K0040,Hogarenas Salvado 200g,2200,1540,50,5,21%
+K0041,Hogarenas 7 Semillas 189g,2300,1610,50,5,21%
+K0042,Vainillas Pozo 148g,1700,1190,50,5,21%
+K0043,9 de Oro Agridulce 200g,2200,1540,50,5,21%
+K0044,9 de Oro Azucaradas 210g,2200,1540,50,5,21%
+K0045,9 de Oro Clasicas 200g,2200,1540,50,5,21%
+K0046,Cafe Cabrales 500g,9500,6650,50,5,21%
+K0047,Cafe Cabrales 125g,4200,2940,50,5,21%
+K0048,Cafe Torrado Morenita 250g,5200,3640,50,5,21%
+K0049,Cafe Torrado La Virginia 250g,5400,3780,50,5,21%
+K0050,Cereales Bagley Salvado 169g,2100,1470,50,5,21%
+K0051,Rumba 110g,1500,1050,50,5,21%
+K0052,Amor 110g,1500,1050,50,5,21%
+K0053,Mellizas 110g,1500,1050,50,5,21%
+K0054,Lincoln 153g,1900,1330,50,5,21%
+K0055,Vocacion Acaramelada 145g,1800,1260,50,5,21%
+K0056,Vocacion Clasica 141g,1800,1260,50,5,21%
+K0057,Coquitas 177g,2000,1400,50,5,21%
+K0058,Chocolinas 170g,2400,1680,50,5,21%
+K0059,Oreo 118g,2200,1540,50,5,21%
+K0060,Melba 120g,1700,1190,50,5,21%
+K0061,Duquesa 115g,1600,1120,50,5,21%
+K0062,Merengadas 88g,1400,980,50,5,21%
+K0063,Oreo Menta 118g,2200,1540,50,5,21%
+K0064,Pepitos 119g,2300,1610,50,5,21%
+K0065,Sonrisas 108g,1900,1330,50,5,21%
+K0066,Cereal Mix Semillas y Chips 207g,2500,1750,50,5,21%
+K0067,Cereal Mix Avena y Pasas 207g,2500,1750,50,5,21%
+K0068,Cereal Mix Frutillis y Chia 207g,2500,1750,50,5,21%
+K0069,Cereal Mix Avena y Chips 207g,2500,1750,50,5,21%
+K0070,Criollitas x1 169g,1500,1050,50,5,21%
+K0071,Traviata x1 108g,1300,910,50,5,21%
+K0072,Criollita x1 100g,1200,840,50,5,21%
+K0073,Talitas Urquiza 100g,1400,980,50,5,21%
+K0074,Paseo Clasicas 250g,2300,1610,50,5,21%
+K0075,Paseo Semillas 250g,2400,1680,50,5,21%
+K0076,Hojalmar 150g,1900,1330,50,5,21%
+K0077,Ronda 150g,1800,1260,50,5,21%
+K0078,Caja Rex 125g,1700,1190,50,5,21%
+K0079,Caja Kesitas 125g,1700,1190,50,5,21%
+K0080,Traviata x3 324g,2900,2030,50,5,21%

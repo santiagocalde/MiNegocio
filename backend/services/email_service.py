@@ -1,11 +1,18 @@
 import httpx
 import os
+import asyncio
 import logging
 from services.email_templates import (
     RESEND_API_KEY, FROM_EMAIL, trial_reminder_template, trial_welcome_template, plan_activated_template
 )
 
 logger = logging.getLogger("NovaStock")
+
+# Reintentos ante fallos transitorios (red caída, 5xx de Resend, rate limit 429).
+# Cubre el email de bienvenida (fire-and-forget) que antes se perdía en silencio.
+_MAX_RETRIES = 3
+_RETRY_BACKOFF = (1, 3, 6)  # segundos entre intentos
+
 
 async def send_email(to_email: str, subject: str, html_content: str):
     if not RESEND_API_KEY:
@@ -22,18 +29,33 @@ async def send_email(to_email: str, subject: str, html_content: str):
         "subject": subject,
         "html": html_content
     }
-    try:
-        async with httpx.AsyncClient() as client:
-            response = await client.post("https://api.resend.com/emails", json=payload, headers=headers, timeout=10.0)
+
+    last_error = None
+    for attempt in range(_MAX_RETRIES):
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.post("https://api.resend.com/emails", json=payload, headers=headers, timeout=10.0)
             if response.status_code == 200:
-                logger.info(f"Email enviado a {to_email}: {subject}")
+                if attempt > 0:
+                    logger.info(f"Email enviado a {to_email} (intento {attempt+1}): {subject}")
+                else:
+                    logger.info(f"Email enviado a {to_email}: {subject}")
                 return response.json()
-            else:
-                logger.error(f"Resend error {response.status_code}: {response.text[:200]}")
+            # 4xx (salvo 429) = error del cliente, no reintentar
+            if response.status_code != 429 and 400 <= response.status_code < 500:
+                logger.error(f"Resend error {response.status_code} (no se reintenta): {response.text[:200]}")
                 return {"status": "error", "detail": response.text[:200]}
-    except Exception as e:
-        logger.error(f"Error enviando email a {to_email}: {e}")
-        return {"status": "error", "message": str(e)}
+            # 429 o 5xx = transitorio, reintentar
+            last_error = f"HTTP {response.status_code}: {response.text[:150]}"
+        except Exception as e:
+            last_error = str(e)
+
+        if attempt < _MAX_RETRIES - 1:
+            await asyncio.sleep(_RETRY_BACKOFF[attempt])
+            logger.warning(f"Reintentando email a {to_email} (intento {attempt+2}/{_MAX_RETRIES}) tras: {last_error}")
+
+    logger.error(f"Email a {to_email} FALLO tras {_MAX_RETRIES} intentos: {last_error}")
+    return {"status": "error", "message": last_error}
 
 
 async def send_trial_reminder(to_email: str, business_name: str, days_left: int):

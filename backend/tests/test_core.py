@@ -78,13 +78,13 @@ async def test_login_wrong_pin(test_db, client):
 
 @pytest.mark.asyncio
 async def test_login_invalid_pin_format(test_db, client):
+    # Un solo `async with` — el cliente httpx no se puede reabrir tras cerrarse
     async with client as ac:
         res = await ac.post("/api/login", json={"pin": "abc"})
-    assert res.status_code == 400
+        assert res.status_code == 400
 
-    async with client as ac:
         res = await ac.post("/api/login", json={"pin": "123"})
-    assert res.status_code == 400
+        assert res.status_code == 400
 
 
 # ── Tests de operadores CRUD ──────────────────────────────────

@@ -15,7 +15,7 @@ import ExpiryAlertsModal from '../components/pos/ExpiryAlertsModal';
 import ToastContainer from '../components/pos/ToastContainer';
 
 export default function PanelLayout() {
-  const { auth, backend, closeTurn, addToast, toasts, trialDaysRemaining, currentPlan, isTrialExpired, isPaid, planLabel } = usePanelContext();
+  const { auth, backend, closeTurn, addToast, toasts, trialDaysRemaining, currentPlan, isTrialExpired, isPaid, planLabel, planLoaded } = usePanelContext();
   const location = useLocation();
 
   // Estados para Onboarding Modals
@@ -27,10 +27,14 @@ export default function PanelLayout() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Esperar confirmación del servidor antes de redirigir — evita flash
+    // cuando el admin acaba de hacer un upgrade y el usuario todavía tiene
+    // el plan viejo en localStorage cache.
+    if (!planLoaded) return;
     if (isTrialExpired && !isPaid && location.pathname !== '/panel/plan') {
       navigate('/panel/plan');
     }
-  }, [isTrialExpired, isPaid, location.pathname, navigate]);
+  }, [planLoaded, isTrialExpired, isPaid, location.pathname, navigate]);
 
   useEffect(() => {
     if (localStorage.getItem('minegocio_onboarding_pending') === 'true') {
@@ -43,19 +47,21 @@ export default function PanelLayout() {
     e.preventDefault();
     try {
       const { apiPost } = await import('../services/apiClient');
-      await apiPost('/turns', {
+      const res = await apiPost('/turns', {
         operator: auth.currentOperator?.name || 'Dueño',
         sucursal_id: 1,
         initial_cash: parseFloat(initialCajaMonto) || 0
       });
-    } catch { addToast('Error al abrir la caja. Reintentá.', 'error'); }
+      if (res.ok) {
+        const data = await res.json();
+        if (data.id) {
+          auth.setCurrentTurnId(data.id);
+          localStorage.setItem('minegocio_current_turn_id', String(data.id));
+        }
+      }
+    } catch { addToast('Error al abrir la caja. Reintentá.', 'error'); return; }
     setShowInitialCaja(false);
-    // Solo pedir PIN si NO hay operadores (cuenta nueva sin setup)
-    if (backend.operators && backend.operators.length > 0) {
-      addToast('Caja abierta. ¡A vender!', 'success');
-    } else {
-      setShowCreatePassword(true);
-    }
+    addToast('Caja abierta. ¡A vender!', 'success');
   };
 
   const handlePasswordSubmit = async (e) => {

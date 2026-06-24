@@ -14,7 +14,7 @@ from typing import Optional
 BASE_DIR = os.path.dirname(__file__)
 DATA_DIR = os.path.join(BASE_DIR, "data")
 DB_PATH = os.path.abspath(os.path.join(DATA_DIR, "novastock.db"))
-JWT_SECRET = os.getenv("JWT_SECRET", "super-secret-key-change-me-in-production")
+JWT_SECRET = os.getenv("JWT_SECRET", "dev-insecure-change-me")
 JWT_ALGORITHM = "HS256"
 
 def row_to_dict(row, description):

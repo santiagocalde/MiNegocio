@@ -130,16 +130,33 @@ export default function useSales(cart, effectiveTotal, payment, paymentMethod, u
   const confirmFiado = useCallback(async (partialAmount) => {
     if (!fiadoName) return;
     const cartTotal = effectiveTotal ?? (cart.reduce((acc, item) => acc + (item.price * item.qty), 0));
-    const fiadoAmount = partialAmount && partialAmount > 0 && partialAmount <= cartTotal ? partialAmount : cartTotal;
-    const paymentAmount = cartTotal - fiadoAmount;
+
+    let saleTotal, fiadoAmount, paymentAmount;
+    if (cartTotal > 0) {
+      // Fiar el carrito: monto parcial (<= total) o total completo
+      fiadoAmount = (partialAmount && partialAmount > 0 && partialAmount <= cartTotal) ? partialAmount : cartTotal;
+      paymentAmount = cartTotal - fiadoAmount;
+      saleTotal = cartTotal;
+    } else {
+      // Deuda manual sin productos en el carrito (anotar cuánto debe)
+      fiadoAmount = (partialAmount && partialAmount > 0) ? partialAmount : 0;
+      paymentAmount = 0;
+      saleTotal = fiadoAmount;
+    }
+
+    if (!fiadoAmount || fiadoAmount <= 0) {
+      addToast('Ingresá un monto a fiar mayor a cero', 'error');
+      return;
+    }
+
     const salePayload = {
       turn_id: currentTurnId,
-      total: cartTotal,
+      total: saleTotal,
       payment: paymentAmount,
       change_given: 0,
       operator: currentOperator?.name || 'Sistema',
       is_fiado: true,
-      fiado_name: fiadoName,
+      fiado_name: fiadoName.trim(),
       payment_method: paymentAmount > 0 ? 'split' : 'fiado',
       client_cuit: '',
       items: cart.map(i => ({

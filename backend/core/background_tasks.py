@@ -25,10 +25,10 @@ async def check_trial_emails() -> None:
                 async with pool.acquire() as conn:
                     reminders_active = await conn.fetch("""
                         SELECT id, email, business_name,
-                               EXTRACT(DAY FROM (CURRENT_DATE - DATE(created_at))) AS days_passed
+                               (CURRENT_DATE - DATE(created_at)) AS days_passed
                         FROM businesses
                         WHERE plan = 'trial'
-                          AND EXTRACT(DAY FROM (CURRENT_DATE - DATE(created_at))) IN (2, 4, 6)
+                          AND (CURRENT_DATE - DATE(created_at)) IN (2, 4, 6)
                     """)
                     for b in reminders_active:
                         days_left = 7 - int(b["days_passed"])

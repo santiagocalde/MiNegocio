@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /panel/
+Disallow: /register/
+Disallow: /api/
+Disallow: /og-template.html
+
+Sitemap: https://mi-negocio.app/sitemap.xml

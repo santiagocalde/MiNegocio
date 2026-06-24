@@ -18,7 +18,7 @@ function PlanCard({ plan, isYearly, onCta, isLoggedIn }) {
   const savings = isYearly ? plan.monthly * 12 - plan.yearly : 0;
 
   return (
-    <div style={{
+    <div className={`lp-plan-card${plan.popular ? ' lp-plan-popular' : ''}`} style={{
       position: 'relative', padding: '32px 24px', borderRadius: 24,
       background: plan.popular ? 'rgba(20,187,166,0.05)' : 'rgba(30,58,95,0.6)',
       border: plan.popular ? '1px solid rgba(20,187,166,0.4)' : '1px solid rgba(255,255,255,0.08)',
@@ -131,7 +131,7 @@ export default function LandingPricing({ isYearly, setIsYearly, isLoggedIn, setC
           ))}
         </div>
         <Reveal delay={4}>
-          <div style={{ textAlign: 'center', marginTop: 120, padding: '32px', borderRadius: 16, border: '1px solid rgba(20,187,166,0.15)', background: 'rgba(20,187,166,0.03)' }}>
+          <div className="lp-plan-custom" style={{ textAlign: 'center', marginTop: 120, padding: '32px', borderRadius: 16, border: '1px solid rgba(20,187,166,0.15)', background: 'rgba(20,187,166,0.03)' }}>
             <p style={{ fontWeight: 600, marginBottom: 6 }}>¿Necesitás un plan a medida?</p>
             <p style={{ color: 'var(--lp-text-muted)', fontSize: '0.85rem', marginBottom: 12 }}>Ideal para cadenas de kioscos con múltiples sucursales.</p>
             <button onClick={() => setShowContactModal(true)} className="lp-btn lp-btn--ghost" style={{ padding: '10px 28px', fontSize: '0.85rem', borderColor: 'rgba(20,187,166,0.3)', color: 'var(--lp-primary)' }}

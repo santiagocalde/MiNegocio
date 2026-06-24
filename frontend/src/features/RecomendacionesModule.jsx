@@ -110,13 +110,10 @@ export default function RecomendacionesModule() {
 
   return (
     <FeatureGate isLocked={isLocked} requiredPlan="IA">
-      <div style={{ padding: '22px 28px', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflowY: 'auto' }}>
-      
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px', flexShrink: 0 }}>
-        <div>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, margin: '0 0 8px 0', color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>Recomendaciones IA</h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '1rem', margin: 0 }}>Motor de inteligencia predictiva para maximizar tus márgenes de ganancia.</p>
-        </div>
+      <div style={{ padding: '12px 20px', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflowY: 'auto' }}>
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexShrink: 0 }}>
+        <h2 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>Recomendaciones IA</h2>
       </div>
 
       {loading ? (

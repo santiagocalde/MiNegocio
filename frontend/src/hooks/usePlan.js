@@ -22,6 +22,8 @@ function getStoredPlan() {
 
 export default function usePlan(businessConfig) {
   const [serverData, setServerData] = useState(() => getStoredPlan());
+  // true una vez que el servidor respondió — evita redirecciones prematuras
+  const [planLoaded, setPlanLoaded] = useState(false);
   const [retries, setRetries] = useState(0);
 
   const fetchPlan = useCallback(() => {
@@ -30,10 +32,20 @@ export default function usePlan(businessConfig) {
       .then(data => {
         if (data) {
           setServerData(data);
-          try { localStorage.setItem('saas_plan_cache', JSON.stringify({ plan: data.plan, created_at: data.created_at })); } catch {}
+          // Actualizar cache con el plan real del servidor
+          try {
+            localStorage.setItem('saas_plan_cache', JSON.stringify({
+              plan: data.plan,
+              created_at: data.created_at,
+            }));
+          } catch {}
         }
+        // Marcar como cargado incluso si falla — para no bloquear UI
+        setPlanLoaded(true);
       })
-      .catch(() => {});
+      .catch(() => {
+        setPlanLoaded(true);
+      });
   }, []);
 
   useEffect(() => {
@@ -41,7 +53,7 @@ export default function usePlan(businessConfig) {
   }, [fetchPlan]);
 
   useEffect(() => {
-    if (!serverData) {
+    if (!serverData && !planLoaded) {
       const timer = setTimeout(() => {
         if (retries < 5) {
           setRetries(r => r + 1);
@@ -50,7 +62,7 @@ export default function usePlan(businessConfig) {
       }, 2000 * (retries + 1));
       return () => clearTimeout(timer);
     }
-  }, [serverData, retries, fetchPlan]);
+  }, [serverData, planLoaded, retries, fetchPlan]);
 
   return useMemo(() => {
     const storedFallback = serverData?.plan ? serverData.plan : (getStoredPlan()?.plan || 'trial');
@@ -71,6 +83,7 @@ export default function usePlan(businessConfig) {
       currentPlan, planStartDate, daysSinceStart, isTrialExpired,
       trialDaysRemaining, trialEndDate, trialEndDateFormatted,
       planLabel, canAccessIA, isPaid, showGate,
+      planLoaded,
     };
-  }, [businessConfig?.plan_start_date, serverData]);
+  }, [businessConfig?.plan_start_date, serverData, planLoaded]);
 }
