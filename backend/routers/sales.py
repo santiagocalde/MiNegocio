@@ -590,6 +590,12 @@ async def list_sales(limit: int = Query(50), date_from: Optional[str] = Query(No
 
 @router.get("/api/turns/{turn_id}/detail", summary="Detalle de turno")
 async def turn_detail(turn_id: int) -> dict:
+    """Devuelve el turno con sus ventas y egresos asociados.
+
+    Antes solo devolvía la fila de `turns`, dejando vacíos los listados que
+    necesita el detalle de cierre de caja. Ahora adjunta `sales` y `egresos`
+    scopeados por turno + tenant.
+    """
     b_id = _biz_id()
     if USE_PG:
         from db_helpers import get_pg_pool
@@ -597,14 +603,40 @@ async def turn_detail(turn_id: int) -> dict:
         async with pool.acquire() as conn:
             row = await conn.fetchrow("SELECT * FROM turns WHERE id = $1 AND business_id = $2", turn_id, b_id)
             if not row: raise HTTPException(404, detail="Turno no encontrado")
-            return dict(row)
+            sales = await conn.fetch(
+                "SELECT id, total, payment, change_given, payment_method, is_fiado, fiado_name, operator, timestamp "
+                "FROM sales WHERE turn_id = $1 AND business_id = $2 ORDER BY timestamp ASC",
+                turn_id, b_id
+            )
+            egresos = await conn.fetch(
+                "SELECT id, monto, motivo, type, operator, timestamp "
+                "FROM egresos_caja WHERE turn_id = $1 AND business_id = $2 ORDER BY timestamp ASC",
+                turn_id, b_id
+            )
+            detail = dict(row)
+            detail["sales"] = [dict(r) for r in sales]
+            detail["egresos"] = [dict(r) for r in egresos]
+            return detail
     else:
         import aiosqlite
         async with aiosqlite.connect(main.DB_PATH) as db:
             cur = await db.execute("SELECT * FROM turns WHERE id=?", (turn_id,))
             row = await cur.fetchone()
             if not row: raise HTTPException(404, detail="Turno no encontrado")
-            return row_to_dict(row, cur.description)
+            detail = row_to_dict(row, cur.description)
+            cur = await db.execute(
+                "SELECT id, total, payment, change_given, payment_method, is_fiado, fiado_name, operator, timestamp "
+                "FROM sales WHERE turn_id = ? ORDER BY timestamp ASC",
+                (turn_id,)
+            )
+            detail["sales"] = [row_to_dict(r, cur.description) for r in await cur.fetchall()]
+            cur = await db.execute(
+                "SELECT id, monto, motivo, type, operator, timestamp "
+                "FROM egresos_caja WHERE turn_id = ? ORDER BY timestamp ASC",
+                (turn_id,)
+            )
+            detail["egresos"] = [row_to_dict(r, cur.description) for r in await cur.fetchall()]
+            return detail
 
 
 @router.get("/api/customers", summary="Listar clientes con cuentas corrientes")
