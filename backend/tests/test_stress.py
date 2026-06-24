@@ -17,6 +17,20 @@ import logging
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
+# ── GUARD DE SEGURIDAD ───────────────────────────────────────
+# Este test genera carga (miles de ventas). Si se corre vía pytest, conftest.py
+# ya limpió DATABASE_URL y forzó SQLite. Pero si se ejecuta DIRECTO
+# (python test_stress.py) dentro del contenedor de prod, conftest NO se carga y
+# `import main` pegaría contra PostgreSQL real. Esto ya ensució producción una vez
+# (~105k ventas fantasma). Abortamos si detectamos una DATABASE_URL de Postgres.
+_dburl = os.environ.get("DATABASE_URL", "")
+if _dburl and ("postgres" in _dburl.lower() or "@db:" in _dburl.lower()):
+    raise SystemExit(
+        "ABORTADO: DATABASE_URL apunta a PostgreSQL. Los stress tests NUNCA deben "
+        "correr contra producción. Ejecutalos con `pytest` (usa conftest.py que "
+        "fuerza SQLite) o limpiá DATABASE_URL."
+    )
+
 from main import app
 from core.database import init_db
 
