@@ -284,9 +284,17 @@ async def create_purchase(request: Request, body: dict) -> dict:
                             qty, cost_val, item.get("product_id")
                         )
                 if body.get("paid_from_register"):
+                    # El egreso debe atarse al turno abierto para que el cierre de caja
+                    # lo reste del efectivo esperado (si no, da faltante falso).
+                    turn_id = body.get("turn_id")
+                    if not turn_id:
+                        turn_id = await conn.fetchval(
+                            "SELECT id FROM turns WHERE closed_at IS NULL AND business_id = $1 ORDER BY id DESC LIMIT 1",
+                            b_id
+                        )
                     await conn.execute(
-                        "INSERT INTO egresos_caja (business_id, monto, motivo, type, operator) VALUES ($1,$2,$3,$4,$5)",
-                        b_id, round(cost, 2), f"Compra #{purchase_id}", "pago_proveedor", body.get("operator", "Sistema")
+                        "INSERT INTO egresos_caja (business_id, turn_id, monto, motivo, type, operator) VALUES ($1,$2,$3,$4,$5,$6)",
+                        b_id, turn_id, round(cost, 2), f"Compra #{purchase_id}", "pago_proveedor", body.get("operator", "Sistema")
                     )
                 return {"id": purchase_id, "total_cost": round(cost, 2)}
     else:
@@ -310,9 +318,14 @@ async def create_purchase(request: Request, body: dict) -> dict:
                             (item.get("quantity", 0), item.get("unit_cost", 0), item.get("product_id"))
                         )
                 if body.get("paid_from_register"):
+                    turn_id = body.get("turn_id")
+                    if not turn_id:
+                        curt = await db.execute("SELECT id FROM turns WHERE closed_at IS NULL ORDER BY id DESC LIMIT 1")
+                        rowt = await curt.fetchone()
+                        turn_id = rowt[0] if rowt else None
                     await db.execute(
-                        "INSERT INTO egresos_caja (monto, motivo, type, operator) VALUES (?,?,?,?)",
-                        (round(cost, 2), f"Compra #{purchase_id}", "pago_proveedor", body.get("operator", "Sistema"))
+                        "INSERT INTO egresos_caja (turn_id, monto, motivo, type, operator) VALUES (?,?,?,?,?)",
+                        (turn_id, round(cost, 2), f"Compra #{purchase_id}", "pago_proveedor", body.get("operator", "Sistema"))
                     )
                 await db.commit()
                 return {"id": purchase_id, "total_cost": round(cost, 2)}
