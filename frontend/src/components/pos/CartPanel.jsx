@@ -32,7 +32,7 @@ export default function CartPanel({ cart, total, adjustedTotal, updateQty, setIt
                   <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-primary)', letterSpacing: '0.1px' }}>{item.name}</div>
                   <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', fontFamily: 'var(--font-mono)' }}>{item.code}</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
-                    <span style={{ fontWeight: 800, color: 'var(--text-primary)', fontSize: '0.9rem' }}>{formatMoney(item.price)}</span>
+                    <span style={{ fontWeight: 800, color: 'var(--text-primary)', fontSize: '0.9rem', fontVariantNumeric: 'tabular-nums' }}>{formatMoney(item.price)}</span>
                     {!item.is_virtual && (() => {
                       const tone = stockTone(item.stock, item.min_stock);
                       return <span style={{ background: tone.bg, border: `1px solid ${tone.bd}`, color: tone.fg, padding: '2px 4px', borderRadius: '4px', fontSize: '0.65rem', fontWeight: 800 }}>Stock: {item.stock} u</span>;
@@ -44,7 +44,7 @@ export default function CartPanel({ cart, total, adjustedTotal, updateQty, setIt
               <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: '2px' }}>Subtotal</div>
-                  <div style={{ fontWeight: 800, fontSize: '1rem', color: 'var(--text-primary)' }}>{formatMoney(item.price * item.qty)}</div>
+                  <div style={{ fontWeight: 800, fontSize: '1rem', color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>{formatMoney(item.price * item.qty)}</div>
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
