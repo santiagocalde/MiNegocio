@@ -169,10 +169,14 @@ async def auth_register(request: Request, body: BusinessCreate) -> dict:
         default_pin = str(random.randint(1000, 9999))
         hashed_pin = bcrypt.hashpw(default_pin.encode(), bcrypt.gensalt()).decode()
 
+        # El operador admin se llama como el DUEÑO (no como el negocio): el saludo
+        # del panel usa el nombre del operador logueado ("Hola {nombre}").
+        operator_name = body.name.strip() or "Dueño"
+
         # Crear operador en PostgreSQL (modo cloud) — DENTRO del async with
         await conn.execute(
             "INSERT INTO operators (business_id, name, pin, role) VALUES ($1, $2, $3, 'admin')",
-            biz_id, biz_name or "Dueño", hashed_pin
+            biz_id, operator_name, hashed_pin
         )
 
         access_token = jwt.encode(
@@ -202,7 +206,7 @@ async def auth_register(request: Request, body: BusinessCreate) -> dict:
         async with aiosqlite.connect(tenant_db_path) as tenant_db:
             await tenant_db.execute(
                 "INSERT INTO operators (name, pin, role) VALUES (?, ?, 'admin')",
-                (biz_name or "Dueño", hashed_pin)
+                (operator_name, hashed_pin)
             )
             await tenant_db.commit()
     except Exception as e:

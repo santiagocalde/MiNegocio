@@ -17,7 +17,15 @@ async def get_config() -> dict:
         async with pool.acquire() as conn:
             b_id = _biz_id()
             row = await conn.fetchrow("SELECT * FROM business_config WHERE business_id = $1", b_id)
-            return dict(row) if row else {}
+            cfg = dict(row) if row else {}
+            # Si no se configuró un nombre en Ajustes, usar el nombre del negocio
+            # cargado en el registro/onboarding (businesses.business_name), así el
+            # panel muestra el nombre real y no "tu negocio".
+            if not cfg.get("nombre"):
+                biz = await conn.fetchrow("SELECT business_name FROM businesses WHERE id = $1", b_id)
+                if biz and biz["business_name"]:
+                    cfg["nombre"] = biz["business_name"]
+            return cfg
     else:
         import aiosqlite
         async with aiosqlite.connect(main.DB_PATH) as db:
