@@ -995,6 +995,7 @@ main > * {
   .lp-showcase-stage { cursor: zoom-in; }
   .lp-showcase-side-arrow { display: flex; }
   .lp-showcase-caption-row { display: none !important; }
+  .lp-showcase-tabs { display: none !important; }
 }
 
 /* Flechas laterales sobre la imagen (PC) */

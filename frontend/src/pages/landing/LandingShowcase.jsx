@@ -70,8 +70,8 @@ export default function LandingShowcase() {
           <div className="lp-showcase-wrap" style={{ margin: '0 auto' }}
             onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
 
-            {/* Tabs */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginBottom: 22 }}>
+            {/* Tabs (solo celular; en PC se navega con flechas/dots/zoom) */}
+            <div className="lp-showcase-tabs" style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginBottom: 22 }}>
               {SCREENS.map((s, i) => (
                 <button key={s.name} onClick={() => go(i)}
                   aria-label={`Ver ${s.name}`} aria-pressed={i === active}
