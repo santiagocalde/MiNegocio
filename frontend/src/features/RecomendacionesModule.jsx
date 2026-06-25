@@ -12,15 +12,37 @@ const Icons = {
   CloudRain: () => <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16h16M4 16a4 4 0 01-4-4 4 4 0 014-4 4 4 0 017.2-2.1A6 6 0 0120 12a4 4 0 010 8m-4 4v-4m-4 4v-4m-4 4v-4" /></svg>
 };
 
+function IaCard({ titulo, subtitulo, icon, loading, texto, vacio }) {
+  return (
+    <div style={{ background: 'linear-gradient(135deg, rgba(124,58,237,0.10), rgba(20,187,166,0.05))', border: '1px solid rgba(165,180,252,0.25)', borderRadius: '16px', padding: '20px 22px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#c4b5fd', fontWeight: 800, fontSize: '1.05rem', marginBottom: '4px' }}>
+        {icon} {titulo}
+      </div>
+      <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: '0 0 14px' }}>{subtitulo}</p>
+      {loading ? (
+        <div style={{ color: 'var(--text-secondary)', fontSize: '0.92rem' }}>Analizando con IA…</div>
+      ) : texto ? (
+        <div style={{ color: 'var(--text-primary)', fontSize: '0.96rem', lineHeight: 1.65, whiteSpace: 'pre-line' }}>{texto}</div>
+      ) : (
+        <div style={{ color: 'var(--text-secondary)', fontSize: '0.92rem' }}>{vacio}</div>
+      )}
+    </div>
+  );
+}
+
 export default function RecomendacionesModule() {
   const { addToast, backend, currentPlan } = usePanelContext();
   const isLocked = PLAN_WEIGHT[currentPlan] < PLAN_WEIGHT['ia'];
   const [suggestions, setSuggestions] = useState([]);
   const [deadStock, setDeadStock] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [iaPrecios, setIaPrecios] = useState({ texto: '', loading: true });
+  const [iaRepo, setIaRepo] = useState({ texto: '', loading: true });
 
   useEffect(() => {
     if (isLocked) {
+      setIaPrecios({ texto: '', loading: false });
+      setIaRepo({ texto: '', loading: false });
       setSuggestions([
         { id: 1, product_name: 'Alfajor Fantoche', cost_price: 350, price: 400, suggested_price: 600, margin_pct: 12 },
         { id: 2, product_name: 'Cerveza Quilmes 1L', cost_price: 1200, price: 1400, suggested_price: 1800, margin_pct: 14 },
@@ -50,6 +72,16 @@ export default function RecomendacionesModule() {
         setDeadStock(Array.isArray(list) ? list.slice(0, 5) : []);
       })
       .catch(() => setDeadStock([]));
+
+    apiGet('/ai/precios')
+      .then(r => r.ok ? r.json() : Promise.reject(r))
+      .then(d => setIaPrecios({ texto: d.texto || '', loading: false }))
+      .catch(() => setIaPrecios({ texto: '', loading: false }));
+
+    apiGet('/ai/reposicion')
+      .then(r => r.ok ? r.json() : Promise.reject(r))
+      .then(d => setIaRepo({ texto: d.texto || '', loading: false }))
+      .catch(() => setIaRepo({ texto: '', loading: false }));
   }, []);
 
   const handleApplyPrices = async () => {
@@ -114,6 +146,26 @@ export default function RecomendacionesModule() {
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexShrink: 0 }}>
         <h2 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>Recomendaciones IA</h2>
+      </div>
+
+      {/* ANÁLISIS EN LENGUAJE NATURAL (IA) */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
+        <IaCard
+          titulo="Asesor de precios"
+          subtitulo="Qué subir y qué estás vendiendo casi a pérdida, según costo y rotación."
+          icon={<Icons.Brain />}
+          loading={iaPrecios.loading}
+          texto={iaPrecios.texto}
+          vacio="Sin sugerencias por ahora: tus márgenes están sanos."
+        />
+        <IaCard
+          titulo="Reposición inteligente"
+          subtitulo="Qué comprar antes de quedarte sin, según el ritmo de venta."
+          icon={<Icons.CloudRain />}
+          loading={iaRepo.loading}
+          texto={iaRepo.texto}
+          vacio="Nada urgente por reponer en los próximos días."
+        />
       </div>
 
       {loading ? (
