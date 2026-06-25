@@ -49,9 +49,9 @@ async def procesar_factura_ocr(image_bytes: bytes, content_type: str = "image/jp
         )
 
     data_url = f"data:{content_type or 'image/jpeg'};base64,{base64.b64encode(image_bytes).decode()}"
+    # Sin 'temperature': algunos modelos (Kimi/Moonshot) solo aceptan el default.
     payload = {
         "model": AI_MODEL,
-        "temperature": 0,
         "messages": [{
             "role": "user",
             "content": [
