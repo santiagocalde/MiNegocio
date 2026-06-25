@@ -382,6 +382,9 @@ async def init_pg() -> None:
             ALTER TABLE businesses ADD COLUMN IF NOT EXISTS needs_arca TEXT DEFAULT '';
             ALTER TABLE businesses ADD COLUMN IF NOT EXISTS objective TEXT DEFAULT '';
             ALTER TABLE businesses ADD COLUMN IF NOT EXISTS source TEXT DEFAULT '';
+            -- Día de trial (2/4/6/7) del último recordatorio enviado, para no
+            -- reenviar el mismo email en cada reinicio del backend.
+            ALTER TABLE businesses ADD COLUMN IF NOT EXISTS trial_email_sent_day INT;
             ALTER TABLE business_config ADD COLUMN IF NOT EXISTS print_config TEXT;
             ALTER TABLE sale_items ALTER COLUMN product_id DROP NOT NULL;
 
