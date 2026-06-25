@@ -26,15 +26,29 @@ const ROTATE_MS = 4500;
 export default function LandingShowcase() {
   const [active, setActive] = useState(0);
   const [paused, setPaused] = useState(false);
+  const [zoom, setZoom] = useState(false);
   const [reduceMotion] = useState(() => typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
 
   useEffect(() => {
-    if (paused || reduceMotion) return;
+    if (paused || zoom || reduceMotion) return;
     const t = setInterval(() => setActive(a => (a + 1) % SCREENS.length), ROTATE_MS);
     return () => clearInterval(t);
-  }, [paused, active, reduceMotion]);
+  }, [paused, zoom, active, reduceMotion]);
+
+  // Lightbox: navegación por teclado y cierre con Escape
+  useEffect(() => {
+    if (!zoom) return;
+    const onKey = (e) => {
+      if (e.key === 'Escape') setZoom(false);
+      else if (e.key === 'ArrowRight') setActive(a => (a + 1) % SCREENS.length);
+      else if (e.key === 'ArrowLeft') setActive(a => (a - 1 + SCREENS.length) % SCREENS.length);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [zoom]);
 
   const go = (i) => setActive((i + SCREENS.length) % SCREENS.length);
+  const openZoom = () => { if (typeof window !== 'undefined' && window.innerWidth >= 768) setZoom(true); };
   const cur = SCREENS[active];
 
   return (
@@ -85,18 +99,23 @@ export default function LandingShowcase() {
                   </span>
                 </div>
               </div>
-              <div style={{ position: 'relative', width: '100%', aspectRatio: '1366 / 768', background: 'var(--lp-bg)' }}>
+              <div className="lp-showcase-stage" onClick={openZoom}>
                 {/* Todas apiladas: se precargan una vez y el cambio es un crossfade instantáneo (sin parpadeo) */}
                 {SCREENS.map((s, i) => (
                   <img key={s.name} src={s.src} alt={s.alt} loading={i === 0 ? 'eager' : 'lazy'} decoding="async" width="1366" height="768"
                     style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top',
                              opacity: i === active ? 1 : 0, transition: reduceMotion ? 'none' : 'opacity 0.5s ease', pointerEvents: 'none' }} />
                 ))}
+                {/* Flechas laterales discretas (solo PC) */}
+                <button className="lp-showcase-side-arrow lp-showcase-side-left" aria-label="Anterior"
+                  onClick={(e) => { e.stopPropagation(); go(active - 1); }}>‹</button>
+                <button className="lp-showcase-side-arrow lp-showcase-side-right" aria-label="Siguiente"
+                  onClick={(e) => { e.stopPropagation(); go(active + 1); }}>›</button>
               </div>
             </div>
 
-            {/* Caption + arrows */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginTop: 18 }}>
+            {/* Caption + flechas debajo: SOLO celular (en PC las flechas van sobre la imagen) */}
+            <div className="lp-showcase-caption-row" style={{ alignItems: 'center', justifyContent: 'space-between', gap: 16, marginTop: 18 }}>
               <button onClick={() => go(active - 1)} aria-label="Anterior" className="lp-show-arrow"
                 style={{ flexShrink: 0, width: 38, height: 38, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)', color: 'var(--lp-text)', cursor: 'pointer', fontSize: '1.1rem', lineHeight: 1 }}>‹</button>
               <div style={{ textAlign: 'center', flex: 1, minHeight: 44 }}>
@@ -117,6 +136,21 @@ export default function LandingShowcase() {
           </div>
         </Reveal>
       </div>
+
+      {/* Lightbox: al hacer click la imagen se agranda un poco para mirarla y moverse entre módulos */}
+      {zoom && (
+        <div className="lp-showcase-lightbox" onClick={() => setZoom(false)} role="dialog" aria-modal="true" aria-label={`Vista ampliada: ${cur.name}`}>
+          <button className="lp-lightbox-close" onClick={() => setZoom(false)} aria-label="Cerrar">✕</button>
+          <button className="lp-lightbox-arrow lp-lightbox-prev" aria-label="Anterior"
+            onClick={(e) => { e.stopPropagation(); go(active - 1); }}>‹</button>
+          <figure className="lp-lightbox-fig" onClick={(e) => e.stopPropagation()}>
+            <img src={cur.src} alt={cur.alt} />
+            <figcaption>{cur.name}</figcaption>
+          </figure>
+          <button className="lp-lightbox-arrow lp-lightbox-next" aria-label="Siguiente"
+            onClick={(e) => { e.stopPropagation(); go(active + 1); }}>›</button>
+        </div>
+      )}
     </section>
   );
 }
