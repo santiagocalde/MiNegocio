@@ -176,18 +176,29 @@ async def mercadopago_webhook(request: Request):
                     pool = await get_pool()
                     async with pool.acquire() as conn:
                             if status == "authorized":
-                                await conn.execute(
-                                    "UPDATE businesses SET plan = $1, status = 'active', plan_end_date = CURRENT_DATE + make_interval(months => $2), plan_pending = NULL, mp_subscription_id = $3, updated_at = now() WHERE id = $4",
-                                    plan_id, months, data_id, biz_id
+                                # Idempotencia: MP re-entrega los webhooks. Si el negocio YA está
+                                # activo con este mismo plan y suscripción, es un duplicado → no
+                                # re-extender plan_end_date ni reenviar el email de activación.
+                                current = await conn.fetchrow(
+                                    "SELECT status, plan, mp_subscription_id FROM businesses WHERE id = $1", biz_id
                                 )
-                                logger.info(f"Webhook MP: {biz_id} activado {plan_id} ({months}m), sub={data_id}")
-                                row = await conn.fetchrow("SELECT email, business_name FROM businesses WHERE id = $1", biz_id)
-                                if row:
-                                    from core.plan_pricing import PLANS_CONFIG
-                                    plan_label = PLANS_CONFIG.get(plan_id, {}).get("name", plan_id)
-                                    is_yearly = months >= 12
-                                    import asyncio as _asyncio
-                                    _asyncio.create_task(_send_plan_email(row["email"], row["business_name"], plan_label, is_yearly))
+                                already_active = bool(current) and current["status"] == "active" \
+                                    and current["plan"] == plan_id and current["mp_subscription_id"] == data_id
+                                if already_active:
+                                    logger.info(f"Webhook MP (re-entrega ignorada): {biz_id} ya activo en {plan_id}, sub={data_id}")
+                                else:
+                                    await conn.execute(
+                                        "UPDATE businesses SET plan = $1, status = 'active', plan_end_date = CURRENT_DATE + make_interval(months => $2), plan_pending = NULL, mp_subscription_id = $3, updated_at = now() WHERE id = $4",
+                                        plan_id, months, data_id, biz_id
+                                    )
+                                    logger.info(f"Webhook MP: {biz_id} activado {plan_id} ({months}m), sub={data_id}")
+                                    row = await conn.fetchrow("SELECT email, business_name FROM businesses WHERE id = $1", biz_id)
+                                    if row:
+                                        from core.plan_pricing import PLANS_CONFIG
+                                        plan_label = PLANS_CONFIG.get(plan_id, {}).get("name", plan_id)
+                                        is_yearly = months >= 12
+                                        import asyncio as _asyncio
+                                        _asyncio.create_task(_send_plan_email(row["email"], row["business_name"], plan_label, is_yearly))
                             elif status == "pending":
                                 await conn.execute(
                                     "UPDATE businesses SET mp_subscription_id = $1, plan_pending = $2, updated_at = now() WHERE id = $3",
