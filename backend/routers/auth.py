@@ -14,9 +14,9 @@ from services.email_templates import base_template, _e
 logger = logging.getLogger("NovaStock.Auth")
 router = APIRouter(prefix="/api/auth", tags=["Auth"])
 
-from slowapi import Limiter
-from slowapi.util import get_remote_address
-auth_limiter = Limiter(key_func=get_remote_address)
+# Limiter central: keyea por IP REAL (X-Real-IP), no por la IP del proxy nginx.
+# Antes usaba get_remote_address → todos los kioscos compartían el límite.
+from core.ratelimit import limiter as auth_limiter
 
 class BusinessCreate(BaseModel):
     email: EmailStr
@@ -312,6 +312,13 @@ async def auth_login(request: Request, body: BusinessLogin) -> dict:
             biz_id, refresh_token, datetime.now(timezone.utc) + timedelta(days=7)
         )
 
+        # ¿Es superadmin? Se resuelve en el server contra la tabla superadmins,
+        # no con una lista de emails hardcodeada en el frontend. Esto solo habilita
+        # el acceso al panel; la seguridad real la da verify_superadmin + password.
+        is_superadmin = bool(await conn.fetchval(
+            "SELECT 1 FROM superadmins WHERE email = $1", biz_email.lower().strip()
+        ))
+
     return {
         "access_token": access_token,
         "refresh_token": refresh_token,
@@ -319,6 +326,7 @@ async def auth_login(request: Request, body: BusinessLogin) -> dict:
         "business": {
             "id": biz_id, "email": biz_email,
             "business_name": biz_name, "plan": biz_plan, "status": biz_status,
+            "is_superadmin": is_superadmin,
         },
     }
 
