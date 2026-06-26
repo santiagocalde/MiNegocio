@@ -7,16 +7,16 @@ import hashlib
 import logging
 from db import get_pool
 from jose import jwt
-from slowapi import Limiter
-from slowapi.util import get_remote_address
 
 router = APIRouter()
 logger = logging.getLogger("NovaStock")
-billing_limiter = Limiter(key_func=get_remote_address)
+# Limiter central: keyea por IP real, no por la IP del proxy nginx.
+from core.ratelimit import limiter as billing_limiter
+
+from core.config import JWT_SECRET
 
 MP_ACCESS_TOKEN = os.environ.get("MP_ACCESS_TOKEN", "")
 MP_WEBHOOK_SECRET = os.environ.get("MP_WEBHOOK_SECRET", "")
-JWT_SECRET = os.environ.get("JWT_SECRET", "dev-insecure-change-me")
 
 class SubscribeRequest(BaseModel):
     plan_id: str
