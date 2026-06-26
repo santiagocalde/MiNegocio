@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { API_ROOT } from '../../config';
 import { Reveal } from './hooks/useReveal';
 import testimonialsFallback from './data/testimonials';
 
@@ -8,8 +9,7 @@ export default function LandingTestimonials() {
   const [testimonials, setTestimonials] = useState(testimonialsFallback);
 
   useEffect(() => {
-    const baseUrl = import.meta.env.PROD ? '' : 'http://localhost:8005';
-    fetch(`${baseUrl}/api/testimonials`)
+    fetch(`${API_ROOT}/api/testimonials`)
       .then(res => res.ok ? res.json() : Promise.reject())
       .then(data => {
         if (Array.isArray(data) && data.length > 0) {

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { API_ROOT } from '../../config';
 import { Reveal } from './hooks/useReveal';
 
 const Svg = {
@@ -85,8 +86,7 @@ export default function LandingPricing({ isYearly, setIsYearly, isLoggedIn, setC
   const [plans, setPlans] = useState(FALLBACK_PLANS);
 
   useEffect(() => {
-    const baseUrl = import.meta.env.PROD ? '' : 'http://localhost:8005';
-    fetch(`${baseUrl}/api/plans`)
+    fetch(`${API_ROOT}/api/plans`)
       .then(res => res.ok ? res.json() : Promise.reject())
       .then(data => {
         if (Array.isArray(data) && data.length > 0) {

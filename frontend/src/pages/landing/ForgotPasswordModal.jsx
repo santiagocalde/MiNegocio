@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { API_ROOT } from '../../config';
 
 const Svg = {
   Mail: () => <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>,
@@ -21,8 +22,7 @@ export default function ForgotPasswordModal({ onClose }) {
     setLoading(true);
     setError('');
     try {
-      const baseUrl = import.meta.env.PROD ? '' : 'http://localhost:8005';
-      const res = await fetch(`${baseUrl}/api/auth/forgot-password`, {
+      const res = await fetch(`${API_ROOT}/api/auth/forgot-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })
