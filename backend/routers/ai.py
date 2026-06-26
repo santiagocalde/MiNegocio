@@ -178,9 +178,17 @@ async def _gather_precios(b_id) -> list:
 
 def _compute_price_recs(productos: list) -> list:
     """Calcula recomendaciones de precio CONCRETAS (antes→después), sin IA.
-    Apunta a ~30% de margen en lo que está flojo. Redondea a $50 para precios
-    de kiosco. Solo sugiere SUBIR (nunca bajar por margen)."""
-    TARGET = 0.30          # margen objetivo
+
+    Para que NO sean recomendaciones locas:
+    - Apunta a ~30% de margen, pero SUBE como mucho +20% por vez (un ajuste
+      digerible para el cliente; si hace falta más, se reajusta otro día).
+    - Excepción: si se vende POR DEBAJO del costo, sí o sí hay que llegar al
+      menos a cubrir el costo — eso no es negociable, estás perdiendo plata.
+    - Redondea a $50. Solo sugiere SUBIR.
+    """
+    import math
+    TARGET = 0.30          # margen objetivo (ideal)
+    MAX_SUBA = 0.20        # tope de aumento por sugerencia (+20%)
     recs = []
     for p in productos:
         cost = float(p["cost"] or 0)
@@ -189,27 +197,37 @@ def _compute_price_recs(productos: list) -> list:
             continue
         margen = (price - cost) / cost * 100
         vendidos = float(p["vendidos"] or 0)
-        # objetivo: precio que deja TARGET de margen, redondeado a $50
-        objetivo = round((cost * (1 + TARGET)) / 50) * 50
-        if objetivo <= price:
-            continue  # ya está bien o por encima del objetivo → no tocar
-        delta_pct = round((objetivo - price) / price * 100)
+
+        objetivo = round((cost * (1 + TARGET)) / 50) * 50      # precio ideal (30% margen)
+        tope     = round((price * (1 + MAX_SUBA)) / 50) * 50   # +20% redondeado a $50
+        piso     = math.ceil(cost / 50) * 50                   # break-even (cubrir el costo)
+        # Sugerido: el ideal pero acotado al tope de +20%; nunca por debajo del costo.
+        sugerido = min(objetivo, max(tope, piso))
+
+        if sugerido <= price:
+            continue  # ya está bien → no tocar
+        delta_pct = round((sugerido - price) / price * 100)
         if delta_pct < 3:
             continue  # ajuste insignificante, no vale la pena molestar
+
         if margen < 0:
-            prioridad, motivo = "urgente", "Lo estás vendiendo a pérdida"
+            prioridad, motivo = "urgente", "Estabas vendiendo a pérdida"
         elif margen < 15:
             prioridad, motivo = "alta", "Margen muy bajo" + (", y rota bien" if vendidos >= 5 else "")
         else:
             prioridad, motivo = "media", "Margen flojo" + (", igual rota" if vendidos >= 5 else "")
+        # Si quedó topeado (no llegó al ideal), avisamos que es un ajuste gradual.
+        if sugerido < objetivo:
+            motivo += " · ajuste suave, revisalo de nuevo en unos días"
+
         recs.append({
             "product_id": p["id"],
             "name": p["name"],
             "price_actual": round(price),
-            "price_sugerido": int(objetivo),
+            "price_sugerido": int(sugerido),
             "delta_pct": delta_pct,
             "margen_actual": round(margen),
-            "margen_nuevo": round((objetivo - cost) / cost * 100),
+            "margen_nuevo": round((sugerido - cost) / cost * 100),
             "vendidos": round(vendidos, 1),
             "prioridad": prioridad,
             "motivo": motivo,
