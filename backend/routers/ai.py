@@ -10,6 +10,7 @@ from services.ai_service import (
     mensaje_cobranza,
     AINotConfigured,
 )
+from core.ratelimit import limiter
 
 router = APIRouter(prefix="/api/ai", tags=["AI Integration"])
 
@@ -45,6 +46,7 @@ def _ai_error(e: Exception) -> HTTPException:
 
 
 @router.post("/scan-invoice", summary="Escanear Factura de Proveedor con IA (OCR)")
+@limiter.limit("20/minute")
 async def scan_invoice(request: Request, file: UploadFile = File(...)):
     await _require_ia(request)
     if file.content_type is None or not file.content_type.startswith("image/"):
@@ -316,6 +318,7 @@ async def _gather_cliente(b_id, customer_id: int) -> dict:
 # ---------------------------------------------------------------------------
 
 @router.get("/resumen", summary="Resumen del día en lenguaje natural")
+@limiter.limit("30/minute")
 async def resumen_endpoint(request: Request):
     await _require_ia(request)
     try:
@@ -328,6 +331,7 @@ async def resumen_endpoint(request: Request):
 
 
 @router.get("/precios", summary="Asesor de precios con IA")
+@limiter.limit("30/minute")
 async def precios_endpoint(request: Request):
     await _require_ia(request)
     try:
@@ -341,6 +345,7 @@ async def precios_endpoint(request: Request):
 
 
 @router.get("/reposicion", summary="Predicción de reposición con IA")
+@limiter.limit("30/minute")
 async def reposicion_endpoint(request: Request):
     await _require_ia(request)
     try:
@@ -353,6 +358,7 @@ async def reposicion_endpoint(request: Request):
 
 
 @router.get("/cobranza/{customer_id}", summary="Mensaje de cobranza de fiado con IA")
+@limiter.limit("30/minute")
 async def cobranza_endpoint(customer_id: int, request: Request):
     await _require_ia(request)
     try:
