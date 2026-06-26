@@ -35,8 +35,10 @@ export default function FiadoModule() {
         const data = await res.json();
         setCustomers(data);
       }
-    } catch {
+    } catch (e) {
+      console.error('Fiados: no se pudieron cargar los clientes:', e);
       setCustomers([]);
+      addToast?.('No se pudieron cargar los fiados. Revisá la conexión.', 'error');
     } finally {
       setLoading(false);
     }
@@ -52,7 +54,10 @@ export default function FiadoModule() {
         const data = await res.json();
         setTransactionsMap(prev => ({ ...prev, [customerId]: data }));
       }
-    } catch { }
+    } catch (e) {
+      console.error(`Fiados: no se pudieron cargar las transacciones del cliente ${customerId}:`, e);
+      addToast?.('No se pudo cargar el detalle del cliente.', 'error');
+    }
   };
 
   const handleExpand = (c) => {
