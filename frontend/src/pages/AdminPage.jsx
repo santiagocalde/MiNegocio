@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { API_BASE } from '../config';
 
-const API = import.meta.env.PROD ? '/api/admin' : 'http://localhost:8005/api/admin';
+const API = `${API_BASE}/admin`;
 
 const PLAN = { trial: { label: 'Trial', color: '#64748B' }, simple: { label: 'Simple', color: '#3B82F6' }, pro: { label: 'Pro', color: '#14BBA6' }, ia: { label: 'IA', color: '#F59E0B' } };
 const STATUS = { active: { label: 'Activo', color: '#10B981' }, suspended: { label: 'Suspendido', color: '#EF4444' }, expired: { label: 'Expirado', color: '#F59E0B' }, past_due: { label: 'En Mora', color: '#F97316' } };
-const SUPERADMIN_EMAILS = ['calderonsantiago2019@gmail.com', 'admin@minegocio.app'];
 
 function fetchAdmin(url, token, opts = {}) {
   return fetch(url, { ...opts, headers: { ...opts.headers, 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' } }).catch(err => { console.warn('Admin fetch failed:', url, err.message); return Response.error(); });
@@ -39,7 +39,7 @@ const S = {
 
 function isAdminAuthorized() {
   if (localStorage.getItem('saas_admin_gate') === 'true') return true;
-  try { const raw = localStorage.getItem('saas_business'); if (raw) { const biz = JSON.parse(raw); if (biz?.email && SUPERADMIN_EMAILS.includes(biz.email)) { localStorage.setItem('saas_admin_gate', 'true'); return true; } } } catch {}
+  try { const raw = localStorage.getItem('saas_business'); if (raw) { const biz = JSON.parse(raw); if (biz?.is_superadmin) { localStorage.setItem('saas_admin_gate', 'true'); return true; } } } catch {}
   return false;
 }
 
