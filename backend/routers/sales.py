@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Query, Body
+from fastapi import APIRouter, HTTPException, Query, Body, Request
 from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime, timezone
@@ -7,6 +7,7 @@ import uuid
 import main
 from main import JWT_SECRET, JWT_ALGORITHM, row_to_dict, logger, TurnOpen, TurnClose, SaleCreate, USE_PG
 from event_stream import events
+from core.ratelimit import limiter
 
 router = APIRouter()
 
@@ -244,7 +245,8 @@ async def list_turns(limit: int = 30) -> list:
 # SALES ENDPOINTS
 # ────────────────────────────────────────────────────────────
 @router.post("/api/sales", status_code=201, summary="Registrar venta")
-async def create_sale(body: SaleCreate, idempotency_key: Optional[str] = Query(None)) -> dict:
+@limiter.limit("120/minute")
+async def create_sale(request: Request, body: SaleCreate, idempotency_key: Optional[str] = Query(None)) -> dict:
     effective_key = idempotency_key or str(uuid.uuid4())
     b_id = _biz_id()
 
