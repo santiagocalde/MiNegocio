@@ -5,6 +5,7 @@ from typing import Optional, List, Dict, Any
 import aiosqlite
 import main
 from main import row_to_dict, USE_PG, get_current_business, check_product_limit
+from core.ratelimit import limiter
 
 router = APIRouter()
 
@@ -155,6 +156,7 @@ async def price_suggestions(threshold_pct: float = Query(15.0), category_id: Opt
 
 
 @router.post("/api/products/import", summary="Importar productos CSV")
+@limiter.limit("10/minute")
 async def import_products_csv(request: Request, csv_text: str = Body(..., media_type="text/plain")) -> dict:
     import csv, io
     b_id = _biz_id()
@@ -224,6 +226,7 @@ async def import_products_csv(request: Request, csv_text: str = Body(..., media_
 
 
 @router.post("/api/products", status_code=201, summary="Crear producto")
+@limiter.limit("60/minute")
 async def create_product(request: Request, product: dict = Body(...)) -> Dict[str, Any]:
     b_id = _biz_id()
     await _check_product_limit(request, 1)
