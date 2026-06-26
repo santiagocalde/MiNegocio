@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { API_ROOT, API_BASE } from '../config';
 
 import LogoPrincipal from '../assets/images/MiNegocio_transparente_real.png';
 import FotoMascota from '../assets/images/mascota_oficial.jpg';
@@ -56,8 +57,7 @@ export default function LandingPage() {
     setLoginLoading(true);
     setLoginError('');
     try {
-      const baseUrl = import.meta.env.PROD ? '' : 'http://localhost:8005';
-      const endpoint = `${baseUrl}/api/auth/${showLoginModal === 'register' ? 'register' : 'login'}`;
+      const endpoint = `${API_BASE}/auth/${showLoginModal === 'register' ? 'register' : 'login'}`;
       const body = showLoginModal === 'register'
         ? { email: loginEmail, password: loginPassword, name: loginName || 'Usuario', business_name: 'Mi Negocio', business_type: 'kiosco' }
         : { email: loginEmail, password: loginPassword };
@@ -87,10 +87,9 @@ export default function LandingPage() {
       localStorage.setItem('saas_business', JSON.stringify(data.business));
       if (data.operator_pin) localStorage.setItem('minegocio_onboarding_pin', data.operator_pin);
       
-      const superAdminEmails = ['calderonsantiago2019@gmail.com', 'admin@minegocio.app'];
-      if (data.business && superAdminEmails.includes(data.business.email)) {
+      if (data.business && data.business.is_superadmin) {
         localStorage.setItem('saas_admin_gate', 'true');
-        const adminAuthUrl = import.meta.env.PROD ? '/api/admin/auth' : 'http://localhost:8005/api/admin/auth';
+        const adminAuthUrl = `${API_BASE}/admin/auth`;
         fetch(adminAuthUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -125,8 +124,7 @@ export default function LandingPage() {
     setContactLoading(true);
     setContactError('');
     try {
-      const baseUrl = import.meta.env.PROD ? '' : 'http://localhost:8005';
-      const res = await fetch(`${baseUrl}/api/send-contact-email`, {
+      const res = await fetch(`${API_ROOT}/api/send-contact-email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(contactForm)
