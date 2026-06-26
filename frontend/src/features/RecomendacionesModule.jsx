@@ -30,18 +30,81 @@ function IaCard({ titulo, subtitulo, icon, loading, texto, vacio }) {
   );
 }
 
+const PRIO_COLOR = { urgente: 'var(--accent-danger)', alta: 'var(--accent-warning)', media: '#a5b4fc' };
+
+function PreciosIaCard({ loading, texto, sugerencias, onApply, addToast }) {
+  const [aplicados, setAplicados] = useState({});   // {product_id: 'ok' | 'loading'}
+
+  const aplicar = async (s) => {
+    setAplicados(prev => ({ ...prev, [s.product_id]: 'loading' }));
+    const ok = await onApply(s);
+    setAplicados(prev => ({ ...prev, [s.product_id]: ok ? 'ok' : undefined }));
+    addToast?.(ok ? `${s.name}: precio actualizado a $${s.price_sugerido.toLocaleString('es-AR')}` : 'No se pudo aplicar el precio', ok ? 'success' : 'error');
+  };
+
+  return (
+    <div style={{ background: 'linear-gradient(135deg, rgba(124,58,237,0.10), rgba(20,187,166,0.05))', border: '1px solid rgba(165,180,252,0.25)', borderRadius: '16px', padding: '20px 22px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#c4b5fd', fontWeight: 800, fontSize: '1.05rem', marginBottom: '4px' }}>
+        <Icons.Brain /> Asesor de precios
+      </div>
+      <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: '0 0 14px' }}>Qué subir y cuánto exactamente, según costo y rotación. Aplicás con un click.</p>
+
+      {loading ? (
+        <div style={{ color: 'var(--text-secondary)', fontSize: '0.92rem' }}>Analizando con IA…</div>
+      ) : (
+        <>
+          {texto && <div style={{ color: 'var(--text-primary)', fontSize: '0.95rem', lineHeight: 1.6, marginBottom: 14 }}>{texto}</div>}
+          {sugerencias.length === 0 ? (
+            <div style={{ color: 'var(--text-secondary)', fontSize: '0.92rem' }}>Tus precios están sanos: no hay nada para ajustar.</div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {sugerencias.map(s => {
+                const estado = aplicados[s.product_id];
+                return (
+                  <div key={s.product_id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, background: 'var(--bg-main)', borderRadius: 10, padding: '12px 14px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ width: 7, height: 7, borderRadius: '50%', background: PRIO_COLOR[s.prioridad] || '#a5b4fc', flexShrink: 0 }} />
+                        <span style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.95rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.name}</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4, fontFamily: 'var(--font-mono)', fontSize: '1rem' }}>
+                        <span style={{ color: 'var(--text-secondary)', textDecoration: 'line-through' }}>${s.price_actual.toLocaleString('es-AR')}</span>
+                        <span style={{ color: 'var(--text-secondary)' }}>→</span>
+                        <span style={{ color: 'var(--accent-success)', fontWeight: 800 }}>${s.price_sugerido.toLocaleString('es-AR')}</span>
+                        <span style={{ color: PRIO_COLOR[s.prioridad] || '#a5b4fc', fontSize: '0.8rem', fontWeight: 700 }}>(+{s.delta_pct}%)</span>
+                      </div>
+                      <div style={{ color: 'var(--text-secondary)', fontSize: '0.78rem', marginTop: 2 }}>{s.motivo} · margen {s.margen_actual}% → {s.margen_nuevo}%</div>
+                    </div>
+                    <button
+                      onClick={() => aplicar(s)}
+                      disabled={estado === 'ok' || estado === 'loading'}
+                      style={{ flexShrink: 0, padding: '8px 16px', borderRadius: 8, border: 'none', fontWeight: 700, fontSize: '0.85rem', cursor: estado ? 'default' : 'pointer', background: estado === 'ok' ? 'rgba(20,187,166,0.15)' : 'var(--gradient-primary)', color: estado === 'ok' ? 'var(--accent-success)' : 'white' }}
+                    >
+                      {estado === 'ok' ? '✓ Aplicado' : estado === 'loading' ? '…' : 'Aplicar'}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function RecomendacionesModule() {
   const { addToast, backend, currentPlan } = usePanelContext();
   const isLocked = PLAN_WEIGHT[currentPlan] < PLAN_WEIGHT['ia'];
   const [suggestions, setSuggestions] = useState([]);
   const [deadStock, setDeadStock] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [iaPrecios, setIaPrecios] = useState({ texto: '', loading: true });
+  const [iaPrecios, setIaPrecios] = useState({ texto: '', sugerencias: [], loading: true });
   const [iaRepo, setIaRepo] = useState({ texto: '', loading: true });
 
   useEffect(() => {
     if (isLocked) {
-      setIaPrecios({ texto: '', loading: false });
+      setIaPrecios({ texto: '', sugerencias: [], loading: false });
       setIaRepo({ texto: '', loading: false });
       setSuggestions([
         { id: 1, product_name: 'Alfajor Fantoche', cost_price: 350, price: 400, suggested_price: 600, margin_pct: 12 },
@@ -75,14 +138,24 @@ export default function RecomendacionesModule() {
 
     apiGet('/ai/precios')
       .then(r => r.ok ? r.json() : Promise.reject(r))
-      .then(d => setIaPrecios({ texto: d.texto || '', loading: false }))
-      .catch(() => setIaPrecios({ texto: '', loading: false }));
+      .then(d => setIaPrecios({ texto: d.texto || '', sugerencias: d.sugerencias || [], loading: false }))
+      .catch(() => setIaPrecios({ texto: '', sugerencias: [], loading: false }));
 
     apiGet('/ai/reposicion')
       .then(r => r.ok ? r.json() : Promise.reject(r))
       .then(d => setIaRepo({ texto: d.texto || '', loading: false }))
       .catch(() => setIaRepo({ texto: '', loading: false }));
   }, []);
+
+  const handleApplyOne = async (s) => {
+    try {
+      const { apiPatch } = await import('../services/apiClient');
+      const res = await apiPatch(`/products/${s.product_id}/price`, { price: s.price_sugerido });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  };
 
   const handleApplyPrices = async () => {
     try {
@@ -150,13 +223,12 @@ export default function RecomendacionesModule() {
 
       {/* ANÁLISIS EN LENGUAJE NATURAL (IA) */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
-        <IaCard
-          titulo="Asesor de precios"
-          subtitulo="Qué subir y qué estás vendiendo casi a pérdida, según costo y rotación."
-          icon={<Icons.Brain />}
+        <PreciosIaCard
           loading={iaPrecios.loading}
           texto={iaPrecios.texto}
-          vacio="Sin sugerencias por ahora: tus márgenes están sanos."
+          sugerencias={iaPrecios.sugerencias}
+          addToast={addToast}
+          onApply={handleApplyOne}
         />
         <IaCard
           titulo="Reposición inteligente"
