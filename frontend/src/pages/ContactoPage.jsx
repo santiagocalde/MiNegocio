@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { API_ROOT } from '../config';
 
 const Svg = {
   ArrowLeft: () => <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>,
@@ -29,8 +30,7 @@ export default function ContactoPage() {
     setErrorMsg('');
     setLoading(true);
     try {
-      const baseUrl = import.meta.env.PROD ? '' : 'http://localhost:8005';
-      const res = await fetch(`${baseUrl}/api/send-contact-email`, {
+      const res = await fetch(`${API_ROOT}/api/send-contact-email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
