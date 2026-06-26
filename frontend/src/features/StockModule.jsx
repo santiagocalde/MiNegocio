@@ -136,7 +136,10 @@ export default function StockModule() {
         setShowNewCategory(false);
         setNewCategoryName('');
       }
-    } catch(e) {}
+    } catch (e) {
+      console.error('Stock: no se pudo crear la categoría:', e);
+      if (addToast) addToast('No se pudo crear la categoría. Revisá la conexión.', 'error');
+    }
   };
 
   useEffect(() => {
