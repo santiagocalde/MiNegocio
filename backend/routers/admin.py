@@ -12,12 +12,10 @@ import main
 router = APIRouter()
 logger = logging.getLogger("NovaStock.Admin")
 
-JWT_SECRET = os.environ.get("JWT_SECRET", "dev-insecure-change-me")
-JWT_ALGORITHM = "HS256"
+from core.config import JWT_SECRET, JWT_ALGORITHM
 
-from slowapi import Limiter
-from slowapi.util import get_remote_address
-admin_limiter = Limiter(key_func=get_remote_address)
+# Limiter central: keyea por IP real, no por la IP del proxy nginx.
+from core.ratelimit import limiter as admin_limiter
 
 # ────────────────────────────────────────────────────────────
 # HELPERS
