@@ -257,9 +257,10 @@ async def _gather_cliente(b_id, customer_id: int) -> dict:
 async def resumen_endpoint(request: Request):
     await _require_ia(request)
     try:
-        datos = await _gather_resumen(_biz_id())
-        texto = await resumen_natural(datos)
-        return {"texto": texto, "datos": datos}
+        bid = _biz_id()
+        datos = await _gather_resumen(bid)
+        texto = await resumen_natural(datos, biz_id=bid)
+        return {"texto": texto, "datos": datos, "cached": False}
     except Exception as e:
         raise _ai_error(e)
 
@@ -268,8 +269,9 @@ async def resumen_endpoint(request: Request):
 async def precios_endpoint(request: Request):
     await _require_ia(request)
     try:
-        productos = await _gather_precios(_biz_id())
-        texto = await asesor_precios(productos)
+        bid = _biz_id()
+        productos = await _gather_precios(bid)
+        texto = await asesor_precios(productos, biz_id=bid)
         return {"texto": texto, "analizados": len(productos)}
     except Exception as e:
         raise _ai_error(e)
@@ -279,8 +281,9 @@ async def precios_endpoint(request: Request):
 async def reposicion_endpoint(request: Request):
     await _require_ia(request)
     try:
-        productos = await _gather_reposicion(_biz_id())
-        texto = await prediccion_reposicion(productos)
+        bid = _biz_id()
+        productos = await _gather_reposicion(bid)
+        texto = await prediccion_reposicion(productos, biz_id=bid)
         return {"texto": texto, "urgentes": len(productos)}
     except Exception as e:
         raise _ai_error(e)
@@ -290,8 +293,9 @@ async def reposicion_endpoint(request: Request):
 async def cobranza_endpoint(customer_id: int, request: Request):
     await _require_ia(request)
     try:
-        cliente = await _gather_cliente(_biz_id(), customer_id)
-        texto = await mensaje_cobranza(cliente)
+        bid = _biz_id()
+        cliente = await _gather_cliente(bid, customer_id)
+        texto = await mensaje_cobranza(cliente, biz_id=bid)
         return {"texto": texto, "telefono": cliente.get("phone"), "nombre": cliente.get("name")}
     except Exception as e:
         raise _ai_error(e)

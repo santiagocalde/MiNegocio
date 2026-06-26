@@ -412,6 +412,25 @@ async def init_pg() -> None:
             );
         """)
 
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS ai_logs (
+                id              BIGSERIAL PRIMARY KEY,
+                business_id     TEXT NOT NULL,
+                function_name   TEXT NOT NULL,
+                input_hash      TEXT NOT NULL,
+                input_data      JSONB,
+                output_text     TEXT,
+                model           TEXT,
+                tokens_in       INTEGER DEFAULT 0,
+                tokens_out      INTEGER DEFAULT 0,
+                created_at      TIMESTAMPTZ DEFAULT now()
+            );
+            CREATE INDEX IF NOT EXISTS idx_ai_logs_lookup
+                ON ai_logs(business_id, function_name, input_hash, created_at DESC);
+            CREATE INDEX IF NOT EXISTS idx_ai_logs_training
+                ON ai_logs(function_name, created_at DESC);
+        """)
+
         plan_count = await conn.fetchval("SELECT COUNT(*) FROM plans")
         if plan_count == 0:
             await conn.execute("""
