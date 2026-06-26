@@ -47,3 +47,5 @@ pgdata/
 opencode.json
 .gemini/
 .cursor/
+.claude/
+backups/
