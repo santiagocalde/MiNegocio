@@ -144,7 +144,7 @@ async def _gather_precios(b_id) -> list:
         pool = await get_pg_pool()
         async with pool.acquire() as conn:
             rows = await conn.fetch("""
-                SELECT p.name, p.price, p.cost_price,
+                SELECT p.id, p.name, p.price, p.cost_price,
                        ROUND(CAST((p.price - p.cost_price) / NULLIF(p.cost_price,0) * 100 AS numeric),1) AS margen,
                        COALESCE((SELECT SUM(si.quantity) FROM sale_items si JOIN sales s ON s.id=si.sale_id
                                  WHERE si.product_id=p.id AND s.timestamp > now() - interval '30 day'
@@ -157,7 +157,7 @@ async def _gather_precios(b_id) -> list:
         async with aiosqlite.connect(main.DB_PATH) as db:
             db.row_factory = aiosqlite.Row
             rows = await (await db.execute("""
-                SELECT p.name, p.price, p.cost_price,
+                SELECT p.id, p.name, p.price, p.cost_price,
                        ROUND((p.price - p.cost_price) / NULLIF(p.cost_price,0) * 100, 1) AS margen,
                        COALESCE((SELECT SUM(si.quantity) FROM sale_items si JOIN sales s ON s.id=si.sale_id
                                  WHERE si.product_id=p.id AND s.timestamp > datetime('now','-30 day')
@@ -167,12 +167,56 @@ async def _gather_precios(b_id) -> list:
                 ORDER BY vendidos DESC LIMIT 40
             """)).fetchall()
     return [{
+        "id": r["id"],
         "name": r["name"],
         "price": round(float(r["price"] or 0)),
         "cost": round(float(r["cost_price"] or 0)),
         "margen_pct": float(r["margen"] or 0),
         "vendidos": round(float(r["vendidos"] or 0), 1),
     } for r in rows]
+
+
+def _compute_price_recs(productos: list) -> list:
+    """Calcula recomendaciones de precio CONCRETAS (antes→después), sin IA.
+    Apunta a ~30% de margen en lo que está flojo. Redondea a $50 para precios
+    de kiosco. Solo sugiere SUBIR (nunca bajar por margen)."""
+    TARGET = 0.30          # margen objetivo
+    recs = []
+    for p in productos:
+        cost = float(p["cost"] or 0)
+        price = float(p["price"] or 0)
+        if cost <= 0 or price <= 0:
+            continue
+        margen = (price - cost) / cost * 100
+        vendidos = float(p["vendidos"] or 0)
+        # objetivo: precio que deja TARGET de margen, redondeado a $50
+        objetivo = round((cost * (1 + TARGET)) / 50) * 50
+        if objetivo <= price:
+            continue  # ya está bien o por encima del objetivo → no tocar
+        delta_pct = round((objetivo - price) / price * 100)
+        if delta_pct < 3:
+            continue  # ajuste insignificante, no vale la pena molestar
+        if margen < 0:
+            prioridad, motivo = "urgente", "Lo estás vendiendo a pérdida"
+        elif margen < 15:
+            prioridad, motivo = "alta", "Margen muy bajo" + (", y rota bien" if vendidos >= 5 else "")
+        else:
+            prioridad, motivo = "media", "Margen flojo" + (", igual rota" if vendidos >= 5 else "")
+        recs.append({
+            "product_id": p["id"],
+            "name": p["name"],
+            "price_actual": round(price),
+            "price_sugerido": int(objetivo),
+            "delta_pct": delta_pct,
+            "margen_actual": round(margen),
+            "margen_nuevo": round((objetivo - cost) / cost * 100),
+            "vendidos": round(vendidos, 1),
+            "prioridad": prioridad,
+            "motivo": motivo,
+        })
+    orden = {"urgente": 0, "alta": 1, "media": 2}
+    recs.sort(key=lambda r: (orden[r["prioridad"]], -r["vendidos"]))
+    return recs[:8]
 
 
 async def _gather_reposicion(b_id) -> list:
@@ -271,8 +315,9 @@ async def precios_endpoint(request: Request):
     try:
         bid = _biz_id()
         productos = await _gather_precios(bid)
-        texto = await asesor_precios(productos, biz_id=bid)
-        return {"texto": texto, "analizados": len(productos)}
+        recs = _compute_price_recs(productos)
+        texto = await asesor_precios(recs, biz_id=bid)
+        return {"texto": texto, "sugerencias": recs, "analizados": len(productos)}
     except Exception as e:
         raise _ai_error(e)
 
