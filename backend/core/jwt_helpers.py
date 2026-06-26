@@ -11,10 +11,10 @@ from jose import JWTError, jwt
 
 logger = logging.getLogger("MiNegocio.auth")
 
-JWT_SECRET    = os.getenv("JWT_SECRET", "dev-insecure-change-me")
-JWT_ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60
-REFRESH_TOKEN_EXPIRE_DAYS   = 7
+from core.config import (
+    JWT_SECRET, JWT_ALGORITHM,
+    ACCESS_TOKEN_EXPIRE_MINUTES, REFRESH_TOKEN_EXPIRE_DAYS,
+)
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
