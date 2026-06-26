@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { API_ROOT } from '../../config';
 import { Reveal } from './hooks/useReveal';
 import useCountUp from './hooks/useCountUp';
 
@@ -42,8 +43,7 @@ export default function LandingSocialProof() {
   const [stats, setStats] = useState(DEFAULT_STATS);
 
   useEffect(() => {
-    const baseUrl = import.meta.env.PROD ? '' : 'http://localhost:8005';
-    fetch(`${baseUrl}/api/metrics`)
+    fetch(`${API_ROOT}/api/metrics`)
       .then(res => res.ok ? res.json() : Promise.reject())
       .then(data => {
         setStats([
