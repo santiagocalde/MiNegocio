@@ -36,6 +36,10 @@ logger = logging.getLogger("NovaStock.AI")
 AI_API_KEY  = (os.environ.get("AI_INVOICE_API_KEY")   or "").strip()
 AI_BASE_URL = (os.environ.get("AI_INVOICE_BASE_URL")   or "https://openrouter.ai/api/v1").rstrip("/")
 AI_MODEL    = (os.environ.get("AI_INVOICE_MODEL")      or "openai/gpt-4o-mini").strip()
+# Modelo para las funciones de TEXTO (resumen, precios, etc.). Si no se define,
+# usa el mismo que visión. Permite poner un modelo más barato para texto y dejar
+# el modelo con visión (Kimi K2) solo para el escáner de facturas.
+AI_TEXT_MODEL = (os.environ.get("AI_INVOICE_TEXT_MODEL") or AI_MODEL).strip()
 
 _PROMPT = (
     "Sos un asistente que lee facturas y remitos de proveedores de un kiosco en Argentina. "
@@ -51,8 +55,12 @@ _PROMPT = (
 _SYS = ("Sos el asistente de un kiosco/almacén argentino. Hablás claro, en criollo, directo y "
         "breve, tuteando al dueño. Te basás SOLO en los datos que te paso, nunca inventes números.")
 
-# TTL en horas por función (0 = sin caché)
-_CACHE_TTL = {"resumen": 24, "precios": 6, "reposicion": 4, "cobranza": 0}
+# TTL en horas por función (0 = sin caché). Sirve la última respuesta dentro
+# de la ventana → rate-limit automático por negocio.
+#   resumen 1h: se refresca a lo largo del día pero nunca más de 1 vez/hora
+#   precios 6h / reposicion 4h: los costos y la rotación cambian lento
+#   cobranza 0: cada mensaje es único, siempre se genera
+_CACHE_TTL = {"resumen": 1, "precios": 6, "reposicion": 4, "cobranza": 0}
 
 
 class AINotConfigured(Exception):
@@ -63,12 +71,12 @@ class AINotConfigured(Exception):
 # HTTP helper
 # ---------------------------------------------------------------------------
 
-async def _post_chat(messages: list, timeout: float = 60) -> str:
+async def _post_chat(messages: list, timeout: float = 60, model: str | None = None) -> str:
     if not AI_API_KEY:
         raise AINotConfigured(
             "La IA no está configurada en el servidor. Definí AI_INVOICE_API_KEY."
         )
-    payload = {"model": AI_MODEL, "messages": messages}
+    payload = {"model": model or AI_MODEL, "messages": messages}
     headers = {"Authorization": f"Bearer {AI_API_KEY}", "Content-Type": "application/json"}
     try:
         async with httpx.AsyncClient(timeout=timeout) as client:
@@ -93,8 +101,12 @@ def _hash_prompt(user_prompt: str) -> str:
     return hashlib.sha256(user_prompt.encode()).hexdigest()[:16]
 
 
-async def _check_cache(biz_id: str, fn: str, h: str, ttl_h: int) -> str | None:
-    """Devuelve el output cacheado si existe y está dentro del TTL, o None."""
+async def _check_cache(biz_id: str, fn: str, ttl_h: float) -> str | None:
+    """Caché por RECENCIA: devuelve la última respuesta de esa función para el
+    negocio si fue generada dentro del TTL, sin importar si los datos cambiaron.
+
+    Esto actúa también como rate-limit: aunque el kiosquero entre 50 veces a
+    Inicio en una hora, el resumen se genera una sola vez por hora."""
     if ttl_h <= 0 or not biz_id:
         return None
     try:
@@ -103,13 +115,13 @@ async def _check_cache(biz_id: str, fn: str, h: str, ttl_h: int) -> str | None:
         async with pool.acquire() as conn:
             row = await conn.fetchrow(
                 """SELECT output_text FROM ai_logs
-                   WHERE business_id=$1 AND function_name=$2 AND input_hash=$3
-                     AND created_at > now() - make_interval(hours => $4)
+                   WHERE business_id=$1 AND function_name=$2
+                     AND created_at > now() - make_interval(secs => $3)
                    ORDER BY created_at DESC LIMIT 1""",
-                biz_id, fn, h, ttl_h
+                biz_id, fn, ttl_h * 3600
             )
         if row:
-            logger.info(f"AI cache HIT: {fn} biz={biz_id[:8]}")
+            logger.info(f"AI cache HIT: {fn} biz={biz_id[:8]} (TTL {ttl_h}h)")
             return row["output_text"]
     except Exception as e:
         logger.debug(f"AI cache check failed (ignorado): {e}")
@@ -141,20 +153,21 @@ def _log_async(biz_id: str, fn: str, h: str, input_data: dict, output: str):
 
 async def _texto(user_prompt: str, fn: str = "", biz_id: str = "",
                  input_data: dict | None = None) -> str:
-    """Texto con caché transparente. fn y biz_id habilitan caché + logging."""
-    h = _hash_prompt(user_prompt)
+    """Texto con caché transparente. fn y biz_id habilitan caché + logging.
+    Usa AI_TEXT_MODEL (puede ser un modelo más barato que el de visión)."""
     ttl = _CACHE_TTL.get(fn, 0)
 
-    cached = await _check_cache(biz_id, fn, h, ttl)
+    cached = await _check_cache(biz_id, fn, ttl)
     if cached:
         return cached
 
     out = await _post_chat([{"role": "system", "content": _SYS},
-                             {"role": "user",   "content": user_prompt}])
+                            {"role": "user",   "content": user_prompt}],
+                           model=AI_TEXT_MODEL)
     result = (out or "").strip()
 
     if fn and biz_id:
-        _log_async(biz_id, fn, h, input_data or {}, result)
+        _log_async(biz_id, fn, _hash_prompt(user_prompt), input_data or {}, result)
 
     return result
 
@@ -175,22 +188,22 @@ async def resumen_natural(d: dict, biz_id: str = "") -> str:
     return await _texto(user, "resumen", biz_id, d)
 
 
-async def asesor_precios(productos: list, biz_id: str = "") -> str:
-    if not productos:
-        return "Todavía no tengo costos y ventas suficientes para sugerirte precios."
+async def asesor_precios(recs: list, biz_id: str = "") -> str:
+    """recs: recomendaciones ya calculadas (antes→después). La IA solo redacta
+    un resumen corto y humano; los números vienen del cálculo, no del modelo."""
+    if not recs:
+        return "Tus precios están sanos: no encontré productos con margen para ajustar."
     detalle = "\n".join(
-        f"- {p['name']}: precio ${p['price']}, costo ${p['cost']}, margen {p['margen_pct']}%, "
-        f"vendidos en 30 días: {p['vendidos']}" for p in productos[:40]
+        f"- {r['name']}: de ${r['price_actual']} a ${r['price_sugerido']} "
+        f"(+{r['delta_pct']}%). {r['motivo']}." for r in recs
     )
     user = (
-        "Tenés esta lista de productos con su margen y rotación:\n" + detalle +
-        "\n\nDame entre 3 y 6 sugerencias concretas y cortas. Reglas:\n"
-        "- Si rota bien pero tiene margen flaco, sugerí subirlo un % razonable.\n"
-        "- Si está casi a pérdida o con margen muy bajo, avisá fuerte.\n"
-        "- Priorizá lo que más impacta (lo que más rota). No listes todo, solo lo importante.\n"
-        "Una sugerencia por línea, cada una empezando con '• '."
+        "Estos son los ajustes de precio que ya calculé para el kiosco:\n" + detalle +
+        "\n\nEscribí un resumen de 2 a 3 frases para el dueño, en criollo, diciéndole cuáles son "
+        "los más urgentes y por qué conviene ajustarlos. NO inventes ni cambies los números, "
+        "usá exactamente los que te di. Texto corrido, sin viñetas."
     )
-    return await _texto(user, "precios", biz_id, {"n": len(productos)})
+    return await _texto(user, "precios", biz_id, {"recs": [r["name"] for r in recs]})
 
 
 async def prediccion_reposicion(productos: list, biz_id: str = "") -> str:

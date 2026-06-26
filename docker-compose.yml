@@ -34,6 +34,7 @@ services:
       - AI_INVOICE_API_KEY=${AI_INVOICE_API_KEY:-}
       - AI_INVOICE_BASE_URL=${AI_INVOICE_BASE_URL:-}
       - AI_INVOICE_MODEL=${AI_INVOICE_MODEL:-}
+      - AI_INVOICE_TEXT_MODEL=${AI_INVOICE_TEXT_MODEL:-}
       - APP_ENV=${APP_ENV:-production}
       - SAAS_MODE=true
     depends_on:
