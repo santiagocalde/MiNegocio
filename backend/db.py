@@ -1,4 +1,5 @@
 import os
+import glob
 import logging
 import asyncpg
 from typing import Optional
@@ -73,6 +74,56 @@ def row_to_dict(row, columns=None):
     if hasattr(row, 'keys') and not isinstance(row, (str, bytes)):
         return dict(row)
     return dict(row)
+
+
+MIGRATIONS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "migrations")
+
+
+async def run_migrations_pg() -> None:
+    """Runner de migraciones liviano para PostgreSQL.
+
+    Aplica una sola vez, en orden, los archivos backend/migrations/*.pg.sql que
+    todavía no estén registrados en schema_migrations. Cada migración corre en su
+    propia transacción: si falla, no queda a medias ni se marca como aplicada.
+
+    El schema base se sigue creando en init_pg() (idempotente). Este runner es
+    para los CAMBIOS posteriores (ALTER TABLE, nuevas tablas, índices), así
+    quedan versionados y trazables en vez de ALTERs sueltos.
+
+    Usa su propia conexión del pool para no depender del estado de la sesión
+    de init_pg. Convención de nombre: 0001_descripcion.pg.sql (prefijo = orden).
+    """
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        await conn.execute(
+            """CREATE TABLE IF NOT EXISTS schema_migrations (
+                id          TEXT PRIMARY KEY,
+                applied_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+            )"""
+        )
+        rows = await conn.fetch("SELECT id FROM schema_migrations")
+        applied = {r["id"] for r in rows}
+
+        if not os.path.isdir(MIGRATIONS_DIR):
+            return
+        paths = sorted(glob.glob(os.path.join(MIGRATIONS_DIR, "*.pg.sql")))
+        pending = 0
+        for path in paths:
+            mig_id = os.path.basename(path)[:-len(".pg.sql")]
+            if mig_id in applied:
+                continue
+            with open(path, encoding="utf-8") as f:
+                sql = f.read().strip()
+            if not sql:
+                # Migración vacía: igual la registramos para no reintentarla siempre.
+                await conn.execute("INSERT INTO schema_migrations (id) VALUES ($1)", mig_id)
+                continue
+            async with conn.transaction():
+                await conn.execute(sql)
+                await conn.execute("INSERT INTO schema_migrations (id) VALUES ($1)", mig_id)
+            pending += 1
+            logger.info(f"Migración aplicada: {mig_id}")
+        logger.info(f"Migraciones al día (schema_migrations): {len(applied) + pending} aplicadas")
 
 
 async def init_pg() -> None:
@@ -479,6 +530,10 @@ async def init_pg() -> None:
             await conn.execute("CREATE INDEX IF NOT EXISTS idx_admin_audit_action ON admin_audit_log(action)")
 
     logger.info("PostgreSQL inicializado: todas las tablas creadas y datos seedeados")
+
+    # Migraciones incrementales versionadas. Se corren en su PROPIA conexión
+    # (no la del init de arriba) para aislarlas del estado de esa sesión.
+    await run_migrations_pg()
 
 
 async def get_business_id_from_jwt(payload: dict) -> Optional[str]:
