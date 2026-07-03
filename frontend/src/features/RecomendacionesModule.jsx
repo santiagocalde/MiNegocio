@@ -178,7 +178,7 @@ export default function RecomendacionesModule() {
       if (addToast) addToast(`${applied} precios actualizados correctamente.`, 'success');
       setSuggestions(prev => prev.filter(s => !prices.find(p => p.id === (s.id || s.product_id))));
     } catch {
-      if (addToast) addToast('Error al aplicar precios.', 'error');
+      if (addToast) addToast('No se pudieron aplicar los precios sugeridos. Reintentá o revisá tu conexión.', 'error');
     }
   };
 
@@ -206,10 +206,10 @@ export default function RecomendacionesModule() {
         setDeadStock([]);
       } else {
         const err = await res.json().catch(() => ({}));
-        if (addToast) addToast(err.detail || 'Error al crear promocion.', 'error');
+        if (addToast) addToast(err.detail || 'No se pudo crear la promoción. Reintentá o revisá tu conexión.', 'error');
       }
     } catch {
-      if (addToast) addToast('Error de conexion.', 'error');
+      if (addToast) addToast('No se pudo conectar con el servidor. Revisá tu conexión a internet.', 'error');
     }
   };
 

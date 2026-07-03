@@ -29,7 +29,7 @@ export default function CartPanel({ cart, total, adjustedTotal, updateQty, setIt
                   <Icons.Image style={{ width: 18, height: 18 }} />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-primary)', letterSpacing: '0.1px' }}>{item.name}</div>
+                  <div style={{ fontWeight: 700, fontSize: 'var(--fs-body)', color: 'var(--text-primary)', letterSpacing: '0.1px' }}>{item.name}</div>
                   <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', fontFamily: 'var(--font-mono)' }}>{item.code}</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
                     <span style={{ fontWeight: 800, color: 'var(--text-primary)', fontSize: '0.9rem', fontVariantNumeric: 'tabular-nums' }}>{formatMoney(item.price)}</span>

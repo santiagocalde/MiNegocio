@@ -28,10 +28,11 @@ async def get_config() -> dict:
             return cfg
     else:
         import aiosqlite
+        # business_config en SQLite es clave-valor (core/database.py), no una tabla ancha
         async with aiosqlite.connect(main.DB_PATH) as db:
-            cur = await db.execute("SELECT * FROM business_config LIMIT 1")
-            row = await cur.fetchone()
-            return row_to_dict(row, cur.description) if row else {}
+            cur = await db.execute("SELECT key, value FROM business_config")
+            rows = await cur.fetchall()
+            return {key: value for key, value in rows}
 
 
 @router.get("/api/catalogo", summary="Catálogo público de un comercio (sin auth)")
@@ -114,15 +115,17 @@ async def update_config(data: dict) -> dict:
         return {"success": True}
     else:
         import aiosqlite
-        b_id = _biz_id() or ""
+        # business_config en SQLite es clave-valor: upsert no destructivo (lo enviado pisa,
+        # lo no enviado se conserva), igual que la rama Postgres de arriba.
+        COLS = ["nombre", "subtitulo", "direccion", "telefono", "cuit", "condicion_iva",
+                "numero_caja", "mensaje_ticket", "iva_rate", "mp_access_token", "mp_collector_id"]
         async with aiosqlite.connect(main.DB_PATH) as db:
-            await db.execute("DELETE FROM business_config WHERE id IN (SELECT id FROM business_config LIMIT 1)")
-            await db.execute(
-                "INSERT INTO business_config (nombre, subtitulo, direccion, telefono, cuit, condicion_iva, numero_caja, mensaje_ticket, iva_rate, mp_access_token, mp_collector_id) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
-                (data.get("nombre"), data.get("subtitulo"), data.get("direccion"), data.get("telefono"),
-                 data.get("cuit"), data.get("condicion_iva"), data.get("numero_caja"), data.get("mensaje_ticket"),
-                 data.get("iva_rate"), data.get("mp_access_token"), data.get("mp_collector_id"))
-            )
+            for c in COLS:
+                if c in data:
+                    await db.execute(
+                        "INSERT INTO business_config (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+                        (c, str(data[c]) if data[c] is not None else "")
+                    )
             await db.commit()
         return {"success": True}
 

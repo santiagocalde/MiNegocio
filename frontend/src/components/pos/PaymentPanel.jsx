@@ -20,7 +20,7 @@ export default function PaymentPanel({
   mpLoading, setMpLoading, mpPaymentStatus, setMpPaymentStatus, setMpIntentId,
   businessConfig, setBusinessConfig, addToast, currentOperator,
   promotionSavings,
-  handleQuickAdd
+  handleQuickAdd, handleRepeatSale
 }) {
   const ivaActual = String(businessConfig?.iva_rate ?? '0');
 
@@ -32,7 +32,7 @@ export default function PaymentPanel({
       try { new BroadcastChannel('minegocio-sync').postMessage('config-changed'); } catch {}
       addToast(nuevoIva === '0' ? 'IVA desactivado: precios finales sin discriminar' : `IVA configurado en ${nuevoIva}%`, 'success');
     } catch {
-      addToast('No se pudo guardar el IVA', 'error');
+      addToast('No se pudo guardar el IVA. Reintentá o revisá tu conexión.', 'error');
     }
   };
   const defaultQuickButtons = [
@@ -53,7 +53,7 @@ export default function PaymentPanel({
     localStorage.setItem('minegocio_quick_buttons', JSON.stringify(newBtns));
   };
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '12px' }}>
+    <div style={{ position: 'relative', flex: 1, display: 'flex', flexDirection: 'column', gap: '12px' }}>
       <div style={{ background: 'var(--bg-card)', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
           <h2 style={{ fontSize: '1.3rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)', letterSpacing: '-0.2px' }}>Resumen</h2>
@@ -100,16 +100,21 @@ export default function PaymentPanel({
         </button>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
-          <button style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)', color: 'var(--text-primary)', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', padding: '12px', borderRadius: '12px', transition: 'all 0.2s' }} onMouseEnter={e=>e.target.style.background='rgba(255,255,255,0.05)'} onMouseLeave={e=>e.target.style.background='rgba(255,255,255,0.02)'} onClick={() => setIsFiadoOpen(true)}>
+          {cart.length === 0 && lastSale?.cart?.length > 0 && (
+            <button style={{ width: '100%', minHeight: '44px', background: 'rgba(20,187,166,0.08)', border: '1px solid rgba(20,187,166,0.25)', color: 'var(--accent-primary)', fontWeight: 700, fontSize: 'var(--fs-body)', cursor: 'pointer', padding: '12px', borderRadius: '12px', transition: 'all 0.2s' }} onMouseEnter={e=>e.target.style.background='rgba(20,187,166,0.14)'} onMouseLeave={e=>e.target.style.background='rgba(20,187,166,0.08)'} onClick={() => handleRepeatSale(lastSale.cart)}>
+              ↻ Repetir última venta
+            </button>
+          )}
+          <button style={{ width: '100%', minHeight: '44px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)', color: 'var(--text-primary)', fontWeight: 700, fontSize: 'var(--fs-body)', cursor: 'pointer', padding: '12px', borderRadius: '12px', transition: 'all 0.2s' }} onMouseEnter={e=>e.target.style.background='rgba(255,255,255,0.05)'} onMouseLeave={e=>e.target.style.background='rgba(255,255,255,0.02)'} onClick={() => setIsFiadoOpen(true)}>
             Anotar Fiado
           </button>
           {lastSale && (
-            <button style={{ width: '100%', background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.15)', color: 'var(--accent-danger)', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', padding: '12px', borderRadius: '12px', transition: 'all 0.2s' }} onMouseEnter={e=>e.target.style.background='rgba(239,68,68,0.1)'} onMouseLeave={e=>e.target.style.background='rgba(239,68,68,0.05)'} onClick={() => { setDevolucionQtys({}); setShowDevolucionItems(true); }}>
+            <button style={{ width: '100%', minHeight: '44px', background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.15)', color: 'var(--accent-danger)', fontWeight: 700, fontSize: 'var(--fs-body)', cursor: 'pointer', padding: '12px', borderRadius: '12px', transition: 'all 0.2s' }} onMouseEnter={e=>e.target.style.background='rgba(239,68,68,0.1)'} onMouseLeave={e=>e.target.style.background='rgba(239,68,68,0.05)'} onClick={() => { setDevolucionQtys({}); setShowDevolucionItems(true); }}>
               ↩ Devolver ítems (última venta)
             </button>
           )}
           {cart.length > 0 && (
-            <button style={{ width: '100%', background: 'transparent', border: 'none', color: 'var(--accent-danger)', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', padding: '8px' }} onClick={() => setIsCancelConfirm(true)}>
+            <button style={{ width: '100%', minHeight: '44px', background: 'transparent', border: 'none', color: 'var(--accent-danger)', fontWeight: 700, fontSize: 'var(--fs-body)', cursor: 'pointer', padding: '8px' }} onClick={() => setIsCancelConfirm(true)}>
               Anular Venta
             </button>
           )}
@@ -125,7 +130,7 @@ export default function PaymentPanel({
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
           {quickButtons.map((btn, idx) => (
-            <div key={btn.id} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px', padding: '8px', display: 'flex', flexDirection: 'column', gap: '4px', position: 'relative' }}>
+            <div key={btn.id} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px', padding: '8px', minHeight: '44px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '4px', position: 'relative' }}>
               {isEditingQuick ? (
                 <>
                   <input type="text" value={btn.name} onChange={e => {
@@ -158,7 +163,7 @@ export default function PaymentPanel({
       </div>
 
       {saleConfirm && (
-        <div style={{ position: 'absolute', inset: 0, background: 'rgba(34, 197, 94, 0.95)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 10, borderRadius: '16px' }}>
+        <div style={{ position: 'absolute', inset: 0, background: 'rgba(34, 197, 94, 0.95)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 10, borderRadius: '16px', animation: 'scaleIn 0.25s ease' }}>
           <div style={{ background: 'white', color: 'var(--accent-success)', borderRadius: '50%', width: 100, height: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24 }}>
             <Icons.Check />
           </div>

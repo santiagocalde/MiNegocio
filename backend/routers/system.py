@@ -39,7 +39,8 @@ async def setup_status() -> dict:
         async with aiosqlite.connect(DB_PATH) as db:
             cur = await db.execute("SELECT COUNT(*) FROM operators")
             count = (await cur.fetchone())[0]
-            cur2 = await db.execute("SELECT nombre FROM business_config LIMIT 1")
+            # business_config en SQLite es clave-valor (core/database.py), no una tabla ancha
+            cur2 = await db.execute("SELECT value FROM business_config WHERE key = 'nombre'")
             name_row = await cur2.fetchone()
             return {"needs_setup": count == 0, "operators_count": count, "business_name": name_row[0] if name_row else "Mi Kiosco"}
 
@@ -69,7 +70,10 @@ async def setup_init(data: dict) -> dict:
     else:
         async with aiosqlite.connect(DB_PATH) as db:
             await db.execute("INSERT INTO operators (name, pin, role) VALUES (?, ?, 'admin')", (admin_name, hashed))
-            await db.execute("INSERT OR IGNORE INTO business_config (nombre) VALUES (?)", (business_name,))
+            await db.execute(
+                "INSERT INTO business_config (key, value) VALUES ('nombre', ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+                (business_name,)
+            )
             await db.commit()
     return {"success": True, "business_name": business_name}
 

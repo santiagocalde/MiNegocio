@@ -8,7 +8,12 @@
   --border-focus: #14BBA6;
 
   --text-primary: #FFFFFF;
-  --text-secondary: rgba(230, 255, 251, 0.7); /* Muted */
+  --text-secondary: rgba(230, 255, 251, 0.82); /* Muted, subido de 0.7 para legibilidad en pantallas de kiosco */
+
+  /* Escala tipográfica para contenido operativo (nombres, montos, botones de acción).
+     Pisos subidos desde los 0.85rem/0.8rem que se usaban antes en texto real de venta. */
+  --fs-sm: 0.9rem;
+  --fs-body: 0.95rem;
 
   /* Accents */
   --accent-primary: #14BBA6; 

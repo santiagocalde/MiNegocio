@@ -69,7 +69,7 @@ export default function ChargeModal({
                 <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px dashed rgba(255,255,255,0.05)' }}>
                   <div style={{ flex: 1, paddingRight: '16px' }}>
                     <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.95rem', lineHeight: '1.2' }}>{item.name}</div>
-                    <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '4px' }}>{item.qty} x ${(item.price || 0).toLocaleString('es-AR', {minimumFractionDigits:2})}</div>
+                    <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--fs-sm)', marginTop: '4px' }}>{item.qty} x ${(item.price || 0).toLocaleString('es-AR', {minimumFractionDigits:2})}</div>
                   </div>
                   <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>${((item.price || 0) * item.qty).toLocaleString('es-AR', {minimumFractionDigits:2})}</div>
                 </div>
@@ -123,9 +123,9 @@ export default function ChargeModal({
                   style={{ width: '100%', background: 'var(--bg-main)', border: '2px solid var(--accent-primary)', color: 'var(--text-primary)', borderRadius: '12px', padding: '16px', fontSize: '2rem', fontFamily: 'var(--font-mono)', textAlign: 'center', outline: 'none', marginBottom: '16px', boxShadow: '0 0 0 4px rgba(20,187,166, 0.1)' }}
                 />
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '12px' }}>
-                  <button onClick={() => setPayment(finalTotal.toString())} style={{ flex: '1 0 auto', padding: '8px 12px', background: 'var(--accent-success)', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 800, fontSize: '0.85rem', cursor: 'pointer' }}>Pago Exacto</button>
+                  <button onClick={() => setPayment(finalTotal.toString())} style={{ flex: '1 0 auto', minHeight: '44px', padding: '8px 12px', background: 'var(--accent-success)', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 800, fontSize: 'var(--fs-body)', cursor: 'pointer' }}>Pago Exacto</button>
                   {[1000, 2000, 5000, 10000, 20000].map(bill => (
-                    <button key={bill} onClick={() => setPayment(p => (parseFloat(p || 0) + bill).toString())} style={{ flex: '1 0 auto', padding: '8px 10px', background: 'rgba(255,255,255,0.06)', color: '#fff', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer', fontFamily: 'var(--font-mono)' }}>
+                    <button key={bill} onClick={() => setPayment(p => (parseFloat(p || 0) + bill).toString())} style={{ flex: '1 0 auto', minHeight: '44px', padding: '8px 10px', background: 'rgba(255,255,255,0.06)', color: '#fff', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontWeight: 600, fontSize: 'var(--fs-sm)', cursor: 'pointer', fontFamily: 'var(--font-mono)' }}>
                       +${bill.toLocaleString('es-AR')}
                     </button>
                   ))}

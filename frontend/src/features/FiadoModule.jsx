@@ -205,8 +205,23 @@ export default function FiadoModule() {
                     <Icons.User />
                   </div>
                   <div>
-                    <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '4px' }}>
-                      {c.name}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                      <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                        {c.name}
+                      </div>
+                      {c.created_at && (() => {
+                        const days = Math.floor((Date.now() - new Date(c.created_at)) / 86400000);
+                        const tone = days < 7
+                          ? { bg: 'rgba(16,185,129,0.15)', bd: 'rgba(16,185,129,0.3)', fg: '#6EE7B7' }
+                          : days < 30
+                            ? { bg: 'rgba(245,158,11,0.15)', bd: 'rgba(245,158,11,0.3)', fg: '#FCD34D' }
+                            : { bg: 'rgba(239,68,68,0.15)', bd: 'rgba(239,68,68,0.3)', fg: '#FCA5A5' };
+                        return (
+                          <span title="Antigüedad de la cuenta (desde que se creó el cliente, no necesariamente desde la última venta fiada)" style={{ background: tone.bg, border: `1px solid ${tone.bd}`, color: tone.fg, padding: '2px 8px', borderRadius: '99px', fontSize: '0.7rem', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                            {days === 0 ? 'Hoy' : days === 1 ? '1 día' : `${days} días`}
+                          </span>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>

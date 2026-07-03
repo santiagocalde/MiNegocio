@@ -232,7 +232,7 @@ app.add_middleware(GZipMiddleware, minimum_size=1000)
 _CORS_ORIGINS = (
     ["https://mi-negocio.app", "https://www.mi-negocio.app"]
     if APP_ENV == "production"
-    else ["http://localhost:5173", "http://localhost:3000", "http://localhost:8080", "http://127.0.0.1:5173"]
+    else ["http://localhost:5173", "http://localhost:5175", "http://localhost:3000", "http://localhost:8080", "http://127.0.0.1:5173", "http://127.0.0.1:5175"]
 )
 app.add_middleware(
     CORSMiddleware,

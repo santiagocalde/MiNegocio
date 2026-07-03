@@ -177,10 +177,10 @@ export default function StockModule() {
         if (onProductsUpdated) onProductsUpdated();
       } else {
         const data = await res.json().catch(()=>({}));
-        if (addToast) addToast(data.detail || 'Error al crear producto.', 'error');
+        if (addToast) addToast(data.detail || 'No se pudo crear el producto. Reintentá o revisá tu conexión.', 'error');
       }
     } catch {
-      if (addToast) addToast('Error de conexión.', 'error');
+      if (addToast) addToast('No se pudo conectar con el servidor. Revisá tu conexión a internet.', 'error');
     }
   };
 
@@ -193,10 +193,10 @@ export default function StockModule() {
         if (onProductsUpdated) onProductsUpdated();
       } else {
         const data = await res.json().catch(()=>({}));
-        if (addToast) addToast(data.detail || "Error al abrir bulto", "error");
+        if (addToast) addToast(data.detail || "No se pudo abrir el bulto. Reintentá o revisá tu conexión.", "error");
       }
     } catch {
-      if (addToast) addToast("Error de conexión", "error");
+      if (addToast) addToast("No se pudo conectar con el servidor. Revisá tu conexión a internet.", "error");
     }
   };
 
@@ -225,10 +225,10 @@ export default function StockModule() {
             fetchProducts();
             onProductsUpdated();
           } else {
-            addToast('Error al aumentar precios', 'error');
+            addToast('No se pudieron aumentar los precios. Reintentá o revisá tu conexión.', 'error');
           }
         } catch {
-          addToast('Error de conexión', 'error');
+          addToast('No se pudo conectar con el servidor. Revisá tu conexión a internet.', 'error');
         }
       }
     });
@@ -245,7 +245,7 @@ export default function StockModule() {
       fetchProducts();
       if (onProductsUpdated) onProductsUpdated();
     } catch(e) {
-      if (addToast) addToast('Error al aumentar precios.', 'error');
+      if (addToast) addToast('No se pudieron aumentar los precios. Reintentá o revisá tu conexión.', 'error');
     }
   };
 
@@ -266,10 +266,10 @@ export default function StockModule() {
         fetchProducts();
         if (onProductsUpdated) onProductsUpdated();
       } else {
-        if (addToast) addToast(data.detail || 'Error al importar archivo.', 'error');
+        if (addToast) addToast(data.detail || 'No se pudo importar el archivo. Revisá el formato e intentá de nuevo.', 'error');
       }
     } catch {
-      if (addToast) addToast('Error de conexión al importar archivo.', 'error');
+      if (addToast) addToast('No se pudo conectar con el servidor para importar el archivo. Revisá tu conexión a internet.', 'error');
     }
     e.target.value = '';
   };
@@ -504,10 +504,10 @@ export default function StockModule() {
                                   fetchProducts();
                                   if (onProductsUpdated) onProductsUpdated();
                                 } else {
-                                  if (addToast) addToast('Error al actualizar precio.', 'error');
+                                  if (addToast) addToast('No se pudo actualizar el precio. Reintentá o revisá tu conexión.', 'error');
                                 }
                               } catch {
-                                if (addToast) addToast('Error de conexión.', 'error');
+                                if (addToast) addToast('No se pudo conectar con el servidor. Revisá tu conexión a internet.', 'error');
                               }
                             }
                           }
@@ -528,10 +528,10 @@ export default function StockModule() {
                                   fetchProducts();
                                   if (onProductsUpdated) onProductsUpdated();
                                 } else {
-                                  if (addToast) addToast('Error al actualizar stock.', 'error');
+                                  if (addToast) addToast('No se pudo actualizar el stock. Reintentá o revisá tu conexión.', 'error');
                                 }
                               } catch {
-                                if (addToast) addToast('Error de conexión.', 'error');
+                                if (addToast) addToast('No se pudo conectar con el servidor. Revisá tu conexión a internet.', 'error');
                               }
                             }
                           }
@@ -552,10 +552,10 @@ export default function StockModule() {
                                   fetchProducts();
                                   if (onProductsUpdated) onProductsUpdated();
                                 } else {
-                                  if (addToast) addToast(`Error al actualizar nombre (${res.status}).`, 'error');
+                                  if (addToast) addToast('No se pudo actualizar el nombre. Reintentá o revisá tu conexión.', 'error');
                                 }
                               } catch {
-                                if (addToast) addToast('Error de conexión.', 'error');
+                                if (addToast) addToast('No se pudo conectar con el servidor. Revisá tu conexión a internet.', 'error');
                               }
                             }
                           }
@@ -603,8 +603,8 @@ export default function StockModule() {
                     setConfirmState(prev => ({...prev, isOpen: false}));
                   apiPost(`/products/${p.id}`, {}).then(r => {
                     if (r.ok) { addToast(`${p.name} eliminado.`, 'success'); fetchProducts(); }
-                    else addToast('Error al eliminar.', 'error');
-                  }).catch(() => addToast('Error de conexion.', 'error'));
+                    else addToast('No se pudo eliminar el producto. Reintentá o revisá tu conexión.', 'error');
+                  }).catch(() => addToast('No se pudo conectar con el servidor. Revisá tu conexión a internet.', 'error'));
                   }
                 });
               }}><Icons.Trash /></td>
