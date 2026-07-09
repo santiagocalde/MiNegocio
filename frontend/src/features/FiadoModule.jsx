@@ -14,7 +14,8 @@ const Icons = {
 };
 
 export default function FiadoModule() {
-  const { addToast } = usePanelContext();
+  const { addToast, currentPlan } = usePanelContext();
+  const [cobranza, setCobranza] = useState(null); // {nombre, telefono, texto, loading}
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expandedClient, setExpandedClient] = useState(null);
@@ -34,8 +35,10 @@ export default function FiadoModule() {
         const data = await res.json();
         setCustomers(data);
       }
-    } catch {
+    } catch (e) {
+      console.error('Fiados: no se pudieron cargar los clientes:', e);
       setCustomers([]);
+      addToast?.('No se pudieron cargar los fiados. Revisá la conexión.', 'error');
     } finally {
       setLoading(false);
     }
@@ -51,7 +54,10 @@ export default function FiadoModule() {
         const data = await res.json();
         setTransactionsMap(prev => ({ ...prev, [customerId]: data }));
       }
-    } catch { }
+    } catch (e) {
+      console.error(`Fiados: no se pudieron cargar las transacciones del cliente ${customerId}:`, e);
+      addToast?.('No se pudo cargar el detalle del cliente.', 'error');
+    }
   };
 
   const handleExpand = (c) => {
@@ -105,6 +111,30 @@ export default function FiadoModule() {
     } catch {
       addToast?.('Error de conexión al crear cliente.', 'error');
     }
+  };
+
+  const handleCobranzaIA = async (c) => {
+    setCobranza({ nombre: c.name, telefono: c.phone, texto: '', loading: true });
+    try {
+      const res = await apiGet(`/ai/cobranza/${c.id}`);
+      if (res.ok) {
+        const d = await res.json();
+        setCobranza({ nombre: c.name, telefono: d.telefono || c.phone, texto: d.texto || '', loading: false });
+      } else {
+        setCobranza(null);
+        addToast?.('No se pudo generar el mensaje con IA.', 'error');
+      }
+    } catch {
+      setCobranza(null);
+      addToast?.('Error de conexión al generar el mensaje.', 'error');
+    }
+  };
+
+  const enviarWhatsApp = () => {
+    const tel = (cobranza?.telefono || '').replace(/[^0-9]/g, '');
+    const texto = encodeURIComponent(cobranza?.texto || '');
+    const url = tel ? `https://wa.me/${tel}?text=${texto}` : `https://wa.me/?text=${texto}`;
+    window.open(url, '_blank');
   };
 
   const filteredCustomers = customers.filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -175,8 +205,23 @@ export default function FiadoModule() {
                     <Icons.User />
                   </div>
                   <div>
-                    <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '4px' }}>
-                      {c.name}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                      <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                        {c.name}
+                      </div>
+                      {c.created_at && (() => {
+                        const days = Math.floor((Date.now() - new Date(c.created_at)) / 86400000);
+                        const tone = days < 7
+                          ? { bg: 'rgba(16,185,129,0.15)', bd: 'rgba(16,185,129,0.3)', fg: '#6EE7B7' }
+                          : days < 30
+                            ? { bg: 'rgba(245,158,11,0.15)', bd: 'rgba(245,158,11,0.3)', fg: '#FCD34D' }
+                            : { bg: 'rgba(239,68,68,0.15)', bd: 'rgba(239,68,68,0.3)', fg: '#FCA5A5' };
+                        return (
+                          <span title="Antigüedad de la cuenta (desde que se creó el cliente, no necesariamente desde la última venta fiada)" style={{ background: tone.bg, border: `1px solid ${tone.bd}`, color: tone.fg, padding: '2px 8px', borderRadius: '99px', fontSize: '0.7rem', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                            {days === 0 ? 'Hoy' : days === 1 ? '1 día' : `${days} días`}
+                          </span>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>
@@ -186,6 +231,15 @@ export default function FiadoModule() {
                     <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', textTransform: 'uppercase', marginBottom: '2px' }}>Saldo Deudor</div>
                     <div style={{ fontFamily: 'var(--font-mono)', fontSize: '1.2rem', fontWeight: 800, color: 'var(--accent-warning)' }}>${(c.balance ?? 0).toLocaleString('es-AR')}</div>
                   </div>
+                  {currentPlan === 'ia' && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleCobranzaIA(c); }}
+                      title="Generar mensaje de cobranza con IA"
+                      style={{ background: 'linear-gradient(135deg, #7c3aed, #14bba6)', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 14px', fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s', display: 'flex', alignItems: 'center', gap: '6px' }}
+                    >
+                      💬 Cobrar con IA
+                    </button>
+                  )}
                   <button
                     onClick={(e) => { e.stopPropagation(); setAbonoModal(c); }}
                     style={{ background: 'var(--gradient-success)', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 16px', fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s', display: 'flex', alignItems: 'center', gap: '6px' }}
@@ -232,6 +286,43 @@ export default function FiadoModule() {
           );
         })}
       </div>
+
+      {/* MODAL COBRANZA IA */}
+      {cobranza && (
+        <div className="modal-overlay" onClick={() => setCobranza(null)}>
+          <div onClick={e => e.stopPropagation()} style={{ background: 'var(--bg-card)', padding: '32px', borderRadius: '24px', width: '460px', maxWidth: '92vw', border: '1px solid rgba(165,180,252,0.3)' }}>
+            <h3 style={{ margin: '0 0 4px 0', fontSize: '1.4rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              💬 Mensaje de cobranza
+            </h3>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '20px', fontSize: '0.9rem' }}>
+              Para <strong>{cobranza.nombre}</strong>. Escrito por IA, podés editarlo antes de enviar.
+            </p>
+            {cobranza.loading ? (
+              <div style={{ padding: '32px', textAlign: 'center', color: 'var(--text-secondary)' }}>Generando el mensaje con IA…</div>
+            ) : (
+              <>
+                <textarea
+                  value={cobranza.texto}
+                  onChange={e => setCobranza(prev => ({ ...prev, texto: e.target.value }))}
+                  rows={5}
+                  style={{ width: '100%', background: 'var(--bg-main)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '14px', borderRadius: '12px', fontSize: '1rem', lineHeight: 1.5, outline: 'none', resize: 'vertical', boxSizing: 'border-box' }}
+                />
+                {!cobranza.telefono && (
+                  <p style={{ color: 'var(--accent-warning)', fontSize: '0.82rem', margin: '8px 0 0' }}>
+                    Este cliente no tiene teléfono cargado: se abrirá WhatsApp para que elijas el contacto.
+                  </p>
+                )}
+                <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
+                  <button onClick={() => setCobranza(null)} style={{ flex: 1, padding: '14px', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', borderRadius: '12px', fontWeight: 700, cursor: 'pointer' }}>Cerrar</button>
+                  <button onClick={enviarWhatsApp} style={{ flex: 2, padding: '14px', background: '#25D366', border: 'none', color: 'white', borderRadius: '12px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                    Enviar por WhatsApp
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* MODAL ABONO */}
       {abonoModal && (

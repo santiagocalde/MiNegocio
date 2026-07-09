@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { API_ROOT, API_BASE } from '../config';
+import { track } from '../utils/track';
 
 import LogoPrincipal from '../assets/images/MiNegocio_transparente_real.png';
 import FotoMascota from '../assets/images/mascota_oficial.jpg';
@@ -8,6 +10,7 @@ import LogoWhatsApp from '../assets/images/whatsapp_logo.png';
 import LandingNav from './landing/LandingNav';
 import LandingHero from './landing/LandingHero';
 import LandingSocialProof from './landing/LandingSocialProof';
+import LandingShowcase from './landing/LandingShowcase';
 import LandingDemo from './landing/LandingDemo';
 import LandingComparativa from './landing/LandingComparativa';
 import LandingFeatures from './landing/LandingFeatures';
@@ -27,7 +30,7 @@ import DogEasterEgg from './landing/DogEasterEgg';
 export default function LandingPage() {
   const navigate = useNavigate();
   const [isScrolled, setIsScrolled] = useState(false);
-  const [isYearly, setIsYearly] = useState(false);
+  const [isYearly, setIsYearly] = useState(true); // anual por default: resalta el ahorro del 20%
   const [mobileMenu, setMobileMenu] = useState(false);
   const [checkoutPlan, setCheckoutPlan] = useState(null);
 
@@ -55,8 +58,7 @@ export default function LandingPage() {
     setLoginLoading(true);
     setLoginError('');
     try {
-      const baseUrl = import.meta.env.PROD ? '' : 'http://localhost:8005';
-      const endpoint = `${baseUrl}/api/auth/${showLoginModal === 'register' ? 'register' : 'login'}`;
+      const endpoint = `${API_BASE}/auth/${showLoginModal === 'register' ? 'register' : 'login'}`;
       const body = showLoginModal === 'register'
         ? { email: loginEmail, password: loginPassword, name: loginName || 'Usuario', business_name: 'Mi Negocio', business_type: 'kiosco' }
         : { email: loginEmail, password: loginPassword };
@@ -86,10 +88,9 @@ export default function LandingPage() {
       localStorage.setItem('saas_business', JSON.stringify(data.business));
       if (data.operator_pin) localStorage.setItem('minegocio_onboarding_pin', data.operator_pin);
       
-      const superAdminEmails = ['calderonsantiago2019@gmail.com', 'admin@minegocio.app'];
-      if (data.business && superAdminEmails.includes(data.business.email)) {
+      if (data.business && data.business.is_superadmin) {
         localStorage.setItem('saas_admin_gate', 'true');
-        const adminAuthUrl = import.meta.env.PROD ? '/api/admin/auth' : 'http://localhost:8005/api/admin/auth';
+        const adminAuthUrl = `${API_BASE}/admin/auth`;
         fetch(adminAuthUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -124,8 +125,7 @@ export default function LandingPage() {
     setContactLoading(true);
     setContactError('');
     try {
-      const baseUrl = import.meta.env.PROD ? '' : 'http://localhost:8005';
-      const res = await fetch(`${baseUrl}/api/send-contact-email`, {
+      const res = await fetch(`${API_ROOT}/api/send-contact-email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(contactForm)
@@ -158,6 +158,16 @@ export default function LandingPage() {
 
   // Scroll spy
   const [activeSection, setActiveSection] = useState('');
+  // Registra la visita a la landing (funnel de adquisición) una sola vez por sesión.
+  useEffect(() => {
+    try {
+      if (!sessionStorage.getItem('mn_landing_tracked')) {
+        track('landing_view');
+        sessionStorage.setItem('mn_landing_tracked', '1');
+      }
+    } catch { track('landing_view'); }
+  }, []);
+
   useEffect(() => {
     const sections = ['funciones', 'planes', 'faq'];
     const observers = [];
@@ -250,6 +260,8 @@ export default function LandingPage() {
 
       <LandingHero isLoggedIn={isLoggedIn} goPanel={goPanel} goOnboard={goOnboard} />
       <LandingSocialProof />
+      <div className="lp-divider" />
+      <LandingShowcase />
       <div className="lp-divider" />
       <LandingDemo />
       <div className="lp-divider" />

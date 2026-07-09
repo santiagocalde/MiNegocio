@@ -18,8 +18,8 @@ function BackupRestoreModal({ showBackupRestore, setShowBackupRestore, backupLis
               <button disabled={restoring} onClick={async () => {
                 if (!window.confirm(`¿Restaurar "${b.filename}"? Se perderán los datos actuales.`)) return;
                 setRestoring(true);
-                try { const res = await apiPost('/backup/restore', { filename: b.filename }); if (res.ok) { addToast('✅ Base de datos restaurada. Se recomienda reiniciar.', 'success'); setShowBackupRestore(false); } else { const err = await res.json().catch(()=>({})); addToast(err.detail||'Error al restaurar','error'); } }
-                catch { addToast('Error de conexión','error'); }
+                try { const res = await apiPost('/backup/restore', { filename: b.filename }); if (res.ok) { addToast('✅ Base de datos restaurada. Se recomienda reiniciar.', 'success'); setShowBackupRestore(false); } else { const err = await res.json().catch(()=>({})); addToast(err.detail||'No se pudo restaurar el backup. Reintentá o probá con otro archivo.','error'); } }
+                catch { addToast('No se pudo conectar con el servidor. Revisá tu conexión a internet.','error'); }
                 setRestoring(false);
               }} style={{ background:'var(--accent-danger)', border:'none', borderRadius:'8px', color:'white', padding:'8px 16px', cursor:'pointer', fontWeight:700, fontSize:'0.85rem', opacity: restoring?0.6:1 }}>{restoring?'Restaurando...':'Restaurar'}</button>
             </div>)}

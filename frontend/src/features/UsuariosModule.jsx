@@ -47,10 +47,10 @@ export default function UsuariosModule() {
         const fresh = await apiGet('/operators');
         if (fresh.ok) onOperatorsUpdate(await fresh.json());
       } else {
-        if (addToast) addToast('Error al eliminar usuario.', 'error');
+        if (addToast) addToast('No se pudo eliminar el usuario. Reintentá o revisá tu conexión.', 'error');
       }
     } catch {
-      if (addToast) addToast('Error de conexión.', 'error');
+      if (addToast) addToast('No se pudo conectar con el servidor. Revisá tu conexión a internet.', 'error');
     }
   };
 
@@ -73,10 +73,10 @@ export default function UsuariosModule() {
         const fresh = await apiGet('/operators');
         if (fresh.ok) onOperatorsUpdate(await fresh.json());
       } else {
-        if (addToast) addToast('Error al guardar usuarios.', 'error');
+        if (addToast) addToast('No se pudieron guardar los usuarios. Reintentá o revisá tu conexión.', 'error');
       }
     } catch {
-      if (addToast) addToast('Error de conexión.', 'error');
+      if (addToast) addToast('No se pudo conectar con el servidor. Revisá tu conexión a internet.', 'error');
     }
   };
 

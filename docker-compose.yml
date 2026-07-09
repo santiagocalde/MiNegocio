@@ -15,6 +15,15 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   backend:
     build: ./backend
@@ -30,13 +39,33 @@ services:
       - JWT_SECRET=${JWT_SECRET:?JWT_SECRET no definido en .env}
       - MP_ACCESS_TOKEN=${MP_ACCESS_TOKEN:-}
       - MP_COLLECTOR_ID=${MP_COLLECTOR_ID:-}
+      - MP_WEBHOOK_SECRET=${MP_WEBHOOK_SECRET:-}
       - RESEND_API_KEY=${RESEND_API_KEY:-}
+      - AI_INVOICE_API_KEY=${AI_INVOICE_API_KEY:-}
+      - AI_INVOICE_BASE_URL=${AI_INVOICE_BASE_URL:-}
+      - AI_INVOICE_MODEL=${AI_INVOICE_MODEL:-}
+      - AI_INVOICE_TEXT_MODEL=${AI_INVOICE_TEXT_MODEL:-}
       - APP_ENV=${APP_ENV:-production}
       - SAAS_MODE=true
     depends_on:
       db:
         condition: service_healthy
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0) if urllib.request.urlopen('http://localhost:8000/api/health', timeout=4).status==200 else sys.exit(1)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          memory: 768M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
 
   frontend:
     build: ./frontend
@@ -46,6 +75,23 @@ services:
     depends_on:
       - backend
     restart: unless-stopped
+    healthcheck:
+      # localhost resuelve a IPv6 (::1) y nginx escucha en IPv4; usar 127.0.0.1.
+      # El :80 hace 301 a HTTPS con cert self-signed → --no-check-certificate.
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--no-check-certificate", "-O", "/dev/null", "http://127.0.0.1/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 volumes:
   pgdata:

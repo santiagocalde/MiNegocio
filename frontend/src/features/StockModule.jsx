@@ -25,14 +25,12 @@ const Icons = {
 
 function AlertAccordion({ icon: Icon, title, subtitle, data, isOpen, onToggle, columns, renderRow }) {
   return (
-    <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', marginBottom: '8px', overflow: 'hidden' }}>
-      <div onClick={onToggle} style={{ padding: '6px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', transition: 'background 0.2s' }} onMouseEnter={e=>e.currentTarget.style.background='var(--bg-hover)'} onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <div style={{ color: 'var(--text-secondary)', transform: 'scale(0.7)' }}><Icon /></div>
-          <div>
-            <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.85rem' }}>{title}</div>
-            <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem' }}>{subtitle}</div>
-          </div>
+    <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', marginBottom: '6px', overflow: 'hidden' }}>
+      <div onClick={onToggle} style={{ padding: '5px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', transition: 'background 0.2s' }} onMouseEnter={e=>e.currentTarget.style.background='var(--bg-hover)'} onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+          <div style={{ color: 'var(--text-secondary)', transform: 'scale(0.6)', alignSelf: 'center' }}><Icon /></div>
+          <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.82rem' }}>{title}</div>
+          <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem' }}>{subtitle}</div>
         </div>
         <div style={{ color: 'var(--text-secondary)' }}>
           {isOpen ? <Icons.ChevronUp /> : <Icons.ChevronDown />}
@@ -138,7 +136,10 @@ export default function StockModule() {
         setShowNewCategory(false);
         setNewCategoryName('');
       }
-    } catch(e) {}
+    } catch (e) {
+      console.error('Stock: no se pudo crear la categoría:', e);
+      if (addToast) addToast('No se pudo crear la categoría. Revisá la conexión.', 'error');
+    }
   };
 
   useEffect(() => {
@@ -176,10 +177,10 @@ export default function StockModule() {
         if (onProductsUpdated) onProductsUpdated();
       } else {
         const data = await res.json().catch(()=>({}));
-        if (addToast) addToast(data.detail || 'Error al crear producto.', 'error');
+        if (addToast) addToast(data.detail || 'No se pudo crear el producto. Reintentá o revisá tu conexión.', 'error');
       }
     } catch {
-      if (addToast) addToast('Error de conexión.', 'error');
+      if (addToast) addToast('No se pudo conectar con el servidor. Revisá tu conexión a internet.', 'error');
     }
   };
 
@@ -192,10 +193,10 @@ export default function StockModule() {
         if (onProductsUpdated) onProductsUpdated();
       } else {
         const data = await res.json().catch(()=>({}));
-        if (addToast) addToast(data.detail || "Error al abrir bulto", "error");
+        if (addToast) addToast(data.detail || "No se pudo abrir el bulto. Reintentá o revisá tu conexión.", "error");
       }
     } catch {
-      if (addToast) addToast("Error de conexión", "error");
+      if (addToast) addToast("No se pudo conectar con el servidor. Revisá tu conexión a internet.", "error");
     }
   };
 
@@ -224,10 +225,10 @@ export default function StockModule() {
             fetchProducts();
             onProductsUpdated();
           } else {
-            addToast('Error al aumentar precios', 'error');
+            addToast('No se pudieron aumentar los precios. Reintentá o revisá tu conexión.', 'error');
           }
         } catch {
-          addToast('Error de conexión', 'error');
+          addToast('No se pudo conectar con el servidor. Revisá tu conexión a internet.', 'error');
         }
       }
     });
@@ -244,7 +245,7 @@ export default function StockModule() {
       fetchProducts();
       if (onProductsUpdated) onProductsUpdated();
     } catch(e) {
-      if (addToast) addToast('Error al aumentar precios.', 'error');
+      if (addToast) addToast('No se pudieron aumentar los precios. Reintentá o revisá tu conexión.', 'error');
     }
   };
 
@@ -265,10 +266,10 @@ export default function StockModule() {
         fetchProducts();
         if (onProductsUpdated) onProductsUpdated();
       } else {
-        if (addToast) addToast(data.detail || 'Error al importar archivo.', 'error');
+        if (addToast) addToast(data.detail || 'No se pudo importar el archivo. Revisá el formato e intentá de nuevo.', 'error');
       }
     } catch {
-      if (addToast) addToast('Error de conexión al importar archivo.', 'error');
+      if (addToast) addToast('No se pudo conectar con el servidor para importar el archivo. Revisá tu conexión a internet.', 'error');
     }
     e.target.value = '';
   };
@@ -503,10 +504,10 @@ export default function StockModule() {
                                   fetchProducts();
                                   if (onProductsUpdated) onProductsUpdated();
                                 } else {
-                                  if (addToast) addToast('Error al actualizar precio.', 'error');
+                                  if (addToast) addToast('No se pudo actualizar el precio. Reintentá o revisá tu conexión.', 'error');
                                 }
                               } catch {
-                                if (addToast) addToast('Error de conexión.', 'error');
+                                if (addToast) addToast('No se pudo conectar con el servidor. Revisá tu conexión a internet.', 'error');
                               }
                             }
                           }
@@ -527,10 +528,10 @@ export default function StockModule() {
                                   fetchProducts();
                                   if (onProductsUpdated) onProductsUpdated();
                                 } else {
-                                  if (addToast) addToast('Error al actualizar stock.', 'error');
+                                  if (addToast) addToast('No se pudo actualizar el stock. Reintentá o revisá tu conexión.', 'error');
                                 }
                               } catch {
-                                if (addToast) addToast('Error de conexión.', 'error');
+                                if (addToast) addToast('No se pudo conectar con el servidor. Revisá tu conexión a internet.', 'error');
                               }
                             }
                           }
@@ -551,10 +552,10 @@ export default function StockModule() {
                                   fetchProducts();
                                   if (onProductsUpdated) onProductsUpdated();
                                 } else {
-                                  if (addToast) addToast(`Error al actualizar nombre (${res.status}).`, 'error');
+                                  if (addToast) addToast('No se pudo actualizar el nombre. Reintentá o revisá tu conexión.', 'error');
                                 }
                               } catch {
-                                if (addToast) addToast('Error de conexión.', 'error');
+                                if (addToast) addToast('No se pudo conectar con el servidor. Revisá tu conexión a internet.', 'error');
                               }
                             }
                           }
@@ -579,7 +580,7 @@ export default function StockModule() {
       </div>
 
       {/* ACCORDIONS ALERTAS */}
-      <div style={{ marginTop: '24px', flexShrink: 0 }}>
+      <div style={{ marginTop: '10px', flexShrink: 0 }}>
         <AlertAccordion
           icon={Icons.Clock} title="Productos por vencer" subtitle={`${nearExpiry.length} alerta dentro de los próximos 15 días`}
           isOpen={openAccordion === 'vencer'} onToggle={() => toggleAccordion('vencer')}
@@ -602,8 +603,8 @@ export default function StockModule() {
                     setConfirmState(prev => ({...prev, isOpen: false}));
                   apiPost(`/products/${p.id}`, {}).then(r => {
                     if (r.ok) { addToast(`${p.name} eliminado.`, 'success'); fetchProducts(); }
-                    else addToast('Error al eliminar.', 'error');
-                  }).catch(() => addToast('Error de conexion.', 'error'));
+                    else addToast('No se pudo eliminar el producto. Reintentá o revisá tu conexión.', 'error');
+                  }).catch(() => addToast('No se pudo conectar con el servidor. Revisá tu conexión a internet.', 'error'));
                   }
                 });
               }}><Icons.Trash /></td>

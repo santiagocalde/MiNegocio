@@ -5,6 +5,7 @@ from typing import Optional, List, Dict, Any
 import aiosqlite
 import main
 from main import row_to_dict, USE_PG, get_current_business, check_product_limit
+from core.ratelimit import limiter
 
 router = APIRouter()
 
@@ -55,18 +56,24 @@ async def create_category(body: dict = Body(...)) -> dict:
 @router.get("/api/products", summary="Listar productos")
 async def list_products(q: Optional[str] = Query(None), limit: int = Query(500), sucursal_id: Optional[int] = Query(None)) -> list:
     b_id = _biz_id()
+    # LEFT JOIN a categories para devolver category_name (la tabla de inventario
+    # lo muestra; antes el SELECT * no lo traía y siempre salía "Sin categoría").
     if USE_PG:
         from db_helpers import get_pg_pool
         pool = await get_pg_pool()
         async with pool.acquire() as conn:
             if q:
                 rows = await conn.fetch(
-                    "SELECT * FROM products WHERE business_id = $1 AND is_active = 1 AND (code ILIKE $2 OR name ILIKE $2) ORDER BY name LIMIT $3",
+                    "SELECT p.*, c.name AS category_name FROM products p "
+                    "LEFT JOIN categories c ON c.id = p.category_id "
+                    "WHERE p.business_id = $1 AND p.is_active = 1 AND (p.code ILIKE $2 OR p.name ILIKE $2) ORDER BY p.name LIMIT $3",
                     b_id, f"%{q}%", limit
                 )
             else:
                 rows = await conn.fetch(
-                    "SELECT * FROM products WHERE business_id = $1 AND is_active = 1 ORDER BY name LIMIT $2",
+                    "SELECT p.*, c.name AS category_name FROM products p "
+                    "LEFT JOIN categories c ON c.id = p.category_id "
+                    "WHERE p.business_id = $1 AND p.is_active = 1 ORDER BY p.name LIMIT $2",
                     b_id, limit
                 )
             return [dict(r) for r in rows]
@@ -74,11 +81,16 @@ async def list_products(q: Optional[str] = Query(None), limit: int = Query(500),
         async with aiosqlite.connect(main.DB_PATH) as db:
             if q:
                 cur = await db.execute(
-                    "SELECT * FROM products WHERE is_active = 1 AND (code LIKE ? OR name LIKE ?) ORDER BY name LIMIT ?",
+                    "SELECT p.*, c.name AS category_name FROM products p "
+                    "LEFT JOIN categories c ON c.id = p.category_id "
+                    "WHERE p.is_active = 1 AND (p.code LIKE ? OR p.name LIKE ?) ORDER BY p.name LIMIT ?",
                     (f"%{q}%", f"%{q}%", limit)
                 )
             else:
-                cur = await db.execute("SELECT * FROM products WHERE is_active = 1 ORDER BY name LIMIT ?", (limit,))
+                cur = await db.execute(
+                    "SELECT p.*, c.name AS category_name FROM products p "
+                    "LEFT JOIN categories c ON c.id = p.category_id "
+                    "WHERE p.is_active = 1 ORDER BY p.name LIMIT ?", (limit,))
             rows = await cur.fetchall()
             return [row_to_dict(r, cur.description) for r in rows]
 
@@ -144,6 +156,7 @@ async def price_suggestions(threshold_pct: float = Query(15.0), category_id: Opt
 
 
 @router.post("/api/products/import", summary="Importar productos CSV")
+@limiter.limit("10/minute")
 async def import_products_csv(request: Request, csv_text: str = Body(..., media_type="text/plain")) -> dict:
     import csv, io
     b_id = _biz_id()
@@ -213,6 +226,7 @@ async def import_products_csv(request: Request, csv_text: str = Body(..., media_
 
 
 @router.post("/api/products", status_code=201, summary="Crear producto")
+@limiter.limit("60/minute")
 async def create_product(request: Request, product: dict = Body(...)) -> Dict[str, Any]:
     b_id = _biz_id()
     await _check_product_limit(request, 1)
@@ -266,9 +280,22 @@ async def update_price(product_id: int, body: dict) -> dict:
             return {"success": True, "old_price": row[0], "new_price": price}
 
 
-@router.patch("/api/products/{product_id}/stock", summary="Actualizar stock")
+@router.patch("/api/products/{product_id}/stock", summary="Fijar stock absoluto")
 async def update_stock(product_id: int, body: dict) -> dict:
-    stock = body.get("stock", 0)
+    """Fija el stock ABSOLUTO del producto (no es un movimiento sumable).
+
+    El valor es obligatorio: antes defaulteaba a 0, por lo que un body sin
+    `stock` (o con valor no numérico) podía vaciar el inventario real en silencio.
+    Ahora se rechaza con 422 si falta o no es un número >= 0.
+    """
+    if "stock" not in body or body.get("stock") is None:
+        raise HTTPException(422, detail="Falta el campo 'stock' (valor absoluto a fijar)")
+    try:
+        stock = float(body["stock"])
+    except (TypeError, ValueError):
+        raise HTTPException(422, detail="'stock' debe ser numérico")
+    if stock < 0:
+        raise HTTPException(422, detail="'stock' no puede ser negativo")
     operator = body.get("operator", "Sistema")
     b_id = _biz_id()
     if USE_PG:

@@ -61,7 +61,7 @@ export default function PromotionModule() {
         fetchPromotions();
         addToast(`Promocion ${promo.is_active ? 'desactivada' : 'activada'}.`, 'success');
       }
-    } catch { addToast('Error de conexion.', 'error'); }
+    } catch { addToast('No se pudo conectar con el servidor. Revisá tu conexión a internet.', 'error'); }
   };
 
   const handleDelete = async (id) => {
@@ -72,9 +72,9 @@ export default function PromotionModule() {
         setPromotions(prev => prev.filter(p => p.id !== id));
         addToast('Promocion eliminada.', 'success');
       } else {
-        addToast('Error al eliminar.', 'error');
+        addToast('No se pudo eliminar la promoción. Reintentá o revisá tu conexión.', 'error');
       }
-    } catch { addToast('Error de conexion.', 'error'); }
+    } catch { addToast('No se pudo conectar con el servidor. Revisá tu conexión a internet.', 'error'); }
   };
 
   const resetForm = () => {
@@ -169,9 +169,9 @@ export default function PromotionModule() {
         fetchPromotions();
       } else {
         const err = await res.json().catch(() => ({}));
-        addToast(err.detail || 'Error al crear promocion.', 'error');
+        addToast(err.detail || 'No se pudo crear la promoción. Reintentá o revisá tu conexión.', 'error');
       }
-    } catch { addToast('Error de conexion.', 'error'); }
+    } catch { addToast('No se pudo conectar con el servidor. Revisá tu conexión a internet.', 'error'); }
   };
 
   const getTypeLabel = (type) => {

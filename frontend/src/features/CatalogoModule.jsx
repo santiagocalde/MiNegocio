@@ -44,10 +44,10 @@ export default function CatalogoModule() {
       if (res.ok) {
         if (addToast) addToast('Configuración guardada correctamente.', 'success');
       } else {
-        if (addToast) addToast('Error al guardar configuración.', 'error');
+        if (addToast) addToast('No se pudo guardar la configuración del catálogo. Reintentá o revisá tu conexión.', 'error');
       }
     } catch {
-      if (addToast) addToast('Error de conexión.', 'error');
+      if (addToast) addToast('No se pudo conectar con el servidor. Revisá tu conexión a internet.', 'error');
     }
   };
 
@@ -67,11 +67,11 @@ export default function CatalogoModule() {
         if (addToast) addToast(newVal ? 'Catálogo activado.' : 'Catálogo desactivado.', 'success');
       } else {
         setIsActive(!newVal);
-        if (addToast) addToast('Error al cambiar estado.', 'error');
+        if (addToast) addToast('No se pudo cambiar el estado del catálogo. Reintentá o revisá tu conexión.', 'error');
       }
     } catch {
       setIsActive(!newVal);
-      if (addToast) addToast('Error de conexión.', 'error');
+      if (addToast) addToast('No se pudo conectar con el servidor. Revisá tu conexión a internet.', 'error');
     } finally { setSaving(false); }
   };
 

@@ -64,7 +64,7 @@ export default function ConfigPage() {
       addToast('Configuración guardada', 'success');
       setTimeout(() => setSaved(false), 2000);
     } catch {
-      addToast('Error al guardar configuración', 'error');
+      addToast('No se pudo guardar la configuración. Reintentá o revisá tu conexión.', 'error');
     }
     setSaving(false);
   };

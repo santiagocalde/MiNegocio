@@ -23,23 +23,34 @@ async def check_trial_emails() -> None:
                 from db_helpers import get_pg_pool
                 pool = await get_pg_pool()
                 async with pool.acquire() as conn:
+                    # Solo a quienes NO se les envió ya el recordatorio de ESE día.
+                    # trial_email_sent_day evita reenviar el mismo mail al reiniciar.
                     reminders_active = await conn.fetch("""
                         SELECT id, email, business_name,
                                (CURRENT_DATE - DATE(created_at)) AS days_passed
                         FROM businesses
                         WHERE plan = 'trial'
                           AND (CURRENT_DATE - DATE(created_at)) IN (2, 4, 6)
+                          AND COALESCE(trial_email_sent_day, -1) <> (CURRENT_DATE - DATE(created_at))
                     """)
                     for b in reminders_active:
                         days_left = 7 - int(b["days_passed"])
                         await send_trial_reminder(b["email"], b["business_name"], days_left)
+                        await conn.execute(
+                            "UPDATE businesses SET trial_email_sent_day = $1 WHERE id = $2",
+                            int(b["days_passed"]), b["id"]
+                        )
 
                     reminders_7d = await conn.fetch(
                         "SELECT id, email, business_name FROM businesses "
-                        "WHERE plan = 'trial' AND DATE(created_at) = CURRENT_DATE - INTERVAL '7 days'"
+                        "WHERE plan = 'trial' AND DATE(created_at) = CURRENT_DATE - INTERVAL '7 days' "
+                        "AND COALESCE(trial_email_sent_day, -1) <> 7"
                     )
                     for b in reminders_7d:
                         await send_trial_reminder(b["email"], b["business_name"], 0)
+                        await conn.execute(
+                            "UPDATE businesses SET trial_email_sent_day = 7 WHERE id = $1", b["id"]
+                        )
             logger.info("Tarea de emails de prueba completada.")
         except Exception as e:
             logger.error(f"Error en tarea de emails de prueba: {e}")

@@ -12,15 +12,100 @@ const Icons = {
   CloudRain: () => <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16h16M4 16a4 4 0 01-4-4 4 4 0 014-4 4 4 0 017.2-2.1A6 6 0 0120 12a4 4 0 010 8m-4 4v-4m-4 4v-4m-4 4v-4" /></svg>
 };
 
+function IaCard({ titulo, subtitulo, icon, loading, texto, vacio }) {
+  return (
+    <div style={{ background: 'linear-gradient(135deg, rgba(124,58,237,0.10), rgba(20,187,166,0.05))', border: '1px solid rgba(165,180,252,0.25)', borderRadius: '16px', padding: '20px 22px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#c4b5fd', fontWeight: 800, fontSize: '1.05rem', marginBottom: '4px' }}>
+        {icon} {titulo}
+      </div>
+      <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: '0 0 14px' }}>{subtitulo}</p>
+      {loading ? (
+        <div style={{ color: 'var(--text-secondary)', fontSize: '0.92rem' }}>Analizando con IA…</div>
+      ) : texto ? (
+        <div style={{ color: 'var(--text-primary)', fontSize: '0.96rem', lineHeight: 1.65, whiteSpace: 'pre-line' }}>{texto}</div>
+      ) : (
+        <div style={{ color: 'var(--text-secondary)', fontSize: '0.92rem' }}>{vacio}</div>
+      )}
+    </div>
+  );
+}
+
+const PRIO_COLOR = { urgente: 'var(--accent-danger)', alta: 'var(--accent-warning)', media: '#a5b4fc' };
+
+function PreciosIaCard({ loading, texto, sugerencias, onApply, addToast }) {
+  const [aplicados, setAplicados] = useState({});   // {product_id: 'ok' | 'loading'}
+
+  const aplicar = async (s) => {
+    setAplicados(prev => ({ ...prev, [s.product_id]: 'loading' }));
+    const ok = await onApply(s);
+    setAplicados(prev => ({ ...prev, [s.product_id]: ok ? 'ok' : undefined }));
+    addToast?.(ok ? `${s.name}: precio actualizado a $${s.price_sugerido.toLocaleString('es-AR')}` : 'No se pudo aplicar el precio', ok ? 'success' : 'error');
+  };
+
+  return (
+    <div style={{ background: 'linear-gradient(135deg, rgba(124,58,237,0.10), rgba(20,187,166,0.05))', border: '1px solid rgba(165,180,252,0.25)', borderRadius: '16px', padding: '20px 22px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#c4b5fd', fontWeight: 800, fontSize: '1.05rem', marginBottom: '4px' }}>
+        <Icons.Brain /> Asesor de precios
+      </div>
+      <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: '0 0 14px' }}>Qué subir y cuánto exactamente, según costo y rotación. Aplicás con un click.</p>
+
+      {loading ? (
+        <div style={{ color: 'var(--text-secondary)', fontSize: '0.92rem' }}>Analizando con IA…</div>
+      ) : (
+        <>
+          {texto && <div style={{ color: 'var(--text-primary)', fontSize: '0.95rem', lineHeight: 1.6, marginBottom: 14 }}>{texto}</div>}
+          {sugerencias.length === 0 ? (
+            <div style={{ color: 'var(--text-secondary)', fontSize: '0.92rem' }}>Tus precios están sanos: no hay nada para ajustar.</div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {sugerencias.map(s => {
+                const estado = aplicados[s.product_id];
+                return (
+                  <div key={s.product_id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, background: 'var(--bg-main)', borderRadius: 10, padding: '12px 14px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ width: 7, height: 7, borderRadius: '50%', background: PRIO_COLOR[s.prioridad] || '#a5b4fc', flexShrink: 0 }} />
+                        <span style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.95rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.name}</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4, fontFamily: 'var(--font-mono)', fontSize: '1rem' }}>
+                        <span style={{ color: 'var(--text-secondary)', textDecoration: 'line-through' }}>${s.price_actual.toLocaleString('es-AR')}</span>
+                        <span style={{ color: 'var(--text-secondary)' }}>→</span>
+                        <span style={{ color: 'var(--accent-success)', fontWeight: 800 }}>${s.price_sugerido.toLocaleString('es-AR')}</span>
+                        <span style={{ color: PRIO_COLOR[s.prioridad] || '#a5b4fc', fontSize: '0.8rem', fontWeight: 700 }}>(+{s.delta_pct}%)</span>
+                      </div>
+                      <div style={{ color: 'var(--text-secondary)', fontSize: '0.78rem', marginTop: 2 }}>{s.motivo} · margen {s.margen_actual}% → {s.margen_nuevo}%</div>
+                    </div>
+                    <button
+                      onClick={() => aplicar(s)}
+                      disabled={estado === 'ok' || estado === 'loading'}
+                      style={{ flexShrink: 0, padding: '8px 16px', borderRadius: 8, border: 'none', fontWeight: 700, fontSize: '0.85rem', cursor: estado ? 'default' : 'pointer', background: estado === 'ok' ? 'rgba(20,187,166,0.15)' : 'var(--gradient-primary)', color: estado === 'ok' ? 'var(--accent-success)' : 'white' }}
+                    >
+                      {estado === 'ok' ? '✓ Aplicado' : estado === 'loading' ? '…' : 'Aplicar'}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function RecomendacionesModule() {
   const { addToast, backend, currentPlan } = usePanelContext();
   const isLocked = PLAN_WEIGHT[currentPlan] < PLAN_WEIGHT['ia'];
   const [suggestions, setSuggestions] = useState([]);
   const [deadStock, setDeadStock] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [iaPrecios, setIaPrecios] = useState({ texto: '', sugerencias: [], loading: true });
+  const [iaRepo, setIaRepo] = useState({ texto: '', loading: true });
 
   useEffect(() => {
     if (isLocked) {
+      setIaPrecios({ texto: '', sugerencias: [], loading: false });
+      setIaRepo({ texto: '', loading: false });
       setSuggestions([
         { id: 1, product_name: 'Alfajor Fantoche', cost_price: 350, price: 400, suggested_price: 600, margin_pct: 12 },
         { id: 2, product_name: 'Cerveza Quilmes 1L', cost_price: 1200, price: 1400, suggested_price: 1800, margin_pct: 14 },
@@ -50,7 +135,27 @@ export default function RecomendacionesModule() {
         setDeadStock(Array.isArray(list) ? list.slice(0, 5) : []);
       })
       .catch(() => setDeadStock([]));
+
+    apiGet('/ai/precios')
+      .then(r => r.ok ? r.json() : Promise.reject(r))
+      .then(d => setIaPrecios({ texto: d.texto || '', sugerencias: d.sugerencias || [], loading: false }))
+      .catch(() => setIaPrecios({ texto: '', sugerencias: [], loading: false }));
+
+    apiGet('/ai/reposicion')
+      .then(r => r.ok ? r.json() : Promise.reject(r))
+      .then(d => setIaRepo({ texto: d.texto || '', loading: false }))
+      .catch(() => setIaRepo({ texto: '', loading: false }));
   }, []);
+
+  const handleApplyOne = async (s) => {
+    try {
+      const { apiPatch } = await import('../services/apiClient');
+      const res = await apiPatch(`/products/${s.product_id}/price`, { price: s.price_sugerido });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  };
 
   const handleApplyPrices = async () => {
     try {
@@ -73,7 +178,7 @@ export default function RecomendacionesModule() {
       if (addToast) addToast(`${applied} precios actualizados correctamente.`, 'success');
       setSuggestions(prev => prev.filter(s => !prices.find(p => p.id === (s.id || s.product_id))));
     } catch {
-      if (addToast) addToast('Error al aplicar precios.', 'error');
+      if (addToast) addToast('No se pudieron aplicar los precios sugeridos. Reintentá o revisá tu conexión.', 'error');
     }
   };
 
@@ -101,10 +206,10 @@ export default function RecomendacionesModule() {
         setDeadStock([]);
       } else {
         const err = await res.json().catch(() => ({}));
-        if (addToast) addToast(err.detail || 'Error al crear promocion.', 'error');
+        if (addToast) addToast(err.detail || 'No se pudo crear la promoción. Reintentá o revisá tu conexión.', 'error');
       }
     } catch {
-      if (addToast) addToast('Error de conexion.', 'error');
+      if (addToast) addToast('No se pudo conectar con el servidor. Revisá tu conexión a internet.', 'error');
     }
   };
 
@@ -114,6 +219,25 @@ export default function RecomendacionesModule() {
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexShrink: 0 }}>
         <h2 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>Recomendaciones IA</h2>
+      </div>
+
+      {/* ANÁLISIS EN LENGUAJE NATURAL (IA) */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
+        <PreciosIaCard
+          loading={iaPrecios.loading}
+          texto={iaPrecios.texto}
+          sugerencias={iaPrecios.sugerencias}
+          addToast={addToast}
+          onApply={handleApplyOne}
+        />
+        <IaCard
+          titulo="Reposición inteligente"
+          subtitulo="Qué comprar antes de quedarte sin, según el ritmo de venta."
+          icon={<Icons.CloudRain />}
+          loading={iaRepo.loading}
+          texto={iaRepo.texto}
+          vacio="Nada urgente por reponer en los próximos días."
+        />
       </div>
 
       {loading ? (

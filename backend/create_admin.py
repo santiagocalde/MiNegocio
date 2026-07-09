@@ -1,44 +1,76 @@
-import sqlite3
-import bcrypt
-import uuid
-import os
+"""
+Crea (o verifica) una cuenta de superadmin.
 
-db_path = 'd:/Codigo/SoftwareKioscos/backend/data/novastock.db'
-conn = sqlite3.connect(db_path)
+Las credenciales se toman de variables de entorno — NUNCA hardcodeadas:
+    ADMIN_EMAIL     correo del superadmin
+    ADMIN_PASSWORD  contraseña (mínimo 8 caracteres)
+    ADMIN_PIN       PIN de operador (4 dígitos, opcional, default aleatorio)
+
+Uso:
+    ADMIN_EMAIL=jefe@kiosco.com ADMIN_PASSWORD='unaClaveFuerte' python create_admin.py
+
+Funciona en modo SQLite local (usa DATA_DIR del backend). Para PostgreSQL
+en producción, gestioná el superadmin desde el panel de admin.
+"""
+import os
+import sys
+import uuid
+import secrets
+import sqlite3
+
+import bcrypt
+
+EMAIL    = os.getenv("ADMIN_EMAIL", "").strip()
+PASSWORD = os.getenv("ADMIN_PASSWORD", "")
+PIN      = os.getenv("ADMIN_PIN", "").strip()
+
+if not EMAIL or not PASSWORD:
+    sys.exit("✗ Definí ADMIN_EMAIL y ADMIN_PASSWORD como variables de entorno.")
+if len(PASSWORD) < 8:
+    sys.exit("✗ ADMIN_PASSWORD debe tener al menos 8 caracteres.")
+if PIN and (len(PIN) != 4 or not PIN.isdigit()):
+    sys.exit("✗ ADMIN_PIN debe ser de 4 dígitos.")
+if not PIN:
+    PIN = f"{secrets.randbelow(10000):04d}"
+
+# Ruta portable: data/ junto a este script (no rutas absolutas de Windows).
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR = os.path.join(BASE_DIR, "data")
+os.makedirs(DATA_DIR, exist_ok=True)
+DB_PATH = os.path.join(DATA_DIR, "minegocio.db")
+
+conn = sqlite3.connect(DB_PATH)
 cursor = conn.cursor()
 
-# Check if admin123 exists
-email = 'admin123@kiosco.com'
-cursor.execute('SELECT * FROM businesses WHERE email = ?', (email,))
-if not cursor.fetchone():
-    pwd = b'password123'
-    hashed = bcrypt.hashpw(pwd, bcrypt.gensalt()).decode('utf-8')
-    
-    business_id = str(uuid.uuid4())
-    cursor.execute('''
-        INSERT INTO businesses (id, email, password_hash, business_name, plan, status) 
-        VALUES (?, ?, ?, ?, ?, ?)
-    ''', (business_id, email, hashed, 'Kiosco Admin', 'pro', 'active'))
-    conn.commit()
-    print(f'User {email} created in central DB.')
-    
-    # Initialize the tenant database
-    tenant_db_path = f'd:/Codigo/SoftwareKioscos/backend/data/novastock_{business_id}.db'
-    # we don't have init_db easily accessible in synchronous python without importing the fastAPI app, 
-    # but we can create the operators table.
-    conn2 = sqlite3.connect(tenant_db_path)
-    c2 = conn2.cursor()
-    c2.execute('''
-    CREATE TABLE IF NOT EXISTS operators (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+cursor.execute("SELECT id FROM businesses WHERE email = ?", (EMAIL,))
+if cursor.fetchone():
+    print(f"El usuario {EMAIL} ya existe.")
+    conn.close()
+    sys.exit(0)
+
+hashed = bcrypt.hashpw(PASSWORD.encode(), bcrypt.gensalt()).decode("utf-8")
+business_id = str(uuid.uuid4())
+cursor.execute(
+    """INSERT INTO businesses (id, email, password_hash, business_name, plan, status)
+       VALUES (?, ?, ?, ?, ?, ?)""",
+    (business_id, EMAIL, hashed, "Kiosco Admin", "pro", "active"),
+)
+conn.commit()
+print(f"✓ Superadmin {EMAIL} creado en la DB central.")
+
+tenant_db_path = os.path.join(DATA_DIR, f"minegocio_{business_id}.db")
+conn2 = sqlite3.connect(tenant_db_path)
+c2 = conn2.cursor()
+c2.execute(
+    """CREATE TABLE IF NOT EXISTS operators (
+        id   INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
-        pin TEXT NOT NULL,
+        pin  TEXT NOT NULL,
         role TEXT NOT NULL DEFAULT 'operator'
-    )
-    ''')
-    # the PIN screen asks for the pin. Let's make the pin '1234'.
-    c2.execute("INSERT INTO operators (name, pin, role) VALUES ('Admin', '1234', 'admin')")
-    conn2.commit()
-    print('Tenant DB and operator PIN (1234) initialized.')
-else:
-    print(f'User {email} already exists.')
+    )"""
+)
+c2.execute("INSERT INTO operators (name, pin, role) VALUES ('Admin', ?, 'admin')", (PIN,))
+conn2.commit()
+conn2.close()
+conn.close()
+print(f"✓ DB del tenant inicializada. PIN de operador: {PIN}")

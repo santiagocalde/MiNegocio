@@ -346,7 +346,9 @@ async def list_purchases(limit: int = 50) -> list:
             return purchases
     else:
         async with aiosqlite.connect(main.DB_PATH) as db:
-            cur = await db.execute("SELECT * FROM purchases ORDER BY created_at DESC LIMIT ?", (limit,))
+            # SQLite usa 'timestamp'; PG usa 'created_at'. Aliaseamos para que el
+            # frontend reciba created_at igual y no crashee en modo local/offline.
+            cur = await db.execute("SELECT *, timestamp AS created_at FROM purchases ORDER BY timestamp DESC LIMIT ?", (limit,))
             rows = await cur.fetchall()
             purchases = [row_to_dict(r, cur.description) for r in rows]
             for p in purchases:
@@ -364,11 +366,14 @@ async def stock_alerts() -> dict:
         async with pool.acquire() as conn:
             empty = await conn.fetch("SELECT * FROM products WHERE business_id = $1 AND is_active = 1 AND stock = 0", b_id)
             low = await conn.fetch("SELECT * FROM products WHERE business_id = $1 AND is_active = 1 AND stock > 0 AND stock <= min_stock", b_id)
-            return {"empty": [dict(r) for r in empty], "low": [dict(r) for r in low]}
+            sin_costo = await conn.fetch("SELECT * FROM products WHERE business_id = $1 AND is_active = 1 AND stock > 0 AND COALESCE(cost_price, 0) = 0", b_id)
+            return {"empty": [dict(r) for r in empty], "low": [dict(r) for r in low], "sin_costo": [dict(r) for r in sin_costo]}
     else:
         async with aiosqlite.connect(main.DB_PATH) as db:
             cur = await db.execute("SELECT * FROM products WHERE is_active = 1 AND stock = 0")
             empty = [row_to_dict(r, cur.description) for r in await cur.fetchall()]
             cur = await db.execute("SELECT * FROM products WHERE is_active = 1 AND stock > 0 AND stock <= min_stock")
             low = [row_to_dict(r, cur.description) for r in await cur.fetchall()]
-            return {"empty": empty, "low": low}
+            cur = await db.execute("SELECT * FROM products WHERE is_active = 1 AND stock > 0 AND COALESCE(cost_price, 0) = 0")
+            sin_costo = [row_to_dict(r, cur.description) for r in await cur.fetchall()]
+            return {"empty": empty, "low": low, "sin_costo": sin_costo}

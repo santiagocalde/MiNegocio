@@ -105,6 +105,7 @@ export default function VentasPage() {
           mpLoading={backend.mpLoading} setMpLoading={backend.setMpLoading}
           mpPaymentStatus={backend.mpPaymentStatus} setMpPaymentStatus={backend.setMpPaymentStatus}
           setMpIntentId={backend.setMpIntentId} handleQuickAdd={cart.handleQuickAdd}
+          handleRepeatSale={cart.handleRepeatSale}
           businessConfig={backend.businessConfig} setBusinessConfig={backend.setBusinessConfig} addToast={addToast}
           currentOperator={auth.currentOperator} promotionSavings={promos.promotionSavings} />
       </div>

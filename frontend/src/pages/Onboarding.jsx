@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Icons } from '../components/ui/Icons';
+import { API_ROOT } from '../config';
+import { getSource } from '../utils/attribution';
 import LogoPrincipal from '../assets/images/MiNegocio_transparente_real.png';
 
 const Svg = {
@@ -121,8 +123,8 @@ export default function Onboarding() {
     setRegisterLoading(true);
     setRegisterError('');
     try {
-      const baseUrl = import.meta.env.PROD ? '' : 'http://localhost:8005';
-      
+      const baseUrl = API_ROOT;
+
       if (isLoggedIn) {
         const token = localStorage.getItem('saas_token');
         const res = await fetch(`${baseUrl}/api/auth/complete-onboarding`, {
@@ -163,6 +165,7 @@ export default function Onboarding() {
             prior_pos: formData.posPrevio,
             needs_arca: formData.arca,
             objective: formData.objetivo,
+            source: getSource(),
           }),
         });
 

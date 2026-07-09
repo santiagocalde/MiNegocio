@@ -39,7 +39,8 @@ async def setup_status() -> dict:
         async with aiosqlite.connect(DB_PATH) as db:
             cur = await db.execute("SELECT COUNT(*) FROM operators")
             count = (await cur.fetchone())[0]
-            cur2 = await db.execute("SELECT nombre FROM business_config LIMIT 1")
+            # business_config en SQLite es clave-valor (core/database.py), no una tabla ancha
+            cur2 = await db.execute("SELECT value FROM business_config WHERE key = 'nombre'")
             name_row = await cur2.fetchone()
             return {"needs_setup": count == 0, "operators_count": count, "business_name": name_row[0] if name_row else "Mi Kiosco"}
 
@@ -69,7 +70,10 @@ async def setup_init(data: dict) -> dict:
     else:
         async with aiosqlite.connect(DB_PATH) as db:
             await db.execute("INSERT INTO operators (name, pin, role) VALUES (?, ?, 'admin')", (admin_name, hashed))
-            await db.execute("INSERT OR IGNORE INTO business_config (nombre) VALUES (?)", (business_name,))
+            await db.execute(
+                "INSERT INTO business_config (key, value) VALUES ('nombre', ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+                (business_name,)
+            )
             await db.commit()
     return {"success": True, "business_name": business_name}
 
@@ -304,6 +308,35 @@ async def list_plans() -> list:
         logger.warning(f"No se pudieron cargar planes desde DB, usando fallback: {e}")
         from core.plan_pricing import PLANS_CONFIG
         return [{"id": slug, "name": p["name"], "monthly": p["monthly"], "yearly": p["yearly"], "desc": p["desc"], "popular": p["popular"], "features": p["features"]} for slug, p in PLANS_CONFIG.items()]
+
+
+@router.post("/api/track", summary="Registrar evento del funnel (público)")
+@limiter.limit("60/minute")
+async def track_funnel_event(request: Request, body: dict = Body(...)) -> dict:
+    """Registra eventos del funnel de adquisición (visita a landing, inicio de
+    registro, etc.) para poder medir la conversión landing → registro.
+    Público y sin auth; degrada en silencio si no hay PostgreSQL (modo kiosco local)."""
+    event = str(body.get("event", "")).strip()[:40]
+    allowed = {"landing_view", "register_start", "register_done", "checkout_start", "pricing_view"}
+    if event not in allowed:
+        return {"ok": False}
+    try:
+        from db_helpers import get_pg_pool
+        pool = await get_pg_pool()
+        async with pool.acquire() as conn:
+            await conn.execute(
+                """INSERT INTO funnel_events (event, utm_source, utm_medium, utm_campaign, path, session_id)
+                   VALUES ($1, $2, $3, $4, $5, $6)""",
+                event,
+                str(body.get("utm_source", ""))[:120],
+                str(body.get("utm_medium", ""))[:120],
+                str(body.get("utm_campaign", ""))[:120],
+                str(body.get("path", ""))[:200],
+                str(body.get("session_id", ""))[:64],
+            )
+    except Exception as e:
+        logger.debug(f"No se pudo registrar funnel_event: {e}")
+    return {"ok": True}
 
 
 @router.get("/api/metrics", summary="Metricas publicas")

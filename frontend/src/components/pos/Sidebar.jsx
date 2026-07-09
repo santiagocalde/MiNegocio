@@ -163,14 +163,14 @@ export default function Sidebar({
           {initialCash > 0 && (
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 700 }}>
               <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>Caja inicial</span>
-              <span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', fontFamily: 'var(--font-mono)', fontWeight: 600 }}>
+              <span style={{ color: 'var(--text-secondary)', fontSize: 'var(--fs-sm)', fontFamily: 'var(--font-mono)', fontWeight: 600 }}>
                 ${(initialCash || 0).toLocaleString('es-AR')}
               </span>
             </div>
           )}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 700 }}>
             <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>Operador</span>
-            <span style={{ color: 'var(--text-primary)', fontWeight: 800, fontSize: '0.75rem' }}>{currentOperator?.name || 'Invitado'}</span>
+            <span style={{ color: 'var(--text-primary)', fontWeight: 800, fontSize: 'var(--fs-sm)' }}>{currentOperator?.name || 'Invitado'}</span>
           </div>
           {pendingSync > 0 && (
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 700 }}>
