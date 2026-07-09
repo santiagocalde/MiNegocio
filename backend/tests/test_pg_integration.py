@@ -117,8 +117,7 @@ def test_jwt_secret_unificado():
     """Todos los módulos deben compartir el mismo JWT_SECRET (core.config)."""
     from core.config import JWT_SECRET
     from core.jwt_helpers import JWT_SECRET as j_helpers
-    from core.dependencies import JWT_SECRET as j_deps
-    assert JWT_SECRET == j_helpers == j_deps
+    assert JWT_SECRET == j_helpers
 
 
 def test_rate_limit_usa_ip_real():

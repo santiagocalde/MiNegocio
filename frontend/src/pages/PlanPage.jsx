@@ -100,6 +100,12 @@ export default function PlanPage() {
   const [plans, setPlans] = useState(FALLBACK_PLANS);
   const [planPageLoading, setPlanPageLoading] = useState(false);
   const [planPageError, setPlanPageError] = useState('');
+  const [showCancel, setShowCancel] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
+  const [cancelDetail, setCancelDetail] = useState('');
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelDone, setCancelDone] = useState(false);
+  const [cancelError, setCancelError] = useState('');
 
   useEffect(() => {
     apiGet('/plans')
@@ -122,6 +128,34 @@ export default function PlanPage() {
   }, []);
 
   const activePlanId = currentPlan;
+  const hasPaidPlan = ['simple', 'pro', 'ia'].includes(currentPlan);
+
+  const CANCEL_OPTIONS = [
+    { id: 'precio', label: 'Es muy caro para mí' },
+    { id: 'no_lo_uso', label: 'No lo estoy usando' },
+    { id: 'cambie_sistema', label: 'Me cambio a otro sistema' },
+    { id: 'faltan_funciones', label: 'Le faltan funciones que necesito' },
+    { id: 'cerro_negocio', label: 'Cerré / pausé el negocio' },
+    { id: 'otro', label: 'Otro motivo' },
+  ];
+
+  const handleCancel = async () => {
+    if (cancelling || !cancelReason) return;
+    setCancelling(true);
+    setCancelError('');
+    try {
+      const res = await apiPost('/billing/cancel', { reason: cancelReason, detail: cancelDetail });
+      if (res.ok) {
+        setCancelDone(true);
+      } else {
+        setCancelError('No se pudo procesar la cancelación. Escribinos por WhatsApp y lo resolvemos.');
+      }
+    } catch {
+      setCancelError('Error de conexión. Intentá de nuevo o escribinos por WhatsApp.');
+    } finally {
+      setCancelling(false);
+    }
+  };
 
   const handleSubscribe = async (planId, isYearly) => {
     if (planPageLoading) return;
@@ -185,6 +219,67 @@ export default function PlanPage() {
           <PlanCard key={plan.id} plan={plan} isYearly={isYearly} currentPlan={activePlanId} onSubscribe={handleSubscribe} />
         ))}
       </div>
+
+      {hasPaidPlan && (
+        <div style={{ textAlign: 'center', paddingBottom: 40 }}>
+          <button onClick={() => { setShowCancel(true); setCancelDone(false); setCancelReason(''); setCancelDetail(''); setCancelError(''); }}
+            style={{ background: 'none', border: 'none', color: 'rgba(230,255,251,0.4)', fontSize: '0.82rem', cursor: 'pointer', textDecoration: 'underline', fontFamily: 'inherit' }}>
+            Cancelar suscripción
+          </button>
+        </div>
+      )}
+
+      {showCancel && (
+        <div onClick={() => !cancelling && setShowCancel(false)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }}>
+          <div onClick={e => e.stopPropagation()}
+            style={{ background: '#0F1A30', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: 28, maxWidth: 440, width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.5)' }}>
+            {cancelDone ? (
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '2.4rem', marginBottom: 8 }}>👋</div>
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#fff', marginBottom: 10 }}>Suscripción cancelada</h3>
+                <p style={{ color: 'rgba(230,255,251,0.6)', fontSize: '0.9rem', lineHeight: 1.5, marginBottom: 20 }}>
+                  No se harán más cobros. Podés seguir usando tu plan hasta que termine el período que ya pagaste. Gracias por probar MiNegocio.
+                </p>
+                <button onClick={() => setShowCancel(false)}
+                  style={{ padding: '10px 28px', borderRadius: 8, border: 'none', background: 'var(--gradient-primary)', color: '#fff', fontWeight: 600, cursor: 'pointer' }}>
+                  Entendido
+                </button>
+              </div>
+            ) : (
+              <>
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#fff', marginBottom: 6 }}>¿Por qué querés cancelar?</h3>
+                <p style={{ color: 'rgba(230,255,251,0.55)', fontSize: '0.85rem', marginBottom: 18 }}>Tu respuesta nos ayuda a mejorar. Solo tomás un segundo.</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+                  {CANCEL_OPTIONS.map(opt => (
+                    <button key={opt.id} onClick={() => setCancelReason(opt.id)}
+                      style={{ textAlign: 'left', padding: '11px 14px', borderRadius: 9, cursor: 'pointer', fontSize: '0.88rem', fontFamily: 'inherit',
+                        border: `1px solid ${cancelReason === opt.id ? 'var(--primary, #14BBA6)' : 'rgba(255,255,255,0.08)'}`,
+                        background: cancelReason === opt.id ? 'rgba(20,187,166,0.12)' : 'rgba(255,255,255,0.02)',
+                        color: cancelReason === opt.id ? '#fff' : 'rgba(230,255,251,0.7)' }}>
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+                <textarea value={cancelDetail} onChange={e => setCancelDetail(e.target.value)} placeholder="Contanos algo más (opcional)"
+                  rows={2} maxLength={500}
+                  style={{ width: '100%', boxSizing: 'border-box', padding: '10px 12px', borderRadius: 9, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.02)', color: '#fff', fontSize: '0.85rem', fontFamily: 'inherit', resize: 'vertical', marginBottom: 16 }} />
+                {cancelError && <div style={{ color: '#FCA5A5', fontSize: '0.82rem', marginBottom: 12 }}>{cancelError}</div>}
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <button onClick={() => setShowCancel(false)} disabled={cancelling}
+                    style={{ flex: 1, padding: '11px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: 'rgba(230,255,251,0.8)', fontWeight: 600, cursor: cancelling ? 'default' : 'pointer', fontFamily: 'inherit' }}>
+                    Mejor no
+                  </button>
+                  <button onClick={handleCancel} disabled={!cancelReason || cancelling}
+                    style={{ flex: 1, padding: '11px', borderRadius: 8, border: 'none', background: (!cancelReason || cancelling) ? 'rgba(239,68,68,0.3)' : 'rgba(239,68,68,0.85)', color: '#fff', fontWeight: 600, cursor: (!cancelReason || cancelling) ? 'default' : 'pointer', fontFamily: 'inherit' }}>
+                    {cancelling ? 'Cancelando…' : 'Cancelar suscripción'}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

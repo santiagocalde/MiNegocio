@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { API_BASE } from '../config';
 
 const API = `${API_BASE}/admin`;
@@ -32,7 +32,7 @@ const S = {
   select: { padding: '8px 12px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 9, color: TEXT, fontSize: '0.82rem', outline: 'none', cursor: 'pointer' },
   primaryBtn: { padding: '9px 20px', background: `linear-gradient(135deg, ${ACCENT}, #0F8A7D)`, border: 'none', color: '#fff', borderRadius: 9, fontWeight: 700, fontSize: '0.84rem', cursor: 'pointer', boxShadow: '0 3px 12px rgba(20,187,166,0.2)', transition: 'all 0.2s', display: 'inline-flex', alignItems: 'center', gap: 6 },
   ghostBtn: { padding: '8px 16px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', color: MUTED, borderRadius: 8, fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s', display: 'inline-flex', alignItems: 'center', gap: 5 },
-  pill: (color, text) => ({ padding: '3px 9px', borderRadius: 5, fontSize: '0.72rem', fontWeight: 700, background: `${color}15`, color: color, border: `1px solid ${color}25`, display: 'inline-flex', alignItems: 'center', gap: 4 }),
+  pill: (color) => ({ padding: '3px 9px', borderRadius: 5, fontSize: '0.72rem', fontWeight: 700, background: `${color}15`, color: color, border: `1px solid ${color}25`, display: 'inline-flex', alignItems: 'center', gap: 4 }),
   tableTh: { padding: '12px 16px', textAlign: 'left', fontWeight: 600, fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: '0.6px', color: MUTED, borderBottom: `1px solid ${BORDER}` },
   tableTd: { padding: '11px 16px', borderBottom: `1px solid rgba(255,255,255,0.015)`, fontWeight: 500, fontSize: '0.84rem' },
   skeleton: { background: 'rgba(255,255,255,0.03)', borderRadius: 8, animation: 'pulse 1.5s infinite' },
@@ -40,53 +40,31 @@ const S = {
 
 function isAdminAuthorized() {
   if (localStorage.getItem('saas_admin_gate') === 'true') return true;
-  try { const raw = localStorage.getItem('saas_business'); if (raw) { const biz = JSON.parse(raw); if (biz?.is_superadmin) { localStorage.setItem('saas_admin_gate', 'true'); return true; } } } catch {}
+  try { const raw = localStorage.getItem('saas_business'); if (raw) { const biz = JSON.parse(raw); if (biz?.is_superadmin) { localStorage.setItem('saas_admin_gate', 'true'); return true; } } } catch { /* json inválido en localStorage: no autorizado */ }
   return false;
 }
 
-/* ─── SVG Mini Chart ─── */
-function MiniChart({ data, color, height = 60 }) {
-  if (!data || data.length < 2) return <div style={{ height, display: 'flex', alignItems: 'center', justifyContent: 'center', color: MUTED, fontSize: '0.7rem' }}>Sin datos</div>;
-  const max = Math.max(...data) || 1;
-  const min = Math.min(...data) || 0;
-  const range = max - min || 1;
-  const w = 200;
-  const h = height;
-  const pad = 2;
-  const points = data.map((v, i) => {
-    const x = pad + (i / (data.length - 1)) * (w - pad * 2);
-    const y = h - pad - ((v - min) / range) * (h - pad * 2);
-    return `${x},${y}`;
-  }).join(' ');
-  const area = `${pad},${h-pad} ${points} ${w-pad},${h-pad}`;
-  return (
-    <svg width={w} height={h} style={{ display: 'block' }}>
-      <defs><linearGradient id={`grad-${color}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={color} stopOpacity="0.2"/><stop offset="100%" stopColor={color} stopOpacity="0"/></linearGradient></defs>
-      <polygon points={area} fill={`url(#grad-${color})`} />
-      <polyline points={points} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
+const emptyChart = (height) => <div style={{ height, display: 'flex', alignItems: 'center', justifyContent: 'center', color: MUTED, fontSize: '0.7rem' }}>Sin datos</div>;
 
 function BarChart({ data, color, height = 100 }) {
-  if (!data || !Array.isArray(data) || data.length === 0) return <div style={{ height, display: 'flex', alignItems: 'center', justifyContent: 'center', color: MUTED, fontSize: '0.7rem' }}>Sin datos</div>;
-  try {
-    const maxVal = Math.max(...data.map(d => d?.count || d?.sales || 0)) || 1;
-    const w = Math.min(Math.max(data.length * 16, 100), 500);
-    const h = height;
-    const barW = Math.max(4, Math.floor((w - data.length * 2) / data.length));
-    return (
-      <svg width={w} height={h} style={{ display: 'block', margin: '0 auto' }}>
-        {data.map((d, i) => {
-          const v = d?.count || d?.sales || 0;
-          const bh = Math.max(2, (v / maxVal) * (h - 20));
-          const x = i * (barW + 2) + 2;
-          const y = h - bh - 14;
-          return <rect key={i} x={x} y={y} width={barW} height={bh} rx="2" fill={color} opacity="0.8" />;
-        })}
-      </svg>
-    );
-  } catch { return <div style={{ height, display: 'flex', alignItems: 'center', justifyContent: 'center', color: MUTED, fontSize: '0.7rem' }}>Error al cargar grafico</div>; }
+  if (!data || !Array.isArray(data) || data.length === 0) return emptyChart(height);
+  // Cálculos fuera del JSX: nunca construir JSX dentro de try/catch (React no captura
+  // errores de render ahí; para eso van los error boundaries).
+  const maxVal = Math.max(...data.map(d => d?.count || d?.sales || 0)) || 1;
+  const w = Math.min(Math.max(data.length * 16, 100), 500);
+  const h = height;
+  const barW = Math.max(4, Math.floor((w - data.length * 2) / data.length));
+  return (
+    <svg width={w} height={h} style={{ display: 'block', margin: '0 auto' }}>
+      {data.map((d, i) => {
+        const v = d?.count || d?.sales || 0;
+        const bh = Math.max(2, (v / maxVal) * (h - 20));
+        const x = i * (barW + 2) + 2;
+        const y = h - bh - 14;
+        return <rect key={i} x={x} y={y} width={barW} height={bh} rx="2" fill={color} opacity="0.8" />;
+      })}
+    </svg>
+  );
 }
 
 
@@ -495,16 +473,20 @@ function Businesses({ token, toast }) {
   const [detail, setDetail] = useState(null); const [del, setDel] = useState(null);
   const [exporting, setExporting] = useState(false);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     const q = new URLSearchParams({ page, limit: 15 }); if (search) q.set('search', search); if (sFilter) q.set('status', sFilter); if (pFilter) q.set('plan', pFilter);
     const r = await fetchAdmin(`${API}/businesses?${q}`, token); if (r.ok) setData(await r.json());
-  };
+  }, [page, search, sFilter, pFilter, token]);
+  // Recarga automática al cambiar página o filtros. `search` se aplica manualmente
+  // (doSearch) para no recargar en cada tecla; por eso no está en las deps del effect.
+  // set-state-in-effect: falso positivo — el fetch es async y setData corre tras el await.
+  // eslint-disable-next-line react-hooks/exhaustive-deps, react-hooks/set-state-in-effect
   useEffect(() => { load(); }, [page, sFilter, pFilter]);
 
   const doSearch = e => { e.preventDefault(); setPage(1); load(); };
   const chPlan = async (id, np) => { if (!window.confirm(`Cambiar plan a ${PLAN[np]?.label || np}?`)) return; const r = await fetchAdmin(`${API}/businesses/${id}/plan`, token, { method: 'PUT', body: JSON.stringify({ new_plan: np, notes: 'Actualizacion manual' }) }); if (r.ok) { toast('Plan actualizado'); load(); } };
   const chStatus = async (id, ns) => { const r = await fetchAdmin(`${API}/businesses/${id}/status`, token, { method: 'PUT', body: JSON.stringify({ status: ns, reason: 'Accion administrativa' }) }); if (r.ok) { toast('Estado actualizado'); load(); } };
-  const extendPlan = async (id, days) => { const r = await fetchAdmin(`${API}/businesses/${id}/extend`, token, { method: 'POST', body: JSON.stringify({ days, notes: `Extensión manual +${days}d` }) }); if (r.ok) { const d = await r.json(); toast(`+${days} días concedidos`); setDetail(null); load(); } else toast('Error al extender'); };
+  const extendPlan = async (id, days) => { const r = await fetchAdmin(`${API}/businesses/${id}/extend`, token, { method: 'POST', body: JSON.stringify({ days, notes: `Extensión manual +${days}d` }) }); if (r.ok) { toast(`+${days} días concedidos`); setDetail(null); load(); } else toast('Error al extender'); };
   const doDelete = async (id, name) => {
     if (!window.confirm(`Eliminar "${name}"?\n\nBorra todos los datos: productos, ventas, operadores, config. No se puede deshacer.`)) return;
     setDel(id); const r = await fetchAdmin(`${API}/businesses/${id}`, token, { method: 'DELETE' }); setDel(null);
@@ -704,7 +686,7 @@ function Insights({ token }) {
       try {
         const res = await fetchAdmin(`${API}/insights`, token);
         if (res.ok && alive) setData(await res.json());
-      } catch {}
+      } catch { /* red caída: se mantiene el estado previo */ }
       if (alive) setLoading(false);
     })();
     return () => { alive = false; };

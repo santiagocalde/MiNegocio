@@ -261,7 +261,7 @@ class TenantMiddleware(BaseHTTPMiddleware):
 
         public_prefixes = (
             "/api/auth", "/api/admin/auth", "/api/login", "/api/health",
-            "/api/billing/webhook", "/api/plans", "/api/metrics",
+            "/api/billing/webhook", "/api/plans", "/api/metrics", "/api/track",
             "/api/testimonials", "/api/send-contact", "/api/catalogo", "/docs", "/openapi",
         )
         path = request.url.path
