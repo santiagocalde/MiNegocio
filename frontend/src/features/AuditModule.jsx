@@ -70,8 +70,8 @@ export default function AuditModule() {
     } catch (e) {
       console.error('fetchMovements failed:', e);
       const msg = e.message === 'Error de movimientos'
-        ? 'Error al cargar movimientos del servidor.'
-        : 'Error de conexion. Verifica que el servidor este corriendo.';
+        ? 'No se pudieron cargar los movimientos. Reintentá o revisá tu conexión.'
+        : 'No se pudo conectar con el servidor. Verificá que esté corriendo e intentá de nuevo.';
       if (addToast) addToast(msg, 'error');
     } finally {
       setLoading(false);

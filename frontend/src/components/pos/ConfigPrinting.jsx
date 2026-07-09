@@ -42,7 +42,7 @@ export default function ConfigPrinting({ printConfig, setPrintConfig, qzConnecte
           try {
             await apiPut('/config/printing', printConfig);
             addToast('Configuración de impresión guardada', 'success');
-          } catch { addToast('Error al guardar', 'error'); }
+          } catch { addToast('No se pudo guardar la configuración de impresión. Reintentá.', 'error'); }
         }} style={{ background: 'var(--gradient-primary)', border: 'none', color: 'white', padding: '10px 20px', borderRadius: '8px', fontWeight: 700, cursor: 'pointer' }}>
           Guardar Configuración
         </button>
@@ -53,7 +53,7 @@ export default function ConfigPrinting({ printConfig, setPrintConfig, qzConnecte
             addToast('QZ Tray conectado', 'success');
           } catch {
             setQzConnected(false);
-            addToast('QZ Tray no disponible', 'error');
+            addToast('No se detectó el servicio de impresión (QZ Tray). Abrilo en tu PC e intentá de nuevo.', 'error');
           }
         }} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '10px 20px', borderRadius: '8px', fontWeight: 700, cursor: 'pointer' }}>
           Probar Conexión QZ Tray
@@ -67,7 +67,7 @@ export default function ConfigPrinting({ printConfig, setPrintConfig, qzConnecte
               await QZTray.openDrawerViaAgent('http://127.0.0.1:8199', printConfig.printer_name);
               addToast('Cajón abierto (vía agente)', 'success');
             } catch {
-              addToast('No se pudo abrir el cajón', 'error');
+              addToast('No se pudo abrir el cajón. Revisá que esté conectado e intentá de nuevo.', 'error');
             }
           }
         }} style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)', color: 'var(--accent-success)', padding: '10px 20px', borderRadius: '8px', fontWeight: 700, cursor: 'pointer' }}>

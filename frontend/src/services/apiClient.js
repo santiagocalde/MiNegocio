@@ -1,4 +1,6 @@
-const SERVER_URL = import.meta.env.PROD ? '/api' : 'http://localhost:8005/api';
+import { API_BASE } from '../config';
+
+const SERVER_URL = API_BASE;
 const FETCH_TIMEOUT = 15000;
 
 function getToken() {

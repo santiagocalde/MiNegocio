@@ -14,9 +14,9 @@ from services.email_templates import base_template, _e
 logger = logging.getLogger("NovaStock.Auth")
 router = APIRouter(prefix="/api/auth", tags=["Auth"])
 
-from slowapi import Limiter
-from slowapi.util import get_remote_address
-auth_limiter = Limiter(key_func=get_remote_address)
+# Limiter central: keyea por IP REAL (X-Real-IP), no por la IP del proxy nginx.
+# Antes usaba get_remote_address → todos los kioscos compartían el límite.
+from core.ratelimit import limiter as auth_limiter
 
 class BusinessCreate(BaseModel):
     email: EmailStr
@@ -28,6 +28,7 @@ class BusinessCreate(BaseModel):
     prior_pos: str = ""
     needs_arca: str = ""
     objective: str = ""
+    source: str = ""  # atribución: de dónde vino el registro (utm_source / ref / referrer)
 
     @field_validator("password")
     @classmethod
@@ -143,8 +144,8 @@ async def auth_register(request: Request, body: BusinessCreate) -> dict:
 
         row = await conn.fetchrow(
             """INSERT INTO businesses (email, password_hash, business_name, plan, phone, terms_accepted_at,
-                                       owner_name, business_type, prior_pos, needs_arca, objective)
-               VALUES ($1, $2, $3, 'trial', $4, now(), $5, $6, $7, $8, $9)
+                                       owner_name, business_type, prior_pos, needs_arca, objective, source)
+               VALUES ($1, $2, $3, 'trial', $4, now(), $5, $6, $7, $8, $9, $10)
                RETURNING id, email, business_name, plan, status, phone""",
             body.email.lower().strip(),
             hashed_pw,
@@ -155,6 +156,7 @@ async def auth_register(request: Request, body: BusinessCreate) -> dict:
             (body.prior_pos or "").strip(),
             (body.needs_arca or "").strip(),
             (body.objective or "").strip(),
+            (body.source or "").strip()[:120],  # acotar para no guardar URLs gigantes
         )
         biz_id, biz_email, biz_name, biz_plan, biz_status, biz_phone = row
 
@@ -167,10 +169,14 @@ async def auth_register(request: Request, body: BusinessCreate) -> dict:
         default_pin = str(random.randint(1000, 9999))
         hashed_pin = bcrypt.hashpw(default_pin.encode(), bcrypt.gensalt()).decode()
 
+        # El operador admin se llama como el DUEÑO (no como el negocio): el saludo
+        # del panel usa el nombre del operador logueado ("Hola {nombre}").
+        operator_name = body.name.strip() or "Dueño"
+
         # Crear operador en PostgreSQL (modo cloud) — DENTRO del async with
         await conn.execute(
             "INSERT INTO operators (business_id, name, pin, role) VALUES ($1, $2, $3, 'admin')",
-            biz_id, biz_name or "Dueño", hashed_pin
+            biz_id, operator_name, hashed_pin
         )
 
         access_token = jwt.encode(
@@ -200,7 +206,7 @@ async def auth_register(request: Request, body: BusinessCreate) -> dict:
         async with aiosqlite.connect(tenant_db_path) as tenant_db:
             await tenant_db.execute(
                 "INSERT INTO operators (name, pin, role) VALUES (?, ?, 'admin')",
-                (biz_name or "Dueño", hashed_pin)
+                (operator_name, hashed_pin)
             )
             await tenant_db.commit()
     except Exception as e:
@@ -306,6 +312,13 @@ async def auth_login(request: Request, body: BusinessLogin) -> dict:
             biz_id, refresh_token, datetime.now(timezone.utc) + timedelta(days=7)
         )
 
+        # ¿Es superadmin? Se resuelve en el server contra la tabla superadmins,
+        # no con una lista de emails hardcodeada en el frontend. Esto solo habilita
+        # el acceso al panel; la seguridad real la da verify_superadmin + password.
+        is_superadmin = bool(await conn.fetchval(
+            "SELECT 1 FROM superadmins WHERE email = $1", biz_email.lower().strip()
+        ))
+
     return {
         "access_token": access_token,
         "refresh_token": refresh_token,
@@ -313,6 +326,7 @@ async def auth_login(request: Request, body: BusinessLogin) -> dict:
         "business": {
             "id": biz_id, "email": biz_email,
             "business_name": biz_name, "plan": biz_plan, "status": biz_status,
+            "is_superadmin": is_superadmin,
         },
     }
 

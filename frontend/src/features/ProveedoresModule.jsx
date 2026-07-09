@@ -66,10 +66,10 @@ export default function ProveedoresModule() {
         fetchProveedores();
       } else {
         const data = await res.json().catch(() => ({}));
-        if (addToast) addToast(data.detail || 'Error al crear proveedor.', 'error');
+        if (addToast) addToast(data.detail || 'No se pudo crear el proveedor. Reintentá o revisá tu conexión.', 'error');
       }
     } catch {
-      if (addToast) addToast('Error de conexión.', 'error');
+      if (addToast) addToast('No se pudo conectar con el servidor. Revisá tu conexión a internet.', 'error');
     }
   };
 
@@ -177,7 +177,7 @@ export default function ProveedoresModule() {
                     setShowAbonar(null);
                     fetchProveedores();
                   }
-                } catch { addToast('Error de conexion.', 'error'); }
+                } catch { addToast('No se pudo conectar con el servidor. Revisá tu conexión a internet.', 'error'); }
               }} style={{ background: 'var(--accent-danger)', border: 'none', color: 'white', padding: '10px 24px', borderRadius: '8px', cursor: 'pointer', fontWeight: 700 }}
                 disabled={!abonarMonto || parseFloat(abonarMonto) <= 0}>
                 Pagar

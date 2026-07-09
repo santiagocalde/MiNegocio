@@ -36,6 +36,14 @@ export default function useCart(productsDB, ivaRate, playBeep) {
   const [promotionSavings, setPromotionSavings] = useState(0);
   const addLockRef = useRef(false);
   const debounceRef = useRef(null);
+  // Un único BroadcastChannel compartido para leer y escribir: el propio objeto nunca
+  // recibe los mensajes que él mismo posteó (así lo garantiza la spec). Usar instancias
+  // separadas para escuchar y para escribir (como antes) provoca que la pestaña se
+  // haga eco a sí misma: cada setCart dispara un post, ese post reactiva el listener,
+  // que vuelve a hacer setCart con un array nuevo (JSON.parse siempre da otra referencia
+  // aunque el contenido sea igual) — un loop infinito de renders y de fetch en cadena
+  // (ej. /api/promotions/evaluate) cada vez que se toca el carrito.
+  const bcRef = useRef(null);
 
   // Persist cart to localStorage with debounce
   useEffect(() => {
@@ -45,18 +53,16 @@ export default function useCart(productsDB, ivaRate, playBeep) {
         localStorage.setItem('minegocio_cart', JSON.stringify(cart));
         localStorage.setItem('minegocio_cart_ts', String(Date.now()));
       } catch {}
-      try {
-        const bc = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('minegocio-cart') : null;
-        if (bc) { bc.postMessage('cart-updated'); bc.close(); }
-      } catch {}
+      try { bcRef.current?.postMessage('cart-updated'); } catch {}
     }, 250);
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, [cart]);
 
-  // Listen for cart changes from other tabs
+  // Listen for cart changes from other tabs (mismo canal usado para postear arriba)
   useEffect(() => {
     const bc = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('minegocio-cart') : null;
     if (!bc) return;
+    bcRef.current = bc;
     const handler = () => {
       try {
         const saved = localStorage.getItem('minegocio_cart');
@@ -67,7 +73,7 @@ export default function useCart(productsDB, ivaRate, playBeep) {
       } catch {}
     };
     bc.onmessage = handler;
-    return () => bc.close();
+    return () => { bcRef.current = null; bc.close(); };
   }, []);
 
   const handleQuickAdd = useCallback((code, name, price, extra) => {
@@ -84,6 +90,14 @@ export default function useCart(productsDB, ivaRate, playBeep) {
     setTimeout(() => { addLockRef.current = false; }, 300);
     if (playBeep) playBeep();
   }, [productsDB, playBeep]);
+
+  // Repone el carrito completo con los items de una venta anterior (ej. "repetir última venta").
+  // Usa setCart directo en vez de handleQuickAdd: handleQuickAdd tiene un lock de 300ms pensado
+  // para evitar dobles-escaneos accidentales, que bloquearía agregar varios items distintos en loop.
+  const handleRepeatSale = useCallback((previousCartItems) => {
+    if (!Array.isArray(previousCartItems) || previousCartItems.length === 0) return;
+    setCart(previousCartItems.map(item => ({ ...item })));
+  }, []);
 
   const updateQty = useCallback((id, delta) => {
     setCart(prev => prev.map(item => item.id === id ? { ...item, qty: Math.max(0.01, item.qty + delta) } : item));
@@ -155,6 +169,7 @@ export default function useCart(productsDB, ivaRate, playBeep) {
     isCancelConfirm, setIsCancelConfirm,
     promotionSavings, setPromotionSavings,
     handleQuickAdd,
+    handleRepeatSale,
     updateQty,
     setItemQty,
     removeItem,

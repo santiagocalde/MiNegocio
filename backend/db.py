@@ -1,4 +1,5 @@
 import os
+import glob
 import logging
 import asyncpg
 from typing import Optional
@@ -75,6 +76,56 @@ def row_to_dict(row, columns=None):
     return dict(row)
 
 
+MIGRATIONS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "migrations")
+
+
+async def run_migrations_pg() -> None:
+    """Runner de migraciones liviano para PostgreSQL.
+
+    Aplica una sola vez, en orden, los archivos backend/migrations/*.pg.sql que
+    todavía no estén registrados en schema_migrations. Cada migración corre en su
+    propia transacción: si falla, no queda a medias ni se marca como aplicada.
+
+    El schema base se sigue creando en init_pg() (idempotente). Este runner es
+    para los CAMBIOS posteriores (ALTER TABLE, nuevas tablas, índices), así
+    quedan versionados y trazables en vez de ALTERs sueltos.
+
+    Usa su propia conexión del pool para no depender del estado de la sesión
+    de init_pg. Convención de nombre: 0001_descripcion.pg.sql (prefijo = orden).
+    """
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        await conn.execute(
+            """CREATE TABLE IF NOT EXISTS schema_migrations (
+                id          TEXT PRIMARY KEY,
+                applied_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+            )"""
+        )
+        rows = await conn.fetch("SELECT id FROM schema_migrations")
+        applied = {r["id"] for r in rows}
+
+        if not os.path.isdir(MIGRATIONS_DIR):
+            return
+        paths = sorted(glob.glob(os.path.join(MIGRATIONS_DIR, "*.pg.sql")))
+        pending = 0
+        for path in paths:
+            mig_id = os.path.basename(path)[:-len(".pg.sql")]
+            if mig_id in applied:
+                continue
+            with open(path, encoding="utf-8") as f:
+                sql = f.read().strip()
+            if not sql:
+                # Migración vacía: igual la registramos para no reintentarla siempre.
+                await conn.execute("INSERT INTO schema_migrations (id) VALUES ($1)", mig_id)
+                continue
+            async with conn.transaction():
+                await conn.execute(sql)
+                await conn.execute("INSERT INTO schema_migrations (id) VALUES ($1)", mig_id)
+            pending += 1
+            logger.info(f"Migración aplicada: {mig_id}")
+        logger.info(f"Migraciones al día (schema_migrations): {len(applied) + pending} aplicadas")
+
+
 async def init_pg() -> None:
     pool = await get_pool()
     async with pool.acquire() as conn:
@@ -90,6 +141,7 @@ async def init_pg() -> None:
                 plan_pending    TEXT,
                 mp_subscription_id TEXT,
                 phone           TEXT DEFAULT '',
+                source          TEXT DEFAULT '',
                 status          TEXT NOT NULL DEFAULT 'active',
                 reset_token     TEXT,
                 reset_token_expires TIMESTAMPTZ,
@@ -380,6 +432,10 @@ async def init_pg() -> None:
             ALTER TABLE businesses ADD COLUMN IF NOT EXISTS prior_pos TEXT DEFAULT '';
             ALTER TABLE businesses ADD COLUMN IF NOT EXISTS needs_arca TEXT DEFAULT '';
             ALTER TABLE businesses ADD COLUMN IF NOT EXISTS objective TEXT DEFAULT '';
+            ALTER TABLE businesses ADD COLUMN IF NOT EXISTS source TEXT DEFAULT '';
+            -- Día de trial (2/4/6/7) del último recordatorio enviado, para no
+            -- reenviar el mismo email en cada reinicio del backend.
+            ALTER TABLE businesses ADD COLUMN IF NOT EXISTS trial_email_sent_day INT;
             ALTER TABLE business_config ADD COLUMN IF NOT EXISTS print_config TEXT;
             ALTER TABLE sale_items ALTER COLUMN product_id DROP NOT NULL;
 
@@ -407,14 +463,33 @@ async def init_pg() -> None:
             );
         """)
 
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS ai_logs (
+                id              BIGSERIAL PRIMARY KEY,
+                business_id     TEXT NOT NULL,
+                function_name   TEXT NOT NULL,
+                input_hash      TEXT NOT NULL,
+                input_data      JSONB,
+                output_text     TEXT,
+                model           TEXT,
+                tokens_in       INTEGER DEFAULT 0,
+                tokens_out      INTEGER DEFAULT 0,
+                created_at      TIMESTAMPTZ DEFAULT now()
+            );
+            CREATE INDEX IF NOT EXISTS idx_ai_logs_lookup
+                ON ai_logs(business_id, function_name, input_hash, created_at DESC);
+            CREATE INDEX IF NOT EXISTS idx_ai_logs_training
+                ON ai_logs(function_name, created_at DESC);
+        """)
+
         plan_count = await conn.fetchval("SELECT COUNT(*) FROM plans")
         if plan_count == 0:
             await conn.execute("""
                 INSERT INTO plans (slug, name, monthly_price, yearly_price, max_products, max_users, features, sort_order)
                 VALUES
                 ('simple', 'Simple', 20000, 200000, 3500, 2, '["Hasta 3.500 productos","Clientes y ventas","Soporta cortes de internet","Manejo de fiados","Lector laser e impresoras","Hasta 2 usuarios"]', 1),
-                ('pro', 'Pro', 30000, 300000, 7000, 5, '["Todo lo de Simple","Hasta 7.000 productos","Manejo de proveedores","Catalogo web online QR","Reportes de ventas detallados","Alta asistida en ARCA/AFIP","Hasta 5 usuarios"]', 2),
-                ('ia', 'IA', 40000, 400000, 10000, 10, '["Todo lo de Pro","Hasta 10.000 productos","Escanner de facturas IA","Asesor de precios inteligente","Alta asistida en ARCA/AFIP","Reportes inteligentes","Hasta 10 usuarios"]', 3)
+                ('pro', 'Pro', 30000, 300000, 7000, 5, '["Todo lo de Simple","Catalogo web con QR (tu tienda online)","Reportes de ventas y ganancias","Analisis de rentabilidad por producto","Manejo de proveedores","Hasta 7.000 productos","Hasta 5 usuarios"]', 2),
+                ('ia', 'IA', 40000, 400000, 10000, 10, '["Todo lo de Pro","Escaner de facturas con IA","Resumen diario del negocio con IA","Asesor de precios y reposicion con IA","Cobranza de fiados por WhatsApp con IA","Hasta 10.000 productos"]', 3)
             """)
 
         test_count = await conn.fetchval("SELECT COUNT(*) FROM testimonials")
@@ -455,6 +530,10 @@ async def init_pg() -> None:
             await conn.execute("CREATE INDEX IF NOT EXISTS idx_admin_audit_action ON admin_audit_log(action)")
 
     logger.info("PostgreSQL inicializado: todas las tablas creadas y datos seedeados")
+
+    # Migraciones incrementales versionadas. Se corren en su PROPIA conexión
+    # (no la del init de arriba) para aislarlas del estado de esa sesión.
+    await run_migrations_pg()
 
 
 async def get_business_id_from_jwt(payload: dict) -> Optional[str]:

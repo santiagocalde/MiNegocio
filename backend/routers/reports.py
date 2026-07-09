@@ -81,6 +81,58 @@ async def export_sales_excel(desde: Optional[str] = None, hasta: Optional[str] =
                              headers={"Content-Disposition": "attachment; filename=ventas.xlsx"})
 
 
+@router.get("/api/reports/margins", summary="Margen de ganancia por producto")
+async def margins_report():
+    """Margen por producto activo, usando price y cost_price ya cargados.
+
+    Solo lectura. Marca dos problemas de rentabilidad:
+      - `sin_costo`: cost_price 0/NULL → no se puede saber si se gana.
+      - `costo_mayor`: cost_price >= price → se vende a pérdida o sin margen.
+    """
+    b_id = _biz_id()
+    if USE_PG:
+        from db_helpers import get_pg_pool
+        pool = await get_pg_pool()
+        async with pool.acquire() as conn:
+            rows = await conn.fetch(
+                "SELECT id, code, name, price, cost_price, stock FROM products "
+                "WHERE business_id = $1 AND is_active = 1 ORDER BY name",
+                b_id
+            )
+            products = [dict(r) for r in rows]
+    else:
+        import aiosqlite
+        async with aiosqlite.connect(main.DB_PATH) as db:
+            cur = await db.execute(
+                "SELECT id, code, name, price, cost_price, stock FROM products WHERE is_active = 1 ORDER BY name"
+            )
+            products = [row_to_dict(r, cur.description) for r in await cur.fetchall()]
+
+    items = []
+    sin_costo = costo_mayor = 0
+    for p in products:
+        price = float(p.get("price") or 0)
+        cost = float(p.get("cost_price") or 0)
+        margen = round(price - cost, 2)
+        margen_pct = round((margen / price) * 100, 1) if price > 0 else None
+        flag = None
+        if cost <= 0:
+            flag = "sin_costo"; sin_costo += 1
+        elif cost >= price:
+            flag = "costo_mayor"; costo_mayor += 1
+        items.append({
+            "id": p.get("id"), "code": p.get("code"), "name": p.get("name"),
+            "price": price, "cost_price": cost, "stock": p.get("stock"),
+            "margen": margen, "margen_pct": margen_pct, "flag": flag,
+        })
+    # Peores márgenes primero (los None — sin precio — al final)
+    items.sort(key=lambda x: (x["margen_pct"] is None, x["margen_pct"] if x["margen_pct"] is not None else 0))
+    return {
+        "items": items,
+        "resumen": {"total": len(items), "sin_costo": sin_costo, "costo_mayor_o_igual": costo_mayor},
+    }
+
+
 @router.get("/api/reports/products", summary="Exportar productos a Excel")
 async def export_products_excel():
     if not HAS_OPENPYXL:

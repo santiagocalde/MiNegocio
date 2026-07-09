@@ -31,10 +31,10 @@ export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, curren
         if (onTurnClosed) onTurnClosed();
       } else {
         const data = await res.json().catch(() => ({}));
-        if (addToast) addToast(data.detail || 'Error al cerrar turno.', 'error');
+        if (addToast) addToast(data.detail || 'No se pudo cerrar el turno. Reintentá o revisá tu conexión.', 'error');
       }
     } catch {
-      if (addToast) addToast('Error de conexion al cerrar turno.', 'error');
+      if (addToast) addToast('No se pudo conectar con el servidor para cerrar el turno. Revisá tu conexión a internet.', 'error');
     } finally {
       setClosing(false);
     }
