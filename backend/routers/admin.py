@@ -229,8 +229,12 @@ async def admin_change_status(
         old = await conn.fetchrow("SELECT status FROM businesses WHERE id = $1", business_id)
         if not old:
             raise HTTPException(404, detail="Negocio no encontrado")
-        
+
         async with conn.transaction():
+            # Si un negocio activo pasa a suspendido/expirado, registrarlo como baja (churn).
+            if new_status in ("suspended", "expired") and old["status"] == "active":
+                from routers.billing import _record_churn
+                await _record_churn(conn, business_id, f"admin_{new_status}", reason or "")
             await conn.execute(
                 "UPDATE businesses SET status = $1, updated_at = $2 WHERE id = $3",
                 new_status, _now(), business_id
@@ -350,28 +354,52 @@ async def admin_delete_business(
 async def admin_metrics(admin: dict = Depends(verify_superadmin)) -> dict:
     pool = await _get_pool()
     async with pool.acquire() as conn:
+        from core.plan_pricing import PLANS_CONFIG
+        # Precios reales centralizados; MRR anual se normaliza a mes (yearly/12).
+        def _mrr_unit(plan, period):
+            p = PLANS_CONFIG.get(plan)
+            if not p:
+                return 0
+            return round(p["yearly"] / 12) if period == "yearly" else p["monthly"]
+
         total = await conn.fetchval("SELECT COUNT(*) FROM businesses")
         active = await conn.fetchval("SELECT COUNT(*) FROM businesses WHERE status = 'active'")
         suspended = await conn.fetchval("SELECT COUNT(*) FROM businesses WHERE status = 'suspended'")
-        
-        # MRR: sum of plan prices (aproximado con precios fijos)
-        plan_prices = {"simple": 20000, "pro": 30000, "ia": 40000}
+
+        # MRR real: por plan + ciclo de facturación (anual normalizado a mes).
+        # Solo cuentan planes pagos activos (trial no factura).
         mrr = 0
-        plan_rows = await conn.fetch("SELECT plan, COUNT(*) as cnt FROM businesses WHERE status = 'active' GROUP BY plan")
+        paying = 0
         breakdown = {}
+        yearly_count = 0
+        monthly_count = 0
+        plan_rows = await conn.fetch(
+            """SELECT plan, COALESCE(NULLIF(billing_period,''),'monthly') AS period, COUNT(*) AS cnt
+               FROM businesses WHERE status = 'active' GROUP BY plan, period"""
+        )
         for r in plan_rows:
-            p = r["plan"]
-            cnt = r["cnt"]
-            breakdown[p] = cnt
-            mrr += cnt * plan_prices.get(p, 0)
-        
-        # Churn este mes (negocios suspendidos/expired en últimos 30 días)
+            p, period, cnt = r["plan"], r["period"], r["cnt"]
+            breakdown[p] = breakdown.get(p, 0) + cnt
+            if p in PLANS_CONFIG:
+                mrr += cnt * _mrr_unit(p, period)
+                paying += cnt
+                if period == "yearly":
+                    yearly_count += cnt
+                else:
+                    monthly_count += cnt
+        arpu = round(mrr / paying) if paying else 0
+        yearly_ratio = round(yearly_count / max(paying, 1) * 100, 1)
+
+        # Churn este mes: bajas registradas en cancellations (más fiable que inferir por status).
         month_ago = _now() - timedelta(days=30)
         churn = await conn.fetchval(
-            "SELECT COUNT(*) FROM businesses WHERE status IN ('suspended','expired') AND updated_at >= $1",
-            month_ago
-        )
-        
+            "SELECT COUNT(*) FROM cancellations WHERE created_at >= $1", month_ago
+        ) or 0
+        mrr_churned = await conn.fetchval(
+            "SELECT COALESCE(SUM(mrr_lost),0) FROM cancellations WHERE created_at >= $1", month_ago
+        ) or 0
+        churn_rate = round(churn / max(paying + churn, 1) * 100, 1)
+
         # Trial conversions (% de trial que pasaron a pago)
         total_trial_ever = await conn.fetchval("SELECT COUNT(*) FROM businesses") or 1
         converted = await conn.fetchval("SELECT COUNT(*) FROM businesses WHERE plan IN ('simple','pro','ia')") or 0
@@ -401,17 +429,55 @@ async def admin_metrics(admin: dict = Depends(verify_superadmin)) -> dict:
         ) or 0
         activation_rate = round(activated / max(total, 1) * 100, 1)
 
+        # Funnel de adquisición (últimos 30 días): visita landing → registro.
+        # Es el KPI de conversión que Thiago movió del 6% al 10%.
+        visits_30 = await conn.fetchval(
+            "SELECT COUNT(*) FROM funnel_events WHERE event = 'landing_view' AND created_at >= $1", month_ago
+        ) or 0
+        signups_30 = await conn.fetchval(
+            "SELECT COUNT(*) FROM businesses WHERE created_at >= $1", month_ago
+        ) or 0
+        landing_conversion = round(signups_30 / visits_30 * 100, 1) if visits_30 else None
+
+        # Crecimiento MoM de ingresos cobrados (payment_events, monto real de MP).
+        rev_this = await conn.fetchval(
+            "SELECT COALESCE(SUM(amount),0) FROM payment_events WHERE status='authorized' AND created_at >= date_trunc('month', now())"
+        ) or 0
+        rev_prev = await conn.fetchval(
+            """SELECT COALESCE(SUM(amount),0) FROM payment_events
+               WHERE status='authorized'
+                 AND created_at >= date_trunc('month', now()) - interval '1 month'
+                 AND created_at <  date_trunc('month', now())"""
+        ) or 0
+        rev_growth = round((rev_this - rev_prev) / rev_prev * 100, 1) if rev_prev else None
+
         return {
             "total_businesses": total,
             "active_subscriptions": active,
             "suspended": suspended,
             "mrr": mrr,
+            "arpu": arpu,
+            "paying_customers": paying,
+            "yearly_ratio": yearly_ratio,
+            "yearly_count": yearly_count,
+            "monthly_count": monthly_count,
             "churn_this_month": churn,
+            "churn_rate": churn_rate,
+            "mrr_churned": int(mrr_churned),
+            "revenue_this_month": int(rev_this),
+            "revenue_prev_month": int(rev_prev),
+            "revenue_growth": rev_growth,
             "trial_conversions": round(converted / max(total_trial_ever, 1) * 100, 1),
             "breakdown_by_plan": breakdown,
             "total_products": total_products,
             "expiring_soon": expiring_soon,
             "total_sales": sales_count,
+            "acquisition_funnel": {
+                "visits": visits_30,
+                "signups": signups_30,
+                "activated": activated,
+                "landing_conversion": landing_conversion,
+            },
             "activation_funnel": {
                 "with_products": with_products,
                 "opened_register": opened_register,
@@ -681,11 +747,10 @@ async def admin_export_products(
 # ANALYTICS ENDPOINTS
 # ────────────────────────────────────────────────────────────
 
-@router.get("/api/admin/analytics/revenue", summary="MRR trend por mes")
+@router.get("/api/admin/analytics/revenue", summary="Ingresos y actividad por mes")
 async def admin_revenue_trend(admin: dict = Depends(verify_superadmin)) -> list:
     pool = await _get_pool()
     async with pool.acquire() as conn:
-        plan_prices = {"simple": 20000, "pro": 30000, "ia": 40000}
         rows = await conn.fetch("""
             SELECT to_char(date_trunc('month', s.timestamp), 'YYYY-MM') as month,
                    COUNT(*) as total_sales
@@ -700,22 +765,103 @@ async def admin_revenue_trend(admin: dict = Depends(verify_superadmin)) -> list:
             WHERE created_at >= CURRENT_DATE - INTERVAL '12 months'
             GROUP BY 1 ORDER BY 1
         """)
+        # Ingresos reales cobrados por mes (monto real de MercadoPago en payment_events).
+        rev_rows = await conn.fetch("""
+            SELECT to_char(date_trunc('month', created_at), 'YYYY-MM') as month,
+                   COALESCE(SUM(amount), 0) as revenue
+            FROM payment_events
+            WHERE status = 'authorized' AND created_at >= CURRENT_DATE - INTERVAL '12 months'
+            GROUP BY 1 ORDER BY 1
+        """)
         months = []
-        sales_data = {}
-        signup_data = {}
-        for r in rows:
-            sales_data[r["month"]] = r["total_sales"]
-        for r in biz_rows:
-            signup_data[r["month"]] = r["new_businesses"]
-        
-        all_months = sorted(set(list(sales_data.keys()) + list(signup_data.keys())))
+        sales_data = {r["month"]: r["total_sales"] for r in rows}
+        signup_data = {r["month"]: r["new_businesses"] for r in biz_rows}
+        rev_data = {r["month"]: int(r["revenue"]) for r in rev_rows}
+
+        all_months = sorted(set(list(sales_data.keys()) + list(signup_data.keys()) + list(rev_data.keys())))
         for m in all_months:
             months.append({
                 "month": m,
                 "sales": sales_data.get(m, 0),
                 "signups": signup_data.get(m, 0),
+                "revenue": rev_data.get(m, 0),
             })
         return months
+
+
+@router.get("/api/admin/analytics/funnel", summary="Funnel de adquisición (30 días)")
+async def admin_funnel(admin: dict = Depends(verify_superadmin)) -> dict:
+    """Conversión landing → registro → activación, y tendencia diaria de visitas."""
+    pool = await _get_pool()
+    async with pool.acquire() as conn:
+        d30 = _now() - timedelta(days=30)
+        visits = await conn.fetchval(
+            "SELECT COUNT(*) FROM funnel_events WHERE event='landing_view' AND created_at >= $1", d30) or 0
+        signups = await conn.fetchval(
+            "SELECT COUNT(*) FROM businesses WHERE created_at >= $1", d30) or 0
+        activated = await conn.fetchval(
+            "SELECT COUNT(DISTINCT business_id) FROM sales WHERE timestamp >= $1", d30) or 0
+        paid = await conn.fetchval(
+            "SELECT COUNT(DISTINCT business_id) FROM payment_events WHERE status='authorized' AND created_at >= $1", d30) or 0
+
+        daily = await conn.fetch("""
+            SELECT to_char(d.d, 'YYYY-MM-DD') as day, COALESCE(v.cnt, 0) as visits
+            FROM generate_series(CURRENT_DATE - INTERVAL '29 days', CURRENT_DATE, '1 day') d(d)
+            LEFT JOIN (
+                SELECT DATE(created_at) as dt, COUNT(*) as cnt
+                FROM funnel_events WHERE event='landing_view' AND created_at >= CURRENT_DATE - INTERVAL '30 days'
+                GROUP BY 1
+            ) v ON v.dt = d.d::date
+            ORDER BY d.d
+        """)
+        by_source = await conn.fetch("""
+            SELECT COALESCE(NULLIF(TRIM(utm_source),''), 'directo') as label, COUNT(*) as count
+            FROM funnel_events WHERE event='landing_view' AND created_at >= CURRENT_DATE - INTERVAL '30 days'
+            GROUP BY 1 ORDER BY count DESC LIMIT 10
+        """)
+        return {
+            "steps": {
+                "visits": visits,
+                "signups": signups,
+                "activated": activated,
+                "paid": paid,
+            },
+            "conversion": {
+                "visit_to_signup": round(signups / visits * 100, 1) if visits else None,
+                "signup_to_activated": round(activated / signups * 100, 1) if signups else None,
+                "signup_to_paid": round(paid / signups * 100, 1) if signups else None,
+            },
+            "daily_visits": [{"day": r["day"], "count": r["visits"]} for r in daily],
+            "by_source": [{"label": r["label"], "count": r["count"]} for r in by_source],
+        }
+
+
+@router.get("/api/admin/analytics/cancellations", summary="Bajas y motivos (churn)")
+async def admin_cancellations(admin: dict = Depends(verify_superadmin)) -> dict:
+    """Motivos de baja y últimas cancelaciones. Alimenta el análisis de churn:
+    cuánto churn hay, por qué, y cuánto MRR se pierde."""
+    pool = await _get_pool()
+    async with pool.acquire() as conn:
+        d30 = _now() - timedelta(days=30)
+        by_reason = await conn.fetch("""
+            SELECT reason as label, COUNT(*) as count, COALESCE(SUM(mrr_lost),0) as mrr
+            FROM cancellations WHERE created_at >= CURRENT_DATE - INTERVAL '90 days'
+            GROUP BY reason ORDER BY count DESC
+        """)
+        recent = await conn.fetch("""
+            SELECT business_name, plan, billing_period, reason, detail, mrr_lost, days_active, created_at
+            FROM cancellations ORDER BY created_at DESC LIMIT 30
+        """)
+        total_30 = await conn.fetchval("SELECT COUNT(*) FROM cancellations WHERE created_at >= $1", d30) or 0
+        mrr_lost_30 = await conn.fetchval("SELECT COALESCE(SUM(mrr_lost),0) FROM cancellations WHERE created_at >= $1", d30) or 0
+        avg_lifetime = await conn.fetchval("SELECT ROUND(AVG(days_active)) FROM cancellations WHERE days_active IS NOT NULL") or 0
+        return {
+            "total_30d": total_30,
+            "mrr_lost_30d": int(mrr_lost_30),
+            "avg_lifetime_days": int(avg_lifetime),
+            "by_reason": [{"label": r["label"], "count": r["count"], "mrr": int(r["mrr"])} for r in by_reason],
+            "recent": [dict(r) | {"created_at": str(r["created_at"])} for r in recent],
+        }
 
 
 @router.get("/api/admin/analytics/signups", summary="Signups ultimos 30 dias")

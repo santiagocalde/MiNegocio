@@ -5,6 +5,7 @@ import os
 import hmac
 import hashlib
 import logging
+from datetime import datetime, timezone
 from db import get_pool
 from jose import jwt
 
@@ -187,10 +188,23 @@ async def mercadopago_webhook(request: Request):
                                 if already_active:
                                     logger.info(f"Webhook MP (re-entrega ignorada): {biz_id} ya activo en {plan_id}, sub={data_id}")
                                 else:
+                                    billing_period = "yearly" if months >= 12 else "monthly"
                                     await conn.execute(
-                                        "UPDATE businesses SET plan = $1, status = 'active', plan_end_date = CURRENT_DATE + make_interval(months => $2), plan_pending = NULL, mp_subscription_id = $3, updated_at = now() WHERE id = $4",
-                                        plan_id, months, data_id, biz_id
+                                        "UPDATE businesses SET plan = $1, status = 'active', plan_end_date = CURRENT_DATE + make_interval(months => $2), plan_pending = NULL, mp_subscription_id = $3, billing_period = $4, updated_at = now() WHERE id = $5",
+                                        plan_id, months, data_id, billing_period, biz_id
                                     )
+                                    # Registro contable del pago (payment_events). Idempotente por
+                                    # idempotency_key: si MP re-entrega el mismo webhook, no se duplica.
+                                    amount = freq.get("transaction_amount")
+                                    try:
+                                        await conn.execute(
+                                            """INSERT INTO payment_events (business_id, mp_subscription_id, amount, status, event_type, idempotency_key, processed_at)
+                                               VALUES ($1, $2, $3, 'authorized', 'subscription', $4, now())
+                                               ON CONFLICT (idempotency_key) DO NOTHING""",
+                                            biz_id, data_id, amount, f"{data_id}:authorized:{plan_id}",
+                                        )
+                                    except Exception as _e:
+                                        logger.warning(f"No se pudo registrar payment_event de {biz_id}: {_e}")
                                     logger.info(f"Webhook MP: {biz_id} activado {plan_id} ({months}m), sub={data_id}")
                                     row = await conn.fetchrow("SELECT email, business_name FROM businesses WHERE id = $1", biz_id)
                                     if row:
@@ -205,6 +219,7 @@ async def mercadopago_webhook(request: Request):
                                     data_id, plan_id, biz_id
                                 )
                             elif status in ("cancelled", "paused"):
+                                await _record_churn(conn, biz_id, "mp_cancelled")
                                 await conn.execute(
                                     "UPDATE businesses SET status = 'past_due', mp_subscription_id = NULL, updated_at = now() WHERE id = $1",
                                     biz_id
@@ -215,6 +230,9 @@ async def mercadopago_webhook(request: Request):
     if action == "cancelled" and data_id:
         pool = await get_pool()
         async with pool.acquire() as conn:
+            row = await conn.fetchrow("SELECT id FROM businesses WHERE mp_subscription_id = $1", data_id)
+            if row:
+                await _record_churn(conn, row["id"], "mp_cancelled")
             await conn.execute(
                 "UPDATE businesses SET status = 'past_due', mp_subscription_id = NULL, updated_at = now() WHERE mp_subscription_id = $1",
                 data_id
@@ -222,6 +240,51 @@ async def mercadopago_webhook(request: Request):
         return {"detail": "cancelled"}
 
     return {"detail": "ignored"}
+
+
+def _mrr_for(plan_id: str, billing_period: str) -> int:
+    """MRR normalizado a mes según el plan y el ciclo de facturación."""
+    from core.plan_pricing import PLANS_CONFIG
+    p = PLANS_CONFIG.get(plan_id)
+    if not p:
+        return 0
+    if billing_period == "yearly":
+        return round(p["yearly"] / 12)
+    return p["monthly"]
+
+
+async def _record_churn(conn, business_id: str, reason: str, detail: str = ""):
+    """Registra una baja en `cancellations` de forma idempotente por día.
+    Evita duplicar si el webhook de cancelación se re-entrega el mismo día."""
+    try:
+        biz = await conn.fetchrow(
+            "SELECT business_name, plan, billing_period, created_at, status FROM businesses WHERE id = $1",
+            business_id,
+        )
+        # Solo contamos como baja a un negocio que estaba activo (paga → deja de pagar).
+        # Si ya estaba past_due/suspended/expired, no re-contamos.
+        if not biz or biz["status"] != "active":
+            return
+        # Idempotencia: una baja por negocio+razón por día.
+        dup = await conn.fetchval(
+            "SELECT 1 FROM cancellations WHERE business_id = $1 AND reason = $2 AND created_at::date = now()::date",
+            business_id, reason,
+        )
+        if dup:
+            return
+        mrr_lost = _mrr_for(biz["plan"], biz["billing_period"] or "monthly") if biz["plan"] not in ("trial", "", None) else 0
+        days_active = None
+        if biz["created_at"]:
+            days_active = (datetime.now(timezone.utc) - biz["created_at"]).days
+        await conn.execute(
+            """INSERT INTO cancellations (business_id, business_name, plan, billing_period, reason, detail, mrr_lost, days_active)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8)""",
+            business_id, biz["business_name"], biz["plan"], biz["billing_period"] or "",
+            reason, detail, mrr_lost, days_active,
+        )
+        logger.info(f"Churn registrado: {business_id} ({reason}), MRR perdido {mrr_lost}")
+    except Exception as e:
+        logger.warning(f"No se pudo registrar churn de {business_id}: {e}")
 
 async def _send_plan_email(email: str, name: str, plan_label: str, is_yearly: bool):
     try:

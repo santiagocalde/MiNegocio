@@ -4,6 +4,7 @@ import { API_BASE } from '../config';
 const API = `${API_BASE}/admin`;
 
 const PLAN = { trial: { label: 'Trial', color: '#64748B' }, simple: { label: 'Simple', color: '#3B82F6' }, pro: { label: 'Pro', color: '#14BBA6' }, ia: { label: 'IA', color: '#F59E0B' } };
+const CHURN_LABEL = { mp_cancelled: 'Canceló pago (MP)', admin_suspended: 'Suspendido por admin', admin_expired: 'Expirado por admin', otro: 'Otro' };
 const STATUS = { active: { label: 'Activo', color: '#10B981' }, suspended: { label: 'Suspendido', color: '#EF4444' }, expired: { label: 'Expirado', color: '#F59E0B' }, past_due: { label: 'En Mora', color: '#F97316' } };
 
 function fetchAdmin(url, token, opts = {}) {
@@ -202,6 +203,8 @@ function Dashboard({ token }) {
   const [signups, setSignups] = useState(null);
   const [atRisk, setAtRisk] = useState(null);
   const [bySource, setBySource] = useState(null);
+  const [funnel, setFunnel] = useState(null);
+  const [churn, setChurn] = useState(null);
 
   useEffect(() => {
     fetchAdmin(`${API}/metrics`, token).then(r => r.ok ? r.json() : null).then(d => d && setM(d)).catch(() => {});
@@ -209,6 +212,8 @@ function Dashboard({ token }) {
     fetchAdmin(`${API}/analytics/signups`, token).then(r => r.ok ? r.json() : null).then(d => d && setSignups(d)).catch(() => {});
     fetchAdmin(`${API}/at-risk`, token).then(r => r.ok ? r.json() : null).then(d => d && setAtRisk(d)).catch(() => {});
     fetchAdmin(`${API}/insights`, token).then(r => r.ok ? r.json() : null).then(d => d && setBySource(d.by_source)).catch(() => {});
+    fetchAdmin(`${API}/analytics/funnel`, token).then(r => r.ok ? r.json() : null).then(d => d && setFunnel(d)).catch(() => {});
+    fetchAdmin(`${API}/analytics/cancellations`, token).then(r => r.ok ? r.json() : null).then(d => d && setChurn(d)).catch(() => {});
   }, [token]);
 
   if (!m) return (
@@ -226,13 +231,72 @@ function Dashboard({ token }) {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14, marginBottom: 24 }}>
-        <StatCard color="#3B82F6" label="Total Negocios" value={fmtNum(m.total_businesses)} sub={`${m.active_subscriptions} activos`} />
-        <StatCard color="#10B981" label="MRR Mensual" value={fmtPesos(m.mrr)} sub="Ingresos recurrentes" />
-        <StatCard color={m.suspended > 0 ? '#EF4444' : '#10B981'} label="Suspendidos" value={fmtNum(m.suspended)} sub={`${m.churn_this_month} churn 30d`} />
-        <StatCard color="#F59E0B" label="Conversion" value={`${m.trial_conversions}%`} sub="Trial a pago" />
-        <StatCard color="#8B5CF6" label="Ventas Totales" value={fmtNum(m.total_sales ?? m.top_features_used?.[0]?.count ?? 0)} sub="Transacciones" />
-        <StatCard color="#EC4899" label="Productos" value={fmtNum(m.total_products)} sub="En todos los negocios" />
+        <StatCard color="#3B82F6" label="Total Negocios" value={fmtNum(m.total_businesses)} sub={`${m.active_subscriptions} activos · ${fmtNum(m.paying_customers ?? 0)} pagos`} />
+        <StatCard color="#10B981" label="MRR" value={fmtPesos(m.mrr)}
+          sub={m.revenue_growth != null ? `${m.revenue_growth >= 0 ? '▲' : '▼'} ${Math.abs(m.revenue_growth)}% ingresos MoM` : 'Ingresos recurrentes'} />
+        <StatCard color="#14BBA6" label="ARPU" value={fmtPesos(m.arpu ?? 0)} sub="Ingreso medio por cliente" />
+        <StatCard color={(m.churn_rate ?? 0) > 5 ? '#EF4444' : '#10B981'} label="Churn 30d" value={`${m.churn_rate ?? 0}%`} sub={`${fmtNum(m.churn_this_month)} bajas · -${fmtPesos(m.mrr_churned ?? 0)} MRR`} />
+        <StatCard color="#F59E0B" label="Conversión landing" value={m.acquisition_funnel?.landing_conversion != null ? `${m.acquisition_funnel.landing_conversion}%` : '—'} sub="Visita → registro (30d)" />
+        <StatCard color="#8B5CF6" label="Ratio anual" value={`${m.yearly_ratio ?? 0}%`} sub={`${fmtNum(m.yearly_count ?? 0)} anual · ${fmtNum(m.monthly_count ?? 0)} mensual`} />
       </div>
+
+      {funnel && (
+        <div style={{ ...S.card, marginBottom: 24 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <h3 style={{ color: '#94A3B8', fontSize: '0.7rem', fontWeight: 700, margin: 0, textTransform: 'uppercase', letterSpacing: '0.7px' }}>Funnel de adquisición (30 días)</h3>
+            <span style={{ color: MUTED, fontSize: '0.72rem' }}>visita → registro → activación → pago</span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 14 }}>
+            {[
+              { label: 'Visitas landing', value: funnel.steps.visits, color: '#64748B', conv: null },
+              { label: 'Registros', value: funnel.steps.signups, color: '#3B82F6', conv: funnel.conversion.visit_to_signup },
+              { label: 'Activaron (≥1 venta)', value: funnel.steps.activated, color: '#F59E0B', conv: funnel.conversion.signup_to_activated },
+              { label: 'Pagaron', value: funnel.steps.paid, color: '#10B981', conv: funnel.conversion.signup_to_paid },
+            ].map((s, i) => (
+              <div key={i} style={{ background: 'rgba(255,255,255,0.012)', borderRadius: 12, padding: '16px', border: `1px solid ${BORDER}` }}>
+                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: s.color, lineHeight: 1 }}>{fmtNum(s.value)}</div>
+                <div style={{ color: '#94A3B8', fontSize: '0.72rem', fontWeight: 600, marginTop: 5 }}>{s.label}</div>
+                {s.conv != null && <div style={{ ...S.pill(s.color), fontSize: '0.64rem', marginTop: 8 }}>{s.conv}% del paso previo</div>}
+              </div>
+            ))}
+          </div>
+          {funnel.steps.visits === 0 && (
+            <div style={{ color: MUTED, fontSize: '0.72rem', fontStyle: 'italic' }}>Aún sin visitas registradas — se empieza a completar con el tracking de la landing.</div>
+          )}
+          {funnel.daily_visits?.some(d => d.count > 0) && (
+            <div style={{ marginTop: 6 }}>
+              <div style={{ color: MUTED, fontSize: '0.66rem', fontWeight: 600, marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Visitas diarias</div>
+              <BarChart data={funnel.daily_visits} color="#3B82F6" height={90} />
+            </div>
+          )}
+        </div>
+      )}
+
+      {churn && (churn.total_30d > 0 || churn.by_reason?.length > 0) && (
+        <div style={{ ...S.card, marginBottom: 24 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <h3 style={{ color: '#94A3B8', fontSize: '0.7rem', fontWeight: 700, margin: 0, textTransform: 'uppercase', letterSpacing: '0.7px' }}>Churn — motivos de baja</h3>
+            <span style={{ ...S.pill('#EF4444'), fontSize: '0.66rem' }}>{fmtNum(churn.total_30d)} bajas 30d · -{fmtPesos(churn.mrr_lost_30d)} MRR</span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
+            <div>
+              <div style={{ color: MUTED, fontSize: '0.68rem', fontWeight: 600, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Por motivo (90d)</div>
+              {(churn.by_reason || []).length === 0 ? <div style={{ color: MUTED, fontSize: '0.78rem', opacity: 0.6 }}>Sin bajas</div> :
+                churn.by_reason.map((r, i) => (
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.02)' }}>
+                    <span style={{ color: TEXT, fontSize: '0.8rem' }}>{CHURN_LABEL[r.label] || r.label}</span>
+                    <span style={{ color: MUTED, fontSize: '0.74rem' }}>{r.count} · -{fmtPesos(r.mrr)}</span>
+                  </div>
+                ))}
+            </div>
+            <div>
+              <div style={{ color: MUTED, fontSize: '0.68rem', fontWeight: 600, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Vida media del cliente</div>
+              <div style={{ fontSize: '2rem', fontWeight: 800, color: '#14BBA6', lineHeight: 1 }}>{fmtNum(churn.avg_lifetime_days)}<span style={{ fontSize: '0.9rem', color: MUTED, fontWeight: 600 }}> días</span></div>
+              <div style={{ color: MUTED, fontSize: '0.7rem', marginTop: 6 }}>Promedio antes de darse de baja</div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {m.activation_funnel && (
         <div style={{ ...S.card, marginBottom: 24 }}>
@@ -305,8 +369,18 @@ function Dashboard({ token }) {
           {signups && <BarChart data={signups} color="#3B82F6" height={120} />}
         </div>
         <div style={S.card}>
-          <h3 style={{ color: '#94A3B8', fontSize: '0.7rem', fontWeight: 700, margin: '0 0 16px 0', textTransform: 'uppercase', letterSpacing: '0.7px' }}>Ventas por mes (12m)</h3>
-          {revenue && <BarChart data={revenue.map(r => ({ count: r.sales }))} color="#14BBA6" height={120} />}
+          {(() => {
+            const hasRev = revenue && revenue.some(r => (r.revenue || 0) > 0);
+            return (
+              <>
+                <h3 style={{ color: '#94A3B8', fontSize: '0.7rem', fontWeight: 700, margin: '0 0 16px 0', textTransform: 'uppercase', letterSpacing: '0.7px' }}>
+                  {hasRev ? 'Ingresos cobrados por mes (12m)' : 'Ventas por mes (12m)'}
+                </h3>
+                {revenue && <BarChart data={revenue.map(r => ({ count: hasRev ? r.revenue : r.sales }))} color="#14BBA6" height={120} />}
+                {hasRev && <div style={{ color: MUTED, fontSize: '0.68rem', marginTop: 8, textAlign: 'right' }}>Último mes: {fmtPesos(revenue[revenue.length - 1]?.revenue)}</div>}
+              </>
+            );
+          })()}
         </div>
       </div>
 

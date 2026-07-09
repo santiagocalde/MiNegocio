@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { API_ROOT, API_BASE } from '../config';
+import { track } from '../utils/track';
 
 import LogoPrincipal from '../assets/images/MiNegocio_transparente_real.png';
 import FotoMascota from '../assets/images/mascota_oficial.jpg';
@@ -157,6 +158,16 @@ export default function LandingPage() {
 
   // Scroll spy
   const [activeSection, setActiveSection] = useState('');
+  // Registra la visita a la landing (funnel de adquisición) una sola vez por sesión.
+  useEffect(() => {
+    try {
+      if (!sessionStorage.getItem('mn_landing_tracked')) {
+        track('landing_view');
+        sessionStorage.setItem('mn_landing_tracked', '1');
+      }
+    } catch { track('landing_view'); }
+  }, []);
+
   useEffect(() => {
     const sections = ['funciones', 'planes', 'faq'];
     const observers = [];

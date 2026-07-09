@@ -310,6 +310,35 @@ async def list_plans() -> list:
         return [{"id": slug, "name": p["name"], "monthly": p["monthly"], "yearly": p["yearly"], "desc": p["desc"], "popular": p["popular"], "features": p["features"]} for slug, p in PLANS_CONFIG.items()]
 
 
+@router.post("/api/track", summary="Registrar evento del funnel (público)")
+@limiter.limit("60/minute")
+async def track_funnel_event(request: Request, body: dict = Body(...)) -> dict:
+    """Registra eventos del funnel de adquisición (visita a landing, inicio de
+    registro, etc.) para poder medir la conversión landing → registro.
+    Público y sin auth; degrada en silencio si no hay PostgreSQL (modo kiosco local)."""
+    event = str(body.get("event", "")).strip()[:40]
+    allowed = {"landing_view", "register_start", "register_done", "checkout_start", "pricing_view"}
+    if event not in allowed:
+        return {"ok": False}
+    try:
+        from db_helpers import get_pg_pool
+        pool = await get_pg_pool()
+        async with pool.acquire() as conn:
+            await conn.execute(
+                """INSERT INTO funnel_events (event, utm_source, utm_medium, utm_campaign, path, session_id)
+                   VALUES ($1, $2, $3, $4, $5, $6)""",
+                event,
+                str(body.get("utm_source", ""))[:120],
+                str(body.get("utm_medium", ""))[:120],
+                str(body.get("utm_campaign", ""))[:120],
+                str(body.get("path", ""))[:200],
+                str(body.get("session_id", ""))[:64],
+            )
+    except Exception as e:
+        logger.debug(f"No se pudo registrar funnel_event: {e}")
+    return {"ok": True}
+
+
 @router.get("/api/metrics", summary="Metricas publicas")
 async def get_metrics() -> dict:
     k, v, d, p = 20, 380000, 98.7, 4.9
