@@ -19,7 +19,7 @@
     <link rel="canonical" href="https://mi-negocio.app/" />
 
     <!-- Security headers (reforzados por nginx en producción) -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: http:; connect-src 'self' https://mi-negocio.app https://*.mercadopago.com https://*.mercadolibre.com; frame-src 'none'; object-src 'none'; base-uri 'self';" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: http:; connect-src 'self' https://mi-negocio.app https://*.mercadopago.com https://*.mercadolibre.com https://*.google-analytics.com https://*.analytics.google.com https://*.facebook.com; frame-src 'none'; object-src 'none'; base-uri 'self';" />
     <meta http-equiv="X-Content-Type-Options" content="nosniff" />
     <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
 
@@ -134,6 +134,39 @@
       ]
     }
     </script>
+
+
+    <!-- ===== Google Analytics 4 ===== -->
+    <!-- Reemplazá G-XXXXXXXXXX con tu Measurement ID real de GA4 -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-XXXXXXXXXX');
+    </script>
+
+    <!-- ===== Google Search Console verification ===== -->
+    <!-- Reemplazá VERIFICATION_CODE con el código que te da Search Console -->
+    <meta name="google-site-verification" content="VERIFICATION_CODE" />
+
+    <!-- ===== Meta Pixel ===== -->
+    <!-- Reemplazá XXXXXXXXXXXXXXXXX con tu Pixel ID de Meta -->
+    <script>
+      !function(f,b,e,v,n,t,s)
+      {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+      n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+      if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+      n.queue=[];t=b.createElement(e);t.async=!0;
+      t.src=v;s=b.getElementsByTagName(e)[0];
+      s.parentNode.insertBefore(t,s)}(window, document,'script',
+      'https://connect.facebook.net/en_US/fbevents.js');
+      fbq('init', 'XXXXXXXXXXXXXXXXX');
+      fbq('track', 'PageView');
+    </script>
+    <noscript><img height="1" width="1" style="display:none"
+      src="https://www.facebook.com/tr?id=XXXXXXXXXXXXXXXXX&ev=PageView&noscript=1"
+    /></noscript>
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />

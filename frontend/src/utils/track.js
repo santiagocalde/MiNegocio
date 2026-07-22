@@ -40,11 +40,28 @@ export function track(event) {
       session_id: sessionId(),
       ...utmParams(),
     });
-    // sendBeacon sobrevive a la navegación; fetch como fallback.
     if (navigator.sendBeacon) {
       navigator.sendBeacon(`${API_BASE}/track`, new Blob([body], { type: 'application/json' }));
     } else {
       fetch(`${API_BASE}/track`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body, keepalive: true }).catch(() => {});
+    }
+  } catch {
+    /* no-op */
+  }
+
+  // Meta Pixel: trackeá eventos del funnel si fbq está disponible
+  try {
+    if (typeof fbq !== 'undefined') {
+      const pixelEvents = {
+        landing_view: 'PageView',
+        register_start: 'InitiateCheckout',
+        register_complete: 'CompleteRegistration',
+        pricing_view: 'ViewContent',
+        contact_sent: 'Lead',
+        trial_started: 'StartTrial',
+      };
+      const fbEvent = pixelEvents[event] || event;
+      fbq('trackCustom', fbEvent, { event_name: event, ...utmParams() });
     }
   } catch {
     /* no-op */
