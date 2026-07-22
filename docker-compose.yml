@@ -28,7 +28,7 @@ services:
   backend:
     build: ./backend
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     environment:
       - DATABASE_URL=postgresql://minegocio:${PG_PASSWORD:?PG_PASSWORD no definido en .env}@db:5432/minegocio
       - PG_HOST=db
