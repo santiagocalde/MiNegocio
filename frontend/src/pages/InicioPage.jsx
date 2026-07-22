@@ -101,7 +101,7 @@ export default function InicioPage() {
       {currentPlan === 'ia' && <ResumenIA />}
 
       {/* Números del día */}
-      <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 16 }}>
+      <div data-tour="inicio-stats" style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 16 }}>
         <StatCard label="Ventas de hoy" value={formatMoney(vendido)} sub={`${tickets} ${tickets === 1 ? 'venta' : 'ventas'}`} color="var(--accent-success)" icon={<Icons.Chart />} />
         <StatCard label="Efectivo en caja" value={formatMoney(efectivo)} sub="Lo que entró en mano" color="var(--accent-primary)" icon={<Icons.ShoppingCart />} />
         <StatCard label="Fiado de hoy" value={formatMoney(fiado)} sub="Anotado en cuentas" color="var(--accent-warning)" icon={<Icons.Book />} />
@@ -111,7 +111,7 @@ export default function InicioPage() {
       {/* CTA + Por agotarse */}
       <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'stretch' }}>
         {/* Ir a vender */}
-        <div style={{ flex: '1 1 280px', background: 'var(--gradient-card)', border: '1px solid var(--border-color)', borderRadius: 16, padding: 24, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 12 }}>
+        <div data-tour="inicio-vender" style={{ flex: '1 1 280px', background: 'var(--gradient-card)', border: '1px solid var(--border-color)', borderRadius: 16, padding: 24, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 12 }}>
           <div>
             <h2 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)' }}>¿Arrancamos a vender?</h2>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', margin: '6px 0 0' }}>Escaneá un código o buscá un producto. El vuelto se calcula solo.</p>
@@ -122,7 +122,7 @@ export default function InicioPage() {
         </div>
 
         {/* Productos por agotarse */}
-        <div style={{ flex: '1 1 320px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 16, padding: 20 }}>
+        <div data-tour="inicio-stock" style={{ flex: '1 1 320px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 16, padding: 20 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <h2 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)' }}>Por agotarse</h2>
             <button onClick={() => navigate('/panel/inventario')} style={{ background: 'transparent', border: 'none', color: 'var(--accent-primary)', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer' }}>Ver inventario →</button>
