@@ -1,12 +1,18 @@
 import React from 'react';
 
-export default function HelpModal({ showHelp, setShowHelp }) {
+export default function HelpModal({ showHelp, setShowHelp, showTour, setShowTour }) {
   if (!showHelp) return null;
   return (
     <div className="modal-overlay" onClick={() => setShowHelp(false)}>
       <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '600px', maxHeight: '85vh', overflowY: 'auto' }}>
         <h2 className="modal-title" style={{ fontSize: '1.8rem' }}>⌨️ Ayuda Rápida</h2>
         <div style={{ marginBottom: '24px' }}>
+          <h3 style={{ fontSize: '1.2rem', marginBottom: '12px', color: 'var(--text-primary)' }}>&#x1F3AB; ¿Primera vez?</h3>
+          <button onClick={() => { setShowHelp(false); if (setShowTour) setShowTour(true); }}
+            style={{ width: '100%', background: 'linear-gradient(135deg, #14BBA6, #0F8A7D)', border: 'none', color: 'white', padding: '12px 20px', borderRadius: '10px', fontWeight: 700, cursor: 'pointer', fontSize: '0.95rem', marginBottom: '20px', transition: 'all 0.2s' }}>
+            &#x1F4A1; Ver tour guiado paso a paso
+          </button>
+
           <h3 style={{ fontSize: '1.2rem', marginBottom: '12px', color: 'var(--text-primary)' }}>Atajos de Teclado</h3>
           {[
             { key: 'Enter', label: 'Cobrar — Procesar la venta si estás en la caja' },

@@ -13,6 +13,7 @@ import CierresAnterioresModal from '../components/pos/CierresAnterioresModal';
 import BackupRestoreModal from '../components/pos/BackupRestoreModal';
 import ExpiryAlertsModal from '../components/pos/ExpiryAlertsModal';
 import ToastContainer from '../components/pos/ToastContainer';
+import GuidedTour from '../components/pos/GuidedTour';
 
 export default function PanelLayout() {
   const { auth, backend, closeTurn, addToast, toasts, trialDaysRemaining, currentPlan, isTrialExpired, isPaid, planLabel, planLoaded } = usePanelContext();
@@ -21,6 +22,7 @@ export default function PanelLayout() {
   // Estados para Onboarding Modals
   const [showInitialCaja, setShowInitialCaja] = React.useState(false);
   const [showCreatePassword, setShowCreatePassword] = React.useState(false);
+  const [showTour, setShowTour] = React.useState(false);
   const [initialCajaMonto, setInitialCajaMonto] = React.useState('');
   const [newPassword, setNewPassword] = React.useState('');
   const [confirmPassword, setConfirmPassword] = React.useState('');
@@ -35,6 +37,13 @@ export default function PanelLayout() {
       navigate('/panel/plan');
     }
   }, [planLoaded, isTrialExpired, isPaid, location.pathname, navigate]);
+
+  useEffect(() => {
+    const tourCompleted = localStorage.getItem('guided_tour_completed');
+    if (!tourCompleted && window.location.pathname === '/panel/inicio') {
+      setTimeout(() => setShowTour(true), 800);
+    }
+  }, []);
 
   useEffect(() => {
     if (localStorage.getItem('minegocio_onboarding_pending') === 'true') {
@@ -173,7 +182,8 @@ export default function PanelLayout() {
 
       <StockAlertsModal stockAlerts={backend.stockAlerts} setStockAlerts={backend.setStockAlerts} />
 
-      <HelpModal showHelp={backend.showHelp} setShowHelp={backend.setShowHelp} />
+      {showTour && <GuidedTour onClose={() => setShowTour(false)} />}
+      <HelpModal showHelp={backend.showHelp} setShowHelp={backend.setShowHelp} showTour={showTour} setShowTour={setShowTour} />
 
       <ResumenModal showResumen={backend.showResumen} setShowResumen={backend.setShowResumen}
         resumenData={backend.resumenData} businessConfig={backend.businessConfig} addToast={addToast} />
