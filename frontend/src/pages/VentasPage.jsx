@@ -70,14 +70,19 @@ export default function VentasPage() {
 
       <div style={{ padding: '16px 24px', width: '100%', height: 'calc(100% - 72px)', display: 'flex', gap: '16px', alignItems: 'flex-start', boxSizing: 'border-box' }}>
         <div style={{ flex: 2, display: 'flex', flexDirection: 'column', gap: '16px', height: '100%' }}>
+          <div data-tour="search-bar" style={{ width: '100%' }}>
           <SearchBar search={cart.search} setSearch={cart.setSearch} searchRef={searchRef}
             searchError={cart.searchError} flash={cart.flash}
             productsDB={backend.productsDB} handleQuickAdd={cart.handleQuickAdd}
             setShowPriceCheck={backend.setShowPriceCheck} addToast={addToast}
             handleEmptyEnter={() => { if (cart.cart.length > 0) sales.setIsCharging(true); }} />
+          </div>
+          <div data-tour="cart-panel">
           <CartPanel cart={cart.cart} total={cart.total} adjustedTotal={cart.adjustedTotal}
             updateQty={cart.updateQty} setItemQty={cart.setItemQty} removeItem={cart.removeItem} />
+          </div>
         </div>
+        <div data-tour="payment-panel">
         <PaymentPanel cart={cart.cart} total={cart.total} adjustedTotal={cart.adjustedTotal}
           effectiveTotal={cart.effectiveTotal} subtotal={cart.subtotal} iva={cart.iva}
           discount={cart.discount} ivaRate={cart.ivaRate} change={cart.change}
@@ -108,6 +113,7 @@ export default function VentasPage() {
           handleRepeatSale={cart.handleRepeatSale}
           businessConfig={backend.businessConfig} setBusinessConfig={backend.setBusinessConfig} addToast={addToast}
           currentOperator={auth.currentOperator} promotionSavings={promos.promotionSavings} />
+        </div>
       </div>
 
       <ChargeModal isCharging={sales.isCharging} setIsCharging={sales.setIsCharging}

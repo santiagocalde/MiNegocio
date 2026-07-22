@@ -92,6 +92,7 @@ export default function Sidebar({
       </div>
 
       <nav className="nav-menu" style={{ overflowY: 'auto', flex: 1 }}>
+        <div data-tour="sidebar-nav">
         {NAV_ITEMS.map((section) => {
           if (section.roles && !section.roles.includes(role)) return null;
           const items = section.items.filter(item => {
@@ -127,6 +128,7 @@ export default function Sidebar({
             </React.Fragment>
           );
         })}
+        </div>
       </nav>
 
       <div style={{ padding: '10px', borderTop: '1px solid var(--border-color)', background: 'var(--gradient-card)', backdropFilter: 'blur(8px)', marginTop: 'auto' }}>
@@ -180,7 +182,7 @@ export default function Sidebar({
           )}
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '10px' }}>
+        <div data-tour="sidebar-bottom" style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '10px' }}>
           <Tooltip text="Registrar salida de efectivo" block>
             <button onClick={() => setShowEgreso(true)} style={{ width: '100%', background: 'rgba(245, 158, 11, 0.1)', border: '1px solid var(--border-color)', color: 'var(--accent-warning)', padding: '6px 10px', borderRadius: '8px', fontWeight: 700, cursor: 'pointer', fontSize: '0.75rem', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
               <Icons.DollarSign style={{ width: 14, height: 14 }} /> Registrar Egreso
