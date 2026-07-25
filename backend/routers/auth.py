@@ -286,12 +286,14 @@ async def auth_login(request: Request, body: BusinessLogin) -> dict:
             "SELECT id, email, business_name, plan, status, password_hash FROM businesses WHERE email = $1",
             body.email.lower().strip(),
         )
-        if not row:
+        # Protección anti-timing / anti-enumeración: siempre se corre un checkpw,
+        # aunque el email no exista, para no filtrar por tiempo de respuesta qué
+        # emails están registrados. Mismo patrón que admin_auth.
+        valid = row is not None
+        stored_hash = row["password_hash"] if valid else bcrypt.hashpw(b"dummy", bcrypt.gensalt()).decode()
+        if not bcrypt.checkpw(body.password.encode(), stored_hash.encode()) or not valid:
             raise HTTPException(status_code=401, detail="Email o contrasena incorrectos")
         biz_id, biz_email, biz_name, biz_plan, biz_status, pw_hash = row
-
-        if not bcrypt.checkpw(body.password.encode(), pw_hash.encode()):
-            raise HTTPException(status_code=401, detail="Email o contrasena incorrectos")
         if biz_status == "suspended":
             raise HTTPException(status_code=403, detail="Cuenta suspendida. Contacta a soporte.")
         if biz_status == "expired":

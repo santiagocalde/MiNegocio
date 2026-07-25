@@ -21,22 +21,34 @@ from core.ratelimit import limiter as admin_limiter
 # HELPERS
 # ────────────────────────────────────────────────────────────
 
-def verify_superadmin(authorization: Optional[str] = Header(None)) -> dict:
+async def verify_superadmin(authorization: Optional[str] = Header(None)) -> dict:
     """Valida JWT y extrae payload. Solo permite role='superadmin'."""
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(401, detail="Token requerido")
     token = authorization.split(" ")[1]
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-        if payload.get("role") != "superadmin":
-            raise HTTPException(403, detail="Acceso denegado: solo superadmins")
-        if payload.get("type") != "access":
-            raise HTTPException(401, detail="Token inválido")
-        return payload
     except jwt.ExpiredSignatureError:
         raise HTTPException(401, detail="Token expirado")
     except jwt.JWTError:
         raise HTTPException(401, detail="Token inválido")
+    if payload.get("role") != "superadmin":
+        raise HTTPException(403, detail="Acceso denegado: solo superadmins")
+    if payload.get("type") != "access":
+        raise HTTPException(401, detail="Token inválido")
+    # Re-validar contra la BD: si el superadmin fue borrado o degradado, su token
+    # deja de valer aunque no haya expirado (cierra el gap de revocación de 12h).
+    try:
+        pool = await _get_pool()
+        async with pool.acquire() as conn:
+            exists = await conn.fetchval("SELECT 1 FROM superadmins WHERE id = $1", payload.get("sub"))
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(503, detail="No se pudo validar la sesión")
+    if not exists:
+        raise HTTPException(403, detail="Acceso denegado: superadmin no vigente")
+    return payload
 
 
 async def _get_pool():
