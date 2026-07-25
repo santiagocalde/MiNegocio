@@ -35,6 +35,7 @@ async def init_db(DB_PATH: str, logger) -> None:
                 stock       INTEGER NOT NULL DEFAULT 0,
                 min_stock   INTEGER NOT NULL DEFAULT 5,
                 iva         TEXT    NOT NULL DEFAULT '21%',
+                image_url   TEXT    DEFAULT '',
                 created_at  TEXT    DEFAULT (datetime('now','localtime')),
                 updated_at  TEXT    DEFAULT (datetime('now','localtime'))
             );
@@ -313,6 +314,7 @@ async def init_db(DB_PATH: str, logger) -> None:
         await add_column_if_not_exists(db, "products", "units_per_package", "INTEGER", default="1")
         await add_column_if_not_exists(db, "sales", "mp_payment_id", "TEXT", default="''")
         await add_column_if_not_exists(db, "products", "currency", "TEXT", default="'ARS'")
+        await add_column_if_not_exists(db, "products", "image_url", "TEXT", default="''")
         await add_column_if_not_exists(db, "products", "exchange_rate", "REAL", default="1.0")
         await add_column_if_not_exists(db, "sales", "tipo_factura", "TEXT", default="'C'")
         await add_column_if_not_exists(db, "sales", "fiado_name", "TEXT", default="''")

@@ -6,6 +6,7 @@ import { SkeletonTable } from '../components/ui/Skeleton';
 import EmptyState from '../components/ui/EmptyState';
 import useSortable from '../hooks/useSortable.jsx';
 import ConfirmModal from '../components/ui/ConfirmModal';
+import ProductThumb from '../components/ui/ProductThumb';
 
 const Icons = {
   Search: () => <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>,
@@ -459,9 +460,7 @@ export default function StockModule() {
               itemContent={(index, p) => (
                 <>
                   <td style={{ padding: '8px 16px' }}>
-                    <div style={{ width: '40px', height: '40px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}>
-                      <Icons.Image />
-                    </div>
+                    <ProductThumb src={p.image_url} size={40} />
                   </td>
                   <td style={{ padding: '8px 16px' }}>
                     <div style={{ fontWeight: 600, fontSize: '0.95rem', color: 'var(--text-primary)', marginBottom: '2px' }}>{p.name}</div>
