@@ -8,6 +8,7 @@ import os
 import sys
 import asyncio
 import shutil
+import hashlib
 import logging
 import gzip
 import tempfile
@@ -105,12 +106,24 @@ def validate_env():
         "novastock-dev-secret-CAMBIAR-EN-PRODUCCION-2026",
         "super-secret-key-change-me-in-production",
     }
-    if jwt_secret in weak_secrets or len(jwt_secret) < 32:
+    # Secretos conocidos-filtrados: se guardan como hash SHA-256 para poder
+    # rechazarlos sin volver a exponer el valor en texto en el source/historial.
+    # (aab81a...: el JWT_SECRET viejo que quedó en el historial de git; rotado.)
+    leaked_secret_hashes = {
+        "aab81a888eeebb850399f827d8c657bf0a803b015fa56621bdffc30678a36156",
+    }
+    secret_hash = hashlib.sha256(jwt_secret.encode()).hexdigest()
+    is_weak = (
+        jwt_secret in weak_secrets
+        or len(jwt_secret) < 32
+        or secret_hash in leaked_secret_hashes
+    )
+    if is_weak:
         if APP_ENV == "production":
-            logger.critical("🚨 JWT_SECRET ausente o inseguro en producción. Definí un JWT_SECRET fuerte (>=32 chars) en .env.")
+            logger.critical("🚨 JWT_SECRET ausente, inseguro o filtrado en producción. Definí un JWT_SECRET fuerte (>=32 chars) y sin filtrar en .env.")
             sys.exit(1)
         else:
-            logger.warning("⚠️  JWT_SECRET inseguro/por defecto. Cambialo antes de ir a producción.")
+            logger.warning("⚠️  JWT_SECRET inseguro/por defecto/filtrado. Cambialo antes de ir a producción.")
     db_url = os.getenv("DATABASE_URL", "")
     if db_url and not db_url.startswith("postgresql"):
         logger.warning("⚠️  DATABASE_URL should start with 'postgresql://'")
