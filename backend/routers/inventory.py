@@ -1,7 +1,9 @@
 from fastapi import APIRouter, HTTPException, Depends, Query, Body, Request
 from pydantic import BaseModel
 from typing import Optional, List
+import hmac
 import aiosqlite
+import bcrypt
 import main
 from main import row_to_dict, USE_PG, get_current_business, check_plan_limits
 
@@ -10,6 +12,43 @@ router = APIRouter()
 
 def _biz_id():
     return main.business_id_ctx.get() if hasattr(main, 'business_id_ctx') else None
+
+
+def _pin_matches(pin: str, stored: str) -> bool:
+    """Compara un PIN contra el hash guardado (bcrypt), con fallback constant-time
+    para PINs legacy en texto plano."""
+    stored = stored or ""
+    if stored.startswith("$2b$"):
+        try:
+            return bcrypt.checkpw(pin.encode(), stored.encode())
+        except Exception:
+            return False
+    return hmac.compare_digest(pin, stored)
+
+
+async def _require_supervisor_pin_pg(conn, pin: Optional[str], b_id) -> None:
+    """Exige el PIN de un operador admin/manager del negocio. Lanza 403 si falta
+    o no corresponde a ningún supervisor. Obligatorio para anular ventas."""
+    pin = str(pin or "").strip()
+    if not pin:
+        raise HTTPException(403, detail="Se requiere el PIN de un administrador para anular")
+    rows = await conn.fetch(
+        "SELECT pin, role FROM operators WHERE business_id = $1 AND role IN ('admin','manager')", b_id
+    )
+    if any(_pin_matches(pin, r["pin"]) for r in rows):
+        return
+    raise HTTPException(403, detail="PIN de administrador incorrecto")
+
+
+async def _require_supervisor_pin_sqlite(db, pin: Optional[str]) -> None:
+    pin = str(pin or "").strip()
+    if not pin:
+        raise HTTPException(403, detail="Se requiere el PIN de un administrador para anular")
+    cur = await db.execute("SELECT pin FROM operators WHERE role IN ('admin','manager')")
+    rows = await cur.fetchall()
+    if any(_pin_matches(pin, r[0]) for r in rows):
+        return
+    raise HTTPException(403, detail="PIN de administrador incorrecto")
 
 
 @router.get("/api/movements", summary="Listar movimientos de stock")
@@ -73,16 +112,10 @@ async def revert_sale_item(sale_id: int, body: dict) -> dict:
         from db_helpers import get_pg_pool
         pool = await get_pg_pool()
         async with pool.acquire() as conn:
-            # Validar PIN supervisor
-            op_id = body.get("operator_id")
-            op_pin = body.get("operator_pin")
-            if op_id and op_pin:
-                op_row = await conn.fetchrow("SELECT pin, role FROM operators WHERE id = $1 AND business_id = $2", op_id, b_id)
-                if not op_row or (op_row["role"] not in ("admin", "manager")):
-                    raise HTTPException(403, detail="Solo administradores pueden anular ventas")
-                import bcrypt
-                if not bcrypt.checkpw(op_pin.encode(), op_row["pin"].encode()):
-                    raise HTTPException(403, detail="PIN incorrecto")
+            # Devolver un ítem (revierte stock y baja deuda de fiado) requiere el
+            # PIN de un supervisor. Obligatorio: antes el check estaba dentro de
+            # `if op_id and op_pin` y se salteaba omitiendo esos campos.
+            await _require_supervisor_pin_pg(conn, body.get("supervisor_pin") or body.get("operator_pin"), b_id)
 
             async with conn.transaction():
                 sale = await conn.fetchrow("SELECT id, reverted FROM sales WHERE id = $1 AND business_id = $2", sale_id, b_id)
@@ -122,6 +155,7 @@ async def revert_sale_item(sale_id: int, body: dict) -> dict:
     else:
         async with main.db_write_lock:
             async with aiosqlite.connect(main.DB_PATH) as db:
+                await _require_supervisor_pin_sqlite(db, body.get("supervisor_pin") or body.get("operator_pin"))
                 await db.execute("BEGIN IMMEDIATE")
                 cur = await db.execute("SELECT id, reverted FROM sales WHERE id = ?", (sale_id,))
                 sale = await cur.fetchone()
@@ -141,12 +175,16 @@ async def revert_sale_item(sale_id: int, body: dict) -> dict:
 
 
 @router.patch("/api/sales/{sale_id}/revert", summary="Anular venta completa")
-async def revert_sale(sale_id: int, operator: str = Query("Sistema")) -> dict:
+async def revert_sale(sale_id: int, body: dict = Body(default={}), operator: str = Query("Sistema")) -> dict:
+    # Anular una venta completa (devuelve todo el stock) requiere el PIN de un
+    # supervisor. El PIN viaja en el body, nunca en la URL/query.
+    pin = body.get("supervisor_pin") or body.get("operator_pin")
     if USE_PG:
         b_id = _biz_id()
         from db_helpers import get_pg_pool
         pool = await get_pg_pool()
         async with pool.acquire() as conn:
+            await _require_supervisor_pin_pg(conn, pin, b_id)
             async with conn.transaction():
                 sale = await conn.fetchrow("SELECT * FROM sales WHERE id = $1 AND business_id = $2", sale_id, b_id)
                 if not sale: raise HTTPException(404, detail="Venta no encontrada")
@@ -159,6 +197,7 @@ async def revert_sale(sale_id: int, operator: str = Query("Sistema")) -> dict:
     else:
         async with main.db_write_lock:
             async with aiosqlite.connect(main.DB_PATH) as db:
+                await _require_supervisor_pin_sqlite(db, pin)
                 await db.execute("BEGIN IMMEDIATE")
                 sale = await db.execute("SELECT * FROM sales WHERE id = ?", (sale_id,))
                 s = await sale.fetchone()

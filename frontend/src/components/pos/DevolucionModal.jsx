@@ -1,9 +1,32 @@
 import { useState } from 'react';
 import ConfirmModal from '../ui/ConfirmModal';
+import SupervisorPinModal from './SupervisorPinModal';
 
 export default function DevolucionModal({ showDevolucionItems, setShowDevolucionItems, lastSale, lastSaleId, devolucionQtys, setDevolucionQtys, handleDevolucionItem, handleDevolucion }) {
   const [showVoidConfirm, setShowVoidConfirm] = useState(false);
+  // Acción pendiente de autorización por PIN: { type: 'item', item } | { type: 'void' }
+  const [pendingAction, setPendingAction] = useState(null);
   if (!showDevolucionItems || !lastSale?.cart) return null;
+
+  const onPinConfirm = async (pin) => {
+    if (!pendingAction) return false;
+    if (pendingAction.type === 'item') {
+      const ok = await handleDevolucionItem(pendingAction.item.id, pendingAction.item.name, lastSaleId, devolucionQtys, pin);
+      if (ok) {
+        setDevolucionQtys(prev => ({ ...prev, [pendingAction.item.id]: '' }));
+        setPendingAction(null);
+      }
+      return ok;
+    }
+    // type === 'void'
+    const ok = await handleDevolucion(lastSaleId, pin);
+    if (ok) {
+      setPendingAction(null);
+      setShowDevolucionItems(false);
+    }
+    return ok;
+  };
+
   return (
     <>
       <div className="modal-overlay" onClick={() => setShowDevolucionItems(false)}>
@@ -20,7 +43,7 @@ export default function DevolucionModal({ showDevolucionItems, setShowDevolucion
                   <input type="number" min="0" max={item.qty} step="0.01" style={{ width: '60px', padding: '6px', background: 'var(--bg-main)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '6px', textAlign: 'center', fontSize: '0.9rem' }}
                     value={devolucionQtys[item.id] || ''}
                     onChange={e => setDevolucionQtys(prev => ({ ...prev, [item.id]: e.target.value }))} placeholder="0" />
-                  <button onClick={() => { handleDevolucionItem(item.id, item.name, lastSaleId, devolucionQtys); setDevolucionQtys(prev => ({ ...prev, [item.id]: '' })); }}
+                  <button onClick={() => setPendingAction({ type: 'item', item })}
                     disabled={!devolucionQtys[item.id] || parseFloat(devolucionQtys[item.id]) <= 0}
                     style={{ background: 'var(--accent-danger)', border: 'none', color: 'white', padding: '6px 12px', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', opacity: (!devolucionQtys[item.id] || parseFloat(devolucionQtys[item.id]) <= 0) ? 0.5 : 1 }}>Devolver</button>
                 </div>
@@ -36,12 +59,19 @@ export default function DevolucionModal({ showDevolucionItems, setShowDevolucion
       <ConfirmModal
         isOpen={showVoidConfirm}
         onClose={() => setShowVoidConfirm(false)}
-        onConfirm={() => { handleDevolucion(lastSaleId); setShowDevolucionItems(false); setShowVoidConfirm(false); }}
+        onConfirm={() => { setShowVoidConfirm(false); setPendingAction({ type: 'void' }); }}
         title="¿Anular venta completa?"
         message="Se revertirá toda la venta seleccionada y los productos volverán al inventario. Esta acción no se puede deshacer."
         confirmLabel="Sí, anular todo"
         variant="danger"
       />
+      {pendingAction && (
+        <SupervisorPinModal
+          onClose={() => setPendingAction(null)}
+          onConfirm={onPinConfirm}
+          title={pendingAction.type === 'void' ? 'Anular venta — autorización' : 'Devolver ítem — autorización'}
+        />
+      )}
     </>
   );
 }

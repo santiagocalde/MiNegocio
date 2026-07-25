@@ -9,6 +9,17 @@ def _biz_id():
     return main.business_id_ctx.get() if hasattr(main, 'business_id_ctx') else None
 
 
+def _redact_secrets(cfg: dict) -> dict:
+    """Nunca devolver el mp_access_token (secreto de MercadoPago del negocio) al
+    cliente. Se reemplaza por un flag booleano para que la UI sepa si ya está
+    configurado sin exponer el valor. El PUT preserva el token si llega vacío."""
+    if not cfg:
+        return cfg
+    cfg["mp_access_token_set"] = bool(cfg.get("mp_access_token"))
+    cfg["mp_access_token"] = ""
+    return cfg
+
+
 @router.get("/api/config", summary="Obtener configuracion del negocio")
 async def get_config() -> dict:
     if USE_PG:
@@ -25,14 +36,14 @@ async def get_config() -> dict:
                 biz = await conn.fetchrow("SELECT business_name FROM businesses WHERE id = $1", b_id)
                 if biz and biz["business_name"]:
                     cfg["nombre"] = biz["business_name"]
-            return cfg
+            return _redact_secrets(cfg)
     else:
         import aiosqlite
         # business_config en SQLite es clave-valor (core/database.py), no una tabla ancha
         async with aiosqlite.connect(main.DB_PATH) as db:
             cur = await db.execute("SELECT key, value FROM business_config")
             rows = await cur.fetchall()
-            return {key: value for key, value in rows}
+            return _redact_secrets({key: value for key, value in rows})
 
 
 @router.get("/api/catalogo", summary="Catálogo público de un comercio (sin auth)")
@@ -81,7 +92,13 @@ async def update_config(data: dict) -> dict:
     cuit = data.get("cuit", "")
     if cuit and len(str(cuit)) > 20:
         raise HTTPException(400, detail="CUIT demasiado largo")
-    
+
+    # El GET nunca devuelve el mp_access_token real (llega vacío al form). Si el
+    # usuario no cargó uno nuevo, no pisar el existente con "" → se quita del
+    # payload para conservar el token ya guardado.
+    if not data.get("mp_access_token"):
+        data.pop("mp_access_token", None)
+
     if USE_PG:
         import re
         from db_helpers import get_pg_pool
@@ -120,6 +137,8 @@ async def update_config(data: dict) -> dict:
         COLS = ["nombre", "subtitulo", "direccion", "telefono", "cuit", "condicion_iva",
                 "numero_caja", "mensaje_ticket", "iva_rate", "mp_access_token", "mp_collector_id"]
         async with aiosqlite.connect(main.DB_PATH) as db:
+            # business_config key-value: upsert no destructivo. mp_access_token ya
+            # fue removido de data arriba si llegó vacío, así se conserva el guardado.
             for c in COLS:
                 if c in data:
                     await db.execute(
