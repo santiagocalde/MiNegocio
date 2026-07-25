@@ -208,6 +208,7 @@ async def init_pg() -> None:
                 pack_size       INTEGER DEFAULT 1,
                 expiry_date     TEXT DEFAULT '',
                 is_active       INTEGER NOT NULL DEFAULT 1,
+                image_url       TEXT DEFAULT '',
                 created_at      TIMESTAMPTZ DEFAULT now(),
                 updated_at      TIMESTAMPTZ DEFAULT now()
             );
@@ -437,6 +438,7 @@ async def init_pg() -> None:
             -- reenviar el mismo email en cada reinicio del backend.
             ALTER TABLE businesses ADD COLUMN IF NOT EXISTS trial_email_sent_day INT;
             ALTER TABLE business_config ADD COLUMN IF NOT EXISTS print_config TEXT;
+            ALTER TABLE products ADD COLUMN IF NOT EXISTS image_url TEXT DEFAULT '';
             ALTER TABLE sale_items ALTER COLUMN product_id DROP NOT NULL;
 
             CREATE TABLE IF NOT EXISTS audit_log (
