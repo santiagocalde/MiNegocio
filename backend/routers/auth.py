@@ -568,12 +568,12 @@ async def forgot_pin(request: Request, body: ForgotPasswordRequest) -> dict:
                     if resp.status_code == 200:
                         logger.info(f"Nuevo PIN enviado a {row['email']}")
                     else:
-                        logger.error(f"Resend error {resp.status_code}: {resp.text[:200]}")
-                        logger.info(f"PIN generado para {row['email']} (NO enviado por email): {new_pin}")
+                        # NUNCA loguear el PIN en texto plano: el log es un sink de
+                        # credenciales. Si el email falla, se alerta sin exponer el PIN.
+                        logger.error(f"Resend error {resp.status_code} al enviar PIN a {row['email']}: {resp.text[:200]}")
             except Exception as e:
-                logger.error(f"No se pudo enviar email de PIN: {e}")
-                logger.info(f"PIN generado para {row['email']} (fallback log): {new_pin}")
+                logger.error(f"No se pudo enviar email de PIN a {row['email']}: {e}")
         else:
-            logger.info(f"PIN generado para {row['email']} (sin RESEND_API_KEY): {new_pin}")
+            logger.error(f"RESEND_API_KEY no configurada: no se pudo enviar el nuevo PIN a {row['email']}")
 
     return {"message": "Si el email existe, recibiras un nuevo PIN por correo."}

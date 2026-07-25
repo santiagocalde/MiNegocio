@@ -103,8 +103,24 @@ def _require_owner(request: Request):
         payload = jose_jwt.decode(auth.split(" ")[1], JWT_SECRET, algorithms=[JWT_ALGORITHM])
         if payload.get("type") != "access" or not payload.get("sub"):
             raise HTTPException(403, detail="Sin permisos suficientes")
+    except HTTPException:
+        raise
     except Exception:
         raise HTTPException(401, detail="Token inválido")
+
+
+def _require_superadmin(request: Request):
+    """Solo un JWT con role='superadmin' puede acceder. El log del sistema es
+    global (todos los tenants) y NUNCA debe quedar expuesto a un negocio común."""
+    auth = request.headers.get("Authorization", "")
+    if not auth.startswith("Bearer "):
+        raise HTTPException(401, detail="Autenticación requerida")
+    try:
+        payload = jose_jwt.decode(auth.split(" ")[1], JWT_SECRET, algorithms=[JWT_ALGORITHM])
+    except Exception:
+        raise HTTPException(401, detail="Token inválido")
+    if payload.get("role") != "superadmin" or payload.get("type") != "access":
+        raise HTTPException(403, detail="Acceso denegado: solo superadmins")
 
 
 @router.get("/api/backup/list", summary="Listar backups disponibles")
@@ -179,14 +195,16 @@ async def health_check() -> dict:
     return {"status": "ok", "wal_mode": True, "last_backup": datetime.fromtimestamp(os.path.getmtime(backups[0])).strftime("%Y-%m-%d %H:%M:%S") if backups else "N/A", "timestamp": datetime.now().isoformat()}
 
 
-@router.get("/api/logs", summary="Logs del sistema")
-async def get_logs(limit: int = 50) -> dict:
+@router.get("/api/logs", summary="Logs del sistema (solo superadmin)")
+async def get_logs(request: Request, limit: int = 50) -> dict:
+    _require_superadmin(request)
+    limit = max(1, min(limit, 1000))
     log_file = os.path.join(main.BASE_DIR, "minegocio.log")
     try:
         with open(log_file, 'r', encoding='utf-8') as f:
             lines = f.readlines()[-limit:]
             return {"lines": [l.strip() for l in lines]}
-    except:
+    except Exception:
         return {"lines": []}
 
 
