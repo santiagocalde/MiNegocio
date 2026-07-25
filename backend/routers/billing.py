@@ -17,6 +17,7 @@ from core.config import JWT_SECRET
 
 MP_ACCESS_TOKEN = os.environ.get("MP_ACCESS_TOKEN", "")
 MP_WEBHOOK_SECRET = os.environ.get("MP_WEBHOOK_SECRET", "")
+APP_ENV = os.environ.get("APP_ENV", "development")
 
 class SubscribeRequest(BaseModel):
     plan_id: str
@@ -109,8 +110,14 @@ async def create_subscription(body: SubscribeRequest, request: Request):
 def _verify_mp_signature(request: Request, data_id: str) -> bool:
     """Verifica la firma HMAC-SHA256 que MercadoPago envía en x-signature."""
     if not MP_WEBHOOK_SECRET:
-        logger.warning("MP_WEBHOOK_SECRET no configurado — firma del webhook no verificada")
-        return True  # degradar con gracia hasta configurar el secret
+        # Sin secreto no se puede verificar la firma. En producción se RECHAZA
+        # (fail-closed): un webhook sin verificar permitiría a cualquiera forzar
+        # activaciones/cancelaciones de plan. En dev/local se degrada con aviso.
+        if APP_ENV == "production":
+            logger.error("MP_WEBHOOK_SECRET no configurado en producción — webhook rechazado (fail-closed)")
+            return False
+        logger.warning("MP_WEBHOOK_SECRET no configurado — firma no verificada (modo no-producción)")
+        return True
     sig_header = request.headers.get("x-signature", "")
     request_id = request.headers.get("x-request-id", "")
     ts = ""
