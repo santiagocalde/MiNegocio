@@ -29,9 +29,16 @@ def get_current_business_id(request: Request) -> str:
     token = auth_header.split(" ")[1]
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
-        return payload.get("sub")
     except Exception:
         raise HTTPException(status_code=401, detail="Token invalido")
+    # Solo un access token habilita acciones de facturación. Sin este chequeo
+    # un refresh token (7 días) o un token de reset servían como access acá.
+    if payload.get("type") != "access":
+        raise HTTPException(status_code=401, detail="Token invalido")
+    sub = payload.get("sub")
+    if not sub:
+        raise HTTPException(status_code=401, detail="Token invalido")
+    return sub
 
 @router.post("/subscribe")
 @billing_limiter.limit("5/10minutes")
