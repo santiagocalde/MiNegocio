@@ -99,7 +99,9 @@ export default function ConfigPage() {
                     <input
                       type={f.type === 'password' ? (showMpToken ? 'text' : 'password') : 'text'}
                       value={config[f.key] || ''}
-                      placeholder={f.placeholder}
+                      placeholder={f.key === 'mp_access_token' && config.mp_access_token_set
+                        ? '•••••••• ya configurado (dejá vacío para no cambiarlo)'
+                        : f.placeholder}
                       onChange={e => setConfig(prev => ({ ...prev, [f.key]: e.target.value }))}
                       style={inputStyle}
                     />

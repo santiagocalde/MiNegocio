@@ -286,12 +286,14 @@ async def auth_login(request: Request, body: BusinessLogin) -> dict:
             "SELECT id, email, business_name, plan, status, password_hash FROM businesses WHERE email = $1",
             body.email.lower().strip(),
         )
-        if not row:
+        # Protección anti-timing / anti-enumeración: siempre se corre un checkpw,
+        # aunque el email no exista, para no filtrar por tiempo de respuesta qué
+        # emails están registrados. Mismo patrón que admin_auth.
+        valid = row is not None
+        stored_hash = row["password_hash"] if valid else bcrypt.hashpw(b"dummy", bcrypt.gensalt()).decode()
+        if not bcrypt.checkpw(body.password.encode(), stored_hash.encode()) or not valid:
             raise HTTPException(status_code=401, detail="Email o contrasena incorrectos")
         biz_id, biz_email, biz_name, biz_plan, biz_status, pw_hash = row
-
-        if not bcrypt.checkpw(body.password.encode(), pw_hash.encode()):
-            raise HTTPException(status_code=401, detail="Email o contrasena incorrectos")
         if biz_status == "suspended":
             raise HTTPException(status_code=403, detail="Cuenta suspendida. Contacta a soporte.")
         if biz_status == "expired":
@@ -568,12 +570,12 @@ async def forgot_pin(request: Request, body: ForgotPasswordRequest) -> dict:
                     if resp.status_code == 200:
                         logger.info(f"Nuevo PIN enviado a {row['email']}")
                     else:
-                        logger.error(f"Resend error {resp.status_code}: {resp.text[:200]}")
-                        logger.info(f"PIN generado para {row['email']} (NO enviado por email): {new_pin}")
+                        # NUNCA loguear el PIN en texto plano: el log es un sink de
+                        # credenciales. Si el email falla, se alerta sin exponer el PIN.
+                        logger.error(f"Resend error {resp.status_code} al enviar PIN a {row['email']}: {resp.text[:200]}")
             except Exception as e:
-                logger.error(f"No se pudo enviar email de PIN: {e}")
-                logger.info(f"PIN generado para {row['email']} (fallback log): {new_pin}")
+                logger.error(f"No se pudo enviar email de PIN a {row['email']}: {e}")
         else:
-            logger.info(f"PIN generado para {row['email']} (sin RESEND_API_KEY): {new_pin}")
+            logger.error(f"RESEND_API_KEY no configurada: no se pudo enviar el nuevo PIN a {row['email']}")
 
     return {"message": "Si el email existe, recibiras un nuevo PIN por correo."}

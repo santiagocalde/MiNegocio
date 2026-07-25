@@ -66,38 +66,43 @@ export default function useBackend(currentOperator, currentTurnId, currentSucurs
     } catch { addToast('Error al desempaquetar', 'error'); }
   }, [currentOperator, addToast, fetchProductsDB]);
 
-  const handleDevolucionItem = useCallback(async (productId, productName, lastSaleId, devolucionQtysLocal) => {
+  const handleDevolucionItem = useCallback(async (productId, productName, lastSaleId, devolucionQtysLocal, supervisorPin) => {
     try {
       const qty = parseFloat(devolucionQtysLocal?.[productId]) || 1;
       const res = await apiPatch(`/sales/${lastSaleId}/revert-item`, {
         product_id: productId,
         quantity: qty,
         operator: currentOperator?.name || 'Sistema',
+        supervisor_pin: supervisorPin || '',
       });
       if (res.ok) {
         addToast(`✅ ${productName} devuelto`, 'success');
         fetchProductsDB();
-      } else {
-        const err = await res.json().catch(() => ({}));
-        addToast(err.detail || 'Error al devolver', 'error');
+        return true;
       }
-    } catch { addToast('Error de conexión', 'error'); }
+      const err = await res.json().catch(() => ({}));
+      addToast(err.detail || 'Error al devolver', 'error');
+      return false;
+    } catch { addToast('Error de conexión', 'error'); return false; }
   }, [currentOperator, addToast, fetchProductsDB]);
 
-  const handleDevolucion = useCallback(async (lastSaleId) => {
-    if (!lastSaleId) return;
+  const handleDevolucion = useCallback(async (lastSaleId, supervisorPin) => {
+    if (!lastSaleId) return false;
     setIsReverting(true);
     try {
-      const res = await apiPatch(`/sales/${lastSaleId}/revert?operator=${currentOperator?.name || 'Sistema'}`, {});
+      const res = await apiPatch(`/sales/${lastSaleId}/revert?operator=${currentOperator?.name || 'Sistema'}`, {
+        supervisor_pin: supervisorPin || '',
+      });
       if (res.ok) {
         addToast('✅ Venta anulada completamente', 'success');
         fetchProductsDB();
-      } else {
-        const err = await res.json().catch(() => ({}));
-        addToast(err.detail || 'Error al anular', 'error');
+        return true;
       }
-    } catch { addToast('Error de conexión', 'error'); }
-    setIsReverting(false);
+      const err = await res.json().catch(() => ({}));
+      addToast(err.detail || 'Error al anular', 'error');
+      return false;
+    } catch { addToast('Error de conexión', 'error'); return false; }
+    finally { setIsReverting(false); }
   }, [currentOperator, addToast, fetchProductsDB]);
 
   const handleManualSync = useCallback(async () => {

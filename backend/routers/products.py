@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 import aiosqlite
 import main
-from main import row_to_dict, USE_PG, get_current_business, check_product_limit
+from main import row_to_dict, USE_PG, get_current_business, check_product_limit, check_plan_limits
 from core.ratelimit import limiter
 
 router = APIRouter()
@@ -442,9 +442,13 @@ async def unpack_product(product_id: int, operator: str = Query("Sistema")) -> d
 
 
 @router.post("/api/audit", summary="Crear log de auditoria")
-async def create_audit_log(body: dict) -> dict:
+async def create_audit_log(request: Request, body: dict) -> dict:
     b_id = _biz_id()
     if USE_PG:
+        auth = request.headers.get("Authorization")
+        if auth and auth.startswith("Bearer "):
+            biz = await get_current_business(auth)
+            if biz: await check_plan_limits("audit_cloud", biz)
         from db_helpers import get_pg_pool
         pool = await get_pg_pool()
         async with pool.acquire() as conn:
@@ -464,9 +468,13 @@ async def create_audit_log(body: dict) -> dict:
 
 
 @router.get("/api/audit", summary="Listar auditoria")
-async def get_audit_logs(limit: int = Query(100)) -> list:
+async def get_audit_logs(request: Request, limit: int = Query(100)) -> list:
     b_id = _biz_id()
     if USE_PG:
+        auth = request.headers.get("Authorization")
+        if auth and auth.startswith("Bearer "):
+            biz = await get_current_business(auth)
+            if biz: await check_plan_limits("audit_cloud", biz)
         from db_helpers import get_pg_pool
         pool = await get_pg_pool()
         async with pool.acquire() as conn:
