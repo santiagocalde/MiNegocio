@@ -260,33 +260,40 @@ app.add_middleware(
 # ── Tenant middleware ─────────────────────────────────────────
 class TenantMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
-        auth_header = request.headers.get("Authorization")
-        b_id = None
-        if auth_header and auth_header.startswith("Bearer "):
-            token = auth_header.split(" ")[1]
-            try:
-                payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-                if payload.get("type") == "access":
-                    b_id = payload.get("sub")
-                    business_id_ctx.set(b_id)
-            except Exception:
-                pass
+        # Aislar el tenant por request: arrancar SIEMPRE en None y resetear al
+        # terminar, para que un business_id no se filtre a otra request que
+        # reutilice el contexto. Defensa en profundidad, no depender de uvicorn.
+        ctx_token = business_id_ctx.set(None)
+        try:
+            auth_header = request.headers.get("Authorization")
+            b_id = None
+            if auth_header and auth_header.startswith("Bearer "):
+                token = auth_header.split(" ")[1]
+                try:
+                    payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+                    if payload.get("type") == "access":
+                        b_id = payload.get("sub")
+                        business_id_ctx.set(b_id)
+                except Exception:
+                    pass
 
-        public_prefixes = (
-            "/api/auth", "/api/admin/auth", "/api/login", "/api/health",
-            "/api/billing/webhook", "/api/plans", "/api/metrics",
-            "/api/testimonials", "/api/send-contact", "/api/catalogo", "/docs", "/openapi",
-        )
-        path = request.url.path
-        if SAAS_MODE and not b_id and path.startswith("/api/"):
-            if not any(path.startswith(p) for p in public_prefixes):
-                if request.method == "OPTIONS":
-                    return await call_next(request)
-                return JSONResponse(
-                    status_code=401,
-                    content={"detail": "Token JWT requerido en modo SaaS. Acceso denegado."},
-                )
-        return await call_next(request)
+            public_prefixes = (
+                "/api/auth", "/api/admin/auth", "/api/login", "/api/health",
+                "/api/billing/webhook", "/api/plans", "/api/metrics",
+                "/api/testimonials", "/api/send-contact", "/api/catalogo", "/docs", "/openapi",
+            )
+            path = request.url.path
+            if SAAS_MODE and not b_id and path.startswith("/api/"):
+                if not any(path.startswith(p) for p in public_prefixes):
+                    if request.method == "OPTIONS":
+                        return await call_next(request)
+                    return JSONResponse(
+                        status_code=401,
+                        content={"detail": "Token JWT requerido en modo SaaS. Acceso denegado."},
+                    )
+            return await call_next(request)
+        finally:
+            business_id_ctx.reset(ctx_token)
 
 
 app.add_middleware(TenantMiddleware)

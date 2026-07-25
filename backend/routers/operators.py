@@ -2,6 +2,7 @@
 Operadores y login local por PIN.
 """
 import os
+import hmac
 import logging
 from datetime import datetime
 from typing import Optional
@@ -109,28 +110,37 @@ async def login(request: Request, data: dict) -> dict:
             b_id = business_id_ctx.get()
             rows = await conn.fetch("SELECT id, name, pin, role FROM operators WHERE business_id = $1", b_id)
             for row in rows:
-                try:
-                    if bcrypt.checkpw(pin.encode(), row["pin"].encode()):
+                stored = row["pin"] or ""
+                if stored.startswith("$2b$"):
+                    if bcrypt.checkpw(pin.encode(), stored.encode()):
                         t = await _ensure_open_turn_pg(conn, row["name"], b_id)
                         return {**_base_op(row), **t}
-                except Exception:
-                    if not row["pin"].startswith("$2b$") and pin == row["pin"]:
-                        t = await _ensure_open_turn_pg(conn, row["name"], b_id)
-                        return {**_base_op(row), **t}
+                # PIN legacy en texto plano: comparación constant-time y migración
+                # a bcrypt en el acto (upgrade-on-login) para no dejar PINs planos.
+                elif hmac.compare_digest(pin, stored):
+                    new_hash = bcrypt.hashpw(pin.encode(), bcrypt.gensalt()).decode()
+                    await conn.execute("UPDATE operators SET pin = $1 WHERE id = $2", new_hash, row["id"])
+                    t = await _ensure_open_turn_pg(conn, row["name"], b_id)
+                    return {**_base_op(row), **t}
         raise HTTPException(status_code=401, detail="PIN incorrecto")
     else:
         async with aiosqlite.connect(main.DB_PATH) as db:
             async with db.execute("SELECT id, name, pin, role FROM operators") as cur:
                 rows = await cur.fetchall()
         for op_id, op_name, op_pin_hash, op_role in rows:
-            try:
-                if bcrypt.checkpw(pin.encode(), op_pin_hash.encode()):
+            stored = op_pin_hash or ""
+            if stored.startswith("$2b$"):
+                if bcrypt.checkpw(pin.encode(), stored.encode()):
                     t = await _ensure_open_turn(op_name)
                     return {"operator_id": op_id, "id": op_id, "name": op_name, "role": op_role, **t}
-            except Exception:
-                if not op_pin_hash.startswith("$2b$") and pin == op_pin_hash:
-                    t = await _ensure_open_turn(op_name)
-                    return {"operator_id": op_id, "id": op_id, "name": op_name, "role": op_role, **t}
+            # PIN legacy en texto plano: constant-time + migración a bcrypt.
+            elif hmac.compare_digest(pin, stored):
+                new_hash = bcrypt.hashpw(pin.encode(), bcrypt.gensalt()).decode()
+                async with aiosqlite.connect(main.DB_PATH) as db2:
+                    await db2.execute("UPDATE operators SET pin = ? WHERE id = ?", (new_hash, op_id))
+                    await db2.commit()
+                t = await _ensure_open_turn(op_name)
+                return {"operator_id": op_id, "id": op_id, "name": op_name, "role": op_role, **t}
         raise HTTPException(status_code=401, detail="PIN incorrecto")
 
 
