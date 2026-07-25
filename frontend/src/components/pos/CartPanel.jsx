@@ -1,5 +1,6 @@
 import React from 'react';
 import { Icons } from '../ui/Icons';
+import ProductThumb from '../ui/ProductThumb';
 import { formatMoney } from '../../utils/format';
 
 // Color del badge de stock según nivel: agotado (rojo), bajo (ámbar), sano (verde)
@@ -25,9 +26,8 @@ export default function CartPanel({ cart, total, adjustedTotal, updateQty, setIt
           cart.map(item => (
             <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
               <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                <div style={{ width: '36px', height: '36px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}>
-                  <Icons.Image style={{ width: 18, height: 18 }} />
-                </div>
+                <ProductThumb src={item.image_url} size={36} />
+
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                   <div style={{ fontWeight: 700, fontSize: 'var(--fs-body)', color: 'var(--text-primary)', letterSpacing: '0.1px' }}>{item.name}</div>
                   <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', fontFamily: 'var(--font-mono)' }}>{item.code}</div>
