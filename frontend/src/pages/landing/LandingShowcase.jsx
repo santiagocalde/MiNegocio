@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Reveal } from './hooks/useReveal';
+import useIsMobile from '../../hooks/useIsMobile';
 
 import imgInicio from '../../assets/landing/inicio.webp';
 import imgPos from '../../assets/landing/punto-de-venta.webp';
@@ -21,6 +22,10 @@ const SCREENS = [
   { src: imgPromociones, name: 'Promociones',    desc: 'Armá combos y descuentos en un minuto para vender más.', alt: 'Promociones de MiNegocio con combos 2x1 y descuentos por porcentaje' },
 ];
 
+// En mobile mostramos solo las 3 pantallas clave (menos imágenes que cargar y
+// menos ruido para el visitante que llega de redes). En desktop se muestran todas.
+const MOBILE_NAMES = ['Punto de Venta', 'Inventario', 'Reportes'];
+
 const ROTATE_MS = 4500;
 
 export default function LandingShowcase() {
@@ -28,28 +33,34 @@ export default function LandingShowcase() {
   const [paused, setPaused] = useState(false);
   const [zoom, setZoom] = useState(false);
   const [reduceMotion] = useState(() => typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
+  const isMobile = useIsMobile();
+
+  // Set de pantallas según dispositivo. En mobile solo cargan/rendrizan 3 imágenes.
+  const screens = isMobile ? SCREENS.filter(s => MOBILE_NAMES.includes(s.name)) : SCREENS;
+  // Índice seguro: si cambia la cantidad (rotar entre mobile/desktop) nunca se va de rango.
+  const safe = active % screens.length;
 
   useEffect(() => {
     if (paused || zoom || reduceMotion) return;
-    const t = setInterval(() => setActive(a => (a + 1) % SCREENS.length), ROTATE_MS);
+    const t = setInterval(() => setActive(a => (a + 1) % screens.length), ROTATE_MS);
     return () => clearInterval(t);
-  }, [paused, zoom, active, reduceMotion]);
+  }, [paused, zoom, active, reduceMotion, screens.length]);
 
   // Lightbox: navegación por teclado y cierre con Escape
   useEffect(() => {
     if (!zoom) return;
     const onKey = (e) => {
       if (e.key === 'Escape') setZoom(false);
-      else if (e.key === 'ArrowRight') setActive(a => (a + 1) % SCREENS.length);
-      else if (e.key === 'ArrowLeft') setActive(a => (a - 1 + SCREENS.length) % SCREENS.length);
+      else if (e.key === 'ArrowRight') setActive(a => (a + 1) % screens.length);
+      else if (e.key === 'ArrowLeft') setActive(a => (a - 1 + screens.length) % screens.length);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [zoom]);
+  }, [zoom, screens.length]);
 
-  const go = (i) => setActive((i + SCREENS.length) % SCREENS.length);
+  const go = (i) => setActive((i + screens.length) % screens.length);
   const openZoom = () => { if (typeof window !== 'undefined' && window.innerWidth >= 768) setZoom(true); };
-  const cur = SCREENS[active];
+  const cur = screens[safe];
 
   return (
     <section id="sistema" className="lp-section" style={{ padding: '90px 24px' }}>
@@ -72,15 +83,15 @@ export default function LandingShowcase() {
 
             {/* Tabs (solo celular; en PC se navega con flechas/dots/zoom) */}
             <div className="lp-showcase-tabs" style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginBottom: 22 }}>
-              {SCREENS.map((s, i) => (
+              {screens.map((s, i) => (
                 <button key={s.name} onClick={() => go(i)}
-                  aria-label={`Ver ${s.name}`} aria-pressed={i === active}
+                  aria-label={`Ver ${s.name}`} aria-pressed={i === safe}
                   style={{
                     padding: '7px 15px', borderRadius: 8, cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600,
                     transition: 'all 0.2s', border: '1px solid',
-                    borderColor: i === active ? 'rgba(20,187,166,0.4)' : 'rgba(255,255,255,0.08)',
-                    background: i === active ? 'var(--lp-gradient-main)' : 'rgba(255,255,255,0.02)',
-                    color: i === active ? '#fff' : 'var(--lp-text-muted)',
+                    borderColor: i === safe ? 'rgba(20,187,166,0.4)' : 'rgba(255,255,255,0.08)',
+                    background: i === safe ? 'var(--lp-gradient-main)' : 'rgba(255,255,255,0.02)',
+                    color: i === safe ? '#fff' : 'var(--lp-text-muted)',
                   }}>
                   {s.name}
                 </button>
@@ -101,10 +112,10 @@ export default function LandingShowcase() {
               </div>
               <div className="lp-showcase-stage" onClick={openZoom}>
                 {/* Todas apiladas: se precargan una vez y el cambio es un crossfade instantáneo (sin parpadeo) */}
-                {SCREENS.map((s, i) => (
+                {screens.map((s, i) => (
                   <img key={s.name} src={s.src} alt={s.alt} loading={i === 0 ? 'eager' : 'lazy'} decoding="async" width="1366" height="768"
                     style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top',
-                             opacity: i === active ? 1 : 0, transition: reduceMotion ? 'none' : 'opacity 0.5s ease', pointerEvents: 'none' }} />
+                             opacity: i === safe ? 1 : 0, transition: reduceMotion ? 'none' : 'opacity 0.5s ease', pointerEvents: 'none' }} />
                 ))}
                 {/* Flechas laterales discretas (solo PC) */}
                 <button className="lp-showcase-side-arrow lp-showcase-side-left" aria-label="Anterior"
@@ -128,9 +139,9 @@ export default function LandingShowcase() {
 
             {/* Dots */}
             <div style={{ display: 'flex', justifyContent: 'center', gap: 7, marginTop: 16 }}>
-              {SCREENS.map((s, i) => (
+              {screens.map((s, i) => (
                 <button key={s.name} onClick={() => go(i)} aria-label={`Ir a ${s.name}`}
-                  style={{ width: i === active ? 22 : 7, height: 7, borderRadius: 4, border: 'none', cursor: 'pointer', padding: 0, transition: 'all 0.3s', background: i === active ? 'var(--lp-primary)' : 'rgba(255,255,255,0.15)' }} />
+                  style={{ width: i === safe ? 22 : 7, height: 7, borderRadius: 4, border: 'none', cursor: 'pointer', padding: 0, transition: 'all 0.3s', background: i === safe ? 'var(--lp-primary)' : 'rgba(255,255,255,0.15)' }} />
               ))}
             </div>
           </div>

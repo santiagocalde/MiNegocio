@@ -23,6 +23,7 @@ import LandingFooter from './landing/LandingFooter';
 import LandingContactModal from './landing/LandingContactModal';
 import LandingLoginModal from './landing/LandingLoginModal';
 import CheckoutView from './landing/CheckoutView';
+import MobileCollapse from './landing/MobileCollapse';
 import ForgotPasswordModal from './landing/ForgotPasswordModal';
 import WhatsAppButton from './landing/WhatsAppButton';
 import DogEasterEgg from './landing/DogEasterEgg';
@@ -263,15 +264,19 @@ export default function LandingPage() {
       <LandingSocialProof />
       <div className="lp-divider" />
       <LandingShowcase />
-      <div className="lp-divider" />
-      <LandingDemo />
-      <div className="lp-divider" />
-      <LandingComparativa />
-      <LandingFeatures />
-      <div className="lp-divider" />
-      <LandingSoporteHumano />
-      <div className="lp-divider" />
-      <LandingTestimonials />
+      {/* Secundario en mobile: se pliega detrás de "Ver más" para llegar antes al
+          precio y el CTA. En desktop se renderiza igual que siempre (display:contents). */}
+      <MobileCollapse label="Ver todo lo que incluye">
+        <div className="lp-divider" />
+        <LandingDemo />
+        <div className="lp-divider" />
+        <LandingComparativa />
+        <LandingFeatures />
+        <div className="lp-divider" />
+        <LandingSoporteHumano />
+        <div className="lp-divider" />
+        <LandingTestimonials />
+      </MobileCollapse>
       <div className="lp-divider" />
       <LandingPricing
         isYearly={isYearly} setIsYearly={setIsYearly}
