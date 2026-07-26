@@ -4,6 +4,7 @@ import { Icons } from '../ui/Icons';
 import Tooltip from '../ui/Tooltip';
 import LogoPrincipal from '../../assets/images/MiNegocio_transparente_real.png';
 import { usePanelContext } from '../../context/PanelContext';
+import { getBusinessFeatures } from '../../config/businessDefaults';
 
 const PLAN_WEIGHT = { trial: 1, simple: 1, pro: 2, ia: 3 };
 
@@ -13,16 +14,16 @@ const NAV_ITEMS = [
     items: [
       { label: 'Inicio', path: '/panel/inicio', icon: 'Home', roles: ['admin', 'manager', 'operator'] },
       { label: 'Punto de Venta', path: '/panel/ventas', icon: 'ShoppingCart', roles: ['admin', 'manager', 'operator'] },
-      { label: 'Compras', path: '/panel/compras', icon: 'Truck', roles: ['admin', 'manager'], minPlan: 'simple' },
-      { label: 'Fiados', path: '/panel/clientes', icon: 'Book', roles: ['admin', 'manager', 'operator'] },
+      { label: 'Compras', path: '/panel/compras', icon: 'Truck', roles: ['admin', 'manager'], minPlan: 'simple', featureKey: 'compras' },
+      { label: 'Fiados', path: '/panel/clientes', icon: 'Book', roles: ['admin', 'manager', 'operator'], featureKey: 'fiados' },
     ],
   },
   {
     category: 'CATÁLOGO',
     items: [
       { label: 'Inventario', path: '/panel/inventario', icon: 'Box', roles: ['admin', 'manager'] },
-      { label: 'Catálogo Web', path: '/panel/catalogo-web', icon: 'Edit', roles: ['admin', 'manager'], minPlan: 'pro' },
-      { label: 'Proveedores', path: '/panel/proveedores', icon: 'Truck', roles: ['admin', 'manager'], minPlan: 'simple' },
+      { label: 'Catálogo Web', path: '/panel/catalogo-web', icon: 'Edit', roles: ['admin', 'manager'], minPlan: 'pro', featureKey: 'catalogo' },
+      { label: 'Proveedores', path: '/panel/proveedores', icon: 'Truck', roles: ['admin', 'manager'], minPlan: 'simple', featureKey: 'proveedores' },
     ],
   },
   {
@@ -30,15 +31,15 @@ const NAV_ITEMS = [
     roles: ['admin'],
     items: [
       { label: 'Reportes', path: '/panel/reportes', icon: 'Chart' },
-      { label: 'Promociones', path: '/panel/promociones', icon: 'Tag' },
-      { label: 'Sugerencias IA', path: '/panel/recomendaciones', icon: 'AI', minPlan: 'ia' },
+      { label: 'Promociones', path: '/panel/promociones', icon: 'Tag', featureKey: 'promociones' },
+      { label: 'Sugerencias IA', path: '/panel/recomendaciones', icon: 'AI', minPlan: 'ia', featureKey: 'recomendaciones' },
     ],
   },
   {
     category: 'SISTEMA',
     roles: ['admin'],
     items: [
-      { label: 'Auditoría', path: '/panel/auditoria', icon: 'Clipboard', minPlan: 'pro' },
+      { label: 'Auditoría', path: '/panel/auditoria', icon: 'Clipboard', minPlan: 'pro', featureKey: 'auditoria' },
       { label: 'Configuración', path: '/panel/configuracion', icon: 'Settings' },
       { label: 'Usuarios', path: '/panel/usuarios', icon: 'Users' },
     ],
@@ -78,12 +79,14 @@ export default function Sidebar({
 }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { currentPlan } = usePanelContext();
+  const { currentPlan, businessType } = usePanelContext();
   const currentPath = location.pathname;
 
   const role = currentOperator?.role || 'admin';
 
   const isActive = (path) => currentPath === path;
+
+  const features = getBusinessFeatures(businessType);
 
   return (
     <aside className="sidebar">
@@ -97,6 +100,7 @@ export default function Sidebar({
           if (section.roles && !section.roles.includes(role)) return null;
           const items = section.items.filter(item => {
             if (item.roles && !item.roles.includes(role)) return false;
+            if (item.featureKey && !features[item.featureKey]) return false;
             return true;
           });
 
