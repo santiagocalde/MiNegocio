@@ -1127,5 +1127,38 @@ main > * {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
-  .lp-orb { display: none !important; }
+   .lp-orb { display: none !important; }
+}
+
+/* ── Floating CTA (mobile) ── */
+.lp-floating-cta {
+  display: none;
+}
+@media (max-width: 768px) {
+  .lp-floating-cta {
+    display: flex; justify-content: center; align-items: center;
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 999;
+    padding: 10px 16px 14px;
+    background: linear-gradient(0deg, rgba(11,19,43,0.98) 60%, rgba(11,19,43,0));
+    opacity: 0; transform: translateY(20px);
+    transition: opacity 0.3s, transform 0.3s;
+    pointer-events: none;
+  }
+  .lp-floating-cta.is-visible {
+    opacity: 1; transform: translateY(0);
+    pointer-events: auto;
+  }
+  .lp-floating-cta-btn {
+    width: 100%; max-width: 400px; padding: 14px 24px;
+    border-radius: 14px; border: none; cursor: pointer;
+    background: var(--lp-gradient-main);
+    color: #fff; font-size: 1rem; font-weight: 800;
+    font-family: inherit; letter-spacing: 0.3px;
+    box-shadow: 0 4px 24px rgba(20,187,166,0.3);
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .lp-floating-cta-btn:active {
+    transform: scale(0.97);
+    box-shadow: 0 2px 12px rgba(20,187,166,0.2);
+  }
 }

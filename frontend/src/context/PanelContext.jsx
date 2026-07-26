@@ -93,7 +93,8 @@ export function PanelProvider({ children }) {
         })
         .catch(() => { addToast('Error al validar turno. Reintentá.', 'error'); });
     }
-  }, [auth.isAuthenticated]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [auth.isAuthenticated, addToast]);
 
   const value = useMemo(() => ({
     auth,
@@ -160,6 +161,7 @@ export function PanelProvider({ children }) {
         </div>
       );
     }
+    // eslint-disable-next-line react-hooks/immutability
     window.location.href = '/';
     return null;
   }
