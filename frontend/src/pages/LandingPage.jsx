@@ -274,9 +274,11 @@ export default function LandingPage() {
         <LandingFeatures />
         <div className="lp-divider" />
         <LandingSoporteHumano />
-        <div className="lp-divider" />
-        <LandingTestimonials />
       </MobileCollapse>
+      {/* Testimonios quedan visibles en mobile (prueba social pegada al precio).
+          En desktop el orden es idéntico al original. */}
+      <div className="lp-divider" />
+      <LandingTestimonials />
       <div className="lp-divider" />
       <LandingPricing
         isYearly={isYearly} setIsYearly={setIsYearly}
