@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Security Audit Card</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0d1117;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  }
+  .card {
+    width: 680px;
+    background: linear-gradient(145deg, #111827, #0d1117);
+    border: 1px solid #21262d;
+    border-radius: 16px;
+    padding: 36px 40px;
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #f85149, #d29922, #3fb950);
+  }
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 28px;
+  }
+  .title-block h1 {
+    color: #f0f6fc;
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.3px;
+  }
+  .title-block .subtitle {
+    color: #8b949e;
+    font-size: 13px;
+    margin-top: 4px;
+  }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(248, 81, 73, 0.15);
+    border: 1px solid rgba(248, 81, 73, 0.3);
+    color: #f85149;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .badge .dot {
+    width: 6px; height: 6px;
+    background: #f85149;
+    border-radius: 50%;
+  }
+  .stats-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+  .stat {
+    flex: 1;
+    background: #161b22;
+    border: 1px solid #21262d;
+    border-radius: 10px;
+    padding: 14px 16px;
+    text-align: center;
+  }
+  .stat .number {
+    font-size: 26px;
+    font-weight: 700;
+    color: #f0f6fc;
+    letter-spacing: -0.5px;
+  }
+  .stat .label {
+    font-size: 11px;
+    color: #8b949e;
+    margin-top: 2px;
+  }
+  .stat.critical { border-left: 3px solid #f85149; }
+  .stat.critical .number { color: #f85149; }
+  .stat.high { border-left: 3px solid #d29922; }
+  .stat.high .number { color: #d29922; }
+  .stat.medium { border-left: 3px solid #3fb950; }
+  .stat.medium .number { color: #3fb950; }
+  table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+  thead th {
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    color: #8b949e;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 0 0 12px 0;
+    border-bottom: 1px solid #21262d;
+  }
+  tbody td {
+    padding: 12px 0;
+    border-bottom: 1px solid #21262d;
+    font-size: 13px;
+    color: #c9d1d9;
+    vertical-align: middle;
+  }
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+  .severity {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: 600;
+    font-size: 12px;
+  }
+  .severity.crit { color: #f85149; }
+  .severity.high-sev { color: #d29922; }
+  .severity.med { color: #3fb950; }
+  .severity .icon {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+  }
+  .severity.crit .icon { background: #f85149; }
+  .severity.high-sev .icon { background: #d29922; }
+  .severity.med .icon { background: #3fb950; }
+  .finding-name {
+    color: #f0f6fc;
+    font-weight: 500;
+  }
+  .fix {
+    color: #7ee787;
+    font-size: 12px;
+  }
+  .footer {
+    margin-top: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    color: #484f58;
+  }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="header">
+    <div class="title-block">
+      <h1>Auditoría de Seguridad</h1>
+      <div class="subtitle">MiNegocio POS · 25 jul 2026 · 4 agentes en paralelo</div>
+    </div>
+    <div class="badge">
+      <span class="dot"></span> COMPLETADA
+    </div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat critical">
+      <div class="number">1</div>
+      <div class="label">CRÍTICO</div>
+    </div>
+    <div class="stat high">
+      <div class="number">3</div>
+      <div class="label">ALTO</div>
+    </div>
+    <div class="stat medium">
+      <div class="number">3</div>
+      <div class="label">MEDIO</div>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Hallazgo</th>
+        <th>Severidad</th>
+        <th>Fix</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="finding-name">JWT_SECRET expuesto en historial git</span></td>
+        <td><span class="severity crit"><span class="icon"></span>Crítico</span></td>
+        <td><span class="fix">Rotado + barrera arranque por hash</span></td>
+      </tr>
+      <tr>
+        <td><span class="finding-name">GET /api/logs sin auth</span><br><span style="font-size:11px;color:#8b949e;">cualquier tenant leía logs globales</span></td>
+        <td><span class="severity high-sev"><span class="icon"></span>Alto</span></td>
+        <td><span class="fix">Cerrado a superadmin</span></td>
+      </tr>
+      <tr>
+        <td><span class="finding-name">Webhook MercadoPago fail-open</span><br><span style="font-size:11px;color:#8b949e;">sin validación de firma en prod</span></td>
+        <td><span class="severity high-sev"><span class="icon"></span>Alto</span></td>
+        <td><span class="fix">Fail-closed + MP_WEBHOOK_SECRET</span></td>
+      </tr>
+      <tr>
+        <td><span class="finding-name">Anulación de ventas sin PIN</span><br><span style="font-size:11px;color:#8b949e;">cualquiera podía anular</span></td>
+        <td><span class="severity high-sev"><span class="icon"></span>Alto</span></td>
+        <td><span class="fix">PIN supervisor en backend + modal</span></td>
+      </tr>
+      <tr>
+        <td><span class="finding-name">PIN en texto plano en logs</span></td>
+        <td><span class="severity med"><span class="icon"></span>Medio</span></td>
+        <td><span class="fix">Eliminado del log</span></td>
+      </tr>
+      <tr>
+        <td><span class="finding-name">mp_access_token retornado en GET /api/config</span></td>
+        <td><span class="severity med"><span class="icon"></span>Medio</span></td>
+        <td><span class="fix">Removido de la respuesta</span></td>
+      </tr>
+      <tr>
+        <td><span class="finding-name">Hardening auth: anti-enum login + PIN legacy → bcrypt</span></td>
+        <td><span class="severity med"><span class="icon"></span>Medio</span></td>
+        <td><span class="fix">bcrypt + contextvar por request</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="footer">
+    <span>branch mejoras/calidad-junio2026 · 6 commits</span>
+    <span>powered by Claude + Opencode</span>
+  </div>
+</div>
+</body>
+</html>
