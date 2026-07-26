@@ -28,15 +28,15 @@ def _fake_request(headers: dict):
 # ── MRR normalizado ───────────────────────────────────────────
 
 def test_mrr_for_monthly():
-    assert billing._mrr_for("simple", "monthly") == 20000
-    assert billing._mrr_for("pro", "monthly") == 30000
-    assert billing._mrr_for("ia", "monthly") == 40000
+    assert billing._mrr_for("simple", "monthly") == 19999
+    assert billing._mrr_for("pro", "monthly") == 29999
+    assert billing._mrr_for("ia", "monthly") == 39999
 
 
 def test_mrr_for_yearly_is_normalized_to_month():
     # El plan anual se prorratea a mes (yearly / 12).
-    assert billing._mrr_for("simple", "yearly") == round(200000 / 12)
-    assert billing._mrr_for("pro", "yearly") == round(300000 / 12)
+    assert billing._mrr_for("simple", "yearly") == round(180000 / 12)
+    assert billing._mrr_for("pro", "yearly") == round(270000 / 12)
 
 
 def test_mrr_for_unknown_plan_is_zero():
