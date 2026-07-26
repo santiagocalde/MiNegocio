@@ -20,6 +20,7 @@ import asyncio
 import os
 import re
 import sys
+import unicodedata
 
 import httpx
 
@@ -93,59 +94,95 @@ async def _off_by_barcode(client: httpx.AsyncClient, barcode: str) -> str:
     return ""
 
 
-def _search_variants(name: str) -> list:
-    """Variantes de búsqueda, de más específica a más general. Los términos cortos
-    (marca + producto) suelen matchear mejor productos populares con foto en OFF."""
-    base = _clean_name(name)
-    words = base.split()
-    variants = []
-    if len(words) >= 2:
-        variants.append(" ".join(words[:2]))   # marca + producto (ej "Papas Lays")
-    if len(words) >= 3:
-        variants.append(" ".join(words[:3]))
-    variants.append(base)                       # nombre completo limpio
-    seen, out = set(), []
-    for v in variants:
-        k = v.lower()
-        if v and k not in seen:
-            seen.add(k)
-            out.append(v)
-    return out
+_STOP = {"de", "la", "el", "con", "y", "x", "sin", "los", "las", "para"}
+# Palabras que indican que el producto es una BEBIDA (para no matchear un snack).
+_BEV_WORDS = {"coca", "cola", "sprite", "fanta", "pepsi", "agua", "gaseosa", "gaseosas",
+              "jugo", "cepita", "monster", "speed", "energizante", "energy", "cerveza",
+              "lata", "bebida", "shake", "chocolatada", "uvasal", "retornable", "mini"}
+_BEV_CATS = ("beverage", "soda", "drink", "water", "juice", "energy", "cola")
+_SNACK_CATS = ("snack", "chips", "crisp", "biscuit", "cookie", "cracker", "candy", "confection")
+# Fields de búsqueda: además de imágenes, traemos nombre/marca/categorías para puntuar.
+_SEARCH_FIELDS = "product_name,brands,categories_tags,image_front_small_url,image_small_url,image_front_url,image_url"
+
+
+def _norm(s: str) -> str:
+    s = unicodedata.normalize("NFKD", s or "").encode("ascii", "ignore").decode()
+    return re.sub(r"[^a-z0-9 ]", " ", s.lower())
+
+
+def _tokens(name: str) -> list:
+    toks = [t for t in _norm(_clean_name(name)).split() if t and t not in _STOP and not t.isdigit()]
+    return toks
+
+
+def _tok_in(t: str, ctoks: set) -> bool:
+    """Match de token tolerante a plural/posesivo (lays≈lay, cola≈colas)."""
+    return t in ctoks or t.rstrip("s") in ctoks or (t + "s") in ctoks
+
+
+def _score(our_tokens: list, cand: dict) -> float:
+    """Puntúa qué tan bien un candidato de OFF representa nuestro producto."""
+    ctoks = set(_norm(f"{cand.get('product_name','')} {cand.get('brands','') or ''}").split())
+    if not ctoks:
+        return -1.0
+    overlap = sum(1 for t in our_tokens if _tok_in(t, ctoks))
+    if overlap == 0:
+        return -1.0
+    score = overlap / max(1, len(our_tokens))
+    # La marca (primer token significativo) debería aparecer.
+    if our_tokens and not _tok_in(our_tokens[0], ctoks):
+        score -= 0.4
+    cats = " ".join(cand.get("categories_tags") or [])
+    if any(t in _BEV_WORDS for t in our_tokens):   # nuestro producto es bebida
+        if any(b in cats for b in _BEV_CATS):
+            score += 0.5
+        if any(s in cats for s in _SNACK_CATS):
+            score -= 0.7                            # penaliza snack cuando buscamos bebida
+    return score
 
 
 async def _off_by_name(client: httpx.AsyncClient, name: str, delay: float) -> str:
-    """Busca por nombre probando variantes; devuelve la primera foto encontrada."""
-    for j, term in enumerate(_search_variants(name)):
-        if j:
-            await asyncio.sleep(delay)  # respetar rate-limit entre variantes
-        data = await _get_json(client, OFF_SEARCH_API, {
-            "search_terms": term, "search_simple": 1, "action": "process",
-            "json": 1, "page_size": 5, "fields": OFF_FIELDS,
-        })
-        if data:
-            for p in data.get("products", []):
-                url = _pick_image(p)
-                if url:
-                    return url
-    return ""
+    """Busca por nombre y elige el candidato mejor puntuado (marca + categoría),
+    no el primero. Devuelve '' si ninguno supera el umbral (mejor sin foto que
+    con la foto equivocada)."""
+    our = _tokens(name)
+    if not our:
+        return "", True
+    # Término de búsqueda: marca + tipo (primeros 2-3 tokens) da mejor recall.
+    term = " ".join(our[:3])
+    data = await _get_json(client, OFF_SEARCH_API, {
+        "search_terms": term, "search_simple": 1, "action": "process",
+        "json": 1, "page_size": 10, "fields": _SEARCH_FIELDS,
+    })
+    responded = data is not None   # False = throttle/red (no borrar la foto actual)
+    best_url, best_score = "", 0.34   # umbral: exige un match razonable
+    if data:
+        for p in data.get("products", []):
+            url = _pick_image(p)
+            if not url:
+                continue
+            s = _score(our, p)
+            if s > best_score:
+                best_score, best_url = s, url
+    return best_url, responded
 
 
-async def fetch_off_image(client: httpx.AsyncClient, barcode: str, name: str = "", delay: float = DELAY_SEARCH) -> tuple[str, str]:
-    """Devuelve (url, metodo). Intenta por código de barras y cae a búsqueda por
-    nombre (mejor cobertura para productos argentinos, cuyos EAN casi no están
-    en OFF). metodo ∈ {'codigo','nombre',''}."""
+async def fetch_off_image(client: httpx.AsyncClient, barcode: str, name: str = "", delay: float = DELAY_SEARCH) -> tuple[str, str, bool]:
+    """Devuelve (url, metodo, responded). responded=False cuando OFF no respondió
+    (throttle/red): en ese caso NO se debe borrar la foto actual en modo overwrite."""
     try:
         if _looks_like_barcode(barcode):
             url = await _off_by_barcode(client, barcode)
             if url:
-                return url, "codigo"
+                return url, "codigo", True
         if name:
-            url = await _off_by_name(client, name, delay)
+            url, responded = await _off_by_name(client, name, delay)
             if url:
-                return url, "nombre"
+                return url, "nombre", True
+            return "", "", responded
     except Exception as e:
         print(f"    [warn] {barcode or name}: {e}")
-    return "", ""
+    return "", "", False
 
 
 async def _load_products_pg(dsn: str, business_id, overwrite: bool):
@@ -227,20 +264,29 @@ async def main():
 
     updates = []
     found = 0
+    cleared = 0
     by_method = {"codigo": 0, "nombre": 0}
     async with httpx.AsyncClient() as client:
         for i, p in enumerate(candidates, 1):
             barcode = str(p["code"]).strip()
-            url, method = await fetch_off_image(client, barcode, p["name"], args.delay)
-            status = f"OK ({method})" if url else "sin foto"
+            url, method, responded = await fetch_off_image(client, barcode, p["name"], args.delay)
             if url:
                 found += 1
                 by_method[method] = by_method.get(method, 0) + 1
                 updates.append((url, p["id"]))
+                status = f"OK ({method})"
+            elif args.overwrite and responded:
+                # OFF respondió pero ningún candidato convence → limpiar la foto
+                # (posiblemente equivocada) en vez de dejar una incorrecta.
+                updates.append(("", p["id"]))
+                cleared += 1
+                status = "limpiada (sin match confiable)"
+            else:
+                status = "sin foto"
             print(f"  [{i}/{len(candidates)}] {p['name'][:42]:42}  -> {status}")
             await asyncio.sleep(args.delay)
 
-    print(f"\nFotos encontradas: {found}/{len(candidates)}  (por código: {by_method.get('codigo',0)}, por nombre: {by_method.get('nombre',0)})")
+    print(f"\nFotos encontradas: {found}/{len(candidates)}  (codigo: {by_method.get('codigo',0)}, nombre: {by_method.get('nombre',0)})  |  limpiadas: {cleared}")
 
     if args.dry_run:
         print("(dry-run: no se escribió nada)")
