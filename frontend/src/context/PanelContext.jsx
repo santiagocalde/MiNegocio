@@ -25,6 +25,12 @@ export function PanelProvider({ children }) {
   const [currentDateTime, setCurrentDateTime] = useState(new Date());
   const [needsSetup, setNeedsSetup] = useState(null);
   const [businessName, setBusinessName] = useState('MiNegocio');
+  const [businessType, setBusinessType] = useState(() => {
+    try {
+      const biz = JSON.parse(localStorage.getItem('saas_business') || '{}');
+      return biz?.business_type || '';
+    } catch { return ''; }
+  });
 
   const addToast = useCallback((message, type = 'success') => {
     const id = Date.now();
@@ -108,10 +114,12 @@ export function PanelProvider({ children }) {
     currentSucursalId,
     setCurrentSucursalId,
     currentDateTime,
+    businessType,
+    setBusinessType,
     ...plan,
   }), [
     auth, backend, closeTurn, printing, addToast, playBeep, playErrorBeep,
-    toasts, currentSucursalId, currentDateTime, plan,
+    toasts, currentSucursalId, currentDateTime, businessType, plan,
   ]);
 
   if (needsSetup === null) {

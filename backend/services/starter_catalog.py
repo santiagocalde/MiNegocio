@@ -43,21 +43,11 @@ STARTER_CATALOG = {
         "Sándwiches": ["Sándwich de miga (docena)", "Pebete"],
         "Bebidas": ["Gaseosa 500ml", "Agua mineral 500ml"],
     },
-    "carniceria": {
-        "Vacuno": ["Asado (kg)", "Carne picada (kg)", "Milanesa (kg)", "Nalga (kg)", "Bife de chorizo (kg)", "Roast beef (kg)"],
-        "Cerdo": ["Bondiola (kg)", "Costilla de cerdo (kg)", "Matambre de cerdo (kg)"],
-        "Pollo": ["Pollo entero (kg)", "Pechuga (kg)", "Pata muslo (kg)"],
-        "Embutidos": ["Chorizo (kg)", "Morcilla (kg)", "Salchicha parrillera (kg)"],
-    },
-    "verduleria": {
-        "Verduras": ["Papa (kg)", "Cebolla (kg)", "Tomate (kg)", "Lechuga", "Zanahoria (kg)", "Zapallo (kg)", "Morrón (kg)"],
-        "Frutas": ["Banana (kg)", "Manzana (kg)", "Naranja (kg)", "Mandarina (kg)", "Pera (kg)", "Uva (kg)"],
-        "Huevos y otros": ["Huevos (docena)", "Papa frita congelada"],
-    },
-    "fiambreria": {
-        "Fiambres": ["Jamón cocido (kg)", "Jamón crudo (kg)", "Salame (kg)", "Mortadela (kg)", "Bondiola (kg)", "Lomo (kg)"],
-        "Quesos": ["Queso cremoso (kg)", "Queso de máquina (kg)", "Queso rallado", "Provolone (kg)", "Roquefort (kg)"],
-        "Picada": ["Maní", "Aceitunas", "Papas fritas"],
+    "autoservicio": {
+        "Almacén": ["Arroz 1kg", "Fideos 500g", "Aceite 900ml", "Azúcar 1kg", "Sal fina 500g", "Harina 1kg", "Yerba 1kg", "Puré de tomate", "Salsa de tomate"],
+        "Bebidas": ["Gaseosa 2.25L", "Agua mineral 2L", "Cerveza lata", "Vino tinto", "Jugo en caja", "Energizante"],
+        "Lácteos": ["Leche 1L", "Queso cremoso", "Manteca 200g", "Yogur", "Dulce de leche"],
+        "Limpieza": ["Lavandina 1L", "Detergente", "Jabón en polvo", "Papel higiénico x4", "Rollo de cocina", "Escoba"],
     },
     "ferreteria": {
         "Herramientas": ["Martillo", "Destornillador", "Pinza", "Llave ajustable", "Cinta métrica"],

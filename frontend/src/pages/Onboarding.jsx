@@ -15,11 +15,9 @@ const tiposNegocio = [
   { id: 'kiosco', label: 'Kiosco', icon: <Icons.Package /> },
   { id: 'almacen', label: 'Almacén', icon: <Icons.Box /> },
   { id: 'minimercado', label: 'Mini Mercado', icon: <Icons.ShoppingCart /> },
+  { id: 'autoservicio', label: 'Autoservicio', icon: <Icons.ShoppingCart /> },
   { id: 'dietetica', label: 'Dietética', icon: <Icons.Sparkles /> },
   { id: 'panaderia', label: 'Panadería', icon: <Icons.Tag /> },
-  { id: 'carniceria', label: 'Carnicería', icon: <Icons.Truck /> },
-  { id: 'verduleria', label: 'Verdulería', icon: <Icons.Image /> },
-  { id: 'fiambreria', label: 'Fiambrería', icon: <Icons.Clipboard /> },
   { id: 'ferreteria', label: 'Ferretería', icon: <Icons.Settings /> },
   { id: 'libreria', label: 'Librería', icon: <Icons.Book /> },
   { id: 'petshop', label: 'Pet Shop', icon: <Icons.Users /> },
@@ -149,6 +147,7 @@ export default function Onboarding() {
 
         const biz = JSON.parse(localStorage.getItem('saas_business') || '{}');
         biz.business_name = formData.negocio;
+        biz.business_type = formData.tipo;
         localStorage.setItem('saas_business', JSON.stringify(biz));
         localStorage.setItem('minegocio_current_operator', JSON.stringify({ name: formData.nombre || 'Dueño', role: 'admin' }));
         localStorage.removeItem('minegocio_onboarding_pending');
@@ -187,6 +186,7 @@ export default function Onboarding() {
         const data = await res.json();
         localStorage.setItem('saas_token', data.access_token);
         if (data.refresh_token) localStorage.setItem('saas_refresh_token', data.refresh_token);
+        data.business.business_type = formData.tipo;
         localStorage.setItem('saas_business', JSON.stringify(data.business));
         localStorage.setItem('minegocio_current_operator', JSON.stringify({ name: formData.nombre || 'Dueño', role: 'admin' }));
         if (data.operator_pin) {
