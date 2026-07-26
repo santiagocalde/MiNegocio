@@ -130,7 +130,7 @@ export default function ReportsModule() {
 
       {fetchError && (
         <div style={{ marginBottom: '16px', padding: '12px 16px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '8px', color: 'var(--accent-danger)', fontSize: '0.9rem', flexShrink: 0 }}>
-          ⚠️ {fetchError} — verificá tu conexión o que el servidor esté activo.
+          ⚠️ {fetchError} — verificá tu conexión a internet.
         </div>
       )}
 

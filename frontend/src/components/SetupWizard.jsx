@@ -21,7 +21,7 @@ export default function SetupWizard({ onComplete }) {
         if (!d.needs_setup) return onComplete();
         setLoading(false);
       })
-      .catch(() => { setLoading(false); setError('No se puede conectar con el servidor'); });
+      .catch(() => { setLoading(false); setError('Sin internet'); });
   }, [onComplete]);
 
   const handleSubmit = async (e) => {
@@ -44,7 +44,7 @@ export default function SetupWizard({ onComplete }) {
         setError(d.detail || 'Error al guardar');
       }
     } catch {
-      setError('Error de conexión con el servidor');
+      setError('Sin internet');
     } finally {
       setSaving(false);
     }

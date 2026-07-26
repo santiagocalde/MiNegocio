@@ -178,7 +178,7 @@ export default function Onboarding() {
               errStr = Array.isArray(data.detail) ? data.detail[0].msg : data.detail;
             }
           } catch {
-            errStr = `Error del servidor (${res.status})`;
+            errStr = `Error del sistema (${res.status})`;
           }
           throw new Error(errStr);
         }

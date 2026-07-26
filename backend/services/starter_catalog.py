@@ -22,6 +22,7 @@ STARTER_CATALOG = {
         "Bebidas": ["Gaseosa 2.25L", "Agua mineral 2L", "Vino tinto", "Cerveza lata"],
         "Limpieza": ["Lavandina 1L", "Detergente", "Jabón en polvo", "Papel higiénico x4"],
         "Lácteos": ["Leche 1L", "Queso cremoso", "Manteca 200g", "Yogur"],
+        "Panadería y otros": ["Pan francés", "Pan de molde", "Huevos (docena)", "Galletitas surtidas"],
     },
     "minimercado": {
         "Almacén": ["Arroz 1kg", "Fideos 500g", "Aceite 900ml", "Azúcar 1kg", "Yerba 1kg", "Café 250g"],
@@ -36,6 +37,9 @@ STARTER_CATALOG = {
         "Harinas": ["Harina integral", "Harina de almendras", "Harina de garbanzo", "Premezcla sin TACC"],
         "Infusiones": ["Té verde", "Yerba orgánica", "Mate cocido"],
         "Endulzantes": ["Miel", "Stevia", "Azúcar mascabo"],
+        "Suplementos": ["Proteína en polvo", "Creatina", "Colágeno", "BCAA", "Barrita proteica"],
+        "Sin TACC": ["Galletitas sin TACC", "Fideos sin TACC", "Premezcla sin TACC", "Pan sin TACC"],
+        "Aceites": ["Aceite de coco", "Aceite de oliva extra virgen", "Aceite de sésamo"],
     },
     "panaderia": {
         "Panadería": ["Pan francés (kg)", "Pan de molde", "Facturas x docena", "Medialunas x unidad", "Criollos (kg)"],
@@ -44,10 +48,13 @@ STARTER_CATALOG = {
         "Bebidas": ["Gaseosa 500ml", "Agua mineral 500ml"],
     },
     "autoservicio": {
-        "Almacén": ["Arroz 1kg", "Fideos 500g", "Aceite 900ml", "Azúcar 1kg", "Sal fina 500g", "Harina 1kg", "Yerba 1kg", "Puré de tomate", "Salsa de tomate"],
-        "Bebidas": ["Gaseosa 2.25L", "Agua mineral 2L", "Cerveza lata", "Vino tinto", "Jugo en caja", "Energizante"],
-        "Lácteos": ["Leche 1L", "Queso cremoso", "Manteca 200g", "Yogur", "Dulce de leche"],
-        "Limpieza": ["Lavandina 1L", "Detergente", "Jabón en polvo", "Papel higiénico x4", "Rollo de cocina", "Escoba"],
+        "Almacén": ["Arroz 1kg", "Fideos 500g", "Aceite 900ml", "Azúcar 1kg", "Sal fina 500g", "Harina 1kg", "Yerba 1kg", "Puré de tomate", "Lentejas 400g", "Polenta 500g"],
+        "Bebidas": ["Gaseosa 2.25L", "Agua mineral 2L", "Cerveza lata", "Vino tinto", "Jugo en caja", "Energizante", "Soda 1.5L"],
+        "Lácteos y Fiambres": ["Leche 1L", "Queso cremoso", "Manteca 200g", "Yogur", "Dulce de leche", "Jamón cocido", "Queso rallado", "Huevos (docena)"],
+        "Limpieza": ["Lavandina 1L", "Detergente", "Jabón en polvo", "Papel higiénico x4", "Rollo de cocina", "Escoba", "Trapo de piso"],
+        "Panadería": ["Pan francés", "Pan de molde", "Facturas x docena", "Prepizza", "Pan rallado"],
+        "Congelados": ["Patitas de pollo (kg)", "Milanesa de carne (kg)", "Papas fritas congeladas (kg)", "Hamburguesas x6"],
+        "Perfumería": ["Shampoo", "Jabón de tocador", "Dentífrico", "Desodorante", "Papel higiénico x4"],
     },
     "ferreteria": {
         "Herramientas": ["Martillo", "Destornillador", "Pinza", "Llave ajustable", "Cinta métrica"],
@@ -64,6 +71,7 @@ STARTER_CATALOG = {
         "Alimento": ["Alimento perro adulto (kg)", "Alimento gato adulto (kg)", "Alimento cachorro (kg)", "Lata de comida"],
         "Higiene": ["Piedras sanitarias", "Shampoo para mascotas", "Bolsas sanitarias"],
         "Accesorios": ["Collar", "Correa", "Juguete", "Comedero"],
+        "Farmacia": ["Antiparasitario interno", "Pipeta antipulgas", "Comprimido desparasitante", "Vitaminas", "Shampoo medicado"],
     },
 }
 

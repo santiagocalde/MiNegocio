@@ -167,7 +167,7 @@ export default function StockModule() {
         if (addToast) addToast(data.detail || 'No se pudo crear el producto. Reintentá o revisá tu conexión.', 'error');
       }
     } catch {
-      if (addToast) addToast('No se pudo conectar con el servidor. Revisá tu conexión a internet.', 'error');
+      if (addToast) addToast('Sin internet. Revisá tu conexión.', 'error');
     }
   };
 
@@ -183,7 +183,7 @@ export default function StockModule() {
         if (addToast) addToast(data.detail || "No se pudo abrir el bulto. Reintentá o revisá tu conexión.", "error");
       }
     } catch {
-      if (addToast) addToast("No se pudo conectar con el servidor. Revisá tu conexión a internet.", "error");
+      if (addToast) addToast("Sin internet. Revisá tu conexión.", "error");
     }
   };
 
@@ -215,7 +215,7 @@ export default function StockModule() {
             addToast('No se pudieron aumentar los precios. Reintentá o revisá tu conexión.', 'error');
           }
         } catch {
-          addToast('No se pudo conectar con el servidor. Revisá tu conexión a internet.', 'error');
+          addToast('Sin internet. Revisá tu conexión.', 'error');
         }
       }
     });
@@ -241,7 +241,7 @@ export default function StockModule() {
         if (addToast) addToast(data.detail || 'No se pudo importar el archivo. Revisá el formato e intentá de nuevo.', 'error');
       }
     } catch {
-      if (addToast) addToast('No se pudo conectar con el servidor para importar el archivo. Revisá tu conexión a internet.', 'error');
+      if (addToast) addToast('Sin internet. No se pudo importar el archivo.', 'error');
     }
     e.target.value = '';
   };
@@ -292,7 +292,7 @@ export default function StockModule() {
         setProducts(cached.products);
         setDeadStock(cached.deadStock || []);
         setOffline(true);
-        if (addToast) addToast('Mostrando datos guardados. Sin conexión al servidor.', 'info');
+        if (addToast) addToast('Mostrando datos guardados. Sin internet.', 'info');
       } else {
         setProducts([]);
         setDeadStock([]);
@@ -356,7 +356,7 @@ export default function StockModule() {
         <div style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: 10, padding: '12px 20px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
           <Icons.Wifi style={{ width: '20px', height: '20px', color: 'var(--accent-warning)', flexShrink: 0 }} />
           <span style={{ flex: 1, color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-            Sin conexión al servidor. Mostrando datos guardados.
+            Sin internet. Mostrando datos guardados.
           </span>
           <button onClick={() => fetchProducts()} style={{ background: 'var(--gradient-primary)', color: 'white', border: 'none', padding: '6px 16px', borderRadius: 6, fontWeight: 600, cursor: 'pointer', fontSize: '0.85rem' }}>
             Reintentar
@@ -479,7 +479,7 @@ export default function StockModule() {
                                   if (addToast) addToast('No se pudo actualizar el precio. Reintentá o revisá tu conexión.', 'error');
                                 }
                               } catch {
-                                if (addToast) addToast('No se pudo conectar con el servidor. Revisá tu conexión a internet.', 'error');
+                                if (addToast) addToast('Sin internet. Revisá tu conexión.', 'error');
                               }
                             }
                           }
@@ -503,7 +503,7 @@ export default function StockModule() {
                                   if (addToast) addToast('No se pudo actualizar el stock. Reintentá o revisá tu conexión.', 'error');
                                 }
                               } catch {
-                                if (addToast) addToast('No se pudo conectar con el servidor. Revisá tu conexión a internet.', 'error');
+                                if (addToast) addToast('Sin internet. Revisá tu conexión.', 'error');
                               }
                             }
                           }
@@ -527,7 +527,7 @@ export default function StockModule() {
                                   if (addToast) addToast('No se pudo actualizar el nombre. Reintentá o revisá tu conexión.', 'error');
                                 }
                               } catch {
-                                if (addToast) addToast('No se pudo conectar con el servidor. Revisá tu conexión a internet.', 'error');
+                                if (addToast) addToast('Sin internet. Revisá tu conexión.', 'error');
                               }
                             }
                           }
@@ -545,7 +545,7 @@ export default function StockModule() {
             <SkeletonTable rows={6} cols={6} />
           ) : (
             <EmptyState icon="Package" title={offline ? 'Sin conexión' : 'Inventario vacío'}
-              description={offline ? 'No se pudieron cargar los datos guardados. Verificá la conexión al servidor.' : 'No hay productos en el inventario. Creá tu primer producto o importá un archivo CSV.'}
+              description={offline ? 'No se pudieron cargar los datos guardados. Verificá la conexión a internet.' : 'No hay productos en el inventario. Creá tu primer producto o importá un archivo CSV.'}
               actionLabel={offline ? 'Reintentar' : undefined} actionOnClick={offline ? () => fetchProducts() : undefined} />
           )}
         </div>
@@ -576,7 +576,7 @@ export default function StockModule() {
                   apiPost(`/products/${p.id}`, {}).then(r => {
                     if (r.ok) { addToast(`${p.name} eliminado.`, 'success'); fetchProducts(); }
                     else addToast('No se pudo eliminar el producto. Reintentá o revisá tu conexión.', 'error');
-                  }).catch(() => addToast('No se pudo conectar con el servidor. Revisá tu conexión a internet.', 'error'));
+                  }).catch(() => addToast('Sin internet. Revisá tu conexión.', 'error'));
                   }
                 });
               }}><Icons.Trash /></td>
@@ -612,7 +612,7 @@ export default function StockModule() {
           )}
         />
         <AlertAccordion
-          icon={Icons.Trash} title="Stock Muerto" subtitle={`${deadStock.length} productos sin ventas en 30 días`}
+          icon={Icons.Trash} title="Sin salida" subtitle={`${deadStock.length} productos sin ventas en 30 días`}
           isOpen={openAccordion === 'dead'} onToggle={() => toggleAccordion('dead')}
           data={deadStock} columns={['Producto', 'Código', 'Categoría', 'Stock Estancado', 'Precio']}
           renderRow={(p) => (
