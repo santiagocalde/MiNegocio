@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { API_ROOT, API_BASE } from '../config';
 import { track } from '../utils/track';
+import useIsMobile from '../hooks/useIsMobile';
 
 import LogoPrincipal from '../assets/images/MiNegocio_transparente_real.png';
 import FotoMascota from '../assets/images/mascota_oficial.jpg';
@@ -11,6 +12,7 @@ import LandingNav from './landing/LandingNav';
 import LandingHero from './landing/LandingHero';
 import LandingSocialProof from './landing/LandingSocialProof';
 import LandingShowcase from './landing/LandingShowcase';
+import LandingFeaturesCompact from './landing/LandingFeaturesCompact';
 import LandingDemo from './landing/LandingDemo';
 import LandingComparativa from './landing/LandingComparativa';
 import LandingFeatures from './landing/LandingFeatures';
@@ -30,6 +32,7 @@ import DogEasterEgg from './landing/DogEasterEgg';
 
 export default function LandingPage() {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isYearly, setIsYearly] = useState(true); // anual por default: resalta el ahorro del 20%
   const [mobileMenu, setMobileMenu] = useState(false);
@@ -264,19 +267,26 @@ export default function LandingPage() {
       <LandingSocialProof />
       <div className="lp-divider" />
       <LandingShowcase />
-      {/* Secundario en mobile: se pliega detrás de "Ver más" para llegar antes al
-          precio y el CTA. En desktop se renderiza igual que siempre (display:contents). */}
-      <MobileCollapse label="Ver todo lo que incluye">
-        <div className="lp-divider" />
-        <LandingDemo />
-        <div className="lp-divider" />
-        <LandingComparativa />
-        <LandingFeatures />
-        <div className="lp-divider" />
-        <LandingSoporteHumano />
-      </MobileCollapse>
-      {/* Testimonios quedan visibles en mobile (prueba social pegada al precio).
-          En desktop el orden es idéntico al original. */}
+
+      {/* Mobile: tira de beneficios "en 5 segundos" (qué resuelve) antes del precio. */}
+      {isMobile && <LandingFeaturesCompact />}
+
+      {/* Detalle. En DESKTOP va acá, en el medio (orden original). En MOBILE se
+          pliega al final, después del CTA, para no frenar el camino al precio.
+          Solo se renderiza una rama según el dispositivo. */}
+      {!isMobile && (
+        <>
+          <div className="lp-divider" />
+          <LandingDemo />
+          <div className="lp-divider" />
+          <LandingComparativa />
+          <LandingFeatures />
+          <div className="lp-divider" />
+          <LandingSoporteHumano />
+        </>
+      )}
+
+      {/* Testimonios visibles en mobile (prueba social pegada al precio). */}
       <div className="lp-divider" />
       <LandingTestimonials />
       <div className="lp-divider" />
@@ -288,6 +298,20 @@ export default function LandingPage() {
       <div className="lp-divider" />
       <LandingFAQ />
       <LandingFinalCTA isLoggedIn={isLoggedIn} goPanel={goPanel} goOnboard={goOnboard} />
+
+      {/* Mobile: el detalle completo va al final, plegado detrás de "Ver más". */}
+      {isMobile && (
+        <MobileCollapse label="Ver todo lo que incluye">
+          <div className="lp-divider" />
+          <LandingDemo />
+          <div className="lp-divider" />
+          <LandingComparativa />
+          <LandingFeatures />
+          <div className="lp-divider" />
+          <LandingSoporteHumano />
+        </MobileCollapse>
+      )}
+
       <LandingFooter
         navigate={navigate} setShowContactModal={setShowContactModal}
         handleDogClick={handleDogClick} logoImg={LogoPrincipal} mascotaImg={FotoMascota}
