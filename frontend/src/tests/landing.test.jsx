@@ -11,7 +11,7 @@ class MockObserver {
   unobserve() {}
   disconnect() {}
 }
-global.IntersectionObserver = MockObserver;
+globalThis.IntersectionObserver = MockObserver;
 
 // Mock images
 vi.mock('../assets/images/MiNegocio_transparente_real.png', () => ({ default: 'logo.png' }));

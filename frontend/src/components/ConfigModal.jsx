@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 
 const FIELDS = [
   { key: 'nombre',         label: 'Nombre del negocio',    placeholder: 'Kiosco Don Julio' },
@@ -13,7 +13,7 @@ const FIELDS = [
   { key: 'mp_access_token',label: 'Access Token de Mercado Pago', placeholder: 'APP_USR-...' },
 ];
 
-export default function ConfigModal({ onClose, onSave, operators, onOperatorsUpdate, serverUrl }) {
+export default function ConfigModal({ onSave, operators, onOperatorsUpdate, serverUrl }) {
   const [config, setConfig] = useState({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);

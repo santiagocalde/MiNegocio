@@ -76,7 +76,7 @@ export default function LandingPage() {
           if (data.detail) {
             errStr = Array.isArray(data.detail) ? data.detail[0].msg : data.detail;
           }
-        } catch (e) {
+        } catch {
           errStr = `Error del servidor (${res.status})`;
         }
         throw new Error(errStr);
@@ -206,6 +206,7 @@ export default function LandingPage() {
 
     const token = localStorage.getItem('saas_token');
     if (token && token !== 'demo-token' && token !== 'preview-token') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsLoggedIn(true);
       setUserName(localStorage.getItem('minegocio_current_operator') || 'Dueño');
     } else if (token === 'demo-token' || token === 'preview-token') {

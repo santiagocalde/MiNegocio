@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { apiPatch } from '../../services/apiClient';
 
 export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, currentOperator, todaySalesTotal, countedCash, setCountedCash, closeCajaPin, setCloseCajaPin, calculateCajaDiff, cashRef, addToast, currentTurnId, onTurnClosed }) {

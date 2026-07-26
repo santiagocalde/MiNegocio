@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Icons } from '../ui/Icons';
+import { useState, useEffect, useRef } from 'react';
 
 export default function AddAmountModal({ show, setShow, handleQuickAdd }) {
   const [name, setName] = useState('Producto Manual');
@@ -8,6 +7,7 @@ export default function AddAmountModal({ show, setShow, handleQuickAdd }) {
 
   useEffect(() => {
     if (show) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setName('Producto Manual');
       setPrice('');
       setTimeout(() => inputRef.current?.focus(), 100);

@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { Icons } from '../ui/Icons';
 import ProductThumb from '../ui/ProductThumb';
 import { formatMoney } from '../../utils/format';

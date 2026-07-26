@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import ConfigPrinting from '../components/pos/ConfigPrinting';
 import { usePanelContext } from '../context/PanelContext';
 import { apiGet, apiPut } from '../services/apiClient';

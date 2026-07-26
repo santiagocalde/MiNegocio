@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { apiPost } from '../services/apiClient';
 
 const K_OPERATOR = 'minegocio_current_operator';

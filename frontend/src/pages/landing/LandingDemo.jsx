@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Reveal } from './hooks/useReveal';
 
 // Demo animada del flujo de venta — 100% en código (sin video).
@@ -20,12 +20,14 @@ function peso(n) { return '$' + n.toLocaleString('es-AR'); }
 
 export default function LandingDemo() {
   const [step, setStep] = useState(0);
-  const reduced = useRef(false);
+  const [reduced, setReduced] = useState(false);
 
   useEffect(() => {
-    reduced.current = typeof window !== 'undefined'
+    const isReduced = typeof window !== 'undefined'
       && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reduced.current) { setStep(5); return; }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setReduced(isReduced);
+    if (isReduced) { setStep(5); return; }
     const id = setInterval(() => setStep(s => (s + 1) % STEPS), STEP_MS);
     return () => clearInterval(id);
   }, []);
@@ -89,7 +91,7 @@ export default function LandingDemo() {
                   Carrito vacío
                 </div>
               )}
-              {visibleItems.map((it, idx) => (
+              {visibleItems.map((it) => (
                 <div key={it.name} className="demo-row" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 20px' }}>
                   <span style={{ fontSize: '1.3rem', width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.05)', borderRadius: 10 }}>{it.emoji}</span>
                   <span style={{ flex: 1, fontSize: '0.95rem', color: '#fff', fontWeight: 600 }}>{it.name}</span>
@@ -121,7 +123,7 @@ export default function LandingDemo() {
             {/* overlay de éxito */}
             {done && (
               <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, background: 'rgba(11,19,43,0.82)', backdropFilter: 'blur(2px)' }}>
-                <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'rgba(16,185,129,0.15)', border: '2px solid #10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', animation: reduced.current ? 'none' : 'demo-pop 0.4s cubic-bezier(0.16,1,0.3,1) both' }}>
+                <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'rgba(16,185,129,0.15)', border: '2px solid #10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', animation: reduced ? 'none' : 'demo-pop 0.4s cubic-bezier(0.16,1,0.3,1) both' }}>
                   <svg width="36" height="36" fill="none" stroke="#10b981" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
                 </div>
                 <div style={{ fontWeight: 800, fontSize: '1.2rem', color: '#fff' }}>¡Venta registrada!</div>

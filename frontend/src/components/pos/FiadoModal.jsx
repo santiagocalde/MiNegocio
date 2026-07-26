@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 export default function FiadoModal({ isFiadoOpen, setIsFiadoOpen, adjustedTotal, total, fiadoName, setFiadoName, fiadoRef, confirmFiado, customers }) {
   const [fiadoAmount, setFiadoAmount] = useState('');

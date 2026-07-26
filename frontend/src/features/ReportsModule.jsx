@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { usePanelContext } from '../context/PanelContext';
 import { apiGet, SERVER_URL } from '../services/apiClient';
-import { SkeletonTable, SkeletonCard } from '../components/ui/Skeleton';
+import { SkeletonTable } from '../components/ui/Skeleton';
 import EmptyState from '../components/ui/EmptyState';
 import useSortable from '../hooks/useSortable.jsx';
 import { Icons } from '../components/ui/Icons';
@@ -91,17 +91,19 @@ export default function ReportsModule() {
     const today = new Date();
     const lastMonth = new Date(today);
     lastMonth.setDate(lastMonth.getDate() - 30);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setDateTo(today.toISOString().split('T')[0]);
     setDateFrom(lastMonth.toISOString().split('T')[0]);
   }, []);
 
   useEffect(() => {
     if (dateFrom && dateTo) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       fetchReports();
       const interval = setInterval(() => fetchReports(true), 10000);
       return () => clearInterval(interval);
     }
-  }, [fetchReports]);
+  }, [fetchReports, dateFrom, dateTo]);
 
   const renderReports = () => (
     <div style={{ padding: '12px 20px', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>

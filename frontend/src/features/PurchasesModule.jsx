@@ -11,7 +11,7 @@ import NewInvoiceForm from './purchases/NewInvoiceForm';
 const PLAN_WEIGHT = { trial: 1, simple: 1, pro: 2, ia: 3 };
 
 export default function PurchasesModule() {
-  const { backend, addToast, auth, currentSucursalId, currentPlan } = usePanelContext();
+  const { backend, addToast, auth, currentPlan } = usePanelContext();
   const globalProductsDB = backend.productsDB;
   const onProductsUpdated = backend.fetchProductsDB;
   const currentTurnId = auth.currentTurnId;
@@ -34,11 +34,6 @@ export default function PurchasesModule() {
   const [paidFromRegister, setPaidFromRegister] = useState(false);
   const [showQuickAdd, setShowQuickAdd] = useState(false);
   const searchInputRef = useRef(null);
-
-  useEffect(() => {
-    fetchSuppliers();
-    if (activeTab === 'history') fetchPurchases();
-  }, [activeTab]);
 
   const fetchSuppliers = async () => {
     if (isLocked) {
@@ -68,6 +63,13 @@ export default function PurchasesModule() {
     setLoading(false);
   };
 
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchSuppliers();
+    if (activeTab === 'history') fetchPurchases();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
+
   const addToCart = (product) => {
     const existing = cart.find(i => i.product_id === product.id);
     if (existing) {
@@ -96,7 +98,7 @@ export default function PurchasesModule() {
     } catch (e) { console.error(e) }
   };
 
-  const quickAddCounter = useRef(Date.now());
+  const quickAddCounter = useRef(0);
   const handleQuickAddNew = () => {
     const name = searchQuery.trim();
     if (!name) return;

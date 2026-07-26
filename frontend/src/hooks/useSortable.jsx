@@ -20,7 +20,7 @@ export default function useSortable(data, defaultKey = null) {
       const bVal = b[sortKey];
       if (aVal == null) return 1;
       if (bVal == null) return -1;
-      let cmp = 0;
+      let cmp;
       if (typeof aVal === 'number' && typeof bVal === 'number') {
         cmp = aVal - bVal;
       } else if (typeof aVal === 'string' && typeof bVal === 'string') {

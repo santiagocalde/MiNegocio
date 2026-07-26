@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import LandingLoginModal from '../pages/landing/LandingLoginModal';
 import LandingContactModal from '../pages/landing/LandingContactModal';
@@ -10,7 +10,7 @@ class MockObserver {
   unobserve() {}
   disconnect() {}
 }
-global.IntersectionObserver = MockObserver;
+globalThis.IntersectionObserver = MockObserver;
 
 describe('LandingLoginModal', () => {
   const defaultProps = {

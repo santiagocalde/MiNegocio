@@ -16,7 +16,7 @@ import ToastContainer from '../components/pos/ToastContainer';
 import GuidedTour from '../components/pos/GuidedTour';
 
 export default function PanelLayout() {
-  const { auth, backend, closeTurn, addToast, toasts, trialDaysRemaining, currentPlan, isTrialExpired, isPaid, planLabel, planLoaded } = usePanelContext();
+  const { auth, backend, closeTurn, addToast, toasts, trialDaysRemaining, currentPlan, isTrialExpired, isPaid, planLoaded } = usePanelContext();
   const location = useLocation();
 
   // Estados para Onboarding Modals
@@ -47,6 +47,7 @@ export default function PanelLayout() {
 
   useEffect(() => {
     if (localStorage.getItem('minegocio_onboarding_pending') === 'true') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setShowInitialCaja(true);
       localStorage.removeItem('minegocio_onboarding_pending');
     }

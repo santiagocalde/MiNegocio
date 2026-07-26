@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { Icons } from '../ui/Icons';
 
 function CierresAnterioresModal({ showCierres, setShowCierres, cierresData }) {

@@ -1,7 +1,7 @@
-import React from 'react';
+
 import { apiPost } from '../../services/apiClient';
 
-export default function CancelConfirmModal({ isCancelConfirm, setIsCancelConfirm, clearCart, cart, adjustedTotal, total, currentOperator, addToast }) {
+export default function CancelConfirmModal({ isCancelConfirm, setIsCancelConfirm, clearCart, cart, adjustedTotal, total, currentOperator }) {
   if (!isCancelConfirm) return null;
   return (
     <div className="modal-overlay"><div className="modal-content" style={{ width: '400px' }}>

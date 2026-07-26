@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { apiGet, apiPost } from '../services/apiClient';
 
 export default function SetupWizard({ onComplete }) {
+  // eslint-disable-next-line no-unused-vars
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);

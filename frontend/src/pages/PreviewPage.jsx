@@ -1,9 +1,6 @@
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 
 export default function PreviewPage() {
-  const navigate = useNavigate();
-
   useEffect(() => {
     localStorage.setItem('saas_token', 'preview-token');
     localStorage.setItem('saas_mode', 'preview');

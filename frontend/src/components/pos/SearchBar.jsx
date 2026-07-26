@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Icons } from '../ui/Icons';
 import AddAmountModal from './AddAmountModal';
 

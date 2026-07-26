@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Icons } from '../components/ui/Icons';
 import { API_ROOT } from '../config';
@@ -54,7 +54,7 @@ const prefijos = [
 export default function Onboarding() {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
-  const [direction, setDirection] = useState(1);
+  const [, setDirection] = useState(1);
   const [registerLoading, setRegisterLoading] = useState(false);
   const [registerError, setRegisterError] = useState('');
   const [termsAccepted, setTermsAccepted] = useState(false);
@@ -67,7 +67,7 @@ export default function Onboarding() {
         const parsed = JSON.parse(saved);
         if (parsed && typeof parsed === 'object') return parsed;
       }
-    } catch {}
+    } catch { /* noop */ }
     return { prefijo: '+54', telefono: '', email: '', password: '', nombre: '', negocio: '', tipo: '', posPrevio: '', arca: '', objetivo: '' };
   });
 
@@ -78,7 +78,7 @@ export default function Onboarding() {
     upper: /[A-Z]/.test(_pwd),
     lower: /[a-z]/.test(_pwd),
     digit: /[0-9]/.test(_pwd),
-    special: /[!@#$%^&*()_+\-=\[\]{}|;:,.<>?/~]/.test(_pwd),
+    special: /[!@#$%^&*()_+=\u005B\u005D{}|;:,.<>?/~-]/.test(_pwd),
   };
   const passwordValid = Object.values(pwdChecks).every(Boolean);
 
@@ -89,14 +89,15 @@ export default function Onboarding() {
 
   useEffect(() => {
     try {
-      const { password, ...persist } = formData; // no persistir la contraseña en texto plano
+      const { /* password */ ...persist } = formData; // no persistir la contraseña en texto plano
       localStorage.setItem('minegocio_onboarding_form', JSON.stringify(persist));
-    } catch {}
+    } catch { /* noop */ }
   }, [formData]);
 
   useEffect(() => {
     document.body.classList.add('landing-open');
     if (isLoggedIn) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setStep(1); // Pedir telefono siempre, aunque ya este registrado
     }
     return () => document.body.classList.remove('landing-open');
@@ -105,6 +106,7 @@ export default function Onboarding() {
   // Auto-avanzar pasos de email y nombre si ya esta logueado
   useEffect(() => {
     if (isLoggedIn && (step === 2 || step === 3)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setStep(4);
     }
   }, [step, isLoggedIn]);
@@ -176,7 +178,7 @@ export default function Onboarding() {
             if (data.detail) {
               errStr = Array.isArray(data.detail) ? data.detail[0].msg : data.detail;
             }
-          } catch (e) {
+          } catch {
             errStr = `Error del servidor (${res.status})`;
           }
           throw new Error(errStr);

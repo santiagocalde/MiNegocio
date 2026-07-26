@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { usePanelContext } from '../context/PanelContext';
 import { WHATSAPP_LINK } from '../utils/constants';
 import { Icons } from '../components/ui/Icons';
@@ -21,7 +21,7 @@ function ChevronUp() {
 }
 
 export default function SoportePage() {
-  const { backend, currentPlan, trialDaysRemaining, isTrialExpired, trialEndDateFormatted, backendError } = usePanelContext();
+  const { backend, currentPlan, trialDaysRemaining, isTrialExpired, trialEndDateFormatted } = usePanelContext();
   const [openFaq, setOpenFaq] = useState(null);
 
   const planLabel = { trial: 'Trial', simple: 'Simple', pro: 'Pro', ia: 'IA' }[currentPlan] || 'Trial';

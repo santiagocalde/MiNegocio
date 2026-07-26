@@ -1,4 +1,4 @@
-import React from 'react';
+
 
 function DuplicateCodeModal({ showDuplicateCodeModal, setShowDuplicateCodeModal, duplicateCodeMatches, setDuplicateCodeMatches, setCart, playBeep, searchRef }) {
   if (!showDuplicateCodeModal) return null;

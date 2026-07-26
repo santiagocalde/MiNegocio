@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { usePanelContext } from '../context/PanelContext';
 import { apiGet, apiPut } from '../services/apiClient';
-import { SkeletonCard } from '../components/ui/Skeleton';
 import FeatureGate from '../components/ui/FeatureGate';
 
 const Icons = {
@@ -12,7 +11,7 @@ const Icons = {
 };
 
 export default function CatalogoModule() {
-  const { addToast, backend, currentPlan } = usePanelContext();
+  const { addToast, currentPlan } = usePanelContext();
   const PLAN_WEIGHT = { trial: 1, simple: 1, pro: 2, ia: 3 };
   const isLocked = PLAN_WEIGHT[currentPlan] < PLAN_WEIGHT['pro'];
   const [isActive, setIsActive] = useState(false);

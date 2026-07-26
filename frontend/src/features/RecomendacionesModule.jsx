@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { usePanelContext } from '../context/PanelContext';
-import { apiGet, apiPost } from '../services/apiClient';
+import { apiGet } from '../services/apiClient';
 import FeatureGate from '../components/ui/FeatureGate';
 
 const PLAN_WEIGHT = { trial: 1, simple: 1, pro: 2, ia: 3 };
@@ -94,7 +94,7 @@ function PreciosIaCard({ loading, texto, sugerencias, onApply, addToast }) {
 }
 
 export default function RecomendacionesModule() {
-  const { addToast, backend, currentPlan } = usePanelContext();
+  const { addToast, currentPlan } = usePanelContext();
   const isLocked = PLAN_WEIGHT[currentPlan] < PLAN_WEIGHT['ia'];
   const [suggestions, setSuggestions] = useState([]);
   const [deadStock, setDeadStock] = useState([]);
@@ -103,6 +103,7 @@ export default function RecomendacionesModule() {
   const [iaRepo, setIaRepo] = useState({ texto: '', loading: true });
 
   useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect */
     if (isLocked) {
       setIaPrecios({ texto: '', sugerencias: [], loading: false });
       setIaRepo({ texto: '', loading: false });
@@ -116,9 +117,9 @@ export default function RecomendacionesModule() {
         { id: 5, name: 'Pilas AAA (Pack x4)', stock: 8, price: 1800 },
       ]);
       setLoading(false);
+      /* eslint-enable react-hooks/set-state-in-effect */
       return;
     }
-
     apiGet('/products/price-suggestions?threshold_pct=15')
       .then(r => r.ok ? r.json() : [])
       .then(data => {
@@ -145,7 +146,7 @@ export default function RecomendacionesModule() {
       .then(r => r.ok ? r.json() : Promise.reject(r))
       .then(d => setIaRepo({ texto: d.texto || '', loading: false }))
       .catch(() => setIaRepo({ texto: '', loading: false }));
-  }, []);
+  }, [isLocked]);
 
   const handleApplyOne = async (s) => {
     try {

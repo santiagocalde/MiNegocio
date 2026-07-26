@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { Icons } from '../ui/Icons';
 
 function ResumenModal({ showResumen, setShowResumen, resumenData, businessConfig, addToast }) {

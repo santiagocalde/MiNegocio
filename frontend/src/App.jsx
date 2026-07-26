@@ -1,4 +1,4 @@
-import React, { lazy, Suspense } from 'react';
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { PanelProvider } from './context/PanelContext';
 import PanelLayout from './layouts/PanelLayout';

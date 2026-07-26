@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 const STEPS = [
   {
@@ -73,7 +73,7 @@ export default function GuidedTour({ onClose }) {
     const r = el.getBoundingClientRect();
     setRect(r);
     const tw = 340, th = 220, gap = 16;
-    let top = 0, left = 0;
+    let top, left;
     if (current.placement === 'bottom') {
       top = r.bottom + gap;
       left = Math.max(16, r.left + r.width / 2 - tw / 2);
@@ -103,7 +103,7 @@ export default function GuidedTour({ onClose }) {
 
   useEffect(() => {
     const onKey = (e) => {
-      if (e.key === 'Escape') { try { localStorage.setItem('guided_tour_completed', 'true'); } catch {} onClose(); }
+      if (e.key === 'Escape') { try { localStorage.setItem('guided_tour_completed', 'true'); } catch { /* noop */ } onClose(); }
       if (e.key === 'ArrowRight') setStep(s => Math.min(s + 1, STEPS.length - 1));
       if (e.key === 'ArrowLeft') setStep(s => Math.max(s - 1, 0));
     };
@@ -112,7 +112,7 @@ export default function GuidedTour({ onClose }) {
   }, [onClose]);
 
   const finish = () => {
-    try { localStorage.setItem('guided_tour_completed', 'true'); } catch {}
+    try { localStorage.setItem('guided_tour_completed', 'true'); } catch { /* noop */ }
     onClose();
   };
 

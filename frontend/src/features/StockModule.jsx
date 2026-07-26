@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, forwardRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { TableVirtuoso } from 'react-virtuoso';
 import { usePanelContext } from '../context/PanelContext';
 import { apiGet, apiPost, apiPatch, apiPut, SERVER_URL } from '../services/apiClient';
@@ -59,14 +59,6 @@ function AlertAccordion({ icon: Icon, title, subtitle, data, isOpen, onToggle, c
   );
 }
 
-function ToggleSwitch({ isOn }) {
-  return (
-    <div style={{ width: '36px', height: '20px', background: isOn ? 'var(--gradient-primary)' : 'rgba(255,255,255,0.1)', borderRadius: '20px', position: 'relative', cursor: 'pointer', transition: 'all 0.3s' }}>
-      <div style={{ width: '16px', height: '16px', background: 'white', borderRadius: '50%', position: 'absolute', top: '2px', left: isOn ? '18px' : '2px', transition: 'all 0.3s' }} />
-    </div>
-  );
-}
-
 const CACHE_KEY = 'minegocio_inventario_cache';
 
 function loadCache() {
@@ -92,12 +84,8 @@ function saveCache(products, deadStock) {
   }
 }
 
-const VirtuosoTable = forwardRef(({ style, ...props }, ref) => <table ref={ref} style={{ ...style, width: '100%', borderCollapse: 'collapse', textAlign: 'left' }} {...props} />);
-const VirtuosoTableHead = forwardRef((props, ref) => <thead ref={ref} style={{ position: 'sticky', top: 0, background: 'var(--bg-main)', zIndex: 1 }} {...props} />);
-const VirtuosoTableRow = forwardRef(({ item, ...props }, ref) => <tr ref={ref} {...props} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background='rgba(255,255,255,0.02)'} onMouseLeave={e => e.currentTarget.style.background='transparent'} />);
-
 export default function StockModule() {
-  const { backend, addToast, currentSucursalId, backendError } = usePanelContext();
+  const { backend, addToast } = usePanelContext();
   const onProductsUpdated = backend.fetchProductsDB;
   const [products, setProducts] = useState([]);
   const [query, setQuery] = useState('');
@@ -115,8 +103,6 @@ export default function StockModule() {
   const [showFilters, setShowFilters] = useState(false);
   const [filterCategory, setFilterCategory] = useState('');
   const [filterStock, setFilterStock] = useState('all');
-  const [filterPriceMin, setFilterPriceMin] = useState('');
-  const [filterPriceMax, setFilterPriceMax] = useState('');
 
   const [showNuevoProducto, setShowNuevoProducto] = useState(false);
   const [categories, setCategories] = useState([]);
@@ -233,21 +219,6 @@ export default function StockModule() {
         }
       }
     });
-    return;
-
-    try {
-      const payload = { percentage: pct };
-      if (filterCategory) payload.category_id = parseInt(filterCategory);
-      await apiPost('/products/batch-increase', payload);
-      if (addToast) addToast(`Precios aumentados un ${aumentoPorcentaje}% exitosamente.`, 'success');
-      setShowAumentoMasivo(false);
-      setAumentoPorcentaje('');
-      setFilterCategory('');
-      fetchProducts();
-      if (onProductsUpdated) onProductsUpdated();
-    } catch(e) {
-      if (addToast) addToast('No se pudieron aumentar los precios. Reintentá o revisá tu conexión.', 'error');
-    }
   };
 
   const handleImportCsv = async (e) => {
@@ -315,7 +286,7 @@ export default function StockModule() {
       setDeadStock(deadList);
 
       saveCache(productList, deadList);
-    } catch (e) {
+    } catch {
       const cached = loadCache();
       if (cached && cached.products?.length > 0) {
         setProducts(cached.products);
@@ -334,6 +305,7 @@ export default function StockModule() {
 
   useEffect(() => {
     fetchProducts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const filteredProducts = sortedProducts.filter(p => {
@@ -352,6 +324,7 @@ export default function StockModule() {
   // derived data
   const emptyStock = products.filter(p => p.stock === 0);
   const lowStock = products.filter(p => p.stock > 0 && p.stock <= p.min_stock);
+  // eslint-disable-next-line react-hooks/purity
   const nearExpiry = products.filter(p => p.expiry_date && new Date(p.expiry_date) <= new Date(Date.now() + 15 * 86400000) && new Date(p.expiry_date) >= new Date());
 
   const toggleAccordion = (name) => {

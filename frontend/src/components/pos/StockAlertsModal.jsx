@@ -1,4 +1,4 @@
-import React from 'react';
+
 
 export default function StockAlertsModal({ stockAlerts, setStockAlerts }) {
   if (!stockAlerts || !((stockAlerts.stock?.total > 0 || stockAlerts.margin?.total > 0))) return null;

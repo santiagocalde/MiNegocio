@@ -1,6 +1,7 @@
 import { useRef, useEffect } from 'react';
 
 let sharedObserver = null;
+// eslint-disable-next-line no-unused-vars
 let observedElements = 0;
 
 function getObserver() {
@@ -33,6 +34,7 @@ function unobserve(el) {
   }
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useReveal() {
   const ref = useRef(null);
 

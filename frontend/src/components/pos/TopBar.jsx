@@ -1,6 +1,6 @@
-import React from 'react';
 
-export default function TopBar({ currentOperator, sucursales, currentSucursalId, setCurrentSucursalId, backendStatus, addToast, setShowHelp }) {
+
+export default function TopBar({ currentOperator, sucursales, currentSucursalId, setCurrentSucursalId, backendStatus, setShowHelp }) {
   const isCashier = currentOperator?.role === 'cashier' || currentOperator?.role === 'employee';
 
   return (
