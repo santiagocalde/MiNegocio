@@ -46,7 +46,7 @@ export default function CatalogoModule() {
         if (addToast) addToast('No se pudo guardar la configuración del catálogo. Reintentá o revisá tu conexión.', 'error');
       }
     } catch {
-      if (addToast) addToast('No se pudo conectar con el servidor. Revisá tu conexión a internet.', 'error');
+      if (addToast) addToast('Sin internet. Revisá tu conexión.', 'error');
     }
   };
 
@@ -70,7 +70,7 @@ export default function CatalogoModule() {
       }
     } catch {
       setIsActive(!newVal);
-      if (addToast) addToast('No se pudo conectar con el servidor. Revisá tu conexión a internet.', 'error');
+      if (addToast) addToast('Sin internet. Revisá tu conexión.', 'error');
     } finally { setSaving(false); }
   };
 

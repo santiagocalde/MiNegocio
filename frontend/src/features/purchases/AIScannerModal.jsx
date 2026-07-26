@@ -45,7 +45,7 @@ export default function AIScannerModal({ onClose, onScanSuccess }) {
         setScanError('No se detectaron productos en la imagen. Intenta con otra foto.');
       }
     } catch (err) {
-      setScanError(err.message || 'Error al conectar con el servidor');
+      setScanError(err.message || 'Sin internet');
     }
     setIsScanning(false);
   };

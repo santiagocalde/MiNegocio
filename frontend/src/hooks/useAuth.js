@@ -53,7 +53,7 @@ export default function useAuth(addToast) {
         setPin('');
       }
     } catch {
-      addToast('Error de conexion con el servidor', 'error');
+      addToast('Sin internet', 'error');
     }
   };
 

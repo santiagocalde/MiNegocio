@@ -50,7 +50,7 @@ export default function UsuariosModule() {
         if (addToast) addToast('No se pudo eliminar el usuario. Reintentá o revisá tu conexión.', 'error');
       }
     } catch {
-      if (addToast) addToast('No se pudo conectar con el servidor. Revisá tu conexión a internet.', 'error');
+      if (addToast) addToast('Sin internet. Revisá tu conexión.', 'error');
     }
   };
 
@@ -76,7 +76,7 @@ export default function UsuariosModule() {
         if (addToast) addToast('No se pudieron guardar los usuarios. Reintentá o revisá tu conexión.', 'error');
       }
     } catch {
-      if (addToast) addToast('No se pudo conectar con el servidor. Revisá tu conexión a internet.', 'error');
+      if (addToast) addToast('Sin internet. Revisá tu conexión.', 'error');
     }
   };
 

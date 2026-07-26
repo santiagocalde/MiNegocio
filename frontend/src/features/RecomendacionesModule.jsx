@@ -210,7 +210,7 @@ export default function RecomendacionesModule() {
         if (addToast) addToast(err.detail || 'No se pudo crear la promoción. Reintentá o revisá tu conexión.', 'error');
       }
     } catch {
-      if (addToast) addToast('No se pudo conectar con el servidor. Revisá tu conexión a internet.', 'error');
+      if (addToast) addToast('Sin internet. Revisá tu conexión.', 'error');
     }
   };
 

@@ -62,7 +62,7 @@ export default function PromotionModule() {
         fetchPromotions();
         addToast(`Promocion ${promo.is_active ? 'desactivada' : 'activada'}.`, 'success');
       }
-    } catch { addToast('No se pudo conectar con el servidor. Revisá tu conexión a internet.', 'error'); }
+    } catch { addToast('Sin internet. Revisá tu conexión.', 'error'); }
   };
 
   const handleDelete = async (id) => {
@@ -75,7 +75,7 @@ export default function PromotionModule() {
       } else {
         addToast('No se pudo eliminar la promoción. Reintentá o revisá tu conexión.', 'error');
       }
-    } catch { addToast('No se pudo conectar con el servidor. Revisá tu conexión a internet.', 'error'); }
+    } catch { addToast('Sin internet. Revisá tu conexión.', 'error'); }
   };
 
   const resetForm = () => {
@@ -172,7 +172,7 @@ export default function PromotionModule() {
         const err = await res.json().catch(() => ({}));
         addToast(err.detail || 'No se pudo crear la promoción. Reintentá o revisá tu conexión.', 'error');
       }
-    } catch { addToast('No se pudo conectar con el servidor. Revisá tu conexión a internet.', 'error'); }
+    } catch { addToast('Sin internet. Revisá tu conexión.', 'error'); }
   };
 
   const getTypeLabel = (type) => {

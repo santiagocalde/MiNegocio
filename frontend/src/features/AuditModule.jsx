@@ -67,7 +67,7 @@ export default function AuditModule() {
       console.error('fetchMovements failed:', e);
       const msg = e.message === 'Error de movimientos'
         ? 'No se pudieron cargar los movimientos. Reintentá o revisá tu conexión.'
-        : 'No se pudo conectar con el servidor. Verificá que esté corriendo e intentá de nuevo.';
+        : 'Sin internet. Verificá tu conexión e intentá de nuevo.';
       if (addToast) addToast(msg, 'error');
     } finally {
       setLoading(false);

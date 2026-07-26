@@ -2,12 +2,12 @@ const BUSINESS_FEATURES = {
   kiosco:        { compras: true, proveedores: false, fiados: true,  catalogo: false, auditoria: false, promociones: true,  recomendaciones: false },
   almacen:       { compras: true, proveedores: true,  fiados: true,  catalogo: false, auditoria: false, promociones: true,  recomendaciones: false },
   minimercado:   { compras: true, proveedores: true,  fiados: true,  catalogo: false, auditoria: false, promociones: true,  recomendaciones: false },
-  autoservicio:  { compras: true, proveedores: true,  fiados: false, catalogo: false, auditoria: false, promociones: false, recomendaciones: false },
+  autoservicio:  { compras: true, proveedores: true,  fiados: false, catalogo: false, auditoria: true,  promociones: true,  recomendaciones: false },
   dietetica:     { compras: true, proveedores: true,  fiados: false, catalogo: false, auditoria: false, promociones: false, recomendaciones: false },
-  panaderia:     { compras: true, proveedores: true,  fiados: false, catalogo: false, auditoria: false, promociones: false, recomendaciones: false },
-  ferreteria:    { compras: true, proveedores: true,  fiados: false, catalogo: false, auditoria: false, promociones: false, recomendaciones: false },
+  panaderia:     { compras: true, proveedores: true,  fiados: true,  catalogo: false, auditoria: false, promociones: true,  recomendaciones: false },
+  ferreteria:    { compras: true, proveedores: true,  fiados: true,  catalogo: false, auditoria: false, promociones: true,  recomendaciones: false },
   libreria:      { compras: true, proveedores: true,  fiados: false, catalogo: false, auditoria: false, promociones: false, recomendaciones: false },
-  petshop:       { compras: true, proveedores: true,  fiados: false, catalogo: false, auditoria: false, promociones: false, recomendaciones: false },
+  petshop:       { compras: true, proveedores: true,  fiados: false, catalogo: false, auditoria: false, promociones: true,  recomendaciones: false },
   otro:          { compras: true, proveedores: true,  fiados: true,  catalogo: false, auditoria: false, promociones: true,  recomendaciones: false },
 };
 
