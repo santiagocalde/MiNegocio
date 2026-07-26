@@ -1,16 +1,16 @@
 const testimonials = [
   {
     id: 1,
-    text: 'Antes usaba un cuaderno. Ahora sé cuánto vendí ayer, cuánto me deben y qué comprar. Cambió todo.',
-    name: 'Carlos',
-    business: 'Kiosco Don Carlos, Lomas',
+    text: 'Soy la tía de Santi. Tengo un kiosco y antes anotaba todo en un cuaderno. Ahora cobro con el celu, sé cuánto vendí y quién me debe. Es un golazo.',
+    name: 'María',
+    business: 'Kiosco de la Tía, Lomas de Zamora',
     stars: 5,
   },
   {
     id: 2,
     text: 'Se cortó internet 3 días y cobramos normal. Eso solo vale la mensualidad.',
-    name: 'María',
-    business: 'Almacén La Buena Fe, Lanús',
+    name: 'Carlos',
+    business: 'Kiosco Don Carlos, Lomas',
     stars: 5,
   },
   {

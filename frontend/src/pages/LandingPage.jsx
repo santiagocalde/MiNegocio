@@ -17,11 +17,13 @@ import LandingDemo from './landing/LandingDemo';
 import LandingComparativa from './landing/LandingComparativa';
 import LandingFeatures from './landing/LandingFeatures';
 import LandingSoporteHumano from './landing/LandingSoporteHumano';
+import LandingTrustBar from './landing/LandingTrustBar';
 import LandingTestimonials from './landing/LandingTestimonials';
 import LandingPricing from './landing/LandingPricing';
 import LandingFAQ from './landing/LandingFAQ';
 import LandingFinalCTA from './landing/LandingFinalCTA';
 import LandingFooter from './landing/LandingFooter';
+import FloatingCTA from './landing/FloatingCTA';
 import LandingContactModal from './landing/LandingContactModal';
 import LandingLoginModal from './landing/LandingLoginModal';
 import CheckoutView from './landing/CheckoutView';
@@ -265,19 +267,20 @@ export default function LandingPage() {
 
       <LandingHero isLoggedIn={isLoggedIn} goPanel={goPanel} goOnboard={goOnboard} />
       <LandingSocialProof />
+      <LandingTrustBar />
       <div className="lp-divider" />
       <LandingShowcase />
 
       {/* Mobile: tira de beneficios "en 5 segundos" (qué resuelve) antes del precio. */}
       {isMobile && <LandingFeaturesCompact />}
 
-      {/* Detalle. En DESKTOP va acá, en el medio (orden original). En MOBILE se
-          pliega al final, después del CTA, para no frenar el camino al precio.
-          Solo se renderiza una rama según el dispositivo. */}
+      {/* Demo de venta: visible siempre. En escritorio va acá en el medio. */}
+      <div className="lp-divider" />
+      <LandingDemo />
+
+      {/* Desktop: comparativa, features y soporte van en el medio. */}
       {!isMobile && (
         <>
-          <div className="lp-divider" />
-          <LandingDemo />
           <div className="lp-divider" />
           <LandingComparativa />
           <LandingFeatures />
@@ -286,7 +289,6 @@ export default function LandingPage() {
         </>
       )}
 
-      {/* Testimonios visibles en mobile (prueba social pegada al precio). */}
       <div className="lp-divider" />
       <LandingTestimonials />
       <div className="lp-divider" />
@@ -295,15 +297,10 @@ export default function LandingPage() {
         isLoggedIn={isLoggedIn} setCheckoutPlan={setCheckoutPlan}
         navigate={navigate} setShowContactModal={setShowContactModal}
       />
-      <div className="lp-divider" />
-      <LandingFAQ />
-      <LandingFinalCTA isLoggedIn={isLoggedIn} goPanel={goPanel} goOnboard={goOnboard} />
 
-      {/* Mobile: el detalle completo va al final, plegado detrás de "Ver más". */}
+      {/* Mobile: el detalle va justo despues del precio, plegado. */}
       {isMobile && (
         <MobileCollapse label="Ver todo lo que incluye">
-          <div className="lp-divider" />
-          <LandingDemo />
           <div className="lp-divider" />
           <LandingComparativa />
           <LandingFeatures />
@@ -311,6 +308,12 @@ export default function LandingPage() {
           <LandingSoporteHumano />
         </MobileCollapse>
       )}
+
+      <div className="lp-divider" />
+      <LandingFAQ />
+      <LandingFinalCTA isLoggedIn={isLoggedIn} goPanel={goPanel} goOnboard={goOnboard} />
+
+      {isMobile && <FloatingCTA isLoggedIn={isLoggedIn} goPanel={goPanel} goOnboard={goOnboard} />}
 
       <LandingFooter
         navigate={navigate} setShowContactModal={setShowContactModal}
