@@ -78,7 +78,7 @@ export default function Sidebar({
 }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { currentPlan, addToast } = usePanelContext();
+  const { currentPlan } = usePanelContext();
   const currentPath = location.pathname;
 
   const role = currentOperator?.role || 'admin';
@@ -140,6 +140,7 @@ export default function Sidebar({
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
               <span style={{ background: 'var(--gradient-primary)', color: 'white', padding: '2px 6px', borderRadius: '6px', fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Abierta</span>
               {turnOpenedAt && (() => {
+                {/* eslint-disable-next-line react-hooks/purity */}
                 const hours = Math.max(0, (Date.now() - new Date(turnOpenedAt).getTime()) / 3600000);
                 const h = Math.floor(hours);
                 const m = Math.floor((hours - h) * 60);

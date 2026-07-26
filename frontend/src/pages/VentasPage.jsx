@@ -1,9 +1,9 @@
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import useCart from '../hooks/useCart';
 import useSales from '../hooks/useSales';
 import usePromotions from '../hooks/usePromotions';
 import { usePanelContext } from '../context/PanelContext';
-import { apiGet, apiPost } from '../services/apiClient';
+import { apiGet } from '../services/apiClient';
 import TopBar from '../components/pos/TopBar';
 import SearchBar from '../components/pos/SearchBar';
 import CartPanel from '../components/pos/CartPanel';
@@ -22,7 +22,8 @@ export default function VentasPage() {
   const cart = useCart(backend.productsDB, ivaRate, playBeep);
   const promos = usePromotions(cart.cart);
 
-  useEffect(() => { cart.setPromotionSavings(promos.promotionSavings); }, [promos.promotionSavings]);
+  useEffect(() => { cart.setPromotionSavings(promos.promotionSavings); // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [promos.promotionSavings]);
 
   const searchRef = useRef(null);
   const paymentRef = useRef(null);
@@ -48,6 +49,7 @@ export default function VentasPage() {
     };
     window.addEventListener('keydown', handleGlobalKeyDown);
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cart.cart.length]);
 
   useEffect(() => {
@@ -60,6 +62,7 @@ export default function VentasPage() {
     };
     const interval = setInterval(checkStatus, 3000);
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [backend.mpIntentId, backend.mpPaymentStatus]);
 
   return (

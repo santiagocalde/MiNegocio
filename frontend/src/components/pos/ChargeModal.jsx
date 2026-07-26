@@ -1,5 +1,4 @@
-import React, { useEffect } from 'react';
-import { apiPost } from '../../services/apiClient';
+import { useEffect } from 'react';
 import { Icons } from '../ui/Icons';
 
 const PAYMENT_METHODS = [
@@ -10,18 +9,14 @@ const PAYMENT_METHODS = [
 
 export default function ChargeModal({
   isCharging, setIsCharging,
-  total, adjustedTotal, effectiveTotal, change,
+  total, adjustedTotal, change,
   payment, setPayment, paymentMethod, setPaymentMethod,
   useSplitPayment, setUseSplitPayment,
-  splitPayments, setSplitPayments,
-  clientCuit, setClientCuit,
-  emitirFactura, setEmitirFactura, tipoFactura, setTipoFactura,
-  vueltoEnCuenta, setVueltoEnCuenta, clienteVuelto, setClienteVuelto,
-  editingTotal, setEditingTotal, setAdjustedTotal,
+  splitPayments,
   cart, autoPrint, setAutoPrint,
   isProcessing,
   confirmCharge, paymentRef,
-  businessConfig, addToast, currentOperator
+  businessConfig
 }) {
   const finalTotal = adjustedTotal ?? total;
   const isConfirmDisabled =

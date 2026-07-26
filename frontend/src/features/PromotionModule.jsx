@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePanelContext } from '../context/PanelContext';
 import { apiGet, apiPost, apiPut, apiDelete } from '../services/apiClient';
@@ -51,6 +51,7 @@ export default function PromotionModule() {
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchPromotions();
   }, []);
 

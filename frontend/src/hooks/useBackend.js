@@ -53,8 +53,9 @@ export default function useBackend(currentOperator, currentTurnId, currentSucurs
       .catch(() => {});
   }, [currentSucursalId]);
 
-  const notifyTabs = useCallback((msg) => {
-    try { new BroadcastChannel('minegocio-sync').postMessage(msg); } catch {}
+  // eslint-disable-next-line no-unused-vars
+  const _notifyTabs = useCallback((msg) => {
+    try { new BroadcastChannel('minegocio-sync').postMessage(msg); } catch { /* noop */ }
   }, []);
 
   const handleUnpack = useCallback(async (productId) => {

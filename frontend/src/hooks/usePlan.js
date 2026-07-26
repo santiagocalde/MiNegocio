@@ -9,14 +9,14 @@ function getStoredPlan() {
       const parsed = JSON.parse(cached);
       if (parsed && parsed.plan) return parsed;
     }
-  } catch {}
+  } catch { /* noop */ }
   try {
     const raw = localStorage.getItem('saas_business');
     if (raw) {
       const biz = JSON.parse(raw);
       if (biz && biz.plan) return { plan: biz.plan, created_at: null };
     }
-  } catch {}
+  } catch { /* noop */ }
   return null;
 }
 
@@ -38,7 +38,7 @@ export default function usePlan(businessConfig) {
               plan: data.plan,
               created_at: data.created_at,
             }));
-          } catch {}
+          } catch { /* noop */ }
         }
         // Marcar como cargado incluso si falla — para no bloquear UI
         setPlanLoaded(true);

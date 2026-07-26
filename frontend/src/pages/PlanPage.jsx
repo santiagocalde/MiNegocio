@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { usePanelContext } from '../context/PanelContext';
-import { WHATSAPP_LINK } from '../utils/constants';
 import { Icons } from '../components/ui/Icons';
 import { apiPost, apiGet } from '../services/apiClient';
 
@@ -169,7 +168,7 @@ export default function PlanPage() {
       } else {
         setPlanPageError('No se pudo generar el link de pago. Intenta nuevamente.');
       }
-    } catch (err) {
+    } catch {
       setPlanPageError('Error de conexion con MercadoPago. Revisa tu internet.');
     } finally {
       setPlanPageLoading(false);

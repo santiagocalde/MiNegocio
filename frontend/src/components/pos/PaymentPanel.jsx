@@ -1,24 +1,17 @@
 import React from 'react';
 import { Icons } from '../ui/Icons';
-import { apiPost, apiPut } from '../../services/apiClient';
+import { apiPut } from '../../services/apiClient';
 import { formatMoney } from '../../utils/format';
 
 export default function PaymentPanel({
-  cart, total, adjustedTotal, effectiveTotal, subtotal, iva, discount, ivaRate, change, payment, paymentMethod,
-  useSplitPayment, splitPayments, setSplitPayments, clientCuit, setClientCuit,
-  emitirFactura, setEmitirFactura, tipoFactura, setTipoFactura,
-  vueltoEnCuenta, setVueltoEnCuenta, clienteVuelto, setClienteVuelto,
-  editingTotal, setEditingTotal, setAdjustedTotal,
-  setPayment, setPaymentMethod, setUseSplitPayment,
-  isProcessing, setIsCharging, confirmCharge,
-  isFiadoOpen, setIsFiadoOpen, lastSale,
+  cart, total, adjustedTotal, subtotal, iva, discount, ivaRate,
+  isProcessing, setIsCharging,
+  setIsFiadoOpen, lastSale,
   setShowDevolucionItems, setDevolucionQtys,
-  setIsCancelConfirm, searchRef,
+  setIsCancelConfirm,
   autoPrint, setAutoPrint,
   saleConfirm,
-  mpQrData, setMpQrData, mpPaymentUrl, setMpPaymentUrl,
-  mpLoading, setMpLoading, mpPaymentStatus, setMpPaymentStatus, setMpIntentId,
-  businessConfig, setBusinessConfig, addToast, currentOperator,
+  businessConfig, setBusinessConfig, addToast,
   promotionSavings,
   handleQuickAdd, handleRepeatSale
 }) {
@@ -29,7 +22,7 @@ export default function PaymentPanel({
     setBusinessConfig?.(updated); // recalcula al instante
     try {
       await apiPut('/config', updated);
-      try { new BroadcastChannel('minegocio-sync').postMessage('config-changed'); } catch {}
+      try { new BroadcastChannel('minegocio-sync').postMessage('config-changed'); } catch { /* noop */ }
       addToast(nuevoIva === '0' ? 'IVA desactivado: precios finales sin discriminar' : `IVA configurado en ${nuevoIva}%`, 'success');
     } catch {
       addToast('No se pudo guardar el IVA. Reintentá o revisá tu conexión.', 'error');

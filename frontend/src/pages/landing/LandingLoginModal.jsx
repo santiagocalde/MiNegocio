@@ -8,12 +8,13 @@ export default function LandingLoginModal({
   showLoginModal, setShowLoginModal, setShowForgotPassword,
   loginName, setLoginName, loginEmail, setLoginEmail,
   loginPassword, setLoginPassword, showPassword, setShowPassword,
-  loginLoading, loginError, handleAuthSubmit, goOnboard, navigate
+  loginLoading, loginError, handleAuthSubmit
 }) {
   const [termsAccepted, setTermsAccepted] = useState(false);
 
   // Resetear checkbox al cambiar entre login/register
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setTermsAccepted(false);
   }, [showLoginModal]);
 

@@ -12,7 +12,7 @@ class MockObserver {
   unobserve() {}
   disconnect() {}
 }
-global.IntersectionObserver = MockObserver;
+globalThis.IntersectionObserver = MockObserver;
 
 describe('LandingSocialProof', () => {
   it('renders all metrics', () => {

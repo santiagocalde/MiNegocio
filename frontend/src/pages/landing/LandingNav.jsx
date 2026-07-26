@@ -14,7 +14,7 @@ export default function LandingNav({
     try {
       const data = localStorage.getItem('saas_business');
       if (data) return JSON.parse(data).business_name || userName || 'Mi Negocio';
-    } catch(e) {}
+    } catch { /* noop */ }
     return userName || 'Mi Negocio';
   };
   const bizName = getBizName();

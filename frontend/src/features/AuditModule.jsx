@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { usePanelContext } from '../context/PanelContext';
 import { apiGet } from '../services/apiClient';
 import FeatureGate from '../components/ui/FeatureGate';
@@ -12,16 +12,12 @@ const Icons = {
 };
 
 export default function AuditModule() {
-  const { addToast, backend, currentPlan } = usePanelContext();
+  const { addToast, currentPlan } = usePanelContext();
   const isLocked = PLAN_WEIGHT[currentPlan] < PLAN_WEIGHT['pro'];
   const [movements, setMovements] = useState([]);
   const [filterType, setFilterType] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchMovements();
-  }, []);
 
   const fetchMovements = async () => {
     if (isLocked) {
@@ -47,7 +43,7 @@ export default function AuditModule() {
           const rawEgr = await egrRes.json();
           egrData = Array.isArray(rawEgr) ? rawEgr : (rawEgr?.egresos || []);
         }
-      } catch (e) {
+      } catch {
         console.warn('Endpoint de egresos no disponible, ignorando...');
       }
 
@@ -77,6 +73,12 @@ export default function AuditModule() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchMovements();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const getBadgeStyle = (type) => {
     switch (type) {

@@ -12,7 +12,7 @@ export default function useCart(productsDB, ivaRate, playBeep) {
         }
         return JSON.parse(saved);
       }
-    } catch {}
+    } catch { /* noop */ }
     return [];
   });
   const [search, setSearch] = useState('');
@@ -52,8 +52,8 @@ export default function useCart(productsDB, ivaRate, playBeep) {
       try {
         localStorage.setItem('minegocio_cart', JSON.stringify(cart));
         localStorage.setItem('minegocio_cart_ts', String(Date.now()));
-      } catch {}
-      try { bcRef.current?.postMessage('cart-updated'); } catch {}
+      } catch { /* noop */ }
+      try { bcRef.current?.postMessage('cart-updated'); } catch { /* noop */ }
     }, 250);
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, [cart]);
@@ -70,7 +70,7 @@ export default function useCart(productsDB, ivaRate, playBeep) {
           const parsed = JSON.parse(saved);
           if (Array.isArray(parsed) && parsed.length > 0) setCart(parsed);
         }
-      } catch {}
+      } catch { /* noop */ }
     };
     bc.onmessage = handler;
     return () => { bcRef.current = null; bc.close(); };

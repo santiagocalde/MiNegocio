@@ -12,7 +12,6 @@ export default function useSales(cart, effectiveTotal, payment, paymentMethod, u
   const [fiadoName, setFiadoName] = useState('');
   const closeTurnStats = useRef({ total_tickets: 0, total_fiado: 0, top_products: [] });
   const processingRef = useRef(false);
-  const fiadoRef2 = useRef(false);
 
   const generateTicketText = useCallback((saleCart, saleTotal, salePayment, saleChange, facturaTipo, afip) => {
     const now = new Date();
@@ -77,7 +76,7 @@ export default function useSales(cart, effectiveTotal, payment, paymentMethod, u
     };
 
     const idempotencyKey = crypto.randomUUID();
-    let afipResponse = null;
+    let afipResponse;
     try {
       const res = await apiPost(`/sales?idempotency_key=${idempotencyKey}`, salePayload);
       if (!res.ok) {
@@ -125,7 +124,7 @@ export default function useSales(cart, effectiveTotal, payment, paymentMethod, u
     setSaleConfirm(true);
     setTimeout(() => setSaleConfirm(false), 2500);
     return { saleCart, saleTotal, salePayment, saleChange, afipResponse, effectivePayments };
-  }, [isProcessing, cart, adjustedTotal, effectiveTotal, useSplitPayment, splitPayments, paymentMethod, payment, currentTurnId, currentOperator, clientCuit, emitirFactura, tipoFactura, vueltoEnCuenta, clienteVuelto, clearCart, setTicketNumber]);
+  }, [cart, effectiveTotal, useSplitPayment, splitPayments, paymentMethod, payment, currentTurnId, currentOperator, clientCuit, emitirFactura, tipoFactura, vueltoEnCuenta, clienteVuelto, clearCart, setTicketNumber, addToast]);
 
   const confirmFiado = useCallback(async (partialAmount) => {
     if (!fiadoName) return;
@@ -185,7 +184,7 @@ export default function useSales(cart, effectiveTotal, payment, paymentMethod, u
     clearCart();
     setIsFiadoOpen(false);
     setFiadoName('');
-  }, [fiadoName, adjustedTotal, effectiveTotal, cart, currentTurnId, currentOperator, addToast, clearCart]);
+  }, [fiadoName, effectiveTotal, cart, currentTurnId, currentOperator, addToast, clearCart]);
 
   return {
     isCharging, setIsCharging,

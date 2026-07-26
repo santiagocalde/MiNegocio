@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { apiPut } from '../../services/apiClient';
 import * as QZTray from '../../services/qzTray';
 
@@ -62,7 +62,7 @@ export default function ConfigPrinting({ printConfig, setPrintConfig, qzConnecte
           try {
             await QZTray.openCashDrawer(printConfig.printer_name);
             addToast('Cajón abierto', 'success');
-          } catch (e) {
+          } catch {
             try {
               await QZTray.openDrawerViaAgent('http://127.0.0.1:8199', printConfig.printer_name);
               addToast('Cajón abierto (vía agente)', 'success');

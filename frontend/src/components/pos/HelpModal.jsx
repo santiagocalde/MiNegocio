@@ -1,6 +1,6 @@
-import React from 'react';
 
-export default function HelpModal({ showHelp, setShowHelp, showTour, setShowTour }) {
+
+export default function HelpModal({ showHelp, setShowHelp, setShowTour }) {
   if (!showHelp) return null;
   return (
     <div className="modal-overlay" onClick={() => setShowHelp(false)}>

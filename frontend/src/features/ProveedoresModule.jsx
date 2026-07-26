@@ -13,7 +13,7 @@ const Icons = {
 
 export default function ProveedoresModule() {
   const navigate = useNavigate();
-  const { addToast, backend, currentPlan } = usePanelContext();
+  const { addToast, currentPlan } = usePanelContext();
   const PLAN_WEIGHT = { trial: 1, simple: 1, pro: 2, ia: 3 };
   const isLocked = PLAN_WEIGHT[currentPlan] < PLAN_WEIGHT['simple'];
   const [proveedores, setProveedores] = useState([]);
@@ -50,6 +50,7 @@ export default function ProveedoresModule() {
       .finally(() => setLoading(false));
   };
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { fetchProveedores(); }, []);
 
   const handleCreate = async () => {

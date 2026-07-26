@@ -1,4 +1,4 @@
-import React from 'react';
+
 
 export default function EgresoModal({ showEgreso, setShowEgreso, egresoType, setEgresoType, egresoMonto, setEgresoMonto, egresoMotivo, setEgresoMotivo, submitEgreso }) {
   if (!showEgreso) return null;
