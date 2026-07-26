@@ -948,7 +948,24 @@ details[open] summary .faq-chevron { transform: rotate(45deg); }
 .nav-mobile-toggle { display: none; }
 
 /* ── Responsive ── */
+/* Colapso de secciones secundarias en mobile.
+   Desktop: wrapper transparente (display:contents) y botón oculto → sin cambios. */
+.lp-mobile-collapse { display: contents; }
+.lp-mobile-more { display: none; }
+
 @media (max-width: 768px) {
+  /* Mobile: las secciones secundarias arrancan ocultas detrás del botón "Ver más". */
+  .lp-mobile-collapse { display: none; }
+  .lp-mobile-collapse.is-open { display: contents; }
+  .lp-mobile-more {
+    display: flex; align-items: center; justify-content: center;
+    width: calc(100% - 32px); max-width: 420px; margin: 8px auto 0;
+    padding: 14px 20px; border-radius: 12px; cursor: pointer;
+    background: rgba(255,255,255,0.03); border: 1px solid rgba(20,187,166,0.25);
+    color: var(--lp-text); font-size: 0.95rem; font-weight: 700; font-family: inherit;
+  }
+  .lp-mobile-more.is-open { display: none; }
+
   .hero-layout { grid-template-columns: 1fr !important; text-align: center; }
   .nav-links { display: none !important; }
   .nav-actions { display: none !important; }
