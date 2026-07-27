@@ -235,7 +235,7 @@ export default function FiadoModule() {
                     <button
                       onClick={(e) => { e.stopPropagation(); handleCobranzaIA(c); }}
                       title="Generar mensaje de cobranza con IA"
-                      style={{ background: 'linear-gradient(135deg, #7c3aed, #14bba6)', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 14px', fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s', display: 'flex', alignItems: 'center', gap: '6px' }}
+                      style={{ background: 'linear-gradient(135deg, #7c3aed, var(--accent-primary))', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 14px', fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s', display: 'flex', alignItems: 'center', gap: '6px' }}
                     >
                       💬 Cobrar con IA
                     </button>

@@ -49,7 +49,7 @@ function StatCard({ label, value, sub, color, icon }) {
   return (
     <div style={{ flex: 1, minWidth: 200, background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 16, padding: '20px 22px', position: 'relative', overflow: 'hidden' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.4px' }}>{label}</div>
+        <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 700, letterSpacing: '0.3px' }}>{label}</div>
         <div style={{ color, opacity: 0.85 }}>{icon}</div>
       </div>
       <div style={{ fontSize: '2rem', fontWeight: 800, color, fontFamily: 'var(--font-mono)', marginTop: 8, letterSpacing: '-0.5px' }}>{value}</div>
@@ -126,7 +126,12 @@ export default function InicioPage() {
         <div data-tour="inicio-stock" style={{ flex: '1 1 320px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 16, padding: 20 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <h2 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)' }}>Por agotarse</h2>
-            <button onClick={() => navigate('/panel/inventario')} style={{ background: 'transparent', border: 'none', color: 'var(--accent-primary)', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer' }}>Ver inventario →</button>
+            <button
+              onClick={() => navigate('/panel/inventario')}
+              style={{ background: 'transparent', border: 'none', color: 'var(--accent-primary)', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', transition: 'opacity 0.15s' }}
+              onMouseEnter={e => e.currentTarget.style.opacity = '0.7'}
+              onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+            >Ver inventario →</button>
           </div>
           {porAgotarse.length === 0 ? (
             <div style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', padding: '20px 0', textAlign: 'center' }}>
