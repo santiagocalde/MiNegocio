@@ -280,6 +280,7 @@ export default function LandingPage() {
         <>
           <div className="lp-divider" />
           <LandingComparativa />
+          <div className="lp-divider" />
           <LandingFeatures />
           <div className="lp-divider" />
           <LandingSoporteHumano />
@@ -300,6 +301,7 @@ export default function LandingPage() {
         <MobileCollapse label="Ver todo lo que incluye">
           <div className="lp-divider" />
           <LandingComparativa />
+          <div className="lp-divider" />
           <LandingFeatures />
           <div className="lp-divider" />
           <LandingSoporteHumano />

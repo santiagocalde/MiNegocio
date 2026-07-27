@@ -48,8 +48,8 @@ export default function LandingSocialProof() {
       .catch(() => {});
   }, []);
   return (
-    <section className="lp-section" style={{ padding: '32px 24px' }}>
-      <div className="lp-container">
+    <section className="lp-section" style={{ padding: '32px 0' }}>
+      <div className="lp-container" style={{ padding: '0 24px' }}>
         <Reveal>
           <hr style={{ border: 'none', borderTop: '1px solid rgba(255,255,255,0.08)', margin: '0 0 24px' }} />
           <div style={{ display: 'flex', justifyContent: 'center', gap: 0, flexWrap: 'wrap', maxWidth: 700, margin: '0 auto' }}>
