@@ -11,17 +11,14 @@ import aiosqlite
 import bcrypt
 import main
 from fastapi import APIRouter, HTTPException, Request
-from slowapi import Limiter
-from slowapi.util import get_remote_address
-
 from core.plan_limits import PLAN_LIMITS
 from core.jwt_helpers import get_current_business
 from core.context import business_id_ctx
+from core.ratelimit import limiter
 
 logger = logging.getLogger("NovaStock")
 
 router = APIRouter()
-limiter = Limiter(key_func=get_remote_address)
 
 USE_PG  = bool(os.getenv("DATABASE_URL", ""))
 # DB_PATH se lee dinámico desde main.DB_PATH en cada handler (igual que el resto

@@ -9,11 +9,9 @@ import httpx
 import main
 from main import row_to_dict, logger, DB_PATH, DATA_DIR, USE_PG, JWT_SECRET, JWT_ALGORITHM
 from jose import jwt as jose_jwt
-from slowapi import Limiter
-from slowapi.util import get_remote_address
+from core.ratelimit import limiter
 
 router = APIRouter()
-limiter = Limiter(key_func=get_remote_address)
 
 def _biz_id():
     return main.business_id_ctx.get() if hasattr(main, 'business_id_ctx') else None
@@ -193,7 +191,8 @@ async def expiry_alerts() -> dict:
 # HEALTH & LOGS
 # ────────────────────────────────────────────────────────────
 @router.get("/api/health", summary="Health check")
-async def health_check() -> dict:
+@limiter.limit("60/minute")
+async def health_check(request: Request) -> dict:
     last_backup_dir = os.path.join(main.BASE_DIR, "backups")
     backups = sorted(glob.glob(os.path.join(last_backup_dir, "*.db.gz")), reverse=True)
     return {"status": "ok", "wal_mode": True, "last_backup": datetime.fromtimestamp(os.path.getmtime(backups[0])).strftime("%Y-%m-%d %H:%M:%S") if backups else "N/A", "timestamp": datetime.now().isoformat()}
@@ -315,7 +314,8 @@ async def send_contact_email(request: Request, data: dict = Body(...)) -> dict:
 # PLANS, METRICS, TESTIMONIALS
 # ────────────────────────────────────────────────────────────
 @router.get("/api/plans", summary="Listar planes")
-async def list_plans() -> list:
+@limiter.limit("30/minute")
+async def list_plans(request: Request) -> list:
     try:
         from db_helpers import get_pg_pool
         pool = await get_pg_pool()
@@ -358,7 +358,8 @@ async def track_funnel_event(request: Request, body: dict = Body(...)) -> dict:
 
 
 @router.get("/api/metrics", summary="Metricas publicas")
-async def get_metrics() -> dict:
+@limiter.limit("30/minute")
+async def get_metrics(request: Request) -> dict:
     k, v, d, p = 20, 380000, 98.7, 4.9
     try:
         from db_helpers import get_pg_pool
@@ -373,7 +374,8 @@ async def get_metrics() -> dict:
 
 
 @router.get("/api/testimonials", summary="Listar testimonios")
-async def list_testimonials() -> list:
+@limiter.limit("30/minute")
+async def list_testimonials(request: Request) -> list:
     try:
         from db_helpers import get_pg_pool
         pool = await get_pg_pool()

@@ -47,6 +47,7 @@ services:
       - AI_INVOICE_TEXT_MODEL=${AI_INVOICE_TEXT_MODEL:-}
       - APP_ENV=${APP_ENV:-production}
       - SAAS_MODE=true
+      - PII_ENCRYPTION_KEY=${PII_ENCRYPTION_KEY:?PII_ENCRYPTION_KEY no definido en .env}
     depends_on:
       db:
         condition: service_healthy

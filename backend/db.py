@@ -6,15 +6,22 @@ from typing import Optional
 
 logger = logging.getLogger("MiNegocio.PG")
 
+_pg_password = os.getenv("PG_PASSWORD")
+PII_ENCRYPTION_KEY = os.getenv("PII_ENCRYPTION_KEY", "")
+DATABASE_URL = os.getenv("DATABASE_URL", "")
+if DATABASE_URL and not _pg_password:
+    raise RuntimeError("PG_PASSWORD no configurado en el entorno. Definir PG_PASSWORD en .env o variables de entorno.")
+if DATABASE_URL and not PII_ENCRYPTION_KEY:
+    raise RuntimeError("PII_ENCRYPTION_KEY no configurado en el entorno. Definir PII_ENCRYPTION_KEY en .env o variables de entorno.")
+
 PG_CONFIG = {
     "host": os.getenv("PG_HOST", "localhost"),
     "port": int(os.getenv("PG_PORT", "5432")),
     "user": os.getenv("PG_USER", "minegocio"),
-    "password": os.getenv("PG_PASSWORD", "1234"),
+    "password": _pg_password or "",
     "database": os.getenv("PG_DATABASE", "minegocio"),
 }
 
-DATABASE_URL = os.getenv("DATABASE_URL", "")
 _pool: Optional[asyncpg.Pool] = None
 
 
@@ -129,6 +136,8 @@ async def run_migrations_pg() -> None:
 async def init_pg() -> None:
     pool = await get_pool()
     async with pool.acquire() as conn:
+
+        await conn.execute("CREATE EXTENSION IF NOT EXISTS pgcrypto;")
 
         await conn.execute("""
             CREATE TABLE IF NOT EXISTS businesses (

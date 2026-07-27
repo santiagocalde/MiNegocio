@@ -322,19 +322,16 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 from event_stream import events
 
 @app.get("/api/events", summary="SSE: Recibir eventos en tiempo real")
+@limiter.limit("10/minute")
 async def sse_event_stream(
-    token: Optional[str] = Query(None),
+    request: Request,
     authorization: Optional[str] = Header(None),
 ):
     biz_id = None
     if SAAS_MODE:
-        raw = token or (
-            authorization.split(" ")[1]
-            if authorization and authorization.startswith("Bearer ")
-            else None
-        )
-        if not raw:
+        if not authorization or not authorization.startswith("Bearer "):
             raise HTTPException(status_code=401, detail="Token requerido para SSE")
+        raw = authorization.split(" ")[1]
         try:
             payload = jwt.decode(raw, JWT_SECRET, algorithms=[JWT_ALGORITHM])
             if payload.get("type") != "access":
