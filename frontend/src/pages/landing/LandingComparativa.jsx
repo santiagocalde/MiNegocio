@@ -88,7 +88,7 @@ function ComparativaMobile() {
 function ComparativaDesktop() {
   return (
     <div style={{ position: 'relative', width: '100%', overflowX: 'auto', paddingBottom: 40, paddingTop: 20 }}>
-      <div style={{ position: 'relative', minWidth: 800, maxWidth: 1000, margin: '0 auto' }}>
+      <div style={{ position: 'relative', minWidth: 768, maxWidth: 1000, margin: '0 auto' }}>
         <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '100%', height: '80%', background: 'radial-gradient(ellipse at center, rgba(20,187,166,0.15) 0%, transparent 60%)', pointerEvents: 'none', filter: 'blur(60px)', zIndex: 0 }} />
         <div
           onMouseMove={(e) => {
@@ -107,9 +107,9 @@ function ComparativaDesktop() {
           style={{ background: 'rgba(255,255,255,0.015)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 24, position: 'relative', overflow: 'hidden', zIndex: 1, '--mouse-x': '-1000px', '--mouse-y': '-1000px' }}>
           <div className="table-glow" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', background: 'radial-gradient(600px circle at var(--mouse-x) var(--mouse-y), rgba(20,187,166,0.08), transparent 40%)', opacity: 0, transition: 'opacity 0.5s ease', zIndex: 0 }} />
           <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 1.2fr', borderBottom: '1px solid rgba(255,255,255,0.04)', position: 'relative', zIndex: 1 }}>
-            <div style={{ padding: '32px 32px 24px', display: 'flex', alignItems: 'flex-end', fontWeight: 800, fontSize: '0.85rem', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '2px' }}>Comparativa</div>
-            <div style={{ textAlign: 'center', padding: '32px 16px 24px', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', fontWeight: 800, fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '1px' }}>El Cuaderno</div>
-            <div style={{ textAlign: 'center', padding: '32px 16px 24px', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', fontWeight: 800, fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '1px' }}>Otros POS</div>
+            <div style={{ padding: '32px 32px 24px', display: 'flex', alignItems: 'flex-end', fontWeight: 800, fontSize: '0.9rem', color: 'rgba(255,255,255,0.55)', letterSpacing: '0.5px' }}>Comparativa</div>
+            <div style={{ textAlign: 'center', padding: '32px 16px 24px', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', fontWeight: 800, fontSize: '0.9rem', color: 'rgba(255,255,255,0.6)', letterSpacing: '0.5px' }}>El Cuaderno</div>
+            <div style={{ textAlign: 'center', padding: '32px 16px 24px', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', fontWeight: 800, fontSize: '0.9rem', color: 'rgba(255,255,255,0.6)', letterSpacing: '0.5px' }}>Otros POS</div>
             <div style={{ padding: '32px 16px 24px' }} />
           </div>
           {rows.map((row, i, arr) => (

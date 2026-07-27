@@ -1,8 +1,8 @@
 export default function LandingFooter({ navigate, setShowContactModal, handleDogClick, logoImg, mascotaImg }) {
   return (
-    <footer style={{ padding: '220px 24px 60px', textAlign: 'center', color: 'var(--lp-text-muted)', background: 'transparent', position: 'relative', zIndex: 10, borderTop: 'none' }}>
+    <footer style={{ padding: '80px 24px 60px', textAlign: 'center', color: 'var(--lp-text-muted)', background: 'transparent', position: 'relative', zIndex: 10, borderTop: 'none' }}>
       <div style={{ maxWidth: 800, margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 48 }}>
-        <img src={logoImg} alt="MiNegocio" loading="lazy" style={{ height: 160, objectFit: 'contain', transform: 'scale(1.8)', transformOrigin: 'center bottom' }} />
+        <img src={logoImg} alt="MiNegocio" loading="lazy" style={{ height: 80, objectFit: 'contain', transform: 'scale(1.3)', transformOrigin: 'center bottom' }} />
 
         <div style={{ marginTop: 20, marginBottom: 16, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
           <img onClick={handleDogClick} src={mascotaImg} alt="Perrito Guardián" loading="lazy" style={{ width: 120, height: 120, objectFit: 'cover', borderRadius: '50%', border: '4px solid rgba(255,255,255,0.1)', boxShadow: '0 10px 30px rgba(30,58,95,0.5)', transition: 'transform 0.3s', cursor: 'pointer' }} onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05) rotate(2deg)'} onMouseLeave={e => e.currentTarget.style.transform = 'scale(1) rotate(0deg)'} />

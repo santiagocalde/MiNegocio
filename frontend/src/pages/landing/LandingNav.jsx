@@ -32,7 +32,7 @@ export default function LandingNav({
       <div className="lp-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', maxWidth: 1400, margin: '0 auto' }}>
         <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
           <span onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} role="button" tabIndex={0} onKeyDown={e => { if (e.key === 'Enter') window.scrollTo({ top: 0, behavior: 'smooth' }); }} style={{ cursor: 'pointer', display: 'inline-block' }} aria-label="MiNegocio - Ir al inicio">
-            <img src={logoImg} alt="MiNegocio" fetchpriority="high" decoding="async" style={{ height: 80, objectFit: 'contain', filter: 'drop-shadow(0 0 15px rgba(20,187,166, 0.25))', transform: 'scale(1.8)', transformOrigin: 'left 35%' }} />
+            <img src={logoImg} alt="MiNegocio" fetchpriority="high" decoding="async" style={{ height: 48, objectFit: 'contain', filter: 'drop-shadow(0 0 15px rgba(20,187,166, 0.25))', transform: 'scale(1.3)', transformOrigin: 'left 35%' }} />
           </span>
         </div>
 
@@ -55,7 +55,7 @@ export default function LandingNav({
             onMouseEnter={() => { const el = document.getElementById('info-dropdown'); if (el) { el.style.opacity = '1'; el.style.pointerEvents = 'auto'; el.style.transform = 'translateX(-50%) translateY(0)'; } }}
             onMouseLeave={() => { const el = document.getElementById('info-dropdown'); if (el) { el.style.opacity = '0'; el.style.pointerEvents = 'none'; el.style.transform = 'translateX(-50%) translateY(-10px)'; } }}>
             <button className="lp-nav-link">
-              INFORMACIÓN <Svg.ChevronRight />
+              Info <Svg.ChevronRight />
             </button>
             <div id="info-dropdown" style={{ opacity: 0, pointerEvents: 'none', transform: 'translateX(-50%) translateY(-10px)', transition: 'all 0.2s', position: 'absolute', top: '100%', left: '50%', background: '#1E3A5F', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 8, display: 'flex', flexDirection: 'column', minWidth: 180, backdropFilter: 'blur(20px)', boxShadow: '0 10px 40px rgba(30,58,95,0.5)' }}>
               <a onClick={(e) => { e.preventDefault(); navigate('/nosotros'); }} style={{ color: 'var(--lp-text-muted)', textDecoration: 'none', padding: '10px 16px', borderRadius: 8, fontSize: '0.9rem', transition: 'all 0.2s', cursor: 'pointer' }} onMouseEnter={e => { e.target.style.background = 'rgba(255,255,255,0.05)'; e.target.style.color = '#fff' }} onMouseLeave={e => { e.target.style.background = 'transparent'; e.target.style.color = 'var(--lp-text-muted)' }}>Sobre Nosotros</a>

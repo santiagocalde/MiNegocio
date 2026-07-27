@@ -70,12 +70,12 @@ function PlanCard({ plan, isYearly, onCta, isLoggedIn }) {
       </ul>
       <button onClick={onCta} style={{
         width: '100%', padding: '12px 0', borderRadius: 10, fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer', transition: 'all 0.2s',
-        background: plan.popular ? 'linear-gradient(90deg, var(--lp-primary), var(--lp-secondary))' : 'rgba(255,255,255,0.05)',
+        background: plan.popular ? 'linear-gradient(90deg, var(--lp-primary), var(--lp-secondary))' : 'rgba(20,187,166,0.12)',
         color: '#fff',
-        border: plan.popular ? 'none' : '1px solid rgba(255,255,255,0.1)'
+        border: plan.popular ? 'none' : '1px solid rgba(20,187,166,0.3)'
       }}
-        onMouseEnter={e => { if (!plan.popular) e.target.style.background = 'rgba(255,255,255,0.1)' }}
-        onMouseLeave={e => { if (!plan.popular) e.target.style.background = 'rgba(255,255,255,0.05)' }}>
+        onMouseEnter={e => { if (!plan.popular) e.target.style.background = 'rgba(20,187,166,0.2)' }}
+        onMouseLeave={e => { if (!plan.popular) e.target.style.background = 'rgba(20,187,166,0.12)' }}>
         {isLoggedIn ? `Activar plan ${plan.name}` : plan.cta}
       </button>
     </div>
