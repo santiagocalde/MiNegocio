@@ -17,6 +17,8 @@ from core.config import JWT_SECRET, JWT_ALGORITHM
 # Limiter central: keyea por IP real, no por la IP del proxy nginx.
 from core.ratelimit import limiter as admin_limiter
 
+from db import PII_ENCRYPTION_KEY
+
 # ────────────────────────────────────────────────────────────
 # HELPERS
 # ────────────────────────────────────────────────────────────
@@ -92,7 +94,7 @@ async def admin_auth(request: Request, body: dict) -> dict:
     
     access_token = jwt.encode(
         {"sub": row["id"], "email": row["email"], "role": row["role"],
-         "type": "access", "exp": _now() + timedelta(hours=12)},
+         "type": "access", "exp": _now() + timedelta(hours=2)},
         JWT_SECRET, algorithm=JWT_ALGORITHM,
     )
     return {"access_token": access_token, "token_type": "bearer", "role": row["role"]}
@@ -134,10 +136,11 @@ async def admin_businesses(
         
         # Paginated data with extra metrics
         offset = (page - 1) * limit
-        params.extend([limit, offset])
+        params.extend([limit, offset, PII_ENCRYPTION_KEY])
+        pii_param = n + 2
         rows = await conn.fetch(f"""
-            SELECT b.id, b.email, b.business_name, b.plan, b.status, b.phone,
-                   b.owner_name, b.business_type, b.created_at, b.updated_at,
+            SELECT b.id, b.email, b.business_name, b.plan, b.status, pgp_sym_decrypt(b.phone, ${pii_param}) as phone,
+                   pgp_sym_decrypt(b.owner_name, ${pii_param}) as owner_name, b.business_type, b.created_at, b.updated_at,
                    (SELECT COUNT(*) FROM operators WHERE business_id = b.id) as operators_count,
                    (SELECT MAX(timestamp) FROM sales WHERE business_id = b.id) as last_sale
             FROM businesses b WHERE {where}
@@ -616,14 +619,19 @@ async def admin_business_detail(
     pool = await _get_pool()
     async with pool.acquire() as conn:
         biz = await conn.fetchrow("""
-            SELECT b.*,
+            SELECT b.id, b.email, b.business_name, b.plan, b.plan_end_date, b.plan_pending,
+                   b.mp_subscription_id, pgp_sym_decrypt(b.phone, $2) as phone,
+                   pgp_sym_decrypt(b.owner_name, $2) as owner_name,
+                   b.source, b.status, b.reset_token, b.reset_token_expires,
+                   b.created_at, b.updated_at, b.business_type, b.prior_pos,
+                   b.needs_arca, b.objective, b.terms_accepted_at, b.trial_email_sent_day,
                    (SELECT COUNT(*) FROM operators WHERE business_id = b.id) as operators_count,
                    (SELECT COUNT(*) FROM products WHERE business_id = b.id) as products_count,
                    (SELECT COUNT(*) FROM sales WHERE business_id = b.id) as sales_count,
                    (SELECT COALESCE(SUM(total), 0) FROM sales WHERE business_id = b.id) as total_revenue,
                    (SELECT MAX(timestamp) FROM sales WHERE business_id = b.id) as last_sale
             FROM businesses b WHERE b.id = $1
-        """, business_id)
+        """, business_id, PII_ENCRYPTION_KEY)
         
         if not biz:
             raise HTTPException(404, detail="Negocio no encontrado")

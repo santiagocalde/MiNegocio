@@ -179,31 +179,67 @@ export default function useBackend(currentOperator, currentTurnId, currentSucurs
     let evtSource;
 
     const connectSSE = () => {
-      if (evtSource) evtSource.close();
+      if (evtSource) {
+        try { evtSource.abort(); } catch { /* EventSource close or AbortController */ }
+      }
       const sseToken = localStorage.getItem('saas_token');
       const validToken = sseToken && sseToken !== 'demo-token' && sseToken !== 'preview-token';
-      const sseUrl = validToken
-        ? `${baseUrl}/api/events?token=${encodeURIComponent(sseToken)}`
-        : `${baseUrl}/api/events`;
-      evtSource = new EventSource(sseUrl);
-      evtSource.addEventListener('product-changed', () => fetchProductsDB());
-      evtSource.addEventListener('sale-created', () => {
-        fetchProductsDB();
-        apiGet(`/sales/today?sucursal_id=${currentSucursalId}`).then(r => r.json()).then(d => {
-          setTodaySalesTotal((d.total_efectivo || 0) + (d.total_tarjeta || 0) + (d.total_transferencia || 0) + (d.total_mp || 0) + (d.total_fiado || 0));
-          setResumenData(d);
-        }).catch(() => {});
-      });
-      evtSource.onerror = () => {
-        evtSource.close();
-        clearTimeout(evtSource._reconnectTimer);
-        evtSource._reconnectTimer = setTimeout(() => {
-          fetchProductsDB();
-          connectSSE();
-        }, retryDelay);
-        retryDelay = Math.min(retryDelay * 2, 30000);
-      };
-      evtSource.onopen = () => { retryDelay = 1000; };
+      const controller = new AbortController();
+      evtSource = controller;
+      const headers = {};
+      if (validToken) headers['Authorization'] = `Bearer ${sseToken}`;
+
+      fetch(`${baseUrl}/api/events`, { headers, signal: controller.signal })
+        .then(response => {
+          if (!response.ok) throw new Error('SSE ' + response.status);
+          retryDelay = 1000;
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          let buffer = '';
+          let currentEvent = 'message';
+
+          function pump() {
+            reader.read().then(({ done, value }) => {
+              if (done) return;
+              buffer += decoder.decode(value, { stream: true });
+              const parts = buffer.split('\n');
+              buffer = parts.pop();
+              for (const line of parts) {
+                if (line.startsWith('event: ')) {
+                  currentEvent = line.slice(7).trim();
+                } else if (line.startsWith('data: ')) {
+                  const eventType = currentEvent;
+                  currentEvent = 'message';
+                  if (eventType === 'product-changed') fetchProductsDB();
+                  if (eventType === 'sale-created') {
+                    fetchProductsDB();
+                    apiGet(`/sales/today?sucursal_id=${currentSucursalId}`).then(r => r.json()).then(d => {
+                      setTodaySalesTotal((d.total_efectivo || 0) + (d.total_tarjeta || 0) + (d.total_transferencia || 0) + (d.total_mp || 0) + (d.total_fiado || 0));
+                      setResumenData(d);
+                    }).catch(() => {});
+                  }
+                }
+              }
+              pump();
+            }).catch(() => {
+              clearTimeout(controller._reconnectTimer);
+              controller._reconnectTimer = setTimeout(() => {
+                fetchProductsDB();
+                connectSSE();
+              }, retryDelay);
+              retryDelay = Math.min(retryDelay * 2, 30000);
+            });
+          }
+          pump();
+        })
+        .catch(() => {
+          clearTimeout(controller._reconnectTimer);
+          controller._reconnectTimer = setTimeout(() => {
+            fetchProductsDB();
+            connectSSE();
+          }, retryDelay);
+          retryDelay = Math.min(retryDelay * 2, 30000);
+        });
     };
     connectSSE();
 
@@ -225,7 +261,7 @@ export default function useBackend(currentOperator, currentTurnId, currentSucurs
     window.addEventListener('focus', handleFocus);
 
     return () => {
-      if (evtSource) evtSource.close();
+      if (evtSource) { try { evtSource.abort(); } catch { /* noop */ } }
       if (bc) bc.close();
       window.removeEventListener('focus', handleFocus);
     };

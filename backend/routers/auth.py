@@ -7,7 +7,7 @@ from pydantic import BaseModel, EmailStr, field_validator
 import bcrypt
 from jose import jwt, JWTError
 
-from db import get_pool
+from db import get_pool, PII_ENCRYPTION_KEY
 from main import JWT_SECRET, JWT_ALGORITHM
 from services.email_templates import base_template, _e
 
@@ -145,12 +145,13 @@ async def auth_register(request: Request, body: BusinessCreate) -> dict:
         row = await conn.fetchrow(
             """INSERT INTO businesses (email, password_hash, business_name, plan, phone, terms_accepted_at,
                                        owner_name, business_type, prior_pos, needs_arca, objective, source)
-               VALUES ($1, $2, $3, 'trial', $4, now(), $5, $6, $7, $8, $9, $10)
-               RETURNING id, email, business_name, plan, status, phone""",
+               VALUES ($1, $2, $3, 'trial', pgp_sym_encrypt($4, $5), now(), pgp_sym_encrypt($6, $5), $7, $8, $9, $10, $11)
+               RETURNING id, email, business_name, plan, status, pgp_sym_decrypt(phone, $5)""",
             body.email.lower().strip(),
             hashed_pw,
             body.business_name.strip() or body.name.strip() or "Mi Kiosco",
             body.phone or "",
+            PII_ENCRYPTION_KEY,
             body.name.strip(),
             (body.business_type or "").strip(),
             (body.prior_pos or "").strip(),
@@ -246,13 +247,13 @@ async def complete_onboarding(body: CompleteOnboarding, business: dict = Depends
     async with pool.acquire() as conn:
         await conn.execute(
             """UPDATE businesses SET business_name = $1,
-                   phone = COALESCE(NULLIF($2, ''), phone),
+                   phone = CASE WHEN $2 = '' THEN phone ELSE pgp_sym_encrypt($2, $8) END,
                    business_type = $3, prior_pos = $4, needs_arca = $5, objective = $6
                WHERE id = $7""",
             body.business_name.strip(), body.phone.strip(),
             (body.business_type or "").strip(), (body.prior_pos or "").strip(),
             (body.needs_arca or "").strip(), (body.objective or "").strip(),
-            business["sub"],
+            business["sub"], PII_ENCRYPTION_KEY,
         )
         # Precargar catálogo del rubro si el negocio todavía no tiene productos
         try:

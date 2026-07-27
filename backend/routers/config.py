@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Query, Body, Request
 from typing import Optional
 import main
 from main import USE_PG, row_to_dict, get_current_business, check_plan_limits
+from core.ratelimit import limiter
 
 router = APIRouter()
 
@@ -47,7 +48,8 @@ async def get_config() -> dict:
 
 
 @router.get("/api/catalogo", summary="Catálogo público de un comercio (sin auth)")
-async def public_catalogo(slug: str = Query("")) -> dict:
+@limiter.limit("30/minute")
+async def public_catalogo(request: Request, slug: str = Query("")) -> dict:
     """Endpoint PÚBLICO (sin token). Devuelve solo datos no sensibles del catálogo
     de un comercio que tenga el catálogo activado. Nunca expone costo, stock ni
     datos internos del negocio."""
