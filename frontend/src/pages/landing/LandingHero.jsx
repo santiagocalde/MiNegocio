@@ -101,9 +101,9 @@ export default function LandingHero({ isLoggedIn, goPanel, goOnboard }) {
         <Reveal delay={5}>
           <div style={{ display: 'flex', gap: 40, justifyContent: 'center', alignItems: 'center', marginTop: 32, flexWrap: 'wrap', width: '100%', maxWidth: '800px', margin: '32px auto 0' }}>
             {[
-              { label: 'Sin internet', desc: 'Seguís vendiendo' },
+              { label: 'Siempre activo', desc: 'Aunque se corte internet' },
               { label: 'Sin límites', desc: 'Stock ilimitado' },
-              { label: 'Sin tarjeta', desc: '7 días gratis' },
+              { label: 'Sin compromiso', desc: 'Cancelás cuando quieras' },
             ].map(s => (
               <div key={s.label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
                 <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>{s.label}</div>

@@ -46,16 +46,17 @@ export default function LandingShowcase() {
     return () => clearInterval(t);
   }, [paused, zoom, active, reduceMotion, screens.length]);
 
-  // Lightbox: navegación por teclado y cierre con Escape
+  // Lightbox: navegación por teclado, cierre con Escape y bloqueo de scroll
   useEffect(() => {
-    if (!zoom) return;
+    if (!zoom) { document.body.style.overflow = ''; return; }
+    document.body.style.overflow = 'hidden';
     const onKey = (e) => {
       if (e.key === 'Escape') setZoom(false);
       else if (e.key === 'ArrowRight') setActive(a => (a + 1) % screens.length);
       else if (e.key === 'ArrowLeft') setActive(a => (a - 1 + screens.length) % screens.length);
     };
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    return () => { window.removeEventListener('keydown', onKey); document.body.style.overflow = ''; };
   }, [zoom, screens.length]);
 
   const go = (i) => setActive((i + screens.length) % screens.length);
