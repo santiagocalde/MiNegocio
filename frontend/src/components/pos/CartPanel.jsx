@@ -24,18 +24,18 @@ export default function CartPanel({ cart, total, adjustedTotal, updateQty, setIt
           <div style={{ textAlign: 'center', color: 'var(--text-secondary)', marginTop: '40px' }}>No hay productos en el carrito. Utilice el buscador superior.</div>
         ) : (
           cart.map(item => (
-            <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
+            <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
               <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                 <ProductThumb src={item.image_url} size={36} />
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                   <div style={{ fontWeight: 700, fontSize: 'var(--fs-body)', color: 'var(--text-primary)', letterSpacing: '0.1px' }}>{item.name}</div>
-                  <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', fontFamily: 'var(--font-mono)' }}>{item.code}</div>
+                  <div style={{ color: 'var(--text-secondary)', fontSize: '0.78rem', fontFamily: 'var(--font-mono)' }}>{item.code}</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
                     <span style={{ fontWeight: 800, color: 'var(--text-primary)', fontSize: '0.9rem', fontVariantNumeric: 'tabular-nums' }}>{formatMoney(item.price)}</span>
                     {!item.is_virtual && (() => {
                       const tone = stockTone(item.stock, item.min_stock);
-                      return <span style={{ background: tone.bg, border: `1px solid ${tone.bd}`, color: tone.fg, padding: '2px 4px', borderRadius: '4px', fontSize: '0.65rem', fontWeight: 800 }}>Stock: {item.stock} u</span>;
+                      return <span style={{ background: tone.bg, border: `1px solid ${tone.bd}`, color: tone.fg, padding: '2px 4px', borderRadius: '4px', fontSize: '0.78rem', fontWeight: 800 }}>Stock: {item.stock} u</span>;
                     })()}
                   </div>
                 </div>
@@ -43,13 +43,18 @@ export default function CartPanel({ cart, total, adjustedTotal, updateQty, setIt
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: '2px' }}>Subtotal</div>
+                  <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '2px' }}>Subtotal</div>
                   <div style={{ fontWeight: 800, fontSize: '1rem', color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>{formatMoney(item.price * item.qty)}</div>
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '2px 6px' }}>
-                    <button style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1.2rem' }} onClick={() => updateQty(item.id, -1)}>-</button>
+                    <button
+                      onClick={() => updateQty(item.id, -1)}
+                      style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1.2rem', borderRadius: '4px', padding: '2px 6px', transition: 'background 0.15s' }}
+                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                    >-</button>
                     <input
                       id={`qty-input-${item.id}`}
                       type="number"
@@ -58,7 +63,12 @@ export default function CartPanel({ cart, total, adjustedTotal, updateQty, setIt
                       onChange={e => { const val = parseFloat(e.target.value); if (!isNaN(val) && val > 0) setItemQty(item.id, val); }}
                       style={{ width: '40px', textAlign: 'center', background: 'transparent', border: 'none', color: 'var(--text-primary)', outline: 'none', fontWeight: 600, fontSize: '0.9rem' }}
                     />
-                    <button style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1.2rem' }} onClick={() => updateQty(item.id, 1)}>+</button>
+                    <button
+                      onClick={() => updateQty(item.id, 1)}
+                      style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1.2rem', borderRadius: '4px', padding: '2px 6px', transition: 'background 0.15s' }}
+                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                    >+</button>
                   </div>
                   <button style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '8px', padding: '8px', color: 'var(--accent-danger)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => removeItem(item.id)}>
                     <Icons.Trash />

@@ -29,9 +29,9 @@ function AlertAccordion({ icon: Icon, title, subtitle, data, isOpen, onToggle, c
     <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', marginBottom: '6px', overflow: 'hidden' }}>
       <div onClick={onToggle} style={{ padding: '5px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', transition: 'background 0.2s' }} onMouseEnter={e=>e.currentTarget.style.background='var(--bg-hover)'} onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-          <div style={{ color: 'var(--text-secondary)', transform: 'scale(0.6)', alignSelf: 'center' }}><Icon /></div>
+          <div style={{ color: 'var(--text-secondary)', alignSelf: 'center' }}><Icon /></div>
           <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.82rem' }}>{title}</div>
-          <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem' }}>{subtitle}</div>
+          <div style={{ color: 'var(--text-secondary)', fontSize: '0.82rem' }}>{subtitle}</div>
         </div>
         <div style={{ color: 'var(--text-secondary)' }}>
           {isOpen ? <Icons.ChevronUp /> : <Icons.ChevronDown />}
@@ -454,7 +454,7 @@ export default function StockModule() {
                   </td>
                   <td style={{ padding: '8px 16px' }}>
                     <div style={{ fontWeight: 800, fontSize: '0.9rem', color: (p.stock ?? 0) === 0 ? 'var(--accent-danger)' : 'var(--text-primary)', marginBottom: '1px' }}>{p.stock ?? 0} u</div>
-                    <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem' }}>Alerta: {p.min_stock ?? 0} u</div>
+                    <div style={{ color: 'var(--text-secondary)', fontSize: '0.78rem' }}>Alerta: {p.min_stock ?? 0} u</div>
                   </td>
                   <td style={{ padding: '8px 16px', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
                     Sin proveedor

@@ -24,13 +24,13 @@ export default function TopBar({ currentOperator, sucursales, currentSucursalId,
         </button>
 
         {backendStatus?.status === 'ok' ? (
-          <span style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10B981', border: '1px solid rgba(16, 185, 129, 0.2)', padding: '6px 16px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 700, marginLeft: '8px' }}>
-            <span style={{ background: '#10B981', boxShadow: '0 0 10px #10B981', marginRight: '8px', width: 8, height: 8, borderRadius: '50%', display: 'inline-block' }}></span>
+          <span style={{ background: 'rgba(16, 185, 129, 0.1)', color: 'var(--accent-success)', border: '1px solid rgba(16, 185, 129, 0.2)', padding: '6px 16px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 700, marginLeft: '8px' }}>
+            <span style={{ background: 'var(--accent-success)', boxShadow: '0 0 10px var(--accent-success)', marginRight: '8px', width: 8, height: 8, borderRadius: '50%', display: 'inline-block' }}></span>
             Conectado
           </span>
         ) : (
-          <span style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#EF4444', border: '1px solid rgba(239, 68, 68, 0.2)', padding: '6px 16px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 700, marginLeft: '8px' }}>
-            <span style={{ background: '#EF4444', boxShadow: '0 0 10px #EF4444', marginRight: '8px', width: 8, height: 8, borderRadius: '50%', display: 'inline-block' }}></span>
+          <span style={{ background: 'rgba(239, 68, 68, 0.1)', color: 'var(--accent-danger)', border: '1px solid rgba(239, 68, 68, 0.2)', padding: '6px 16px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 700, marginLeft: '8px' }}>
+            <span style={{ background: 'var(--accent-danger)', boxShadow: '0 0 10px var(--accent-danger)', marginRight: '8px', width: 8, height: 8, borderRadius: '50%', display: 'inline-block' }}></span>
             Sin conexion
           </span>
         )}

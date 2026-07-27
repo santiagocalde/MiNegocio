@@ -50,7 +50,7 @@ export default function PaymentPanel({
       <div style={{ background: 'var(--bg-card)', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
           <h2 style={{ fontSize: '1.3rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)', letterSpacing: '-0.2px' }}>Resumen</h2>
-          <span style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '4px 12px', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 600 }}>{cart.length} items</span>
+          <span style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '4px 12px', borderRadius: '12px', fontSize: '0.85rem', fontWeight: 600 }}>{cart.length} items</span>
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', fontSize: '0.95rem', color: 'var(--text-secondary)' }}>
@@ -62,7 +62,7 @@ export default function PaymentPanel({
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             {iva > 0 && <span style={{ color: 'var(--text-primary)', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{formatMoney(iva)}</span>}
             <select value={ivaActual} onChange={e => cambiarIva(e.target.value)} title="Cambiar el IVA del negocio"
-              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border-color)', color: ivaActual === '0' ? 'var(--text-secondary)' : 'var(--accent-primary)', borderRadius: '6px', padding: '3px 6px', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', outline: 'none' }}>
+              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border-color)', color: ivaActual === '0' ? 'var(--text-secondary)' : 'var(--accent-primary)', borderRadius: '6px', padding: '3px 6px', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer', outline: 'none' }}>
               <option value="0">No discrimina</option>
               <option value="21">21%</option>
               <option value="10.5">10,5%</option>
@@ -80,7 +80,7 @@ export default function PaymentPanel({
         <div style={{ height: '1px', background: 'var(--border-color)', margin: '12px 0' }}></div>
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '18px' }}>
-          <span style={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px', color: 'var(--text-secondary)' }}>Total a cobrar</span>
+          <span style={{ fontSize: '0.85rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px', color: 'var(--text-secondary)' }}>Total a cobrar</span>
           <span style={{ fontSize: '1.9rem', fontWeight: 800, lineHeight: 1, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.5px' }}>{formatMoney(adjustedTotal ?? total)}</span>
         </div>
 
@@ -156,7 +156,7 @@ export default function PaymentPanel({
       </div>
 
       {saleConfirm && (
-        <div style={{ position: 'absolute', inset: 0, background: 'rgba(34, 197, 94, 0.95)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 10, borderRadius: '16px', animation: 'scaleIn 0.25s ease' }}>
+        <div style={{ position: 'absolute', inset: 0,             background: 'rgba(16, 185, 129, 0.95)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 10, borderRadius: '16px', animation: 'scaleIn 0.25s ease' }}>
           <div style={{ background: 'white', color: 'var(--accent-success)', borderRadius: '50%', width: 100, height: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24 }}>
             <Icons.Check />
           </div>
