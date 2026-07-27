@@ -570,12 +570,9 @@ body.landing-open {
 }
 .lp-divider {
   width: 100%;
-  max-width: 700px;
   height: 1px;
-  margin: 0 auto;
-  background: transparent;
   border: none;
-  border-top: 1px solid rgba(255,255,255,0.1);
+  border-top: 1px solid rgba(255,255,255,0.08);
 }
 
 /* ── Shared container ── */
