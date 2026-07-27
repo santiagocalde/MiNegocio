@@ -29,7 +29,7 @@ function AnimatedStat({ value, label, suffix = '', isLast }) {
 const DEFAULT_STATS = [
   { value: 16, label: 'Negocios activos' },
   { value: 380546, label: 'Ventas procesadas' },
-  { value: 24, label: 'Soporte', suffix: '/7' },
+          { value: 24, label: 'Soporte Lun a Sáb' },
 ];
 
 export default function LandingSocialProof() {
@@ -42,7 +42,7 @@ export default function LandingSocialProof() {
         setStats([
           { value: data.kioscos_activos || 16, label: 'Negocios activos' },
           { value: data.ventas_procesadas || 380546, label: 'Ventas procesadas' },
-          { value: 24, label: 'Soporte', suffix: '/7' },
+  { value: 24, label: 'Soporte Lun a Sáb' },
         ]);
       })
       .catch(() => {});
