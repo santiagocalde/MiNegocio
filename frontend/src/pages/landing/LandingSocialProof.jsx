@@ -3,17 +3,15 @@ import { API_ROOT } from '../../config';
 import { Reveal } from './hooks/useReveal';
 import useCountUp from './hooks/useCountUp';
 
-function AnimatedStat({ value, label, suffix = '', prefix = '', isLast }) {
+function AnimatedStat({ value, label, suffix = '', prefix = '', isLast, isMoney }) {
   const numValue = typeof value === 'string' ? parseFloat(value.replace(/[^0-9.]/g, '')) : value;
   const { count, ref } = useCountUp(numValue, 1500);
 
   const formatDisplay = () => {
-    if (prefix === '$') return `${prefix}${count.toLocaleString('es-AR')}`;
-    if (suffix === '%' || suffix.includes('★')) return `${count}${suffix}`;
-    return `${count.toLocaleString('es-AR')}${suffix}`;
+    if (isMoney) return `$ ${count.toLocaleString('es-AR')}`;
+    if (suffix) return `${count.toLocaleString('es-AR')}${suffix}`;
+    return count.toLocaleString('es-AR');
   };
-
-  const display = formatDisplay();
 
   return (
     <div ref={ref} style={{
@@ -22,21 +20,20 @@ function AnimatedStat({ value, label, suffix = '', prefix = '', isLast }) {
     }}>
       <div className="lp-gradient-text" style={{
         fontFamily: 'var(--lp-font-display)',
-        fontSize: 'clamp(2rem, 3.5vw, 3rem)',
-        letterSpacing: '-2px',
+        fontSize: 'clamp(1.8rem, 3.2vw, 2.6rem)',
+        letterSpacing: '-1px',
         fontWeight: 800,
         lineHeight: 1,
-      }}>{display}</div>
-      <div style={{ color: 'var(--lp-text-muted)', fontSize: '0.8rem', fontWeight: 500, marginTop: 6, letterSpacing: '0.5px' }}>{label}</div>
+      }}>{formatDisplay()}</div>
+      <div style={{ color: 'var(--lp-text-muted)', fontSize: '0.82rem', fontWeight: 500, marginTop: 6, letterSpacing: '0.5px' }}>{label}</div>
     </div>
   );
 }
 
 const DEFAULT_STATS = [
-  { value: 20, label: 'Kioscos activos', suffix: '+' },
-  { value: 380, label: 'Ventas procesadas', prefix: '', suffix: 'K+' },
-  { value: 98.7, label: 'Disponibilidad', suffix: '%' },
-  { value: 4.9, label: 'Puntuacion', suffix: ' ★' },
+  { value: 16, label: 'Negocios activos' },
+  { value: 19546, label: 'Facturado este mes', isMoney: true },
+  { value: 24, label: 'Soporte', suffix: '/7' },
 ];
 
 export default function LandingSocialProof() {
@@ -47,10 +44,9 @@ export default function LandingSocialProof() {
       .then(res => res.ok ? res.json() : Promise.reject())
       .then(data => {
         setStats([
-          { value: data.kioscos_activos || 20, label: 'Kioscos activos', suffix: '+' },
-          { value: data.ventas_procesadas ? Math.round(data.ventas_procesadas / 1000) : 380, label: 'Ventas procesadas', prefix: '', suffix: 'K+' },
-          { value: data.disponibilidad || 98.7, label: 'Disponibilidad', suffix: '%' },
-          { value: data.puntuacion || 4.9, label: 'Puntuacion', suffix: ' ★' },
+          { value: data.kioscos_activos || 16, label: 'Negocios activos' },
+          { value: data.ventas_mes || 19546, label: 'Facturado este mes', isMoney: true },
+          { value: 24, label: 'Soporte', suffix: '/7' },
         ]);
       })
       .catch(() => {});
@@ -64,7 +60,7 @@ export default function LandingSocialProof() {
         <Reveal delay={1}>
           <div style={{ display: 'flex', justifyContent: 'center', gap: 0, flexWrap: 'wrap', maxWidth: 700, margin: '32px auto 0' }}>
             {stats.map((s, i) => (
-              <AnimatedStat key={i} value={s.value} label={s.label} suffix={s.suffix || ''} prefix={s.prefix || ''} isLast={i === stats.length - 1} />
+              <AnimatedStat key={i} value={s.value} label={s.label} suffix={s.suffix || ''} isMoney={s.isMoney || false} isLast={i === stats.length - 1} />
             ))}
           </div>
         </Reveal>
