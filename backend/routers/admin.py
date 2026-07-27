@@ -250,6 +250,15 @@ async def admin_change_status(
             raise HTTPException(404, detail="Negocio no encontrado")
 
         async with conn.transaction():
+            # Cuando se activa manualmente: extender plan_end_date 30 días
+            # para que el background task de grace period no revierta el cambio.
+            if new_status == "active":
+                from datetime import timedelta
+                new_end = _now() + timedelta(days=30)
+                await conn.execute(
+                    "UPDATE businesses SET plan_end_date = $1 WHERE id = $2 AND plan_end_date IS NULL OR plan_end_date < $1",
+                    new_end, business_id
+                )
             # Si un negocio activo pasa a suspendido/expirado, registrarlo como baja (churn).
             if new_status in ("suspended", "expired") and old["status"] == "active":
                 from routers.billing import _record_churn
