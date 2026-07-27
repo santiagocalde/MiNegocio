@@ -15,7 +15,7 @@ export default function LandingTrustBar() {
           background: 'rgba(20,187,166,0.06)', border: '1px solid rgba(20,187,166,0.12)',
           borderRadius: 12, padding: '12px 18px'
         }}>
-          <span>La tía de Santi lo usa hace 3 meses</span>
+          <span>Probado en un negocio real hace 3 meses</span>
           <span style={{ color: 'rgba(230,255,251,0.3)' }}>|</span>
           <span>Anda aunque se corte internet</span>
         </div>
