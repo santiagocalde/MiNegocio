@@ -17,7 +17,6 @@ import LandingDemo from './landing/LandingDemo';
 import LandingComparativa from './landing/LandingComparativa';
 import LandingFeatures from './landing/LandingFeatures';
 import LandingSoporteHumano from './landing/LandingSoporteHumano';
-import LandingTrustBar from './landing/LandingTrustBar';
 import LandingTestimonials from './landing/LandingTestimonials';
 import LandingPricing from './landing/LandingPricing';
 import LandingFAQ from './landing/LandingFAQ';
@@ -267,7 +266,6 @@ export default function LandingPage() {
 
       <LandingHero isLoggedIn={isLoggedIn} goPanel={goPanel} goOnboard={goOnboard} />
       <LandingSocialProof />
-      <LandingTrustBar />
       <div className="lp-divider" />
       <LandingShowcase />
 

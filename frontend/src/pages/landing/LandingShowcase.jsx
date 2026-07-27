@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Reveal } from './hooks/useReveal';
 import useIsMobile from '../../hooks/useIsMobile';
 
@@ -149,8 +150,8 @@ export default function LandingShowcase() {
         </Reveal>
       </div>
 
-      {/* Lightbox: al hacer click la imagen se agranda un poco para mirarla y moverse entre módulos */}
-      {zoom && (
+      {/* Lightbox renderizado en el body para que nada lo tape (ni navbar, ni stacking contexts) */}
+      {zoom && createPortal(
         <div className="lp-showcase-lightbox" onClick={() => setZoom(false)} role="dialog" aria-modal="true" aria-label={`Vista ampliada: ${cur.name}`}>
           <button className="lp-lightbox-close" onClick={() => setZoom(false)} aria-label="Cerrar">✕</button>
           <button className="lp-lightbox-arrow lp-lightbox-prev" aria-label="Anterior"
@@ -161,7 +162,8 @@ export default function LandingShowcase() {
           </figure>
           <button className="lp-lightbox-arrow lp-lightbox-next" aria-label="Siguiente"
             onClick={(e) => { e.stopPropagation(); go(active + 1); }}>›</button>
-        </div>
+        </div>,
+        document.body
       )}
     </section>
   );
