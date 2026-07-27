@@ -17,7 +17,7 @@ export default function LandingTrustBar() {
         }}>
           <span>La tía de Santi lo usa hace 3 meses</span>
           <span style={{ color: 'rgba(230,255,251,0.3)' }}>|</span>
-          <span>Funciona sin internet</span>
+          <span>Anda aunque se corte internet</span>
         </div>
       </Reveal>
     </section>
