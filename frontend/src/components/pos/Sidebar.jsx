@@ -117,13 +117,12 @@ export default function Sidebar({
                     className={`nav-item ${isActive(item.path) && !isLocked ? 'active' : ''}`}
                     onClick={() => navigate(item.path)}
                     style={{
-                      ...(item.label === 'Punto de Venta' ? { fontSize: '0.9rem', padding: '10px 14px', marginBottom: '4px' } : {}),
                       opacity: isLocked ? 0.5 : 1,
                       cursor: isLocked ? 'not-allowed' : 'pointer'
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1 }}>
-                      {ICON_MAP[item.icon] ? React.createElement(ICON_MAP[item.icon], item.label === 'Punto de Venta' ? { style: { width: 22, height: 22 } } : {}) : <span style={{ width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icons.File /></span>}
+                      {ICON_MAP[item.icon] ? React.createElement(ICON_MAP[item.icon]) : <span style={{ width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icons.File /></span>}
                       {item.label}
                     </div>
                   </div>

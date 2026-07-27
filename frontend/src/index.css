@@ -155,7 +155,7 @@ svg {
     border-radius: 8px;
     color: var(--text-secondary);
     font-weight: 600;
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     cursor: pointer;
     transition: background-color 0.2s, color 0.2s;
   }
