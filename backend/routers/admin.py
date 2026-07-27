@@ -138,9 +138,13 @@ async def admin_businesses(
         offset = (page - 1) * limit
         params.extend([limit, offset, PII_ENCRYPTION_KEY])
         pii_param = n + 2
+        # safe_pii_decrypt tolera registros legacy en texto plano (phone/owner_name
+        # antes del commit de PII encryption) sin romper la query entera. Sin esto,
+        # cualquier negocio con phone vacío o no encriptado hacía fallar el listado
+        # y el panel mostraba "Sin resultados".
         rows = await conn.fetch(f"""
-            SELECT b.id, b.email, b.business_name, b.plan, b.status, pgp_sym_decrypt(b.phone, ${pii_param}) as phone,
-                   pgp_sym_decrypt(b.owner_name, ${pii_param}) as owner_name, b.business_type, b.created_at, b.updated_at,
+            SELECT b.id, b.email, b.business_name, b.plan, b.status, safe_pii_decrypt(b.phone, ${pii_param}) as phone,
+                   safe_pii_decrypt(b.owner_name, ${pii_param}) as owner_name, b.business_type, b.created_at, b.updated_at,
                    (SELECT COUNT(*) FROM operators WHERE business_id = b.id) as operators_count,
                    (SELECT MAX(timestamp) FROM sales WHERE business_id = b.id) as last_sale
             FROM businesses b WHERE {where}
@@ -620,8 +624,8 @@ async def admin_business_detail(
     async with pool.acquire() as conn:
         biz = await conn.fetchrow("""
             SELECT b.id, b.email, b.business_name, b.plan, b.plan_end_date, b.plan_pending,
-                   b.mp_subscription_id, pgp_sym_decrypt(b.phone, $2) as phone,
-                   pgp_sym_decrypt(b.owner_name, $2) as owner_name,
+                   b.mp_subscription_id, safe_pii_decrypt(b.phone, $2) as phone,
+                   safe_pii_decrypt(b.owner_name, $2) as owner_name,
                    b.source, b.status, b.reset_token, b.reset_token_expires,
                    b.created_at, b.updated_at, b.business_type, b.prior_pos,
                    b.needs_arca, b.objective, b.terms_accepted_at, b.trial_email_sent_day,
