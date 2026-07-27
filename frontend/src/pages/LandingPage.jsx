@@ -266,7 +266,6 @@ export default function LandingPage() {
 
       <LandingHero isLoggedIn={isLoggedIn} goPanel={goPanel} goOnboard={goOnboard} />
       <LandingSocialProof />
-      <div className="lp-divider" />
       <LandingShowcase />
 
       {/* Mobile: tira de beneficios "en 5 segundos" (qué resuelve) antes del precio. */}
