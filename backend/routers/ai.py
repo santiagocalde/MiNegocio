@@ -368,3 +368,27 @@ async def cobranza_endpoint(customer_id: int, request: Request):
         return {"texto": texto, "telefono": cliente.get("phone"), "nombre": cliente.get("name")}
     except Exception as e:
         raise _ai_error(e)
+
+
+@router.get("/credits", summary="Creditos de IA disponibles")
+@limiter.limit("10/minute")
+async def credits_endpoint(request: Request):
+    """Devuelve cuantos scans de factura quedan disponibles este mes."""
+    await _require_ia(request)
+    bid = _biz_id()
+    used = 0
+    limit = 50
+    if USE_PG:
+        from db_helpers import get_pg_pool
+        pool = await get_pg_pool()
+        async with pool.acquire() as conn:
+            used = await conn.fetchval(
+                "SELECT COUNT(*) FROM ai_logs WHERE business_id=$1 AND fn='scan-invoice' AND ts >= date_trunc('month', now())",
+                bid
+            ) or 0
+    else:
+        async with aiosqlite.connect(main.DB_PATH) as db:
+            used = (await (await db.execute(
+                "SELECT COUNT(*) FROM ai_logs WHERE fn='scan-invoice' AND date(ts) >= date('now','start of month')"
+            )).fetchone())[0]
+    return {"used": used, "limit": limit, "left": max(0, limit - used)}

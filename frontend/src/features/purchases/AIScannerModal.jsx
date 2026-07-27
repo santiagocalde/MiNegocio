@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { API_ROOT } from '../../config';
 import { Icons } from './shared';
 
@@ -10,7 +10,18 @@ import { Icons } from './shared';
 export default function AIScannerModal({ onClose, onScanSuccess }) {
   const [isScanning, setIsScanning] = useState(false);
   const [scanError, setScanError] = useState('');
+  const [creditsLeft, setCreditsLeft] = useState(null);
   const fileRef = useRef(null);
+
+  // Cargar créditos disponibles al abrir el modal
+  React.useEffect(() => {
+    const token = localStorage.getItem('saas_token');
+    fetch(`${API_ROOT}/api/ai/credits`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    }).then(r => r.ok ? r.json() : null)
+      .then(d => { if (d) setCreditsLeft(d); })
+      .catch(() => {});
+  }, []);
 
   const handleFileUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -46,6 +57,7 @@ export default function AIScannerModal({ onClose, onScanSuccess }) {
       }
     } catch (err) {
       setScanError(err.message || 'Sin internet');
+      console.error('Scan error:', err);
     }
     setIsScanning(false);
   };
@@ -59,7 +71,7 @@ export default function AIScannerModal({ onClose, onScanSuccess }) {
             <span style={{ background: 'rgba(20, 187, 166, 0.15)', color: 'var(--accent-primary)', padding: '6px 12px', borderRadius: '12px', fontWeight: 800, fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <Icons.Sparkles /> PRO FEATURE
             </span>
-            <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 600 }}>Créditos mensuales: <span style={{ color: 'var(--text-primary)' }}>45/50</span></span>
+            <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 600 }}>Créditos mensuales: <span style={{ color: 'var(--text-primary)' }}>{creditsLeft ? `${creditsLeft.left}/${creditsLeft.limit}` : '...'}</span></span>
           </div>
 
           <h2 style={{ fontSize: '1.5rem', fontWeight: 800, margin: '0 0 8px 0', color: 'var(--text-primary)' }}>Carga de Facturas con IA</h2>

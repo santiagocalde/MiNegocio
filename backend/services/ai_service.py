@@ -35,11 +35,11 @@ logger = logging.getLogger("NovaStock.AI")
 
 AI_API_KEY  = (os.environ.get("AI_INVOICE_API_KEY")   or "").strip()
 AI_BASE_URL = (os.environ.get("AI_INVOICE_BASE_URL")   or "https://openrouter.ai/api/v1").rstrip("/")
-AI_MODEL    = (os.environ.get("AI_INVOICE_MODEL")      or "openai/gpt-4o-mini").strip()
+AI_MODEL    = (os.environ.get("AI_INVOICE_MODEL")      or "minimax-m3").strip()
 # Modelo para las funciones de TEXTO (resumen, precios, etc.). Si no se define,
 # usa el mismo que visión. Permite poner un modelo más barato para texto y dejar
-# el modelo con visión (Kimi K2) solo para el escáner de facturas.
-AI_TEXT_MODEL = (os.environ.get("AI_INVOICE_TEXT_MODEL") or AI_MODEL).strip()
+# el modelo con visión (minimax-m3) solo para el escáner de facturas.
+AI_TEXT_MODEL = (os.environ.get("AI_INVOICE_TEXT_MODEL") or "deepseek-v4-flash").strip()
 
 _PROMPT = (
     "Sos un asistente que lee facturas y remitos de proveedores de un kiosco en Argentina. "
@@ -269,6 +269,9 @@ async def procesar_factura_ocr(image_bytes: bytes, content_type: str = "image/jp
 
 def _extract_json(text: str) -> dict:
     text = (text or "").strip()
+    # Quitar bloque <think>...</think> (modelos reasoning como minimax-m3)
+    if "<think" in text and "</think>" in text:
+        text = text.split("</think>")[-1].strip()
     if text.startswith("```"):
         parts = text.split("```")
         text = parts[1] if len(parts) >= 2 else text
