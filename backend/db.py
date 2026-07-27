@@ -438,6 +438,25 @@ async def init_pg() -> None:
             ALTER TABLE businesses ADD COLUMN IF NOT EXISTS phone TEXT DEFAULT '';
             ALTER TABLE businesses ADD COLUMN IF NOT EXISTS terms_accepted_at TIMESTAMPTZ;
             ALTER TABLE businesses ADD COLUMN IF NOT EXISTS owner_name TEXT DEFAULT '';
+            -- PII (phone/owner_name) migró a pgp_sym_encrypt (commit ae67fd6). Las columnas
+            -- siguen siendo TEXT: los datos nuevos se guardan como bytea casteado a text
+            -- ("\\x..."), los viejos como texto plano. Esta función tolera los 3 estados
+            -- (vacío/NULL, encriptado, plano) sin romper la query cuando algún registro
+            -- no está encriptado. Se llama con el mismo key que pgp_sym_encrypt.
+            CREATE OR REPLACE FUNCTION safe_pii_decrypt(val TEXT, key TEXT) RETURNS TEXT AS $safe_pii$
+            BEGIN
+                IF val IS NULL OR val = '' THEN RETURN ''; END IF;
+                -- bytea castado a text (modo hex) empieza con "\\x". LIKE trata "\\" como
+                -- escape del patrón, por eso comparamos bytes literales con left().
+                IF left(val, 2) = E'\\\\x' THEN
+                    BEGIN
+                        RETURN pgp_sym_decrypt(decode(substring(val from 3), 'hex'), key);
+                    EXCEPTION WHEN OTHERS THEN RETURN '';
+                    END;
+                END IF;
+                RETURN val;
+            END;
+            $safe_pii$ LANGUAGE plpgsql IMMUTABLE;
             ALTER TABLE businesses ADD COLUMN IF NOT EXISTS business_type TEXT DEFAULT '';
             ALTER TABLE businesses ADD COLUMN IF NOT EXISTS prior_pos TEXT DEFAULT '';
             ALTER TABLE businesses ADD COLUMN IF NOT EXISTS needs_arca TEXT DEFAULT '';
