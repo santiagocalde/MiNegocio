@@ -51,13 +51,13 @@ export default function LandingSocialProof() {
     <section className="lp-section" style={{ padding: '32px 24px' }}>
       <div className="lp-container">
         <Reveal>
-          <hr style={{ border: 'none', borderTop: '1px solid rgba(255,255,255,0.06)', maxWidth: 700, margin: '0 auto 24px' }} />
+          <hr style={{ border: 'none', borderTop: '1px solid rgba(255,255,255,0.1)', maxWidth: 700, margin: '0 auto 24px' }} />
           <div style={{ display: 'flex', justifyContent: 'center', gap: 0, flexWrap: 'wrap', maxWidth: 700, margin: '0 auto' }}>
             {stats.map((s, i) => (
               <AnimatedStat key={i} value={s.value} label={s.label} suffix={s.suffix || ''} isLast={i === stats.length - 1} />
             ))}
           </div>
-          <hr style={{ border: 'none', borderTop: '1px solid rgba(255,255,255,0.06)', maxWidth: 700, margin: '24px auto 0' }} />
+          <hr style={{ border: 'none', borderTop: '1px solid rgba(255,255,255,0.1)', maxWidth: 700, margin: '24px auto 0' }} />
         </Reveal>
       </div>
     </section>
