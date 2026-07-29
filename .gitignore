@@ -49,3 +49,4 @@ opencode.json
 .cursor/
 .claude/
 backups/
+.bak
