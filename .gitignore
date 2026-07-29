@@ -50,3 +50,7 @@ opencode.json
 .claude/
 backups/
 .bak
+
+# Security configs - NEVER commit
+marketing/nginx/
+*.conf
