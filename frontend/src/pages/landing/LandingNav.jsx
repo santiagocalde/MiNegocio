@@ -52,6 +52,8 @@ export default function LandingNav({
             </a>
           ))}
           <div style={{ position: 'relative' }} className="nav-dropdown-container"
+          <a href='/blog/' className='lp-nav-link'>Blog</a>
+          <div style={{ position: 'relative' }} className='nav-dropdown-container'
             onMouseEnter={() => { const el = document.getElementById('info-dropdown'); if (el) { el.style.opacity = '1'; el.style.pointerEvents = 'auto'; el.style.transform = 'translateX(-50%) translateY(0)'; } }}
             onMouseLeave={() => { const el = document.getElementById('info-dropdown'); if (el) { el.style.opacity = '0'; el.style.pointerEvents = 'none'; el.style.transform = 'translateX(-50%) translateY(-10px)'; } }}>
             <button className="lp-nav-link">
