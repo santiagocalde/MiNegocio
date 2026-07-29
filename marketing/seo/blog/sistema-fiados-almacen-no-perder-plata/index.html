@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="index, follow">
+<meta name="author" content="MiNegocio">
+<meta name="theme-color" content="#060913">
+<title>Sistema de fiados para almacenes: como no perder plata | MiNegocio Blog</title>
+<meta name="description" content="Aprende como implementar un sistema de fiados en tu almacen para dejar de perder plata. Metodos practicos, datos clave del cliente y cuando cortar el credito.">
+<meta name="keywords" content="sistema fiados almacen, control fiados comercio, app para fiados, como anotar fiados, gestion deuda clientes">
+<link rel="canonical" href="https://minegocio.app/blog/sistema-fiados-almacen-no-perder-plata/">
+<meta property="og:locale" content="es_AR">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="MiNegocio">
+<meta property="og:title" content="Sistema de fiados para almacenes: como no perder plata | MiNegocio Blog">
+<meta property="og:description" content="Aprende como implementar un sistema de fiados en tu almacen para dejar de perder plata. Metodos practicos, datos clave del cliente y cuando cortar el credito.">
+<meta property="og:url" content="https://minegocio.app/blog/sistema-fiados-almacen-no-perder-plata/">
+<meta property="og:image" content="https://minegocio.app/img/og-blog.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Sistema de fiados para almacenes: como no perder plata | MiNegocio Blog">
+<meta name="twitter:description" content="Aprende como implementar un sistema de fiados en tu almacen para dejar de perder plata. Metodos practicos, datos clave del cliente y cuando cortar el credito.">
+<meta name="twitter:image" content="https://minegocio.app/img/og-blog.jpg">
+<style>
+*,*::before,*::after{{box-sizing:border-box;margin:0;padding:0}}
+body{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,sans-serif;background:#060913;color:#e2e8f0;line-height:1.7;min-height:100vh;display:flex;flex-direction:column}}
+a{{color:#38bdf8;text-decoration:none}}a:hover{{text-decoration:underline}}
+.container{{max-width:800px;margin:0 auto;padding:0 20px;width:100%}}
+nav{{background:#0f172a;border-bottom:1px solid #1e293b;padding:16px 0;position:sticky;top:0;z-index:100}}
+nav .container{{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}}
+nav .logo{{font-size:1.3rem;font-weight:700;color:#fff;white-space:nowrap}}
+nav .logo span{{color:#38bdf8}}
+nav .nav-links{{display:flex;gap:20px;flex-wrap:wrap;list-style:none}}
+nav .nav-links a{{color:#94a3b8;font-size:.9rem;transition:color .2s}}
+nav .nav-links a:hover{{color:#38bdf8;text-decoration:none}}
+article{{flex:1;padding:48px 0}}
+article h1{{font-size:2.2rem;color:#fff;margin-bottom:8px;line-height:1.3}}
+article h2{{font-size:1.4rem;color:#38bdf8;margin:40px 0 16px}}
+article h3{{font-size:1.15rem;color:#e2e8f0;margin:28px 0 10px}}
+article p,article li{{font-size:1.05rem;margin-bottom:14px;color:#cbd5e1}}
+article ul,article ol{{margin:0 0 20px 24px}}
+article li{{margin-bottom:8px}}
+article .meta{{font-size:.85rem;color:#64748b;margin-bottom:32px;padding-bottom:16px;border-bottom:1px solid #1e293b}}
+article .meta a{{color:#64748b}}
+article .highlight{{background:#0f172a;border-left:4px solid #38bdf8;padding:20px 24px;margin:32px 0;border-radius:0 8px 8px 0;font-size:1rem;color:#e2e8f0;font-style:italic}}
+article .tags{{display:flex;flex-wrap:wrap;gap:8px;margin-top:40px;padding-top:20px;border-top:1px solid #1e293b}}
+article .tags a{{background:#0f172a;color:#94a3b8;padding:6px 14px;border-radius:20px;font-size:.82rem;transition:all .2s;border:1px solid #1e293b}}
+article .tags a:hover{{background:#1e293b;color:#38bdf8;text-decoration:none;border-color:#38bdf8}}
+article .related{{margin-top:32px;padding:24px;background:#0f172a;border-radius:8px}}
+article .related h3{{color:#fff;font-size:1.1rem;margin-bottom:14px}}
+article .related ul{{list-style:none;margin:0}}
+article .related li{{margin-bottom:8px}}
+article .related a{{font-size:.95rem}}
+article .cta-soft{{margin-top:40px;padding:24px;background:linear-gradient(135deg,#0f172a,#1e293b);border-radius:8px;text-align:center;border:1px solid #1e293b}}
+article .cta-soft p{{margin-bottom:8px;color:#94a3b8;font-size:.95rem}}
+article .cta-soft a{{font-weight:600}}
+footer{{background:#0f172a;border-top:1px solid #1e293b;padding:32px 0;text-align:center;color:#64748b;font-size:.85rem;margin-top:auto}}
+footer a{{color:#94a3b8}}
+footer .container{{display:flex;flex-direction:column;gap:8px;align-items:center}}
+</style>
+</head>
+<body>
+<nav>
+<div class="container">
+<a href="/" class="logo">Mi<span>Negocio</span></a>
+<ul class="nav-links">
+<li><a href="/">Inicio</a></li>
+<li><a href="/#funcionalidades">Funcionalidades</a></li>
+<li><a href="/#precios">Precios</a></li>
+<li><a href="/blog/">Blog</a></li>
+<li><a href="/#contacto">Contacto</a></li>
+</ul>
+</div>
+</nav>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Sistema de fiados para almacenes: como no perder plata",
+  "description": "Aprende como implementar un sistema de fiados en tu almacen para dejar de perder plata. Metodos practicos, datos clave del cliente y cuando cortar el credito.",
+  "keywords": ["sistema fiados almacen", "control fiados", "app para fiados", "gestion deuda clientes"],
+  "author": {"@type": "Organization", "name": "MiNegocio", "url": "https://minegocio.app"},
+  "publisher": {"@type": "Organization", "name": "MiNegocio", "url": "https://minegocio.app"},
+  "datePublished": "2026-07-27",
+  "dateModified": "2026-07-27",
+  "inLanguage": "es-AR",
+  "mainEntityOfPage": {"@type": "WebPage", "@id": "https://minegocio.app/blog/sistema-fiados-almacen-no-perder-plata/"}
+}
+</script>
+<article>
+<div class="container">
+<h1>Sistema de fiados para almacenes: como no perder plata</h1>
+<div class="meta">27 de julio de 2026 · 4 min de lectura · <a href="/blog/">Blog MiNegocio</a></div>
+
+<p>Si tenes un almacen de barrio, sabes que el fiado es parte del negocio. La vecina que cobra el 15, el pibe que se olvido la billetera, el jubilado que pasa todos los dias. Es imposible decir que no. Pero tambien sabes que ahi se te va la plata sin darte cuenta.</p>
+
+<p>El problema no es fiar. El problema es <strong>como</strong> lo haces. Si lo anotas en un cuaderno o en un papelito suelto, tarde o temprano perdes la cuenta. Y cuando un cliente te debe 30 lucas y solo te acordas de 20, te fumaste 10 lucas de ganancia.</p>
+
+<div class="highlight">Un almacen que no registra los fiados pierde en promedio un 15% de su facturacion mensual en deudas incobrables.</div>
+
+<h2>Por que se pierde plata con los fiados</h2>
+
+<p>Hay tres razones principales por las que los almaceneros pierden guita con el fiado, y las tres tienen solucion:</p>
+
+<ol>
+<li><strong>Mala anotacion:</strong> Escribis "Juan - $3500" y a la semana no sabes si ya te pago o no. Sin fecha, sin detalle de los productos, sin contexto, esa anotacion vale cero.</li>
+<li><strong>Falta de seguimiento:</strong> Le fiaste a una clienta hace 20 dias. No anotaste cuando fue la ultima vez que pago. Se te paso el tiempo y cuando te quisiste acordar ya pasaron 40 dias. Cuanto mas tiempo pasa, mas dificil es cobrar.</li>
+<li><strong>No poner limite:</strong> Le seguis fiando al que ya te debe tres cuentas anteriores. "Despues te pago todo junto" te dice, y vos le crees porque es conocido del barrio. Spoiler: no te paga todo junto.</li>
+</ol>
+
+<h2>Como registrar cada fiado correctamente</h2>
+
+<p>Un fiado bien registrado tiene que tener si o si estos datos:</p>
+
+<ul>
+<li><strong>Nombre completo del cliente:</strong> Nada de "Jose" a secas. Jose que? En el barrio hay tres Joses. Apellido y, si podes, un telefono.</li>
+<li><strong>Fecha del fiado:</strong> Dia, mes y año. Sin esto es imposible saber la antiguedad de la deuda.</li>
+<li><strong>Monto exacto:</strong> Con detalle de que llevo, aunque sea "fiambre + pan + gaseosa = $4.200". Si el cliente te discute despues, tenes respaldo.</li>
+<li><strong>Registro de pagos parciales:</strong> Si te pago la mitad, anotalo. Si no, despues te dice "yo ya te pague eso" y no sabes si es verdad.</li>
+<li><strong>Saldo actualizado:</strong> Siempre tenes que saber cuanto te debe cada cliente hoy, no hace tres semanas.</li>
+</ul>
+
+<h2>Que datos del cliente importan de verdad</h2>
+
+<p>No necesitas el DNI ni la direccion exacta. Pero hay datos minimos que te salvan:</p>
+
+<ul>
+<li>Nombre y apellido</li>
+<li>Telefono (para mandar un WhatsApp amable recordando, no para apretar)</li>
+<li>Antiguedad como cliente</li>
+<li>Historial de pagos: si siempre paga bien o si siempre cuelga</li>
+<li>Monto maximo que le fiaste historico y si lo pago</li>
+</ul>
+
+<p>Con esos datos podes tomar decisiones. Porque no es lo mismo fiarle $10.000 a un cliente que paga cada semana que a uno que te viene bicicleteando hace tres meses.</p>
+
+<h2>Como hacer seguimiento de deuda sin quedar como un ortiva</h2>
+
+<p>El almacenero de barrio tiene una desventaja: atiende a vecinos, amigos, conocidos. No queres quedar mal. Pero tampoco queres perder plata. La clave es la constancia y el metodo:</p>
+
+<p><strong>Un cierre semanal:</strong> Todos los sabados, revisa que clientes tienen deuda pendiente de mas de 7 dias. No hace falta que los llames a todos. Pero vos tenes que saber quienes son.</p>
+
+<p><strong>Recordatorio amable:</strong> Cuando el cliente vuelve al negocio, le decis: "Pablo, me quedaste debiendo del otro dia, son $2.800. Si podes hoy golazo." No le estas cobrando, le estas recordando. El tono cambia todo.</p>
+
+<p><strong>Prioriza a los que mas deben:</strong> No es lo mismo el que te debe $2.000 hace una semana que el que te debe $18.000 hace un mes. Ataca primero las deudas grandes y viejas.</p>
+
+<h2>Cuando cortar el fiado</h2>
+
+<p>Esta es la decision mas dificil. Pero hay reglas claras que te protegen:</p>
+
+<ul>
+<li>Si un cliente tiene mas de 3 deudas abiertas, no le fies mas hasta que cancele al menos una.</li>
+<li>Si la deuda mas vieja supera los 30 dias, no se fia mas hasta que pague todo.</li>
+<li>Si el monto total de deuda supera el doble de lo que ese cliente gasta por semana, cortale el credito.</li>
+<li>Si te ghosteo despues de que le recordaste la deuda, fiado cortado para siempre.</li>
+</ul>
+
+<p>No tengas miedo de poner limites. El cliente que vale la pena lo entiende. El que se ofende porque no le fias mas es justamente el que no te iba a pagar.</p>
+
+<h2>Ventajas de un sistema digital vs el cuaderno</h2>
+
+<p>El cuaderno tiene tres problemas graves:</p>
+
+<ol>
+<li><strong>Se pierde, se moja, se rompe.</strong> Perdiste años de registro en un accidente.</li>
+<li><strong>No busca nada.</strong> Encontrar cuanto te debe Claudia entre 300 paginas lleva 10 minutos. Si lo encontras.</li>
+<li><strong>No avisa.</strong> El cuaderno no te dice "che, a este cliente hace 20 dias que no le cobras".</li>
+</ol>
+
+<p>Un sistema digital, aunque sea una app simple en el celu, te da tres ventajas que el cuaderno no puede darte jamas:</p>
+
+<ul>
+<li><strong>Busqueda instantanea:</strong> Escribis "Gomez" y ves toda la deuda al toque.</li>
+<li><strong>Alertas automaticas:</strong> La app te avisa cuando una deuda esta por vencer.</li>
+<li><strong>Historial eterno:</strong> No se pierde, no se rompe, esta en la nube. Siempre ahi.</li>
+</ul>
+
+<p>Y no, no necesitas una computadora de la NASA. Cualquier celular pedorro de hoy corre una app basica de gestion.</p>
+
+<h2>Conclusion</h2>
+
+<p>El fiado no es tu enemigo. Es parte del negocio de barrio y bien manejado te da mas clientes y mas ventas. Pero mal manejado te come la ganancia de a poco, sin que te des cuenta, todos los meses.</p>
+
+<p>Registra todo, hace seguimiento, pone limites y deja el cuaderno para otra cosa. Tu almacen lo vale.</p>
+
+<div class="cta-soft">
+<p>En <a href="/">MiNegocio</a> armamos una app que te gestiona los fiados automaticamente: registra, te avisa, y te muestra al instante quien te debe y cuanto. Sin cuaderno, sin vueltas.</p>
+</div>
+
+<div class="tags">
+<a href="/blog/tags/fiados/">fiados</a>
+<a href="/blog/tags/almacen/">almacen</a>
+<a href="/blog/tags/gestion/">gestion</a>
+<a href="/blog/tags/deudas/">deudas</a>
+</div>
+
+<div class="related">
+<h3>Tambien te puede interesar</h3>
+<ul>
+<li><a href="/blog/pos-kioscos-argentina-que-tiene-que-tener/">Que tiene que tener un POS para kioscos en Argentina</a></li>
+<li><a href="/blog/cierre-caja-digital-vs-cuaderno/">Cierre de caja digital vs cuaderno: guia para comercios</a></li>
+<li><a href="/blog/app-kiosco-5-cosas-necesita-negocio/">App para kiosco: las 5 cosas que necesita tu negocio</a></li>
+</ul>
+</div>
+
+</div>
+</article>
+<footer>
+<div class="container">
+<p>MiNegocio &copy; 2026 — La app para kioscos y almacenes en Argentina</p>
+<p><a href="/">Inicio</a> · <a href="/blog/">Blog</a> · <a href="/#contacto">Contacto</a></p>
+</div>
+</footer>
+</body>
+</html>
