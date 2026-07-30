@@ -1,0 +1,68 @@
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:"Inter","SF Pro Display",-apple-system,BlinkMacSystemFont,system-ui,sans-serif;background:#060913;color:#fff;line-height:1.7}
+body::before{content:"";position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:-1;
+  background:radial-gradient(circle at 20% 0%,rgba(20,187,166,0.15) 0%,transparent 50%),
+             radial-gradient(circle at 80% 100%,rgba(15,138,125,0.12) 0%,transparent 50%),
+             radial-gradient(circle at 50% 50%,rgba(30,58,95,0.3) 0%,transparent 80%)}
+.hero{padding:120px 24px 60px;text-align:center;max-width:900px;margin:0 auto}
+.hero h1{font-family:Inter,system-ui,sans-serif;font-size:clamp(2rem,6vw,3.5rem);font-weight:800;line-height:1.15;margin-bottom:20px;background:linear-gradient(135deg,#fff,rgba(20,187,166,0.8));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{font-size:clamp(1rem,3vw,1.25rem);color:rgba(230,255,251,0.7);max-width:650px;margin:0 auto;line-height:1.7}
+.content{max-width:1100px;margin:0 auto;padding:40px 24px 80px}
+h2{font-family:Inter,system-ui,sans-serif;font-size:clamp(1.5rem,4vw,2rem);font-weight:700;margin:48px 0 24px;color:#fff}
+h3{font-family:Inter,system-ui,sans-serif;font-size:1.2rem;font-weight:600;color:#fff}
+p,li{font-size:1.05rem;color:rgba(230,255,251,0.8);margin-bottom:16px;line-height:1.7}
+.card{background:linear-gradient(145deg,rgba(30,58,95,0.6),rgba(18,30,54,0.8));border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:32px;transition:border-color .2s}
+.card:hover{border-color:rgba(20,187,166,0.3)}
+.card h3{color:rgba(20,187,166,1);margin-bottom:12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px;margin:32px 0}
+.accent{color:#14bba6}
+.btn{display:inline-block;background:linear-gradient(135deg,#14bba6,#0f8a7d);color:#060913;padding:14px 36px;border-radius:12px;text-decoration:none;font-weight:700;font-size:1rem;font-family:Inter,system-ui,sans-serif;transition:transform .15s,box-shadow .15s;box-shadow:0 0 24px rgba(20,187,166,0.25)}
+.btn:hover{transform:translateY(-1px);box-shadow:0 0 32px rgba(20,187,166,0.4);color:#060913}
+.pricing-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:24px;margin:32px 0}
+.plan{background:linear-gradient(145deg,rgba(30,58,95,0.6),rgba(18,30,54,0.8));border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:36px 32px;text-align:center;position:relative}
+.plan.featured{border-color:rgba(20,187,166,0.4);box-shadow:0 0 40px rgba(20,187,166,0.1)}
+.plan h3{font-size:1.3rem;margin-bottom:8px}
+.plan .price{font-size:2.8rem;font-weight:800;color:#14bba6;margin:16px 0;font-family:Inter,system-ui,sans-serif}
+.plan .price small{font-size:1rem;color:rgba(230,255,251,0.5);font-weight:400}
+.plan .yearly{font-size:.85rem;color:rgba(230,255,251,0.4);margin-bottom:20px}
+.plan ul{text-align:left;list-style:none;padding:0;margin:24px 0}
+.plan ul li{padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:.95rem}
+.plan ul li::before{content:"+ ";color:#14bba6;font-weight:700}
+.badge{display:inline-block;background:#14bba6;color:#060913;padding:4px 16px;border-radius:20px;font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;position:absolute;top:-12px;left:50%;transform:translateX(-50%)}
+.popular{display:inline-block;background:linear-gradient(135deg,#f59e0b,#d97706);color:#060913;padding:4px 16px;border-radius:20px;font-size:.75rem;font-weight:700;position:absolute;top:-12px;left:50%;transform:translateX(-50%)}
+.cta-section{text-align:center;padding:60px 0;margin:40px 0;background:rgba(20,187,166,0.05);border:1px solid rgba(20,187,166,0.1);border-radius:16px}
+.faq{max-width:800px;margin:48px auto 0}
+.faq-item{background:linear-gradient(145deg,rgba(30,58,95,0.4),rgba(18,30,54,0.5));border:1px solid rgba(255,255,255,0.05);border-radius:12px;padding:24px;margin-bottom:12px}
+.faq-item h3{font-size:1.1rem;margin-bottom:8px}
+.highlight{background:rgba(20,187,166,0.08);border-left:3px solid #14bba6;padding:20px 24px;margin:24px 0;border-radius:0 8px 8px 0}
+.highlight p{margin-bottom:0;font-size:1rem}
+.article-card{background:linear-gradient(145deg,rgba(30,58,95,0.6),rgba(18,30,54,0.8));border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:32px;margin-bottom:20px;transition:border-color .2s}
+.article-card:hover{border-color:rgba(20,187,166,0.3)}
+.article-card h2{font-size:1.4rem;margin:0 0 8px}
+.article-card h2 a{color:#fff;text-decoration:none}
+.article-card h2 a:hover{color:#14bba6}
+.article-card .date{font-size:.85rem;color:rgba(230,255,251,0.4);margin-bottom:12px}
+.article-card .read-more{color:#14bba6;font-weight:600;text-decoration:none;font-size:.95rem}
+.article-card .read-more:hover{text-decoration:underline}
+.tag{display:inline-block;background:rgba(20,187,166,0.1);color:rgba(20,187,166,0.9);padding:4px 12px;border-radius:20px;font-size:.8rem;margin:0 4px 8px 0}
+.compare-table{width:100%;border-collapse:collapse;margin:24px 0;font-size:.95rem}
+.compare-table th,.compare-table td{padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.05);text-align:center}
+.compare-table th:first-child,.compare-table td:first-child{text-align:left}
+.compare-table th{color:rgba(230,255,251,0.5);font-weight:600;font-size:.85rem}
+.compare-table td{color:rgba(230,255,251,0.8)}
+.compare-table .check{color:#14bba6;font-weight:700}
+article{padding:120px 0 60px;max-width:800px;margin:0 auto}
+article h1{font-family:Inter,system-ui,sans-serif;font-size:clamp(1.8rem,5vw,2.5rem);font-weight:800;line-height:1.2;margin-bottom:12px;background:linear-gradient(135deg,#fff,rgba(20,187,166,0.8));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+article .meta{font-size:.85rem;color:rgba(230,255,251,0.4);margin-bottom:32px;padding-bottom:24px;border-bottom:1px solid rgba(255,255,255,0.05)}
+article h2{font-size:1.5rem;margin:36px 0 16px}
+article ul,article ol{padding-left:24px;margin-bottom:20px}
+article a{color:#14bba6}
+.tags{margin-top:40px}
+.related{margin-top:48px;padding-top:32px;border-top:1px solid rgba(255,255,255,0.05)}
+.related h3{font-size:1.1rem;margin-bottom:16px}
+.related a{display:block;color:#14bba6;text-decoration:none;font-size:1rem;margin-bottom:10px}
+.related a:hover{text-decoration:underline}
+@media(max-width:768px){.pricing-grid{grid-template-columns:1fr}.hero{padding:100px 24px 40px}nav{padding:12px 20px}nav div{gap:16px !important}}
+</style>

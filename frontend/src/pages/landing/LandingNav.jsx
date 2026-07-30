@@ -51,7 +51,6 @@ export default function LandingNav({
                {link}
             </a>
           ))}
-          <a href='/blog/' className='lp-nav-link'>Blog</a>
           <div style={{ position: 'relative' }} className='nav-dropdown-container'
             onMouseEnter={() => { const el = document.getElementById('info-dropdown'); if (el) { el.style.opacity = '1'; el.style.pointerEvents = 'auto'; el.style.transform = 'translateX(-50%) translateY(0)'; } }}
             onMouseLeave={() => { const el = document.getElementById('info-dropdown'); if (el) { el.style.opacity = '0'; el.style.pointerEvents = 'none'; el.style.transform = 'translateX(-50%) translateY(-10px)'; } }}>
@@ -60,6 +59,7 @@ export default function LandingNav({
             </button>
             <div id="info-dropdown" style={{ opacity: 0, pointerEvents: 'none', transform: 'translateX(-50%) translateY(-10px)', transition: 'all 0.2s', position: 'absolute', top: '100%', left: '50%', background: '#1E3A5F', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 8, display: 'flex', flexDirection: 'column', minWidth: 180, backdropFilter: 'blur(20px)', boxShadow: '0 10px 40px rgba(30,58,95,0.5)' }}>
               <a onClick={(e) => { e.preventDefault(); navigate('/nosotros'); }} style={{ color: 'var(--lp-text-muted)', textDecoration: 'none', padding: '10px 16px', borderRadius: 8, fontSize: '0.9rem', transition: 'all 0.2s', cursor: 'pointer' }} onMouseEnter={e => { e.target.style.background = 'rgba(255,255,255,0.05)'; e.target.style.color = '#fff' }} onMouseLeave={e => { e.target.style.background = 'transparent'; e.target.style.color = 'var(--lp-text-muted)' }}>Sobre Nosotros</a>
+              <a href='/blog/' style={{ color: 'var(--lp-text-muted)', textDecoration: 'none', padding: '10px 16px', borderRadius: 8, fontSize: '0.9rem', transition: 'all 0.2s', cursor: 'pointer' }} onMouseEnter={e => { e.target.style.background = 'rgba(255,255,255,0.05)'; e.target.style.color = '#fff' }} onMouseLeave={e => { e.target.style.background = 'transparent'; e.target.style.color = 'var(--lp-text-muted)' }}>Blog</a>
               <a onClick={(e) => { e.preventDefault(); document.getElementById('faq')?.scrollIntoView({ behavior: 'smooth' }); }} style={{ color: 'var(--lp-text-muted)', textDecoration: 'none', padding: '10px 16px', borderRadius: 8, fontSize: '0.9rem', transition: 'all 0.2s', cursor: 'pointer' }} onMouseEnter={e => { e.target.style.background = 'rgba(255,255,255,0.05)'; e.target.style.color = '#fff' }} onMouseLeave={e => { e.target.style.background = 'transparent'; e.target.style.color = 'var(--lp-text-muted)' }}>Preguntas Frecuentes</a>
               <a onClick={(e) => { e.preventDefault(); navigate('/soporte'); }} style={{ color: 'var(--lp-text-muted)', textDecoration: 'none', padding: '10px 16px', borderRadius: 8, fontSize: '0.9rem', transition: 'all 0.2s', cursor: 'pointer' }} onMouseEnter={e => { e.target.style.background = 'rgba(255,255,255,0.05)'; e.target.style.color = '#fff' }} onMouseLeave={e => { e.target.style.background = 'transparent'; e.target.style.color = 'var(--lp-text-muted)' }}>Soporte</a>
             </div>

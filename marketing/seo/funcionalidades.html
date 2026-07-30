@@ -1,152 +1,106 @@
-<!DOCTYPE html>
-<html lang="es-AR">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#060913">
-<meta name="robots" content="index, follow, max-image-preview:large">
-<meta name="description" content="Todas las funcionalidades de MiNegocio POS: venta sin internet, control de stock, fiados, cierre de caja, reportes, multi-operador. Sistema de punto de venta para kioscos argentinos.">
-<meta name="keywords" content="funcionalidades POS kiosco, sistema de ventas sin internet, control de stock almacen, app para fiados, cierre de caja digital, software kiosco argentina">
-<title>Funcionalidades -- MiNegocio POS para kioscos | Sistema de ventas sin internet</title>
+<!DOCTYPE html><html lang="es-AR"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><meta name="theme-color" content="#060913">
+<meta name="robots" content="index,follow,max-image-preview:large">
+<meta name="description" content="Todas las funcionalidades de MiNegocio POS: control de stock, fiados, proveedores, catalogo web QR, escaneo de facturas con IA, cierre de caja. Sistema completo para kioscos argentinos.">
+<meta name="keywords" content="funcionalidades POS kiosco, sistema control stock kiosco, fiados POS, catalogo QR kiosco, escaner factura IA, proveedores POS, cierre caja kiosco">
+<title>Funcionalidades -- MiNegocio POS | Sistema completo para kioscos</title>
 <link rel="canonical" href="https://mi-negocio.app/funcionalidades/">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-<meta property="og:title" content="Funcionalidades de MiNegocio -- Todo lo que tu kiosco necesita">
-<meta property="og:description" content="Venta sin internet, control de stock, fiados, cierre de caja y reportes. Conoce todas las funcionalidades del POS para kioscos argentinos.">
-<meta property="og:url" content="https://mi-negocio.app/funcionalidades/">
-<meta property="og:type" content="website">
-<meta property="og:locale" content="es_AR">
-<script type="application/ld+json">
-{"@context":"https://schema.org","@type":"WebPage","name":"Funcionalidades MiNegocio POS","description":"Todas las funcionalidades del sistema de punto de venta para kioscos, almacenes y minimarkets de Argentina.","url":"https://mi-negocio.app/funcionalidades/","inLanguage":"es-AR","breadcrumb":{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Inicio","item":"https://mi-negocio.app/"},{"@type":"ListItem","position":2,"name":"Funcionalidades","item":"https://mi-negocio.app/funcionalidades/"}]}}
-</script>
+<meta property="og:title" content="Funcionalidades de MiNegocio POS">
+<meta property="og:description" content="Todo lo que necesitas para manejar tu kiosco: stock, fiados, proveedores, catalogo QR, IA. Sistema web, sin instalar nada.">
+<meta property="og:url" content="https://mi-negocio.app/funcionalidades/"><meta property="og:image" content="https://mi-negocio.app/og-image.png"><meta property="og:locale" content="es_AR">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","name":"Funcionalidades MiNegocio POS","description":"Sistema completo de punto de venta para kioscos, almacenes y comercios en Argentina.","url":"https://mi-negocio.app/funcionalidades/","breadcrumb":{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Inicio","item":"https://mi-negocio.app/"},{"@type":"ListItem","position":2,"name":"Funcionalidades","item":"https://mi-negocio.app/funcionalidades/"}]}}</script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#060913;color:#e2e8f0;line-height:1.7}
-.container{max-width:900px;margin:0 auto;padding:0 24px}
-nav{background:#0a0f1e;border-bottom:1px solid #1e293b;padding:16px 0;position:sticky;top:0;z-index:100}
-nav .container{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
-nav a{color:#e2e8f0;text-decoration:none;font-weight:600;font-size:15px}
-nav a:hover{color:#38bdf8}
-nav .logo{font-size:20px;font-weight:800}
-nav .logo span{color:#38bdf8}
-nav .links{display:flex;gap:20px;flex-wrap:wrap}
-.hero{padding:60px 0 40px;text-align:center}
-.hero h1{font-size:clamp(28px,5vw,40px);font-weight:800;line-height:1.2;margin-bottom:16px;background:linear-gradient(135deg,#e2e8f0,#38bdf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.hero p{font-size:18px;color:#94a3b8;max-width:650px;margin:0 auto}
-.content{padding:20px 0 60px}
-.content h2{font-size:26px;font-weight:700;margin:40px 0 16px;color:#f1f5f9}
-.content h3{font-size:20px;font-weight:600;margin:28px 0 12px;color:#e2e8f0}
-.content p,.content li{font-size:17px;color:#cbd5e1;margin-bottom:16px}
-.content ul{padding-left:24px;margin-bottom:20px}
-.content li{margin-bottom:10px}
-.card{background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:28px;margin-bottom:20px}
-.card h3{margin-top:0;color:#38bdf8}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px;margin:24px 0}
-.icon{font-size:32px;margin-bottom:12px}
-.btn{display:inline-block;background:linear-gradient(135deg,#38bdf8,#2563eb);color:#fff;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:700;font-size:16px;margin-top:12px}
-.btn:hover{opacity:.9}
-footer{text-align:center;padding:40px 0;border-top:1px solid #1e293b;color:#64748b;font-size:14px}
-footer a{color:#94a3b8;text-decoration:none}
-footer a:hover{color:#38bdf8}
-.cta-section{text-align:center;padding:48px 0;background:#0a0f1e;border-radius:12px;margin:40px 0}
-@media(max-width:600px){nav .links{font-size:14px;gap:12px}.hero{padding:40px 0 24px}}
-</style>
-</head>
-<body>
-<nav><div class="container">
-<a href="/" class="logo">Mi<span>Negocio</span></a>
-<div class="links">
-<a href="/funcionalidades/">Funcionalidades</a>
-<a href="/precios/">Precios</a>
-<a href="/blog/">Blog</a>
-<a href="https://mi-negocio.app/#faq">FAQ</a>
-</div>
-</div></nav>
+body{font-family:"Inter","SF Pro Display",-apple-system,BlinkMacSystemFont,system-ui,sans-serif;background:#060913;color:#fff;line-height:1.7}
+body::before{content:"";position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:-1;background:radial-gradient(circle at 20% 0%,rgba(20,187,166,0.15) 0%,transparent 50%),radial-gradient(circle at 80% 100%,rgba(15,138,125,0.12) 0%,transparent 50%),radial-gradient(circle at 50% 50%,rgba(30,58,95,0.3) 0%,transparent 80%)}
+.hero{padding:120px 24px 60px;text-align:center;max-width:900px;margin:0 auto}
+.hero h1{font-size:clamp(2rem,6vw,3.5rem);font-weight:800;line-height:1.15;margin-bottom:20px;background:linear-gradient(135deg,#fff,rgba(20,187,166,0.8));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{font-size:clamp(1rem,3vw,1.25rem);color:rgba(230,255,251,0.7);max-width:650px;margin:0 auto}
+.content{max-width:1100px;margin:0 auto;padding:40px 24px 80px}
+h2{font-size:clamp(1.5rem,4vw,2rem);font-weight:700;margin:48px 0 24px;color:#fff}
+h3{font-size:1.2rem;font-weight:600;color:#fff}
+p,li{font-size:1.05rem;color:rgba(230,255,251,0.8);margin-bottom:16px;line-height:1.7}
+.card{background:linear-gradient(145deg,rgba(30,58,95,0.6),rgba(18,30,54,0.8));border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:32px;transition:border-color .2s}
+.card:hover{border-color:rgba(20,187,166,0.3)}
+.card h3{color:#14bba6;margin-bottom:12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px;margin:32px 0}
+.btn{display:inline-block;background:linear-gradient(135deg,#14bba6,#0f8a7d);color:#060913;padding:14px 36px;border-radius:12px;text-decoration:none;font-weight:700;font-size:1rem;transition:transform .15s,box-shadow .15s;box-shadow:0 0 24px rgba(20,187,166,0.25)}
+.btn:hover{transform:translateY(-1px);box-shadow:0 0 32px rgba(20,187,166,0.4)}
+.pricing-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:24px;margin:32px 0}
+.plan{background:linear-gradient(145deg,rgba(30,58,95,0.6),rgba(18,30,54,0.8));border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:36px 32px;text-align:center;position:relative}
+.plan.featured{border-color:rgba(20,187,166,0.4);box-shadow:0 0 40px rgba(20,187,166,0.1)}
+.plan h3{font-size:1.3rem;margin-bottom:8px}
+.plan .price{font-size:2.8rem;font-weight:800;color:#14bba6;margin:16px 0}
+.plan .price small{font-size:1rem;color:rgba(230,255,251,0.5);font-weight:400}
+.plan .yearly{font-size:.85rem;color:rgba(230,255,251,0.4);margin-bottom:20px}
+.plan ul{text-align:left;list-style:none;padding:0;margin:24px 0}
+.plan ul li{padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:.95rem}
+.plan ul li::before{content:"+ ";color:#14bba6;font-weight:700}
+.badge{display:inline-block;background:#14bba6;color:#060913;padding:4px 16px;border-radius:20px;font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;position:absolute;top:-12px;left:50%;transform:translateX(-50%)}
+.popular{display:inline-block;background:linear-gradient(135deg,#f59e0b,#d97706);color:#060913;padding:4px 16px;border-radius:20px;font-size:.75rem;font-weight:700;position:absolute;top:-12px;left:50%;transform:translateX(-50%)}
+.cta-section{text-align:center;padding:60px 0;margin:40px 0;background:rgba(20,187,166,0.05);border:1px solid rgba(20,187,166,0.1);border-radius:16px}
+.faq{max-width:800px;margin:48px auto 0}
+.faq-item{background:linear-gradient(145deg,rgba(30,58,95,0.4),rgba(18,30,54,0.5));border:1px solid rgba(255,255,255,0.05);border-radius:12px;padding:24px;margin-bottom:12px}
+.faq-item h3{font-size:1.1rem;margin-bottom:8px}
+.highlight{background:rgba(20,187,166,0.08);border-left:3px solid #14bba6;padding:20px 24px;margin:24px 0;border-radius:0 8px 8px 0}
+.highlight p{margin-bottom:0;font-size:1rem}
+.article-card{background:linear-gradient(145deg,rgba(30,58,95,0.6),rgba(18,30,54,0.8));border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:32px;margin-bottom:20px;transition:border-color .2s}
+.article-card:hover{border-color:rgba(20,187,166,0.3)}
+.article-card h2{font-size:1.4rem;margin:0 0 8px}
+.article-card h2 a{color:#fff;text-decoration:none}
+.article-card h2 a:hover{color:#14bba6}
+.article-card .date{font-size:.85rem;color:rgba(230,255,251,0.4);margin-bottom:12px}
+.article-card .read-more{color:#14bba6;font-weight:600;text-decoration:none;font-size:.95rem}
+.tag{display:inline-block;background:rgba(20,187,166,0.1);color:rgba(20,187,166,0.9);padding:4px 12px;border-radius:20px;font-size:.8rem;margin:0 4px 8px 0}
+.compare-table{width:100%;border-collapse:collapse;margin:24px 0;font-size:.95rem}
+.compare-table th,.compare-table td{padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.05);text-align:center}
+.compare-table th:first-child,.compare-table td:first-child{text-align:left}
+.compare-table th{color:rgba(230,255,251,0.5);font-weight:600;font-size:.85rem}
+.compare-table td{color:rgba(230,255,251,0.8)}
+.compare-table .check{color:#14bba6;font-weight:700}
+article{padding:120px 24px 80px;max-width:800px;margin:0 auto}
+article h1{font-size:clamp(1.8rem,5vw,2.5rem);font-weight:800;line-height:1.2;margin-bottom:12px;background:linear-gradient(135deg,#fff,rgba(20,187,166,0.8));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+article .meta{font-size:.85rem;color:rgba(230,255,251,0.4);margin-bottom:32px;padding-bottom:24px;border-bottom:1px solid rgba(255,255,255,0.05)}
+article h2{font-size:1.5rem;margin:36px 0 16px}
+article ul,article ol{padding-left:24px;margin-bottom:20px}
+article a{color:#14bba6}
+.tags{margin-top:40px}
+.related{margin-top:48px;padding-top:32px;border-top:1px solid rgba(255,255,255,0.05)}
+.related h3{font-size:1.1rem;margin-bottom:16px}
+.related a{display:block;color:#14bba6;text-decoration:none;font-size:1rem;margin-bottom:10px}
+.related a:hover{text-decoration:underline}
+@media(max-width:768px){.pricing-grid{grid-template-columns:1fr}.hero{padding:100px 24px 40px}}
+</style></head><body>
 
-<div class="hero">
-<h1>Todo lo que tu kiosco necesita, en una sola pantalla</h1>
-<p>MiNegocio esta diseniado para que cualquier comerciante pueda usarlo sin capacitacion. Estas son todas las funcionalidades incluidas desde el dia 1.</p>
-</div>
+<!--#include virtual="/_header.html" -->
 
-<div class="content"><div class="container">
-
-<h2>Funcionalidades principales</h2>
-
+<div class="hero"><img src="/seo-assets/hero-sistema.png" alt="MiNegocio" style="max-width:340px;width:100%;margin:0 auto 28px;display:block" loading="eager"><h1>Todas las funcionalidades</h1><p>MiNegocio POS es un sistema web. Sin instalar software, sin servidores, sin configuracion. Funciona en PC, tablet y celular.</p></div>
+<div class="content">
 <div class="grid">
-<div class="card">
-<h3>Vende sin internet</h3>
-<p>La funcionalidad mas importante para un kiosco argentino. MiNegocio funciona offline. Si se corta la conexion, seguis vendiendo. Cuando vuelve, se sincroniza todo automaticamente.</p>
+<div class="card"><img src="/seo-assets/punto-de-venta.webp" alt="Ventas y cobros" style="width:100%;max-width:100%;height:auto;border-radius:10px;margin-bottom:16px;display:block" loading="lazy"><h3>Ventas y cobros</h3><p>Punto de venta rapido con busqueda instantanea de productos. Acepta efectivo, transferencia, debito y credito con Mercado Pago integrado. Ticket de venta, factura electronica, descuentos y notas de credito.</p></div>
+<div class="card"><img src="/seo-assets/inventario.webp" alt="Control de stock" style="width:100%;max-width:100%;height:auto;border-radius:10px;margin-bottom:16px;display:block" loading="lazy"><h3>Control de stock</h3><p>Sabe exactamente que tenes y que te falta. Alertas de stock bajo, historial de movimientos, carga masiva de productos. Organiza por rubros, marcas y proveedores.</p></div>
+<div class="card"><img src="/seo-assets/fiados.webp" alt="Fiados" style="width:100%;max-width:100%;height:auto;border-radius:10px;margin-bottom:16px;display:block" loading="lazy"><h3>Fiados</h3><p>Lleva la cuenta corriente de tus clientes. Sistema de cobranzas automaticas por WhatsApp. Recordatorios y estados de cuenta. Limite por cliente. Consolida todo en el modulo de deudores.</p></div>
+<div class="card"><img src="/seo-assets/proveedores.webp" alt="Proveedores y compras" style="width:100%;max-width:100%;height:auto;border-radius:10px;margin-bottom:16px;display:block" loading="lazy"><h3>Proveedores y compras</h3><p>Registra a tus proveedores con lista de precios. Arma ordenes de compra. Registra el ingreso de mercaderia y actualiza el stock automaticamente. Reportes de compras por periodo.</p></div>
+<div class="card"><img src="/seo-assets/promociones.webp" alt="Catalogo web con QR" style="width:100%;max-width:100%;height:auto;border-radius:10px;margin-bottom:16px;display:block" loading="lazy"><h3>Catalogo web con QR</h3><p>Tu negocio en un link. Comparti tu catalogo por WhatsApp, Instagram o redes sociales. Tus clientes ven precios y productos desde el celu. Pedidos directos sin atender el telefono.</p></div>
+<div class="card"><img src="/seo-assets/inicio.webp" alt="Cierre de caja" style="width:100%;max-width:100%;height:auto;border-radius:10px;margin-bottom:16px;display:block" loading="lazy"><h3>Cierre de caja</h3><p>Cierre diario con detalle de ventas, cobros, fiados y gastos. Calcula tu ganancia neta. Historial de cierres. Exporta todo a PDF o planilla Excel para tu contador.</p></div>
+<div class="card"><img src="/seo-assets/compras.webp" alt="Multi-sucursal" style="width:100%;max-width:100%;height:auto;border-radius:10px;margin-bottom:16px;display:block" loading="lazy"><h3>Multi-sucursal</h3><p>Maneja varios locales desde una sola cuenta. Transferencias de stock entre sucursales. Reportes consolidados o separados. Cada sucursal con sus propios usuarios y permisos.</p></div>
+<div class="card"><img src="/seo-assets/reportes.webp" alt="Reportes y analisis" style="width:100%;max-width:100%;height:auto;border-radius:10px;margin-bottom:16px;display:block" loading="lazy"><h3>Reportes y analisis</h3><p>Reportes de ventas, productos mas vendidos, rentabilidad, ganancias, gastos. Analisis por periodo, por sucursal, por vendedor. Datos claros para tomar decisiones.</p></div>
+<div class="card"><img src="/seo-assets/mercadopago_logo.png" alt="Integraciones" style="width:auto;height:44px;margin-bottom:16px;display:block" loading="lazy"><h3>Integraciones</h3><p>Mercado Pago para cobros con QR y terminal. Factura electronica AFIP (comprobantes electronicos). Lector de codigo de barras USB y Bluetooth. Impresoras termicas de ticket.</p></div>
+<div class="card"><h3>Planilla de gastos</h3><p>Registra todos tus gastos: alquiler, servicios, sueldos, impuestos, reposicion de mercaderia. Sabe cuanto gastaste este mes, mes pasado, o en lo que va del ano. Total en tiempo real.</p></div>
+<div class="card"><h3>Escaneo de facturas con IA</h3><p>Sacale una foto a la factura del proveedor y MiNegocio carga los productos solos con precios de costo actualizados. Ahorra horas de carga manual. Solo en Plan IA.</p></div>
+<div class="card"><h3>Asesor de precios con IA</h3><p>Preguntale a que precio conviene vender un producto segun tu margen deseado y los precios de la competencia. La IA te sugiere el precio optimo basado en tus datos. Solo en Plan IA.</p></div>
+</div>
+<div class="highlight"><p>MiNegocio POS es un sistema pensado para el dueno del kiosco que no quiere renegar con la tecnologia. Interfaz simple, soporte en WhatsApp, y se adapta a como vos trabajas, no al reves.</p></div>
+<h2>Como funciona?</h2>
+<div class="grid">
+<div class="card"><h3>1. Creas tu cuenta</h3><p>Registrate gratis en 1 minuto. Sin instalar nada. Sin datos de tarjeta. Solo necesitas un mail o tu Google.</p></div>
+<div class="card"><h3>2. Cargas tus productos</h3><p>Agrega tus productos con precio de venta y costo. Usa el escaneo masivo o carga manual con codigo de barra. Tambien podes importar una planilla.</p></div>
+<div class="card"><h3>3. Empezas a vender</h3><p>Abrir el punto de venta es tocar un boton. Busca productos, cobra, imprime ticket. En 5 minutos estas vendiendo como siempre pero con todo registrado.</p></div>
+</div>
+<div class="cta-section"><h2>Proba MiNegocio gratis por 7 dias</h2><p style="color:rgba(230,255,251,0.6);margin-bottom:24px">Sin tarjeta de credito. Sin compromiso. Acceso completo a todas las funcionalidades.</p><a href="/" class="btn">Comenzar ahora</a></div>
 </div>
 
-<div class="card">
-<h3>Control de stock</h3>
-<p>Cada venta descuenta automaticamente del inventario. Stock minimo por producto, alertas cuando algo esta por acabarse, y carga masiva desde Excel o CSV.</p>
-</div>
+<!--#include virtual="/_footer.html" -->
 
-<div class="card">
-<h3>Sistema de fiados</h3>
-<p>Registra fiados por cliente. Consulta saldo pendiente, historial de pagos, y recordatorios visuales en la pantalla de caja. Ideal para el almacen de barrio.</p>
-</div>
-
-<div class="card">
-<h3>Cierre de caja</h3>
-<p>Cerrar el turno toma segundos. Te muestra el total vendido, los metodos de pago, los egresos del dia, y la diferencia esperada vs real. Podes imprimir el comprobante.</p>
-</div>
-
-<div class="card">
-<h3>Reportes de ventas</h3>
-<p>Ventas por dia, por semana, por producto, por categoria. Margenes de ganancia. Productos mas vendidos. Todo desde el panel, sin necesidad de planillas aparte.</p>
-</div>
-
-<div class="card">
-<h3>Multiples operadores</h3>
-<p>Cada empleado tiene su propio usuario y clave. Podes ver quien hizo cada venta. Ideal si tenes empleados en distintos turnos y queres controlar la caja de cada uno.</p>
-</div>
-
-<div class="card">
-<h3>Catalogo de productos</h3>
-<p>Organiza tus productos por categoria, con fotos y codigos de barra. Busqueda rapida desde la pantalla de venta. Precios de costo y de venta diferenciados.</p>
-</div>
-
-<div class="card">
-<h3>Compatible con Mercado Pago</h3>
-<p>Cobra con QR de Mercado Pago directo desde la pantalla de caja. El pago se acredita y se asocia a la venta automaticamente. Sin apps extra.</p>
-</div>
-
-<div class="card">
-<h3>Acceso desde cualquier dispositivo</h3>
-<p>Usa MiNegocio desde una PC de escritorio, una notebook, una tablet o el celular. La interfaz se adapta automaticamente. No necesitas hardware especial.</p>
-</div>
-
-<div class="card">
-<h3>Multi-negocio</h3>
-<p>Maneja varios comercios desde una misma cuenta. Cada negocio con su propio stock, operadores y reportes independientes. Ideal si tenes mas de un local.</p>
-</div>
-</div>
-
-<h2>Pensado para el comerciante argentino</h2>
-<div class="card">
-<h3>Sin manuales, sin capacitacion</h3>
-<p>Cada pantalla de MiNegocio esta diseniada para que cualquier persona que haya usado un celular pueda operarla. Los botones son grandes, los textos claros, y las acciones mas frecuentes estan a un solo click.</p>
-</div>
-
-<div class="card">
-<h3>Funciona en cualquier conexion</h3>
-<p>No necesitas fibra optica ni internet de alta velocidad. MiNegocio consume muy pocos datos y sigue funcionando aunque la conexion sea inestable. Esta probado en kioscos reales con conexion de datos movil.</p>
-</div>
-
-<div class="cta-section">
-<h2 style="margin-bottom:12px">Proba MiNegocio gratis 7 dias</h2>
-<p style="color:#94a3b8;margin-bottom:24px">Sin tarjeta de credito. Sin compromiso. Todas las funcionalidades incluidas.</p>
-<a href="/" class="btn">Comenzar prueba gratis</a>
-</div>
-
-</div></div>
-
-<footer>
-<div class="container">
-<p>MiNegocio POS -- Sistema de ventas para kioscos y comercios de Argentina</p>
-<p style="margin-top:8px"><a href="/">Inicio</a> &middot; <a href="/funcionalidades/">Funcionalidades</a> &middot; <a href="/precios/">Precios</a> &middot; <a href="/blog/">Blog</a></p>
-<p style="margin-top:12px">&copy; 2026 MiNegocio</p>
-</div>
-</footer>
 </body></html>

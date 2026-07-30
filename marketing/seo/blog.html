@@ -1,117 +1,150 @@
-<!DOCTYPE html>
-<html lang="es-AR">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#060913">
-<meta name="robots" content="index, follow, max-image-preview:large">
-<meta name="description" content="Blog de MiNegocio POS: guias, tips y recursos para kioscos y comercios de Argentina. Aprende a gestionar tu negocio con tecnologia.">
-<meta name="keywords" content="blog kiosco, tips negocio argentino, gestion comercio, sistema ventas articulos, guia POS">
-<title>Blog -- MiNegocio POS | Guias y tips para kioscos argentinos</title>
+<!DOCTYPE html><html lang="es-AR"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><meta name="theme-color" content="#060913">
+<meta name="robots" content="index,follow,max-image-preview:large">
+<meta name="description" content="Blog de MiNegocio POS. Articulos sobre gestion de kioscos, control de stock, fiados, facturacion electronica y tecnologia para comercios en Argentina.">
+<meta name="keywords" content="blog kiosco argentina, gestion comercio, control stock, sistema ventas, facturacion electronica, fiados, POS argentina">
+<title>Blog -- MiNegocio POS | Notas para duenos de kioscos</title>
 <link rel="canonical" href="https://mi-negocio.app/blog/">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-<meta property="og:title" content="Blog de MiNegocio -- Tips, guias y recursos para tu kiosco">
-<meta property="og:description" content="Articulos sobre gestion de kioscos, control de stock, sistema de fiados y tecnologia para comercios argentinos.">
-<meta property="og:url" content="https://mi-negocio.app/blog/">
-<meta property="og:locale" content="es_AR">
-<script type="application/ld+json">
-{"@context":"https://schema.org","@type":"Blog","name":"Blog MiNegocio POS","description":"Guias y tips para kioscos, almacenes y minimarkets de Argentina.","url":"https://mi-negocio.app/blog/","inLanguage":"es-AR","blogPost":[{"@type":"BlogPosting","headline":"Como controlar el stock de un kiosco sin internet","url":"https://mi-negocio.app/blog/controlar-stock-kiosco-sin-internet/","datePublished":"2026-07-28","description":"Guia practica para duenos de kioscos y almacenes sobre como manejar el inventario sin depender de una conexion a internet."},{"@type":"BlogPosting","headline":"Sistema de fiados para almacenes: como no perder plata","url":"https://mi-negocio.app/blog/sistema-fiados-almacen-no-perder-plata/","datePublished":"2026-07-27","description":"Como implementar un sistema de fiados efectivo en tu comercio para reducir perdidas y mantener el control."},{"@type":"BlogPosting","headline":"Que tiene que tener un POS para kioscos en Argentina","url":"https://mi-negocio.app/blog/pos-kioscos-argentina-que-tiene-que-tener/","datePublished":"2026-07-26","description":"Las 10 funcionalidades indispensables que debe tener un sistema de punto de venta para un kiosco argentino."},{"@type":"BlogPosting","headline":"Cierre de caja digital vs cuaderno: guia para comercios","url":"https://mi-negocio.app/blog/cierre-caja-digital-vs-cuaderno/","datePublished":"2026-07-25","description":"Comparativa entre el metodo tradicional y el digital para el cierre de caja diario en comercios."},{"@type":"BlogPosting","headline":"App para kiosco: las 5 cosas que necesita tu negocio","url":"https://mi-negocio.app/blog/app-kiosco-5-cosas-necesita-negocio/","datePublished":"2026-07-24","description":"Descubri que funcionalidades son realmente utiles en una app de gestion para tu kiosco o almacen."}]}
-</script>
+<meta property="og:title" content="Blog de MiNegocio POS">
+<meta property="og:description" content="Articulos practicos sobre gestion de kioscos y comercios en Argentina.">
+<meta property="og:url" content="https://mi-negocio.app/blog/"><meta property="og:image" content="https://mi-negocio.app/og-image.png"><meta property="og:locale" content="es_AR">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Blog","name":"Blog MiNegocio POS","description":"Articulos sobre gestion de kioscos y comercios en Argentina.","url":"https://mi-negocio.app/blog/"}</script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#060913;color:#e2e8f0;line-height:1.7}
-.container{max-width:900px;margin:0 auto;padding:0 24px}
-nav{background:#0a0f1e;border-bottom:1px solid #1e293b;padding:16px 0;position:sticky;top:0;z-index:100}
-nav .container{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
-nav a{color:#e2e8f0;text-decoration:none;font-weight:600;font-size:15px}
-nav a:hover{color:#38bdf8}
-nav .logo{font-size:20px;font-weight:800}
-nav .logo span{color:#38bdf8}
-nav .links{display:flex;gap:20px;flex-wrap:wrap}
-.hero{padding:60px 0 40px;text-align:center}
-.hero h1{font-size:clamp(28px,5vw,40px);font-weight:800;line-height:1.2;margin-bottom:16px;background:linear-gradient(135deg,#e2e8f0,#38bdf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.hero p{font-size:18px;color:#94a3b8;max-width:650px;margin:0 auto}
-.content{padding:20px 0 60px}
-.article-card{background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:28px;margin-bottom:20px;transition:border-color .2s}
-.article-card:hover{border-color:#38bdf8}
-.article-card h2{font-size:22px;font-weight:700;margin-bottom:8px}
-.article-card h2 a{color:#f1f5f9;text-decoration:none}
-.article-card h2 a:hover{color:#38bdf8}
-.article-card .date{font-size:14px;color:#64748b;margin-bottom:12px}
-.article-card p{font-size:16px;color:#94a3b8;line-height:1.6}
-.article-card .read-more{color:#38bdf8;font-weight:600;text-decoration:none;font-size:15px}
-.article-card .read-more:hover{text-decoration:underline}
-.tag{display:inline-block;background:#1e293b;color:#94a3b8;padding:4px 12px;border-radius:20px;font-size:13px;margin-right:8px}
-footer{text-align:center;padding:40px 0;border-top:1px solid #1e293b;color:#64748b;font-size:14px}
-footer a{color:#94a3b8;text-decoration:none}
-footer a:hover{color:#38bdf8}
-</style>
-</head>
-<body>
-<nav><div class="container">
-<a href="/" class="logo">Mi<span>Negocio</span></a>
-<div class="links">
-<a href="/funcionalidades/">Funcionalidades</a>
-<a href="/precios/">Precios</a>
-<a href="/blog/">Blog</a>
-<a href="https://mi-negocio.app/#faq">FAQ</a>
-</div>
-</div></nav>
+body{font-family:"Inter","SF Pro Display",-apple-system,BlinkMacSystemFont,system-ui,sans-serif;background:#060913;color:#fff;line-height:1.7}
+body::before{content:"";position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:-1;background:radial-gradient(circle at 20% 0%,rgba(20,187,166,0.15) 0%,transparent 50%),radial-gradient(circle at 80% 100%,rgba(15,138,125,0.12) 0%,transparent 50%),radial-gradient(circle at 50% 50%,rgba(30,58,95,0.3) 0%,transparent 80%)}
+.hero{padding:120px 24px 60px;text-align:center;max-width:900px;margin:0 auto}
+.hero h1{font-size:clamp(2rem,6vw,3.5rem);font-weight:800;line-height:1.15;margin-bottom:20px;background:linear-gradient(135deg,#fff,rgba(20,187,166,0.8));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{font-size:clamp(1rem,3vw,1.25rem);color:rgba(230,255,251,0.7);max-width:650px;margin:0 auto}
+.content{max-width:1100px;margin:0 auto;padding:40px 24px 80px}
+h2{font-size:clamp(1.5rem,4vw,2rem);font-weight:700;margin:48px 0 24px;color:#fff}
+h3{font-size:1.2rem;font-weight:600;color:#fff}
+p,li{font-size:1.05rem;color:rgba(230,255,251,0.8);margin-bottom:16px;line-height:1.7}
+.card{background:linear-gradient(145deg,rgba(30,58,95,0.6),rgba(18,30,54,0.8));border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:32px;transition:border-color .2s}
+.card:hover{border-color:rgba(20,187,166,0.3)}
+.card h3{color:#14bba6;margin-bottom:12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px;margin:32px 0}
+.btn{display:inline-block;background:linear-gradient(135deg,#14bba6,#0f8a7d);color:#060913;padding:14px 36px;border-radius:12px;text-decoration:none;font-weight:700;font-size:1rem;transition:transform .15s,box-shadow .15s;box-shadow:0 0 24px rgba(20,187,166,0.25)}
+.btn:hover{transform:translateY(-1px);box-shadow:0 0 32px rgba(20,187,166,0.4)}
+.pricing-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:24px;margin:32px 0}
+.plan{background:linear-gradient(145deg,rgba(30,58,95,0.6),rgba(18,30,54,0.8));border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:36px 32px;text-align:center;position:relative}
+.plan.featured{border-color:rgba(20,187,166,0.4);box-shadow:0 0 40px rgba(20,187,166,0.1)}
+.plan h3{font-size:1.3rem;margin-bottom:8px}
+.plan .price{font-size:2.8rem;font-weight:800;color:#14bba6;margin:16px 0}
+.plan .price small{font-size:1rem;color:rgba(230,255,251,0.5);font-weight:400}
+.plan .yearly{font-size:.85rem;color:rgba(230,255,251,0.4);margin-bottom:20px}
+.plan ul{text-align:left;list-style:none;padding:0;margin:24px 0}
+.plan ul li{padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:.95rem}
+.plan ul li::before{content:"+ ";color:#14bba6;font-weight:700}
+.badge{display:inline-block;background:#14bba6;color:#060913;padding:4px 16px;border-radius:20px;font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;position:absolute;top:-12px;left:50%;transform:translateX(-50%)}
+.popular{display:inline-block;background:linear-gradient(135deg,#f59e0b,#d97706);color:#060913;padding:4px 16px;border-radius:20px;font-size:.75rem;font-weight:700;position:absolute;top:-12px;left:50%;transform:translateX(-50%)}
+.cta-section{text-align:center;padding:60px 0;margin:40px 0;background:rgba(20,187,166,0.05);border:1px solid rgba(20,187,166,0.1);border-radius:16px}
+.faq{max-width:800px;margin:48px auto 0}
+.faq-item{background:linear-gradient(145deg,rgba(30,58,95,0.4),rgba(18,30,54,0.5));border:1px solid rgba(255,255,255,0.05);border-radius:12px;padding:24px;margin-bottom:12px}
+.faq-item h3{font-size:1.1rem;margin-bottom:8px}
+.highlight{background:rgba(20,187,166,0.08);border-left:3px solid #14bba6;padding:20px 24px;margin:24px 0;border-radius:0 8px 8px 0}
+.highlight p{margin-bottom:0;font-size:1rem}
+.article-card{background:linear-gradient(145deg,rgba(30,58,95,0.6),rgba(18,30,54,0.8));border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:32px;margin-bottom:20px;transition:border-color .2s}
+.article-card:hover{border-color:rgba(20,187,166,0.3)}
+.article-card h2{font-size:1.4rem;margin:0 0 8px}
+.article-card h2 a{color:#fff;text-decoration:none}
+.article-card h2 a:hover{color:#14bba6}
+.article-card .date{font-size:.85rem;color:rgba(230,255,251,0.4);margin-bottom:12px}
+.article-card .read-more{color:#14bba6;font-weight:600;text-decoration:none;font-size:.95rem}
+.tag{display:inline-block;background:rgba(20,187,166,0.1);color:rgba(20,187,166,0.9);padding:4px 12px;border-radius:20px;font-size:.8rem;margin:0 4px 8px 0}
+.compare-table{width:100%;border-collapse:collapse;margin:24px 0;font-size:.95rem}
+.compare-table th,.compare-table td{padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.05);text-align:center}
+.compare-table th:first-child,.compare-table td:first-child{text-align:left}
+.compare-table th{color:rgba(230,255,251,0.5);font-weight:600;font-size:.85rem}
+.compare-table td{color:rgba(230,255,251,0.8)}
+.compare-table .check{color:#14bba6;font-weight:700}
+article{padding:120px 24px 80px;max-width:800px;margin:0 auto}
+article h1{font-size:clamp(1.8rem,5vw,2.5rem);font-weight:800;line-height:1.2;margin-bottom:12px;background:linear-gradient(135deg,#fff,rgba(20,187,166,0.8));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+article .meta{font-size:.85rem;color:rgba(230,255,251,0.4);margin-bottom:32px;padding-bottom:24px;border-bottom:1px solid rgba(255,255,255,0.05)}
+article h2{font-size:1.5rem;margin:36px 0 16px}
+article ul,article ol{padding-left:24px;margin-bottom:20px}
+article a{color:#14bba6}
+.tags{margin-top:40px}
+.related{margin-top:48px;padding-top:32px;border-top:1px solid rgba(255,255,255,0.05)}
+.related h3{font-size:1.1rem;margin-bottom:16px}
+.related a{display:block;color:#14bba6;text-decoration:none;font-size:1rem;margin-bottom:10px}
+.related a:hover{text-decoration:underline}
+@media(max-width:768px){.pricing-grid{grid-template-columns:1fr}.hero{padding:100px 24px 40px}}
+</style></head><body>
 
-<div class="hero">
-<h1>Blog de MiNegocio</h1>
-<p>Guias practicas, tips y recursos para duenos de kioscos, almacenes y minimarkets de Argentina. Sin tecnicismos, directo al punto.</p>
-</div>
+<!--#include virtual="/_header.html" -->
 
-<div class="content"><div class="container">
-
-<article class="article-card">
+<div class="hero"><h1>Blog</h1><p>Notas, consejos y novedades para duenos de kioscos y comercios en Argentina.</p></div>
+<div class="content">
+<article class="article-card" style="padding:0;overflow:hidden">
+<a href="/blog/controlar-stock-kiosco-sin-internet/" style="text-decoration:none;display:block">
+<img src="/blog/controlar-stock-kiosco-sin-internet/featured.webp" alt="Como controlar el stock de tu kiosco sin internet" style="width:100%;height:auto;display:block" loading="lazy">
+</a>
+<div style="padding:24px 28px 28px">
+<h2><a href="/blog/controlar-stock-kiosco-sin-internet/">Como controlar el stock de tu kiosco sin internet</a></h2>
+<p class="date">Julio 2026</p>
+<p>Saber que tenes, que te falta y que se esta por vencer es la diferencia entre ganar plata y perderla. Como organizar el stock del kiosco sin volverse loco y sin depender de conexion.</p>
 <span class="tag">Stock</span><span class="tag">Kiosco</span>
-<h2><a href="/blog/controlar-stock-kiosco-sin-internet/">Como controlar el stock de un kiosco sin internet</a></h2>
-<div class="date">28 de julio, 2026 &middot; 5 min de lectura</div>
-<p>Manejar el inventario de un kiosco no es facil, y menos cuando la conexion a internet falla. En esta guia te contamos como organizar tu stock para que funcione incluso offline, que datos no pueden faltar en tu sistema de control, y como evitar quedarte sin los productos que mas venden.</p>
-<a href="/blog/controlar-stock-kiosco-sin-internet/" class="read-more">Leer articulo completo &rarr;</a>
-</article>
-
-<article class="article-card">
-<span class="tag">Fiados</span><span class="tag">Almacen</span>
-<h2><a href="/blog/sistema-fiados-almacen-no-perder-plata/">Sistema de fiados para almacenes: como no perder plata</a></h2>
-<div class="date">27 de julio, 2026 &middot; 4 min de lectura</div>
-<p>El fiado es una tradicion en los almacenes de barrio, pero tambien es la principal fuente de perdida cuando no se registra bien. Te contamos como implementar un sistema de fiados ordenado, que datos registrar de cada cliente, y como reducir la morosidad sin perder la confianza del barrio.</p>
-<a href="/blog/sistema-fiados-almacen-no-perder-plata/" class="read-more">Leer articulo completo &rarr;</a>
-</article>
-
-<article class="article-card">
-<span class="tag">POS</span><span class="tag">Guia</span>
-<h2><a href="/blog/pos-kioscos-argentina-que-tiene-que-tener/">Que tiene que tener un POS para kioscos en Argentina</a></h2>
-<div class="date">26 de julio, 2026 &middot; 6 min de lectura</div>
-<p>No todos los sistemas de punto de venta son iguales, y menos para el mercado argentino. En esta guia repasamos las 10 funcionalidades indispensables que deberia tener cualquier POS para un kiosco, almacen o minimarket en Argentina.</p>
-<a href="/blog/pos-kioscos-argentina-que-tiene-que-tener/" class="read-more">Leer articulo completo &rarr;</a>
-</article>
-
-<article class="article-card">
-<span class="tag">Caja</span><span class="tag">Comercio</span>
-<h2><a href="/blog/cierre-caja-digital-vs-cuaderno/">Cierre de caja digital vs cuaderno: guia para comercios</a></h2>
-<div class="date">25 de julio, 2026 &middot; 4 min de lectura</div>
-<p>Muchos comerciantes todavia usan el cuaderno para anotar las ventas del dia. Comparamos el metodo tradicional con el cierre de caja digital: precision, tiempo, control de empleados, y por que cada vez mas negocios estan haciendo el cambio.</p>
-<a href="/blog/cierre-caja-digital-vs-cuaderno/" class="read-more">Leer articulo completo &rarr;</a>
-</article>
-
-<article class="article-card">
-<span class="tag">App</span><span class="tag">Tecnologia</span>
-<h2><a href="/blog/app-kiosco-5-cosas-necesita-negocio/">App para kiosco: las 5 cosas que necesita tu negocio</a></h2>
-<div class="date">24 de julio, 2026 &middot; 5 min de lectura</div>
-<p>Hay docenas de apps para comercios en el mercado. Pero cuales son las funcionalidades que realmente necesita un kiosco argentino? Te contamos las 5 cosas indispensables que deberia tener cualquier app de gestion para tu negocio, y como identificar las que solo son humo.</p>
-<a href="/blog/app-kiosco-5-cosas-necesita-negocio/" class="read-more">Leer articulo completo &rarr;</a>
-</article>
-
-</div></div>
-
-<footer>
-<div class="container">
-<p>MiNegocio POS -- Sistema de ventas para kioscos y comercios de Argentina</p>
-<p style="margin-top:8px"><a href="/">Inicio</a> &middot; <a href="/funcionalidades/">Funcionalidades</a> &middot; <a href="/precios/">Precios</a> &middot; <a href="/blog/">Blog</a></p>
-<p style="margin-top:12px">&copy; 2026 MiNegocio</p>
+<br><a href="/blog/controlar-stock-kiosco-sin-internet/" class="read-more">Leer mas &rarr;</a>
 </div>
-</footer>
+</article>
+
+<article class="article-card" style="padding:0;overflow:hidden">
+<a href="/blog/sistema-fiados-almacen-no-perder-plata/" style="text-decoration:none;display:block">
+<img src="/blog/sistema-fiados-almacen-no-perder-plata/featured.webp" alt="Sistema de fiados para almacen: como no perder plata con los que pagan despues" style="width:100%;height:auto;display:block" loading="lazy">
+</a>
+<div style="padding:24px 28px 28px">
+<h2><a href="/blog/sistema-fiados-almacen-no-perder-plata/">Sistema de fiados para almacen: como no perder plata con los que pagan despues</a></h2>
+<p class="date">Julio 2026</p>
+<p>El fiado es una herramienta de venta que todo kiosco y almacen usa. Pero si no lo controlas, terminas regalando mercaderia. Como manejar la cuenta corriente sin pelearte con los clientes.</p>
+<span class="tag">Fiados</span><span class="tag">Cobranzas</span>
+<br><a href="/blog/sistema-fiados-almacen-no-perder-plata/" class="read-more">Leer mas &rarr;</a>
+</div>
+</article>
+
+<article class="article-card" style="padding:0;overflow:hidden">
+<a href="/blog/pos-kioscos-argentina-que-tiene-que-tener/" style="text-decoration:none;display:block">
+<img src="/blog/pos-kioscos-argentina-que-tiene-que-tener/featured.webp" alt="POS para kioscos en Argentina: que tiene que tener si o si" style="width:100%;height:auto;display:block" loading="lazy">
+</a>
+<div style="padding:24px 28px 28px">
+<h2><a href="/blog/pos-kioscos-argentina-que-tiene-que-tener/">POS para kioscos en Argentina: que tiene que tener si o si</a></h2>
+<p class="date">Junio 2026</p>
+<p>Hay decenas de sistemas POS. Algunos te sirven, otros te complican. Te ayudamos a comparar y a elegir el que se adapta a como trabaja un kiosco argentino de verdad.</p>
+<span class="tag">Comparativa</span><span class="tag">POS</span>
+<br><a href="/blog/pos-kioscos-argentina-que-tiene-que-tener/" class="read-more">Leer mas &rarr;</a>
+</div>
+</article>
+
+<article class="article-card" style="padding:0;overflow:hidden">
+<a href="/blog/cierre-caja-digital-vs-cuaderno/" style="text-decoration:none;display:block">
+<img src="/blog/cierre-caja-digital-vs-cuaderno/featured.webp" alt="Cierre de caja digital vs cuaderno: cual te conviene" style="width:100%;height:auto;display:block" loading="lazy">
+</a>
+<div style="padding:24px 28px 28px">
+<h2><a href="/blog/cierre-caja-digital-vs-cuaderno/">Cierre de caja digital vs cuaderno: cual te conviene</a></h2>
+<p class="date">Junio 2026</p>
+<p>Si todavia cerras caja con papel y lapiz, estas perdiendo tiempo y plata. Como hacer el cierre en 10 segundos y saber exactamente cuanto ganaste (sin dudarlo).</p>
+<span class="tag">Cierre</span><span class="tag">Gestion</span>
+<br><a href="/blog/cierre-caja-digital-vs-cuaderno/" class="read-more">Leer mas &rarr;</a>
+</div>
+</article>
+
+<article class="article-card" style="padding:0;overflow:hidden">
+<a href="/blog/app-kiosco-5-cosas-necesita-negocio/" style="text-decoration:none;display:block">
+<img src="/blog/app-kiosco-5-cosas-necesita-negocio/featured.webp" alt="App para kiosco: 5 cosas que tenes que poder ver desde tu celular" style="width:100%;height:auto;display:block" loading="lazy">
+</a>
+<div style="padding:24px 28px 28px">
+<h2><a href="/blog/app-kiosco-5-cosas-necesita-negocio/">App para kiosco: 5 cosas que tenes que poder ver desde tu celular</a></h2>
+<p class="date">Mayo 2026</p>
+<p>Vender, cobrar fiados, ver stock, sacar reportes y cerrar la caja. Las 5 cosas que si o si tenes que poder hacer desde el celular, sobre todo cuando no estas en el local.</p>
+<span class="tag">App</span><span class="tag">Mobile</span>
+<br><a href="/blog/app-kiosco-5-cosas-necesita-negocio/" class="read-more">Leer mas &rarr;</a>
+</div>
+</article>
+
+<div class="cta-section"><h2>Empeza a vender mejor hoy</h2><p style="color:rgba(230,255,251,0.6);margin-bottom:24px">7 dias gratis. Sin tarjeta. Sin compromiso.</p><a href="/" class="btn">Probar MiNegocio</a></div>
+</div>
+
+<!--#include virtual="/_footer.html" -->
+
 </body></html>
