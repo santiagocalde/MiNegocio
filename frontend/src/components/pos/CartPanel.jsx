@@ -26,7 +26,7 @@ export default function CartPanel({ cart, total, adjustedTotal, updateQty, setIt
           cart.map(item => (
             <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
               <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                <ProductThumb src={item.image_url} size={36} />
+                <ProductThumb name={item.name} size={36} />
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                   <div style={{ fontWeight: 700, fontSize: 'var(--fs-body)', color: 'var(--text-primary)', letterSpacing: '0.1px' }}>{item.name}</div>

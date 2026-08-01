@@ -433,7 +433,7 @@ export default function StockModule() {
               itemContent={(index, p) => (
                 <>
                   <td style={{ padding: '8px 16px' }}>
-                    <ProductThumb src={p.image_url} size={40} />
+                    <ProductThumb name={p.name} size={40} />
                   </td>
                   <td style={{ padding: '8px 16px' }}>
                     <div style={{ fontWeight: 600, fontSize: '0.95rem', color: 'var(--text-primary)', marginBottom: '2px' }}>{p.name}</div>
