@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { TableVirtuoso } from 'react-virtuoso';
 import { usePanelContext } from '../context/PanelContext';
-import { apiGet, apiPost, apiPatch, apiPut, SERVER_URL } from '../services/apiClient';
+import { apiGet, apiPost, apiPatch, apiPut, apiDelete, SERVER_URL } from '../services/apiClient';
 import { SkeletonTable } from '../components/ui/Skeleton';
 import EmptyState from '../components/ui/EmptyState';
 import useSortable from '../hooks/useSortable.jsx';
@@ -573,7 +573,7 @@ export default function StockModule() {
                   variant: 'danger',
                   onConfirm: () => {
                     setConfirmState(prev => ({...prev, isOpen: false}));
-                  apiPost(`/products/${p.id}`, {}).then(r => {
+                  apiDelete(`/products/${p.id}`).then(r => {
                     if (r.ok) { addToast(`${p.name} eliminado.`, 'success'); fetchProducts(); }
                     else addToast('No se pudo eliminar el producto. Reintentá o revisá tu conexión.', 'error');
                   }).catch(() => addToast('Sin internet. Revisá tu conexión.', 'error'));
