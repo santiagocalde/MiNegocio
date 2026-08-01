@@ -228,6 +228,12 @@ async def import_products_csv(request: Request, csv_text: str = Body(..., media_
 @router.post("/api/products", status_code=201, summary="Crear producto")
 @limiter.limit("60/minute")
 async def create_product(request: Request, product: dict = Body(...)) -> Dict[str, Any]:
+    if product.get('price') is not None and product.get('price', 0) < 0:
+        raise HTTPException(status_code=400, detail='El precio no puede ser negativo')
+    if product.get('cost_price') is not None and product.get('cost_price', 0) < 0:
+        raise HTTPException(status_code=400, detail='El costo no puede ser negativo')
+    if product.get('stock') is not None and product.get('stock', 0) < 0:
+        raise HTTPException(status_code=400, detail='El stock no puede ser negativo')
     b_id = _biz_id()
     await _check_product_limit(request, 1)
     import uuid as _uuid
@@ -318,6 +324,12 @@ async def update_stock(product_id: int, body: dict) -> dict:
 
 @router.put("/api/products/{product_id}", summary="Actualizar producto")
 async def update_product(product_id: int, body: dict) -> dict:
+    if body.get('price') is not None and body.get('price', 0) < 0:
+        raise HTTPException(status_code=400, detail='El precio no puede ser negativo')
+    if body.get('cost_price') is not None and body.get('cost_price', 0) < 0:
+        raise HTTPException(status_code=400, detail='El costo no puede ser negativo')
+    if body.get('stock') is not None and body.get('stock', 0) < 0:
+        raise HTTPException(status_code=400, detail='El stock no puede ser negativo')
     b_id = _biz_id()
     if USE_PG:
         from db_helpers import get_pg_pool
