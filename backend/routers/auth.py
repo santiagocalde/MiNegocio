@@ -146,7 +146,11 @@ async def auth_register(request: Request, body: BusinessCreate) -> dict:
             """INSERT INTO businesses (email, password_hash, business_name, plan, phone, terms_accepted_at,
                                        owner_name, business_type, prior_pos, needs_arca, objective, source)
                VALUES ($1, $2, $3, 'trial', pgp_sym_encrypt($4, $5), now(), pgp_sym_encrypt($6, $5), $7, $8, $9, $10, $11)
-               RETURNING id, email, business_name, plan, status, pgp_sym_decrypt(phone, $5)""",
+               -- PII (phone) se inserta encriptado con pgp_sym_encrypt. No desencriptamos en
+               -- RETURNING porque el registro devuelve un JWT, no datos PII. El phone
+               -- encriptado se ignora (biz_phone no se usa). Para leer PII usar
+               -- safe_pii_decrypt(col, key) que maneja legacy plaintext + bytea + vacio.
+               RETURNING id, email, business_name, plan, status, phone as decrypted_phone""",
             body.email.lower().strip(),
             hashed_pw,
             body.business_name.strip() or body.name.strip() or "Mi Kiosco",
