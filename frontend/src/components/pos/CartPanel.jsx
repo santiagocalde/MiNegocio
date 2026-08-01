@@ -57,10 +57,23 @@ export default function CartPanel({ cart, total, adjustedTotal, updateQty, setIt
                     >-</button>
                     <input
                       id={`qty-input-${item.id}`}
-                      type="number"
-                      step="0.01"
-                      value={item.qty}
-                      onChange={e => { const val = parseFloat(e.target.value); if (!isNaN(val) && val > 0) setItemQty(item.id, val); }}
+                      type="text"
+                      inputMode="decimal"
+                      defaultValue={item.qty}
+                      key={`qty-${item.id}-${item.qty}`}
+                      onBlur={e => { 
+                        const raw = e.target.value.replace(',', '.');
+                        const val = parseFloat(raw);
+                        if (!isNaN(val) && val >= 0.01) {
+                          setItemQty(item.id, val);
+                        } else {
+                          e.target.value = item.qty;
+                        }
+                      }}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') e.target.blur();
+                        if (e.key === 'Escape') { e.target.value = item.qty; e.target.blur(); }
+                      }}
                       style={{ width: '40px', textAlign: 'center', background: 'transparent', border: 'none', color: 'var(--text-primary)', outline: 'none', fontWeight: 600, fontSize: '0.9rem' }}
                     />
                     <button
