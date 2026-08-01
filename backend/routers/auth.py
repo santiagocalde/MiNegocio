@@ -326,16 +326,11 @@ async def auth_login(request: Request, body: BusinessLogin) -> dict:
             "SELECT 1 FROM superadmins WHERE email = $1", biz_email.lower().strip()
         ))
 
-    op_name = "Due" + "\u00f1o"
-    try:
         op_row = await conn.fetchrow(
             "SELECT name FROM operators WHERE business_id = $1 AND role = 'admin' LIMIT 1",
             biz_id
         )
-        if op_row:
-            op_name = op_row["name"]
-    except Exception:
-        pass
+        op_name = op_row["name"] if op_row else biz_name
 
     return {
         "access_token": access_token,
