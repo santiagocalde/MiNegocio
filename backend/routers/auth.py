@@ -196,7 +196,7 @@ async def auth_register(request: Request, body: BusinessCreate) -> dict:
         )
 
         await conn.execute(
-            "INSERT INTO auth_tokens (business_id, token, token_type, expires_at) VALUES ($1, $2, 'refresh', $3)",
+            "INSERT INTO auth_tokens (business_id, token, token_type, expires_at) VALUES ($1, $2, 'refresh', $3) ON CONFLICT (token) DO NOTHING",
             biz_id, refresh_token, datetime.now(timezone.utc) + timedelta(days=7)
         )
 
@@ -315,7 +315,7 @@ async def auth_login(request: Request, body: BusinessLogin) -> dict:
             JWT_SECRET, algorithm=JWT_ALGORITHM,
         )
         await conn.execute(
-            "INSERT INTO auth_tokens (business_id, token, token_type, expires_at) VALUES ($1, $2, 'refresh', $3)",
+            "INSERT INTO auth_tokens (business_id, token, token_type, expires_at) VALUES ($1, $2, 'refresh', $3) ON CONFLICT (token) DO NOTHING",
             biz_id, refresh_token, datetime.now(timezone.utc) + timedelta(days=7)
         )
 
@@ -387,7 +387,7 @@ async def auth_refresh(request: Request, authorization: str = Header(None)) -> d
             token,
         )
         await conn.execute(
-            "INSERT INTO auth_tokens (business_id, token, token_type, expires_at) VALUES ($1, $2, 'refresh', $3)",
+            "INSERT INTO auth_tokens (business_id, token, token_type, expires_at) VALUES ($1, $2, 'refresh', $3) ON CONFLICT (token) DO NOTHING",
             biz_id, new_refresh, datetime.now(timezone.utc) + timedelta(days=7)
         )
 
