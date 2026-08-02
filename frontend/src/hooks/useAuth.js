@@ -105,6 +105,7 @@ export default function useAuth(addToast) {
     initialCash, setInitialCash,
     pin, setPin,
     handlePin,
+    openOwnerTurn,
     handleSaaSCallback,
   };
 }
