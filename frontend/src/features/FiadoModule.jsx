@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { usePanelContext } from '../context/PanelContext';
 import { apiGet, apiPost } from '../services/apiClient';
 import { SkeletonCard } from '../components/ui/Skeleton';
+import useIsMobile from '../hooks/useIsMobile';
 
 const Icons = {
   Search: () => <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>,
@@ -14,6 +15,7 @@ const Icons = {
 
 export default function FiadoModule() {
   const { addToast, currentPlan } = usePanelContext();
+  const isMobile = useIsMobile();
   const [cobranza, setCobranza] = useState(null); // {nombre, telefono, texto, loading}
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -196,11 +198,11 @@ export default function FiadoModule() {
 
           return (
             <div key={c.id} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '16px', overflow: 'hidden', transition: 'all 0.2s' }}>
-              <div 
+              <div
                 onClick={() => handleExpand(c)}
-                style={{ padding: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', transition: 'all 0.15s', background: isExpanded ? 'rgba(255,255,255,0.02)' : 'transparent' }}
+                style={{ padding: '16px', display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'stretch' : 'center', justifyContent: 'space-between', gap: isMobile ? '12px' : 0, cursor: 'pointer', transition: 'all 0.15s', background: isExpanded ? 'rgba(255,255,255,0.02)' : 'transparent' }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
                   <div style={{ width: '40px', height: '40px', background: 'rgba(255,255,255,0.05)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}>
                     <Icons.User />
                   </div>
@@ -226,8 +228,8 @@ export default function FiadoModule() {
                   </div>
                 </div>
                 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-                  <div style={{ textAlign: 'right' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '10px' : '20px', justifyContent: isMobile ? 'space-between' : 'flex-end', flexWrap: 'wrap' }}>
+                  <div style={{ textAlign: isMobile ? 'left' : 'right' }}>
                     <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', textTransform: 'uppercase', marginBottom: '2px' }}>Saldo Deudor</div>
                     <div style={{ fontFamily: 'var(--font-mono)', fontSize: '1.2rem', fontWeight: 800, color: 'var(--accent-warning)' }}>${(c.balance ?? 0).toLocaleString('es-AR')}</div>
                   </div>

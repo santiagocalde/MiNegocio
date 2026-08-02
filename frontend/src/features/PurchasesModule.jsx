@@ -164,7 +164,7 @@ export default function PurchasesModule() {
 
       {/* HEADER COMPARTIDO */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexShrink: 0 }}>
-        <h2 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>Gestión de Compras</h2>
+        <h2 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>Compras</h2>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           {activeTab === 'history' ? (

@@ -6,7 +6,9 @@ import { useState, useEffect } from 'react';
  * El estado inicial se calcula una sola vez (lazy) para no parpadear.
  */
 export default function useIsMobile(breakpoint = 768) {
-  const query = `(max-width: ${breakpoint}px)`;
+  // El OR con max-height agarra el celular en horizontal (ancho > breakpoint
+  // pero pantalla baja), así el modo mobile aplica en las dos orientaciones.
+  const query = `(max-width: ${breakpoint}px), (max-height: 500px)`;
   const [isMobile, setIsMobile] = useState(
     () => typeof window !== 'undefined' && window.matchMedia(query).matches
   );

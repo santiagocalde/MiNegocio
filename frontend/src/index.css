@@ -197,7 +197,7 @@ svg {
 .sidebar.collapsed .btn-label,
 .sidebar.collapsed .sidebar-caja-header,
 .sidebar.collapsed .sidebar-caja-info,
-.sidebar.collapsed .sidebar-legal { display: none; }
+.sidebar.collapsed .sidebar-legal { display: none !important; }
 .sidebar.collapsed .brand { justify-content: center; padding: 6px 4px; }
 .sidebar.collapsed .nav-menu { padding: 8px 6px; }
 .sidebar.collapsed .nav-item { justify-content: center; padding: 11px 0; }
@@ -205,8 +205,9 @@ svg {
 .sidebar.collapsed .sidebar-footer { padding: 8px 6px; }
 .sidebar.collapsed .sidebar-footer button { padding: 11px 0 !important; gap: 0 !important; }
 
-/* Targets táctiles más cómodos en celular */
-@media (max-width: 768px) {
+/* Targets táctiles más cómodos en celular. max-height agarra el celu en
+   horizontal (ancho > 768 pero bajo de alto). */
+@media (max-width: 768px), (max-height: 500px) {
   .nav-item { min-height: 44px; }
   /* En mobile, el sidebar expandido flota sobre el contenido (drawer) en vez de
      empujar el layout — el riel de 60px queda como estado por defecto. */
