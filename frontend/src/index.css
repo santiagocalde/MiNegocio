@@ -1190,3 +1190,10 @@ main > * {
     bottom: 80px;
   }
 }
+
+@media (max-width: 768px) {
+  .lp-chat-side-left,
+  .lp-chat-side-right {
+    display: none !important;
+  }
+}
