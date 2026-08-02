@@ -183,6 +183,7 @@ function Dashboard({ token }) {
   const [bySource, setBySource] = useState(null);
   const [funnel, setFunnel] = useState(null);
   const [churn, setChurn] = useState(null);
+  const [traffic, setTraffic] = useState(null);
 
   useEffect(() => {
     fetchAdmin(`${API}/metrics`, token).then(r => r.ok ? r.json() : null).then(d => d && setM(d)).catch(() => {});
@@ -192,6 +193,7 @@ function Dashboard({ token }) {
     fetchAdmin(`${API}/insights`, token).then(r => r.ok ? r.json() : null).then(d => d && setBySource(d.by_source)).catch(() => {});
     fetchAdmin(`${API}/analytics/funnel`, token).then(r => r.ok ? r.json() : null).then(d => d && setFunnel(d)).catch(() => {});
     fetchAdmin(`${API}/analytics/cancellations`, token).then(r => r.ok ? r.json() : null).then(d => d && setChurn(d)).catch(() => {});
+    fetchAdmin(`${API}/analytics/traffic`, token).then(r => r.ok ? r.json() : null).then(d => d && setTraffic(d)).catch(() => {});
   }, [token]);
 
   if (!m) return (
@@ -238,7 +240,22 @@ function Dashboard({ token }) {
               </div>
             ))}
           </div>
-          {funnel.steps.visits === 0 && (
+          {traffic?.today ? (
+            <div style={{ marginTop: 18, paddingTop: 18, borderTop: `1px solid ${BORDER}` }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 6 }}>
+                <div style={{ color: MUTED, fontSize: '0.66rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px' }}>Tráfico real de hoy (nginx)</div>
+                <span style={{ color: MUTED, fontSize: '0.68rem' }}>{fmtNum(traffic.today.total_requests)} requests · {fmtNum(traffic.today.unique_ips)} IPs únicas</span>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10 }}>
+                <StatCard color="#3B82F6" label="Visitas landing" value={fmtNum(traffic.today.landing_visits)} sub="Home hoy" />
+                <StatCard color="#14BBA6" label="Visitas blog" value={fmtNum(traffic.today.blog_visits)} sub="Posts hoy" />
+                <StatCard color="#8B5CF6" label="Visitas glosario" value={fmtNum(traffic.today.glosario_visits)} sub="Términos hoy" />
+                <StatCard color="#F59E0B" label="Googlebot" value={fmtNum(traffic.googlebot)} sub="Rastreos en el log" />
+                <StatCard color="#EF4444" label="Bloqueos" value={fmtNum(traffic.today.blocked)} sub="Conexiones cortadas (444)" />
+                <StatCard color="#F97316" label="Rate limited" value={fmtNum(traffic.today.rate_limited)} sub="Throttled (503)" />
+              </div>
+            </div>
+          ) : funnel.steps.visits === 0 && (
             <div style={{ color: MUTED, fontSize: '0.72rem', fontStyle: 'italic' }}>Aún sin visitas registradas — se empieza a completar con el tracking de la landing.</div>
           )}
           {funnel.daily_visits?.some(d => d.count > 0) && (
