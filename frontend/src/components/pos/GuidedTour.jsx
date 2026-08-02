@@ -62,6 +62,7 @@ export default function GuidedTour({ onClose }) {
   const [step, setStep] = useState(0);
   const [pos, setPos] = useState({ top: 0, left: 0 });
   const [rect, setRect] = useState(null);
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 640);
   const timerRef = useRef(null);
 
   const current = STEPS[step];
@@ -72,6 +73,10 @@ export default function GuidedTour({ onClose }) {
     if (!el) return;
     const r = el.getBoundingClientRect();
     setRect(r);
+    // En mobile el tooltip es un bottom sheet fijo (no anclado), así que no
+    // hace falta calcular posición flotante — se evita el bug de la última
+    // tarjeta quedando debajo del viewport con los botones inalcanzables.
+    if (window.innerWidth < 640) return;
     const tw = 340, th = 220, gap = 16;
     let top, left;
     if (current.placement === 'bottom') {
@@ -96,7 +101,7 @@ export default function GuidedTour({ onClose }) {
     timerRef.current = setTimeout(calc, 80);
     const el = document.querySelector('[data-tour="' + current.id + '"]');
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    const onResize = () => { if (timerRef.current) clearTimeout(timerRef.current); timerRef.current = setTimeout(calc, 50); };
+    const onResize = () => { setIsMobile(window.innerWidth < 640); if (timerRef.current) clearTimeout(timerRef.current); timerRef.current = setTimeout(calc, 50); };
     window.addEventListener('resize', onResize);
     return () => { window.removeEventListener('resize', onResize); if (timerRef.current) clearTimeout(timerRef.current); };
   }, [step, calc, current]);
@@ -140,9 +145,12 @@ export default function GuidedTour({ onClose }) {
       </svg>
 
       <div style={{
-        position: 'absolute', top: pos.top, left: pos.left, width: 340,
+        position: 'fixed',
+        ...(isMobile
+          ? { left: 12, right: 12, bottom: 'calc(12px + env(safe-area-inset-bottom, 0px))', width: 'auto', maxHeight: '80vh', overflowY: 'auto', borderRadius: 18 }
+          : { top: pos.top, left: pos.left, width: 340, borderRadius: 16 }),
         background: 'var(--bg-card, #0B132B)',
-        border: '1px solid rgba(20,187,166,0.25)', borderRadius: 16,
+        border: '1px solid rgba(20,187,166,0.25)',
         padding: '24px 22px 20px',
         boxShadow: '0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(20,187,166,0.08)',
         backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)',

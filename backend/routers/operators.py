@@ -145,6 +145,44 @@ def _base_op(row) -> dict:
     return {"operator_id": row["id"], "id": row["id"], "name": row["name"], "role": row["role"]}
 
 
+# ── Login de dueño sin PIN (cuenta de un solo operador) ───────
+
+@router.post("/api/login/owner", summary="Abrir turno sin PIN si la cuenta tiene un solo operador")
+@limiter.limit("10/minute")
+async def login_owner(request: Request) -> dict:
+    """Abre turno sin PIN cuando la cuenta tiene UN solo operador (el dueño).
+
+    Autorizado por el JWT de la cuenta (business_id_ctx lo setea el middleware
+    solo con un token válido). Si hay más de un operador devuelve 409 y el
+    front cae a la pantalla de PIN, así el PIN sigue protegiendo el caso
+    multi-operador (atribución + anti-robo en anulaciones).
+    """
+    if USE_PG:
+        from db_helpers import get_pg_pool
+        pool = await get_pg_pool()
+        async with pool.acquire() as conn:
+            b_id = business_id_ctx.get()
+            if not b_id:
+                raise HTTPException(status_code=401, detail="No autenticado")
+            rows = await conn.fetch(
+                "SELECT id, name, role FROM operators WHERE business_id = $1", b_id
+            )
+            if len(rows) != 1:
+                raise HTTPException(status_code=409, detail="La cuenta tiene mas de un operador; se requiere PIN")
+            row = rows[0]
+            t = await _ensure_open_turn_pg(conn, row["name"], b_id)
+            return {**_base_op(row), **t}
+    else:
+        async with aiosqlite.connect(main.DB_PATH) as db:
+            async with db.execute("SELECT id, name, role FROM operators") as cur:
+                rows = await cur.fetchall()
+        if len(rows) != 1:
+            raise HTTPException(status_code=409, detail="La cuenta tiene mas de un operador; se requiere PIN")
+        op_id, op_name, op_role = rows[0]
+        t = await _ensure_open_turn(op_name)
+        return {"operator_id": op_id, "id": op_id, "name": op_name, "role": op_role, **t}
+
+
 # ── CRUD Operadores ───────────────────────────────────────────
 
 @router.get("/api/operators", summary="Listar operadores")

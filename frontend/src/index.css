@@ -978,6 +978,13 @@ details[open] summary .faq-chevron { transform: rotate(45deg); }
   .lp-plan-card { transform: none !important; }
   .lp-plan-popular { transform: none !important; }
   .lp-plan-custom { margin-top: 48px !important; padding: 24px !important; }
+  /* Soporte humano: el grid 1fr/auto/1fr con el chat fijo de 340px no entra en
+     mobile. Colapsa a una sola columna (solo el chat, responsive) y oculta las
+     tarjetas decorativas laterales. */
+  .lp-soporte-grid { grid-template-columns: 1fr !important; gap: 0 !important; }
+  .lp-soporte-side { display: none !important; }
+  .lp-soporte-chat { width: 100% !important; max-width: 360px; margin: 0 auto; }
+  .lp-soporte-chat > div { width: 100% !important; }
 }
 
 /* ── Page Transitions ──────────────────────────────────────── */

@@ -21,11 +21,18 @@ export default function UsuariosModule() {
   const [showModal, setShowModal] = useState(false);
   const [editIndex, setEditIndex] = useState(null);
   const [form, setForm] = useState({ name: '', pin: '', role: 'cajero' });
+  const [adminPin, setAdminPin] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState(null); // { id, name }
+
+  // Al pasar de 1 a 2 operadores vuelve a hacer falta el PIN para entrar. Como
+  // el dueño venía entrando sin PIN, hay que pedirle que defina el suyo ahora,
+  // si no quedaría afuera de su propia cuenta.
+  const isFirstEmployee = editIndex === null && usuarios.length === 1 && usuarios[0]?.role === 'admin';
 
   const openNew = () => {
     setEditIndex(null);
     setForm({ name: '', pin: '', role: 'cajero' });
+    setAdminPin('');
     setShowModal(true);
   };
 
@@ -59,11 +66,18 @@ export default function UsuariosModule() {
       if (addToast) addToast('Nombre y PIN de 4 dígitos son obligatorios.', 'error');
       return;
     }
+    if (isFirstEmployee && (!adminPin || adminPin.length < 4)) {
+      if (addToast) addToast('Definí tu PIN de dueño (4 dígitos) para poder seguir entrando.', 'error');
+      return;
+    }
     let updatedList;
     if (editIndex !== null) {
       updatedList = usuarios.map((u, i) => i === editIndex ? { ...u, name: form.name.trim(), role: form.role, pin: form.pin || u.pin } : u);
     } else {
-      updatedList = [...usuarios, { id: Date.now(), name: form.name.trim(), pin: form.pin, role: form.role, last_login: '' }];
+      // Primer empleado: fijar también el PIN del dueño en el mismo guardado
+      // (el PUT reemplaza todos los operadores, así que ambos deben llevar PIN).
+      const base = isFirstEmployee ? usuarios.map(u => ({ ...u, pin: adminPin })) : usuarios;
+      updatedList = [...base, { id: Date.now(), name: form.name.trim(), pin: form.pin, role: form.role, last_login: '' }];
     }
     try {
       const res = await apiPut('/operators', updatedList.map(u => ({ name: u.name, pin: u.pin?.toString(), role: u.role })));
@@ -154,6 +168,17 @@ export default function UsuariosModule() {
             <h2 style={{ fontSize: '1.5rem', fontWeight: 800, margin: '0 0 24px 0', color: 'var(--text-primary)' }}>
               {editIndex !== null ? 'Editar Usuario' : 'Nuevo Usuario'}
             </h2>
+            {isFirstEmployee && (
+              <div style={{ marginBottom: '20px', padding: '14px 16px', background: 'rgba(20,187,166,0.08)', border: '1px solid rgba(20,187,166,0.25)', borderRadius: '10px' }}>
+                <div style={{ color: 'var(--text-primary)', fontSize: '0.9rem', fontWeight: 700, marginBottom: '4px' }}>Vas a tener m&aacute;s de una persona</div>
+                <div style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', lineHeight: 1.5, marginBottom: '12px' }}>
+                  Desde ahora se entra con PIN. Defin&iacute; tu PIN de due&ntilde;o para poder seguir entrando y autorizar anulaciones.
+                </div>
+                <label style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '6px', fontWeight: 600 }}>Tu PIN de due&ntilde;o (4 d&iacute;gitos)</label>
+                <input type="password" maxLength={4} value={adminPin} onChange={e => setAdminPin(e.target.value.replace(/[^0-9]/g, '').slice(0, 4))} placeholder="&bull;&bull;&bull;&bull;"
+                  style={{ width: '100%', padding: '10px 12px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '8px', outline: 'none', fontSize: '0.95rem', boxSizing: 'border-box' }} />
+              </div>
+            )}
             <div style={{ marginBottom: '16px' }}>
               <label style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '6px', fontWeight: 600 }}>Nombre</label>
               <input type="text" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
