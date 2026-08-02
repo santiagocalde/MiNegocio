@@ -37,7 +37,7 @@ export default function LandingSoporteHumano() {
             </div>
           </Reveal>
           <Reveal delay={2} style={{ zIndex: 1 }}>
-            <div style={{ position: 'relative', width: 340 }}>
+            <div style={{ position: 'relative', width: '100%', maxWidth: 340, margin: '0 auto' }}>
               <div style={{ position: 'absolute', inset: '-40px', background: 'radial-gradient(ellipse at center, rgba(20,187,166,0.2) 0%, transparent 70%)', pointerEvents: 'none' }} />
               <div style={{ position: 'relative', background: 'rgba(30,58,95,0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 20, overflow: 'hidden', boxShadow: '0 40px 80px rgba(30,58,95,0.6)' }}>
                 <div style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 12 }}>
