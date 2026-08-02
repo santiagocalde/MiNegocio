@@ -179,6 +179,46 @@ svg {
   box-shadow: 2px 0 8px rgba(20,187,166, 0.5);
 }
 
+/* ── Sidebar colapsado: riel de solo íconos (retráctil) ──
+   No se saca ninguna funcionalidad: los nombres se ocultan y aparecen por
+   tooltip (title) o al expandir. Gobernado por useIsMobile() + este único
+   set de reglas, no por parches sueltos. */
+/* flex-shrink:0 → el sidebar mantiene su ancho (60 riel / 190 expandido) y no
+   lo exprime el contenido ancho del POS. */
+.sidebar { transition: width 0.2s ease; flex-shrink: 0; }
+/* main con min-width:0 → cede el ancho al sidebar (que tiene flex-shrink:0) en
+   vez de que su contenido ancho lo exprima. El contenido scrollea (overflow:auto). */
+.layout > main { min-width: 0; }
+.sidebar-toggle:hover { color: var(--text-primary) !important; }
+.sidebar.collapsed { width: 60px; }
+.sidebar.collapsed .sidebar-logo,
+.sidebar.collapsed .nav-label,
+.sidebar.collapsed .nav-section-label,
+.sidebar.collapsed .btn-label,
+.sidebar.collapsed .sidebar-caja-header,
+.sidebar.collapsed .sidebar-caja-info,
+.sidebar.collapsed .sidebar-legal { display: none; }
+.sidebar.collapsed .brand { justify-content: center; padding: 6px 4px; }
+.sidebar.collapsed .nav-menu { padding: 8px 6px; }
+.sidebar.collapsed .nav-item { justify-content: center; padding: 11px 0; }
+.sidebar.collapsed .nav-item > div { flex: unset; gap: 0; justify-content: center; }
+.sidebar.collapsed .sidebar-footer { padding: 8px 6px; }
+.sidebar.collapsed .sidebar-footer button { padding: 11px 0 !important; gap: 0 !important; }
+
+/* Targets táctiles más cómodos en celular */
+@media (max-width: 768px) {
+  .nav-item { min-height: 44px; }
+  /* En mobile, el sidebar expandido flota sobre el contenido (drawer) en vez de
+     empujar el layout — el riel de 60px queda como estado por defecto. */
+  .sidebar:not(.collapsed) {
+    position: fixed; top: 0; left: 0; bottom: 0; width: 232px; min-width: 232px; z-index: 300;
+    box-shadow: 12px 0 40px rgba(0,0,0,0.6);
+  }
+  .sidebar-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 250; }
+}
+
+
+
 /* Main Content */
 .main-content {
   flex: 1;

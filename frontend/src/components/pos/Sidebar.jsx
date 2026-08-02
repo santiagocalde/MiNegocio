@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Icons } from '../ui/Icons';
 import Tooltip from '../ui/Tooltip';
 import LogoPrincipal from '../../assets/images/MiNegocio_transparente_real.png';
 import { usePanelContext } from '../../context/PanelContext';
 import { getBusinessFeatures } from '../../config/businessDefaults';
+import useIsMobile from '../../hooks/useIsMobile';
 
 const PLAN_WEIGHT = { trial: 1, simple: 1, pro: 2, ia: 3 };
 
@@ -13,7 +14,7 @@ const NAV_ITEMS = [
     category: 'OPERACIÓN',
     items: [
       { label: 'Inicio', path: '/panel/inicio', icon: 'Home', roles: ['admin', 'manager', 'operator'] },
-      { label: 'Punto de Venta', path: '/panel/ventas', icon: 'ShoppingCart', roles: ['admin', 'manager', 'operator'] },
+      { label: 'Punto de Venta', short: 'Vender', path: '/panel/ventas', icon: 'ShoppingCart', roles: ['admin', 'manager', 'operator'] },
       { label: 'Compras', path: '/panel/compras', icon: 'Truck', roles: ['admin', 'manager'], minPlan: 'simple', featureKey: 'compras' },
       { label: 'Fiados', path: '/panel/clientes', icon: 'Book', roles: ['admin', 'manager', 'operator'], featureKey: 'fiados' },
     ],
@@ -22,7 +23,7 @@ const NAV_ITEMS = [
     category: 'CATÁLOGO',
     items: [
       { label: 'Inventario', path: '/panel/inventario', icon: 'Box', roles: ['admin', 'manager'] },
-      { label: 'Catálogo Web', path: '/panel/catalogo-web', icon: 'Edit', roles: ['admin', 'manager'], minPlan: 'pro', featureKey: 'catalogo' },
+      { label: 'Catálogo Web', short: 'Catálogo', path: '/panel/catalogo-web', icon: 'Edit', roles: ['admin', 'manager'], minPlan: 'pro', featureKey: 'catalogo' },
       { label: 'Proveedores', path: '/panel/proveedores', icon: 'Truck', roles: ['admin', 'manager'], minPlan: 'simple', featureKey: 'proveedores' },
     ],
   },
@@ -32,7 +33,7 @@ const NAV_ITEMS = [
     items: [
       { label: 'Reportes', path: '/panel/reportes', icon: 'Chart' },
       { label: 'Promociones', path: '/panel/promociones', icon: 'Tag', featureKey: 'promociones' },
-      { label: 'Sugerencias IA', path: '/panel/recomendaciones', icon: 'AI', minPlan: 'ia', featureKey: 'recomendaciones' },
+      { label: 'Sugerencias IA', short: 'IA', path: '/panel/recomendaciones', icon: 'AI', minPlan: 'ia', featureKey: 'recomendaciones' },
     ],
   },
   {
@@ -81,6 +82,17 @@ export default function Sidebar({
   const location = useLocation();
   const { currentPlan, businessType } = usePanelContext();
   const currentPath = location.pathname;
+  const isMobile = useIsMobile();
+  // En mobile el sidebar arranca como riel de íconos (retraído); el usuario
+  // puede expandirlo con el botón. En desktop queda expandido como siempre.
+  // Se ajusta al cambiar de mobile↔desktop con el patrón de "estado derivado en
+  // render" (sin effect) para no disparar renders en cascada.
+  const [collapsed, setCollapsed] = useState(isMobile);
+  const [prevIsMobile, setPrevIsMobile] = useState(isMobile);
+  if (isMobile !== prevIsMobile) {
+    setPrevIsMobile(isMobile);
+    setCollapsed(isMobile);
+  }
 
   const role = currentOperator?.role || 'admin';
 
@@ -89,9 +101,15 @@ export default function Sidebar({
   const features = getBusinessFeatures(businessType);
 
   return (
-    <aside className="sidebar">
-      <div className="brand" style={{ cursor: 'pointer', display: 'flex', justifyContent: 'center', padding: '4px 0', borderBottom: 'none', boxShadow: 'none' }} onClick={() => navigate('/panel/ventas')}>
-        <img src={LogoPrincipal} alt="MiNegocio" style={{ width: '80%', maxWidth: '140px', height: 'auto', objectFit: 'contain' }} />
+    <>
+    {isMobile && !collapsed && <div className="sidebar-backdrop" onClick={() => setCollapsed(true)} />}
+    <aside className={`sidebar${collapsed ? ' collapsed' : ''}`}>
+      <div className="brand" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, padding: '6px 8px', borderBottom: 'none', boxShadow: 'none' }}>
+        <img className="sidebar-logo" src={LogoPrincipal} alt="MiNegocio" onClick={() => navigate('/panel/ventas')} style={{ maxWidth: '120px', width: '70%', height: 'auto', objectFit: 'contain', cursor: 'pointer' }} />
+        <button className="sidebar-toggle" onClick={() => setCollapsed(c => !c)} title={collapsed ? 'Expandir menú' : 'Contraer menú'} aria-label={collapsed ? 'Expandir menú' : 'Contraer menú'}
+          style={{ background: 'var(--bg-hover)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', borderRadius: 8, minWidth: 30, height: 30, fontSize: '1.1rem', lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
+          {collapsed ? '›' : '‹'}
+        </button>
       </div>
 
       <nav className="nav-menu" style={{ overflowY: 'auto', flex: 1 }}>
@@ -116,6 +134,7 @@ export default function Sidebar({
                     key={item.path}
                     className={`nav-item ${isActive(item.path) && !isLocked ? 'active' : ''}`}
                     onClick={() => navigate(item.path)}
+                    title={item.label}
                     style={{
                       opacity: isLocked ? 0.5 : 1,
                       cursor: isLocked ? 'not-allowed' : 'pointer'
@@ -123,7 +142,7 @@ export default function Sidebar({
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1 }}>
                       {ICON_MAP[item.icon] ? React.createElement(ICON_MAP[item.icon]) : <span style={{ width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icons.File /></span>}
-                      {item.label}
+                      <span className="nav-label">{isMobile && item.short ? item.short : item.label}</span>
                     </div>
                   </div>
                 );
@@ -134,8 +153,8 @@ export default function Sidebar({
         </div>
       </nav>
 
-      <div style={{ padding: '10px', borderTop: '1px solid var(--border-color)', background: 'var(--gradient-card)', backdropFilter: 'blur(8px)', marginTop: 'auto' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+      <div className="sidebar-footer" style={{ padding: '10px', borderTop: '1px solid var(--border-color)', background: 'var(--gradient-card)', backdropFilter: 'blur(8px)', marginTop: 'auto' }}>
+        <div className="sidebar-caja-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
           <span style={{ fontSize: '0.8rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-primary)' }}>
             <Icons.Lock style={{ width: 14, height: 14 }} /> Mi Caja
           </span>
@@ -159,7 +178,7 @@ export default function Sidebar({
           )}
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+        <div className="sidebar-caja-info" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 700 }}>
             <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>Vendido hoy</span>
             <span style={{ color: 'var(--accent-success)', fontSize: '1.1rem', fontFamily: 'var(--font-mono)', fontWeight: 800 }}>
@@ -188,37 +207,38 @@ export default function Sidebar({
 
         <div data-tour="sidebar-bottom" style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '10px' }}>
           <Tooltip text="Registrar salida de efectivo" block>
-            <button onClick={() => setShowEgreso(true)} style={{ width: '100%', background: 'rgba(245, 158, 11, 0.1)', border: '1px solid var(--border-color)', color: 'var(--accent-warning)', padding: '6px 10px', borderRadius: '8px', fontWeight: 700, cursor: 'pointer', fontSize: '0.75rem', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-              <Icons.DollarSign style={{ width: 14, height: 14 }} /> Registrar Egreso
+            <button onClick={() => setShowEgreso(true)} title="Registrar Egreso" style={{ width: '100%', background: 'rgba(245, 158, 11, 0.1)', border: '1px solid var(--border-color)', color: 'var(--accent-warning)', padding: '6px 10px', borderRadius: '8px', fontWeight: 700, cursor: 'pointer', fontSize: '0.75rem', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+              <Icons.DollarSign style={{ width: 14, height: 14 }} /> <span className="btn-label">Egreso</span>
             </button>
           </Tooltip>
           <Tooltip text="Ver ventas del día" block>
-            <button onClick={() => setShowResumen(true)} style={{ width: '100%', background: 'rgba(20,187,166, 0.1)', border: '1px solid var(--border-color)', color: 'var(--accent-primary)', padding: '6px 10px', borderRadius: '8px', fontWeight: 700, cursor: 'pointer', fontSize: '0.75rem', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-              <Icons.Chart style={{ width: 14, height: 14 }} /> Resumen del Día
+            <button onClick={() => setShowResumen(true)} title="Resumen del Día" style={{ width: '100%', background: 'rgba(20,187,166, 0.1)', border: '1px solid var(--border-color)', color: 'var(--accent-primary)', padding: '6px 10px', borderRadius: '8px', fontWeight: 700, cursor: 'pointer', fontSize: '0.75rem', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+              <Icons.Chart style={{ width: 14, height: 14 }} /> <span className="btn-label">Resumen</span>
             </button>
           </Tooltip>
           {currentTurnId ? (
             <Tooltip text="F2 - Cerrar turno y cuadrar caja" block>
-              <button onClick={() => setIsClosingCaja(true)} style={{ width: '100%', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid var(--border-color)', color: 'var(--accent-danger)', padding: '6px 10px', borderRadius: '8px', fontWeight: 700, cursor: 'pointer', fontSize: '0.75rem', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-                <Icons.Lock style={{ width: 14, height: 14 }} /> Cerrar Turno
+              <button onClick={() => setIsClosingCaja(true)} title="Cerrar Turno" style={{ width: '100%', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid var(--border-color)', color: 'var(--accent-danger)', padding: '6px 10px', borderRadius: '8px', fontWeight: 700, cursor: 'pointer', fontSize: '0.75rem', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                <Icons.Lock style={{ width: 14, height: 14 }} /> <span className="btn-label">Cerrar</span>
               </button>
             </Tooltip>
           ) : (
             <Tooltip text="Abrir caja para vender" block>
-              <button onClick={() => { localStorage.setItem('minegocio_onboarding_pending', 'true'); window.location.reload(); }} style={{ width: '100%', background: 'var(--gradient-primary)', border: 'none', color: 'white', padding: '8px 10px', borderRadius: '8px', fontWeight: 800, cursor: 'pointer', fontSize: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', boxShadow: '0 4px 12px rgba(20, 187, 166, 0.3)' }}>
-                Abrir Caja
+              <button onClick={() => { localStorage.setItem('minegocio_onboarding_pending', 'true'); window.location.reload(); }} title="Abrir Caja" style={{ width: '100%', background: 'var(--gradient-primary)', border: 'none', color: 'white', padding: '8px 10px', borderRadius: '8px', fontWeight: 800, cursor: 'pointer', fontSize: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', boxShadow: '0 4px 12px rgba(20, 187, 166, 0.3)' }}>
+                <Icons.Lock style={{ width: 14, height: 14 }} /> <span className="btn-label">Abrir Caja</span>
               </button>
             </Tooltip>
           )}
         </div>
 
         {/* Legal footer */}
-        <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'center', gap: 12 }}>
+        <div className="sidebar-legal" style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'center', gap: 12 }}>
           <a href="/terminos" target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', textDecoration: 'none', opacity: 0.6 }} onMouseEnter={e => e.target.style.opacity = '1'} onMouseLeave={e => e.target.style.opacity = '0.6'}>Términos</a>
           <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', opacity: 0.3 }}>·</span>
           <a href="/privacidad" target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', textDecoration: 'none', opacity: 0.6 }} onMouseEnter={e => e.target.style.opacity = '1'} onMouseLeave={e => e.target.style.opacity = '0.6'}>Privacidad</a>
         </div>
       </div>
     </aside>
+    </>
   );
 }

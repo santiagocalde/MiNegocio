@@ -1,12 +1,14 @@
 import { useMemo, useState } from 'react';
 import { Icons } from '../ui/Icons';
 import AddAmountModal from './AddAmountModal';
+import useIsMobile from '../../hooks/useIsMobile';
 
 export default function SearchBar({
   search, setSearch, searchRef, searchError, flash,
   productsDB, handleQuickAdd, setShowPriceCheck, addToast, handleEmptyEnter
 }) {
   const [showAddAmountModal, setShowAddAmountModal] = useState(false);
+  const isMobile = useIsMobile();
   const autocomplete = useMemo(() => {
     if (!search.trim() || !productsDB) return [];
     return productsDB
@@ -15,19 +17,22 @@ export default function SearchBar({
   }, [search, productsDB]);
 
   return (
-    <div style={{ background: 'var(--bg-card)', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-        <div>
-          <h2 style={{ fontSize: '1.3rem', fontWeight: 800, margin: '0 0 2px 0', letterSpacing: '-0.2px' }}>Buscar Producto</h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0 }}>Escanee código de barras o escriba el nombre del producto</p>
-        </div>
+    <div style={{ background: 'var(--bg-card)', padding: isMobile ? '10px 12px' : '12px 16px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+      <div style={{ display: 'flex', justifyContent: isMobile ? 'flex-end' : 'space-between', alignItems: 'flex-start', marginBottom: isMobile ? '10px' : '16px' }}>
+        {/* En mobile el título y la ayuda son redundantes: el propio campo ya lo dice */}
+        {!isMobile && (
+          <div>
+            <h2 style={{ fontSize: '1.3rem', fontWeight: 800, margin: '0 0 2px 0', letterSpacing: '-0.2px' }}>Buscar Producto</h2>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0 }}>Escanee código de barras o escriba el nombre del producto</p>
+          </div>
+        )}
 
         <div style={{ display: 'flex', gap: '8px' }}>
-          <button onClick={() => setShowPriceCheck(true)} style={{ background: 'var(--bg-hover)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', padding: '8px 12px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }} onMouseEnter={e => e.target.style.background='rgba(255,255,255,0.1)'} onMouseLeave={e => e.target.style.background='var(--bg-hover)'}>
-            Consultar Precio
+          <button onClick={() => setShowPriceCheck(true)} title="Consultar Precio" style={{ background: 'var(--bg-hover)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', padding: '8px 12px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '6px' }} onMouseEnter={e => e.currentTarget.style.background='rgba(255,255,255,0.1)'} onMouseLeave={e => e.currentTarget.style.background='var(--bg-hover)'}>
+            <Icons.Search style={{ width: 15, height: 15 }} />{isMobile ? 'Precio' : 'Consultar Precio'}
           </button>
-          <button onClick={() => setShowAddAmountModal(true)} style={{ background: 'var(--bg-hover)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', padding: '8px 12px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }} onMouseEnter={e => e.target.style.background='rgba(255,255,255,0.1)'} onMouseLeave={e => e.target.style.background='var(--bg-hover)'}>
-            Agregar Monto
+          <button onClick={() => setShowAddAmountModal(true)} title="Agregar Monto" style={{ background: 'var(--bg-hover)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', padding: '8px 12px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '6px' }} onMouseEnter={e => e.currentTarget.style.background='rgba(255,255,255,0.1)'} onMouseLeave={e => e.currentTarget.style.background='var(--bg-hover)'}>
+            <Icons.DollarSign style={{ width: 15, height: 15 }} />{isMobile ? 'Monto' : 'Agregar Monto'}
           </button>
         </div>
       </div>
