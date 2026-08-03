@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { API_ROOT } from '../../config';
 import { Icons } from './shared';
 

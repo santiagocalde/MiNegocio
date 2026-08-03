@@ -220,7 +220,7 @@ async def get_logs(request: Request, limit: int = 50) -> dict:
 # MERCADO PAGO
 # ────────────────────────────────────────────────────────────
 @router.post("/api/mercadopago/create-payment", summary="Crear pago MP")
-async def mercadopago_create_payment  # Stage 8: verified plan limits + user count in payload(data: dict = Body(...)) -> dict:
+async def mercadopago_create_payment(data: dict = Body(...)) -> dict:
     monto = data.get("total", 0)
     descripcion = data.get("description", "Venta en kiosco")
     access_token = os.getenv("MP_ACCESS_TOKEN", "")
@@ -360,13 +360,14 @@ async def track_funnel_event(request: Request, body: dict = Body(...)) -> dict:
 @router.get("/api/metrics", summary="Metricas publicas")
 @limiter.limit("30/minute")
 async def get_metrics(request: Request) -> dict:
-    k, v, d, p = 20, 380000, 98.7, 4.9
+    k, v, d, p = 0, 0, 98.7, 4.9
     try:
         from db_helpers import get_pg_pool
         pool = await get_pg_pool()
         async with pool.acquire() as conn:
             count = await conn.fetchval("SELECT COUNT(*) FROM businesses WHERE status = 'active'")
-            if count: k = count + 15; v = count * 19000
+            k = count or 0
+            v = await conn.fetchval("SELECT COALESCE(SUM(total), 0) FROM sales WHERE created_at > now() - interval '30 days'") or 0
     except Exception as e:
         logger.debug(f"No se pudieron cargar metricas de DB: {e}")
         pass

@@ -1,3 +1,4 @@
+/* global fbq */
 /**
  * Tracking liviano del funnel de adquisición (visita landing → registro).
  * Envía eventos a POST /api/track (endpoint público, sin auth).

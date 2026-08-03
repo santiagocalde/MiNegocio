@@ -292,6 +292,55 @@ async def create_supplier(body: dict) -> dict:
             return {"id": cur.lastrowid, **body}
 
 
+@router.post("/api/suppliers/{supplier_id}/pay", summary="Registrar abono a proveedor")
+async def pay_supplier(supplier_id: int, body: dict) -> dict:
+    """Reduce supplier debt and create an egreso (expense) record."""
+    b_id = _biz_id()
+    amount = float(body.get("amount", 0))
+    if amount <= 0:
+        raise HTTPException(400, detail="El monto debe ser mayor a cero.")
+    motivo = body.get("motivo") or "Abono a proveedor"
+    operator = body.get("operator") or "Sistema"
+    turn_id = body.get("turn_id")
+
+    if USE_PG:
+        from db_helpers import get_pg_pool
+        pool = await get_pg_pool()
+        async with pool.acquire() as conn:
+            async with conn.transaction():
+                # Reduce debt
+                result = await conn.fetchrow(
+                    "UPDATE suppliers SET debt = GREATEST(COALESCE(debt, 0) - $1, 0) WHERE id = $2 AND business_id = $3 RETURNING debt",
+                    amount, supplier_id, b_id
+                )
+                if not result:
+                    raise HTTPException(404, detail="Proveedor no encontrado.")
+                # Record egreso (expense)
+                await conn.execute(
+                    "INSERT INTO egresos_caja (business_id, turn_id, monto, motivo, type, operator) VALUES ($1,$2,$3,$4,$5,$6)",
+                    b_id, turn_id, amount, motivo, "pago_proveedor", operator
+                )
+                return {"success": True, "new_debt": float(result["debt"])}
+    else:
+        async with main.db_write_lock:
+            async with aiosqlite.connect(main.DB_PATH) as db:
+                await db.execute("BEGIN IMMEDIATE")
+                curs = await db.execute("SELECT id, debt FROM suppliers WHERE id = ?", (supplier_id,))
+                row = await curs.fetchone()
+                if not row:
+                    await db.rollback()
+                    raise HTTPException(404, detail="Proveedor no encontrado.")
+                current = row[1] or 0
+                new_debt = max(current - amount, 0)
+                await db.execute("UPDATE suppliers SET debt = ? WHERE id = ?", (new_debt, supplier_id))
+                await db.execute(
+                    "INSERT INTO egresos_caja (turn_id, monto, motivo, type, operator) VALUES (?,?,?,?,?)",
+                    (turn_id, amount, motivo, "pago_proveedor", operator)
+                )
+                await db.commit()
+                return {"success": True, "new_debt": new_debt}
+
+
 @router.post("/api/purchases", summary="Crear compra")
 async def create_purchase(request: Request, body: dict) -> dict:
     b_id = _biz_id()
@@ -309,6 +358,12 @@ async def create_purchase(request: Request, body: dict) -> dict:
                     "INSERT INTO purchases (business_id, supplier_id, invoice_number, total_cost, operator) VALUES ($1,$2,$3,$4,$5) RETURNING id",
                     b_id, body.get("supplier_id"), body.get("invoice_number"), round(cost, 2), body.get("operator", "Sistema")
                 )
+                # Increment supplier debt if not paid from register
+                if not body.get("paid_from_register"):
+                    await conn.execute(
+                        "UPDATE suppliers SET debt = COALESCE(debt, 0) + $1 WHERE id = $2",
+                        round(cost, 2), body.get("supplier_id")
+                    )
                 purchase_id = row["id"]
                 for item in body.get("items", []):
                     await conn.execute(
@@ -345,6 +400,12 @@ async def create_purchase(request: Request, body: dict) -> dict:
                     "INSERT INTO purchases (supplier_id, invoice_number, total_cost, operator) VALUES (?,?,?,?)",
                     (body.get("supplier_id"), body.get("invoice_number"), round(cost, 2), body.get("operator", "Sistema"))
                 )
+                # Increment supplier debt if not paid from register
+                if not body.get("paid_from_register"):
+                    await db.execute(
+                        "UPDATE suppliers SET debt = COALESCE(debt, 0) + ? WHERE id = ?",
+                        (round(cost, 2), body.get("supplier_id"))
+                    )
                 purchase_id = cur.lastrowid
                 for item in body.get("items", []):
                     await db.execute(

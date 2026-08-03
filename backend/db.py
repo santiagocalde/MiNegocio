@@ -332,7 +332,8 @@ async def init_pg() -> None:
                 business_id     TEXT NOT NULL REFERENCES businesses(id),
                 name            TEXT NOT NULL,
                 contact         TEXT,
-                phone           TEXT
+                phone           TEXT,
+                debt            NUMERIC(12,2) DEFAULT 0
             );
             CREATE INDEX IF NOT EXISTS idx_suppliers_business_id ON suppliers(business_id);
 
@@ -468,6 +469,7 @@ async def init_pg() -> None:
             ALTER TABLE business_config ADD COLUMN IF NOT EXISTS print_config TEXT;
             ALTER TABLE products ADD COLUMN IF NOT EXISTS image_url TEXT DEFAULT '';
             ALTER TABLE sale_items ALTER COLUMN product_id DROP NOT NULL;
+            ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS debt NUMERIC(12,2) DEFAULT 0;
 
             CREATE TABLE IF NOT EXISTS audit_log (
                 id              SERIAL PRIMARY KEY,
