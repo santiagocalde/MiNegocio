@@ -130,9 +130,10 @@ export default function SoportePage() {
               <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>1.0.0</div>
             </div>
             <div>
-              <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Backend</span>
-              <div style={{ fontWeight: 700, color: backend.backendStatus?.status === 'ok' ? 'var(--accent-success)' : 'var(--accent-danger)' }}>
-                {backend.backendStatus?.status === 'ok' ? 'Conectado' : 'Desconectado'}
+              <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Conexión</span>
+              <div style={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6, color: backend.backendStatus?.status === 'ok' ? 'var(--accent-success)' : 'var(--accent-danger)' }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'currentColor', display: 'inline-block', flexShrink: 0 }}></span>
+                {backend.backendStatus?.status === 'ok' ? 'En línea' : 'Sin conexión'}
               </div>
             </div>
           </div>

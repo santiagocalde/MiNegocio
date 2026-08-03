@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import LogoMercadoPago from '../../assets/images/mercadopago_logo.png';
+import useIsMobile from '../../hooks/useIsMobile';
 
 const Svg = {
   ArrowRight: () => <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>,
 };
 
 export default function CheckoutView({ plan, isYearly, onBack, onComplete }) {
+  const isMobile = useIsMobile();
   const [step, setStep] = useState(1);
   const [usersLimit, setUsersLimit] = useState(2);
   const [formData, setFormData] = useState({ nombre: '', apellido: '', telefono: '' });
@@ -62,8 +64,8 @@ export default function CheckoutView({ plan, isYearly, onBack, onComplete }) {
             </div>
           )}
           {step === 2 && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', alignItems: 'stretch', animation: 'fadeIn 0.4s ease' }}>
-              <div style={{ padding: '48px 40px', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.2fr 1fr', alignItems: 'stretch', animation: 'fadeIn 0.4s ease' }}>
+              <div style={{ padding: isMobile ? '28px 22px' : '48px 40px', display: 'flex', flexDirection: 'column' }}>
                 <h2 style={{ fontSize: '1.8rem', fontWeight: 800, marginBottom: 8, color: '#fff', letterSpacing: '-0.5px' }}>Tus Datos</h2>
                 <p style={{ color: 'var(--lp-text-muted)', fontSize: '0.9rem', marginBottom: 32 }}>Completá tu info para activar el Plan {plan.name}.</p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -94,7 +96,7 @@ export default function CheckoutView({ plan, isYearly, onBack, onComplete }) {
                   </div>
                 </div>
               </div>
-              <div style={{ background: 'rgba(30,58,95,0.6)', padding: '48px 40px', borderLeft: '1px solid rgba(255,255,255,0.06)', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ background: 'rgba(30,58,95,0.6)', padding: isMobile ? '28px 22px' : '48px 40px', borderLeft: isMobile ? 'none' : '1px solid rgba(255,255,255,0.06)', borderTop: isMobile ? '1px solid rgba(255,255,255,0.08)' : 'none', display: 'flex', flexDirection: 'column' }}>
                 <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#fff', marginBottom: 4, letterSpacing: '-0.5px' }}>Resumen</h3>
                 <p style={{ color: 'var(--lp-text-muted)', fontSize: '0.9rem', marginBottom: 32 }}>El importe que se te cobra hoy.</p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 32, paddingBottom: 24, borderBottom: '1px solid rgba(255,255,255,0.1)' }}>

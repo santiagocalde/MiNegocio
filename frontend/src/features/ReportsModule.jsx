@@ -111,7 +111,7 @@ export default function ReportsModule() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexShrink: 0 }}>
         <h2 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>Reportes de Ventas</h2>
 
-        <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600, paddingLeft: '4px' }}>Fecha desde</label>
             <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '0 16px', borderRadius: '8px', outline: 'none', fontFamily: 'var(--font-mono)', fontSize: '0.85rem', height: '42px', fontWeight: 600 }} />
@@ -134,7 +134,7 @@ export default function ReportsModule() {
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px', flexShrink: 0 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '16px', marginBottom: '24px', flexShrink: 0 }}>
         <div style={{ background: 'var(--bg-card)', borderRadius: '12px', padding: '20px', border: '1px solid var(--border-color)', position: 'relative' }}>
           <div style={{ color: 'var(--text-primary)', fontSize: '0.9rem', fontWeight: 700, marginBottom: '12px' }}>Total de Ventas</div>
           <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '4px', letterSpacing: '-0.5px' }}>{summary.totalVentas}</div>
@@ -165,7 +165,7 @@ export default function ReportsModule() {
       </div>
 
       {canAccessIA ? (
-        <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
+        <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
           <a href={`${serverUrl}/reports/sales?desde=${dateFrom}&hasta=${dateTo}${sucursalId ? `&sucursal_id=${sucursalId}` : ''}`}
             style={{ background: 'var(--accent-primary)', color: 'white', border: 'none', padding: '12px 24px', borderRadius: '12px', fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
             <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
@@ -207,13 +207,13 @@ export default function ReportsModule() {
                    <div style={{ display: 'flex', gap: '12px' }}>
                     <div style={{ position: 'relative' }}>
                       <svg style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                      <input type="text" placeholder="Buscar por ID..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '8px 16px 8px 32px', borderRadius: '8px', outline: 'none', fontSize: '0.85rem', width: '250px' }} />
+                      <input type="text" placeholder="Buscar por ID..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '8px 16px 8px 32px', borderRadius: '8px', outline: 'none', fontSize: '0.85rem', width: '100%', maxWidth: '250px', boxSizing: 'border-box' }} />
                     </div>
                   </div>
                 </div>
 
-                <div style={{ flex: 1, overflow: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                <div style={{ flex: 1, overflow: 'auto', minWidth: 0 }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '520px' }}>
                     <thead style={{ position: 'sticky', top: 0, background: 'var(--bg-main)', zIndex: 1 }}>
                       <tr style={{ color: 'var(--text-primary)', fontSize: '0.85rem', fontWeight: 700, borderBottom: '1px solid var(--border-color)' }}>
                         <th style={{ padding: '16px', cursor: 'pointer' }} onClick={() => toggleSort('id')}>ID<SortIcon columnKey="id" /></th>
