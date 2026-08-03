@@ -262,7 +262,7 @@ async def procesar_factura_ocr(image_bytes: bytes, content_type: str = "image/jp
         "proveedor":      str(parsed.get("proveedor") or "").strip(),
         "fecha":          str(parsed.get("fecha")     or "").strip(),
         "factura_nro":    str(parsed.get("factura_nro") or parsed.get("factura") or "").strip(),
-        "items_detectados": items,
+        "items": items,
         "total_detectado":  round(sum(i["qty"] * i["cost"] for i in items), 2),
     }
 
