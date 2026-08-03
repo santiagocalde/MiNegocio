@@ -3,6 +3,7 @@ import ConfigPrinting from '../components/pos/ConfigPrinting';
 import { usePanelContext } from '../context/PanelContext';
 import { apiGet, apiPut } from '../services/apiClient';
 import { Icons } from '../components/ui/Icons';
+import useIsMobile from '../hooks/useIsMobile';
 
 const FIELDS = [
   { key: 'nombre',         label: 'Nombre del negocio',    placeholder: 'Kiosco Don Julio' },
@@ -32,6 +33,7 @@ export default function ConfigPage() {
   const [saved, setSaved] = useState(false);
   const [operators, setOperators] = useState([]);
   const [showMpToken, setShowMpToken] = useState(false);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     apiGet('/config')
@@ -70,8 +72,8 @@ export default function ConfigPage() {
   };
 
   return (
-    <div style={{ padding: '12px 20px', width: '100%', height: '100%', overflowY: 'auto', boxSizing: 'border-box' }}>
-      <div style={{ maxWidth: '800px', margin: '0 auto', background: 'var(--bg-card)', padding: '24px', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.2)', border: '1px solid var(--border-color)' }}>
+    <div style={{ padding: isMobile ? '10px 12px' : '12px 20px', width: '100%', height: '100%', overflowY: 'auto', boxSizing: 'border-box' }}>
+      <div style={{ maxWidth: '800px', margin: '0 auto', background: 'var(--bg-card)', padding: isMobile ? '16px 14px' : '24px', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', boxSizing: 'border-box' }}>
         <h2 style={{ fontSize: '1.3rem', color: 'var(--text-primary)', marginBottom: '8px' }}><Icons.Settings /> Ajustes y Configuración</h2>
         <p style={{ color: 'var(--text-secondary)', textAlign: 'center', marginBottom: '24px', fontSize: '0.9rem' }}>
           Estos datos aparecen en los tickets impresos y en el encabezado del sistema.
@@ -119,7 +121,7 @@ export default function ConfigPage() {
               <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '1px' }}>
                 Preview del ticket (encabezado)
               </div>
-              <pre style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--text-primary)', lineHeight: 1.6, margin: 0 }}>
+              <pre style={{ fontFamily: 'var(--font-mono)', fontSize: isMobile ? '0.62rem' : '0.75rem', color: 'var(--text-primary)', lineHeight: 1.6, margin: 0, overflowX: 'auto' }}>
 {`══════════════════════════════════════════
 ${(config.nombre || 'NOMBRE').toUpperCase().padStart(21 + Math.floor((config.nombre || '').length / 2))}
 ${(config.subtitulo || '').padStart(21 + Math.floor((config.subtitulo || '').length / 2))}
@@ -133,8 +135,8 @@ CUIT: ${config.cuit || '---'}  ${config.condicion_iva || '---'}`}
             <div style={{ marginTop: '24px', borderTop: '1px solid var(--border-color)', paddingTop: '20px' }}>
               <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '16px', color: 'var(--text-primary)' }}><Icons.Users /> Operadores</h3>
               {operators && operators.map((op, i) => (
-                <div key={i} style={{ display: 'flex', gap: '12px', marginBottom: '12px', alignItems: 'center' }}>
-                  <div style={{ flex: 1 }}>
+                <div key={i} style={{ display: 'flex', gap: isMobile ? '8px' : '12px', marginBottom: '12px', alignItems: 'center' }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
                     <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '4px' }}>Nombre</label>
                     <input
                       type="text"
@@ -147,7 +149,7 @@ CUIT: ${config.cuit || '---'}  ${config.condicion_iva || '---'}`}
                       style={inputStyle}
                     />
                   </div>
-                  <div style={{ width: '120px' }}>
+                  <div style={{ width: isMobile ? '78px' : '120px', flexShrink: 0 }}>
                     <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '4px' }}>PIN</label>
                     <input
                       type="text"
@@ -199,12 +201,12 @@ CUIT: ${config.cuit || '---'}  ${config.condicion_iva || '---'}`}
           </div>
         )}
 
-        <div style={{ marginTop: '32px', display: 'flex', justifyContent: 'flex-end' }}>
+        <div style={{ marginTop: '32px', display: 'flex', justifyContent: isMobile ? 'stretch' : 'flex-end' }}>
           <button
             className="btn btn-modal-confirm"
             onClick={handleSave}
             disabled={saving}
-            style={{ width: '200px', opacity: saving ? 0.7 : 1, cursor: 'pointer', transition: 'all 0.15s' }}
+            style={{ width: isMobile ? '100%' : '200px', opacity: saving ? 0.7 : 1, cursor: 'pointer', transition: 'all 0.15s' }}
           >
             {saved ? <><Icons.Check /> Guardado</> : saving ? 'Guardando...' : 'Guardar Cambios'}
           </button>
