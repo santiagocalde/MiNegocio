@@ -482,6 +482,32 @@ async def create_sale(request: Request, body: SaleCreate, idempotency_key: Optio
                 return {"id": sale_id, "ticket": sale_id}
 
 
+
+@router.post("/api/sales/{sale_id}/cobrar-fiado", summary="Cobrar fiado y actualizar balance")
+async def cobrar_fiado(sale_id: int) -> dict:
+    """Marca un fiado como cobrado y actualiza el balance del cliente."""
+    b_id = _biz_id()
+    if USE_PG:
+        from db_helpers import get_pg_pool
+        pool = await get_pg_pool()
+        async with pool.acquire() as conn:
+            sale = await conn.fetchrow(
+                "SELECT id, is_fiado, fiado_name, total FROM sales WHERE id = $1 AND business_id = $2",
+                sale_id, b_id
+            )
+            if not sale:
+                raise HTTPException(404, detail="Venta no encontrada")
+            if not sale["is_fiado"]:
+                raise HTTPException(400, detail="Esta venta no es un fiado")
+            if sale["fiado_name"]:
+                await conn.execute(
+                    "UPDATE customers SET balance = balance - $1 WHERE business_id = $2 AND name = $3",
+                    sale["total"], b_id, sale["fiado_name"]
+                )
+            await conn.execute("UPDATE sales SET is_fiado = false WHERE id = $1", sale_id)
+    return {"success": True, "message": "Fiado cobrado"}
+
+
 @router.get("/api/sales/today", summary="Resumen de ventas del dia")
 async def today_sales(sucursal_id: Optional[int] = Query(None)) -> dict:
     b_id = _biz_id()
