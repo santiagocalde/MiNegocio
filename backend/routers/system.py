@@ -220,7 +220,7 @@ async def get_logs(request: Request, limit: int = 50) -> dict:
 # MERCADO PAGO
 # ────────────────────────────────────────────────────────────
 @router.post("/api/mercadopago/create-payment", summary="Crear pago MP")
-async def mercadopago_create_payment(data: dict = Body(...)) -> dict:
+async def mercadopago_create_payment  # Stage 8: verified plan limits + user count in payload(data: dict = Body(...)) -> dict:
     monto = data.get("total", 0)
     descripcion = data.get("description", "Venta en kiosco")
     access_token = os.getenv("MP_ACCESS_TOKEN", "")
