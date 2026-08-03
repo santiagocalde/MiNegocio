@@ -1,17 +1,19 @@
 import { useState } from 'react';
 import LogoMercadoPago from '../../assets/images/mercadopago_logo.png';
 import useIsMobile from '../../hooks/useIsMobile';
+import { apiPost } from '../../services/apiClient';
 
 const Svg = {
   ArrowRight: () => <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>,
 };
 
-export default function CheckoutView({ plan, isYearly, onBack, onComplete }) {
+export default function CheckoutView({ plan, isYearly, onBack }) {
   const isMobile = useIsMobile();
   const [step, setStep] = useState(1);
   const [usersLimit, setUsersLimit] = useState(2);
   const [formData, setFormData] = useState({ nombre: '', apellido: '', telefono: '' });
   const [isPaying, setIsPaying] = useState(false);
+  const [checkoutError, setCheckoutError] = useState('');
 
   const extraCostMap = { 2: 0, 5: 10000, 10: 25000 };
   const usersCost = extraCostMap[usersLimit] || 0;
@@ -21,12 +23,24 @@ export default function CheckoutView({ plan, isYearly, onBack, onComplete }) {
   const totalUsers = isYearly ? usersCost * 12 : usersCost;
   const total = (subtotalBase - descuentoNum) + totalUsers;
 
-  const handlePay = () => {
+  const handlePay = async () => {
     setIsPaying(true);
-    console.log("Checkout iniciado", { plan: plan.name, isYearly, usersLimit, user: formData });
-    setTimeout(() => {
-      onComplete();
-    }, 1500);
+    setCheckoutError('');
+    try {
+      // Crea la suscripción en MercadoPago y redirige a su checkout. El plan NO
+      // se activa acá: se activa por el webhook SOLO cuando MP confirma el pago.
+      const res = await apiPost('/billing/subscribe', { plan_id: plan.id, is_yearly: isYearly });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.init_point) {
+        window.location.href = data.init_point;
+      } else {
+        setCheckoutError(data.detail || 'No se pudo generar el link de pago. Intentá de nuevo.');
+        setIsPaying(false);
+      }
+    } catch {
+      setCheckoutError('Error de conexión. Revisá tu internet e intentá de nuevo.');
+      setIsPaying(false);
+    }
   };
 
   return (
@@ -130,6 +144,11 @@ export default function CheckoutView({ plan, isYearly, onBack, onComplete }) {
                   </div>
                   <span style={{ color: 'rgba(230,255,251,0.5)', fontSize: '0.85rem' }}>Pago único para este periodo.</span>
                 </div>
+                {checkoutError && (
+                  <div style={{ background: 'rgba(239,68,68,0.1)', color: '#FCA5A5', border: '1px solid rgba(239,68,68,0.25)', padding: '10px 14px', borderRadius: 10, fontSize: '0.85rem', fontWeight: 600, marginBottom: 12 }}>
+                    {checkoutError}
+                  </div>
+                )}
                 <button onClick={handlePay} disabled={isPaying || !formData.nombre || !formData.telefono} style={{ width: '100%', padding: '16px 0', borderRadius: 10, border: 'none', background: '#14BBA6', color: '#fff', fontSize: '1.1rem', fontWeight: 700, cursor: (isPaying || !formData.nombre || !formData.telefono) ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, boxShadow: '0 8px 24px rgba(20,187,166, 0.25)', opacity: (isPaying || !formData.nombre || !formData.telefono) ? 0.6 : 1, transition: 'all 0.2s' }}>
                   {isPaying ? 'Procesando...' : (
                     <>
