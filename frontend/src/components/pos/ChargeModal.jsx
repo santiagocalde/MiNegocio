@@ -49,7 +49,7 @@ export default function ChargeModal({
         <div style={{ padding: isMobile ? '16px' : '24px 32px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-card)' }}>
           <div>
             <h2 style={{ fontSize: isMobile ? '1.3rem' : '1.75rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>Procesar Venta</h2>
-            <p style={{ color: 'var(--text-secondary)', margin: '4px 0 0 0', fontSize: '0.95rem' }}>Confirme el método de pago e importe</p>
+            {!isMobile && <p style={{ color: 'var(--text-secondary)', margin: '4px 0 0 0', fontSize: '0.95rem' }}>Confirme el método de pago e importe</p>}
           </div>
           <button onClick={() => { if(!isProcessing) setIsCharging(false); }} style={{ background: 'var(--bg-hover)', border: 'none', borderRadius: '50%', width: isMobile ? '44px' : '36px', height: isMobile ? '44px' : '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1.2rem', transition: 'all 0.2s' }}><Icons.X /></button>
         </div>
@@ -82,18 +82,18 @@ export default function ChargeModal({
           </div>
 
           {/* Right Column: Payments */}
-          <div style={{ width: '60%', padding: '32px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          <div style={{ width: isMobile ? '100%' : '60%', padding: isMobile ? '14px' : '32px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: isMobile ? '14px' : '24px' }}>
             
             {/* Payment Method Selector */}
             <div>
               <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '1px' }}>Método de Pago</label>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: isMobile ? '8px' : '12px' }}>
                 {PAYMENT_METHODS.map(m => (
                   <button
                     key={m.key}
                     onClick={() => { setPaymentMethod(m.key); setUseSplitPayment(false); if (m.key !== 'efectivo') setPayment(String(finalTotal)); setTimeout(() => { if (m.key === 'efectivo') paymentRef?.current?.focus(); }, 100); }}
                     style={{
-                      padding: '16px', borderRadius: '12px', border: '2px solid',
+                      padding: isMobile ? '12px' : '16px', borderRadius: '12px', border: '2px solid',
                       borderColor: !useSplitPayment && paymentMethod === m.key ? 'var(--accent-primary)' : 'var(--border-color)',
                       background: !useSplitPayment && paymentMethod === m.key ? 'rgba(20,187,166, 0.08)' : 'var(--bg-card)',
                       color: !useSplitPayment && paymentMethod === m.key ? 'var(--accent-primary)' : 'var(--text-primary)',
@@ -108,7 +108,7 @@ export default function ChargeModal({
 
             {/* Efectivo */}
             {paymentMethod === 'efectivo' && (
-              <div style={{ background: 'var(--bg-card)', padding: '24px', borderRadius: '16px', border: '1px solid var(--border-color)' }}>
+              <div style={{ background: 'var(--bg-card)', padding: isMobile ? '14px' : '24px', borderRadius: '16px', border: '1px solid var(--border-color)' }}>
                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '1px' }}>¿Con cuánto paga? (Ingresa monto + Enter)</label>
                 <input 
                   ref={paymentRef} 
@@ -117,7 +117,7 @@ export default function ChargeModal({
                   onChange={e => setPayment(e.target.value)} 
                   autoFocus 
                   onKeyDown={e => { if (e.key === 'Enter' && change >= 0 && !isConfirmDisabled) confirmCharge(); e.stopPropagation(); }} 
-                  style={{ width: '100%', background: 'var(--bg-main)', border: '2px solid var(--accent-primary)', color: 'var(--text-primary)', borderRadius: '12px', padding: '16px', fontSize: '2rem', fontFamily: 'var(--font-mono)', textAlign: 'center', outline: 'none', marginBottom: '16px', boxShadow: '0 0 0 4px rgba(20,187,166, 0.1)' }}
+                  style={{ width: '100%', background: 'var(--bg-main)', border: '2px solid var(--accent-primary)', color: 'var(--text-primary)', borderRadius: '12px', padding: '16px', fontSize: isMobile ? '1.5rem' : '2rem', fontFamily: 'var(--font-mono)', textAlign: 'center', outline: 'none', marginBottom: isMobile ? '12px' : '16px', boxShadow: '0 0 0 4px rgba(20,187,166, 0.1)' }}
                 />
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '12px' }}>
                   <button onClick={() => setPayment(finalTotal.toString())} style={{ flex: '1 0 auto', minHeight: '44px', padding: '8px 12px', background: 'var(--accent-success)', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 800, fontSize: 'var(--fs-body)', cursor: 'pointer' }}>Pago Exacto</button>
@@ -129,7 +129,7 @@ export default function ChargeModal({
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px', borderTop: '1px dashed var(--border-color)', paddingTop: '16px' }}>
                   <span style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', fontWeight: 600 }}>VUELTO:</span>
-                  <div style={{ fontSize: '2rem', fontWeight: 800, color: change < 0 ? 'var(--accent-danger)' : 'var(--accent-success)', fontFamily: 'var(--font-mono)' }}>
+                  <div style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: 800, color: change < 0 ? 'var(--accent-danger)' : 'var(--accent-success)', fontFamily: 'var(--font-mono)' }}>
                     {change < 0 ? 'Falta dinero' : `$${change.toLocaleString('es-AR')}`}
                   </div>
                 </div>
@@ -164,7 +164,7 @@ export default function ChargeModal({
 
             {/* Tarjeta débito */}
             {paymentMethod === 'tarjeta' && (
-              <div style={{ background: 'var(--bg-card)', padding: '24px', borderRadius: '16px', border: '1px solid var(--border-color)', textAlign: 'center' }}>
+              <div style={{ background: 'var(--bg-card)', padding: isMobile ? '14px' : '24px', borderRadius: '16px', border: '1px solid var(--border-color)', textAlign: 'center' }}>
                 <div style={{ fontSize: '3rem', marginBottom: '8px' }}>💳</div>
                 <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px' }}>Pasá la tarjeta por el posnet</div>
                 <div style={{ fontSize: '2rem', fontWeight: 900, color: 'var(--accent-primary)', fontFamily: 'var(--font-mono)' }}>${finalTotal.toLocaleString('es-AR')}</div>
@@ -173,20 +173,20 @@ export default function ChargeModal({
             )}
 
             {/* Configs Opcionales (Ticket) */}
-            <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ marginTop: isMobile ? '8px' : 'auto', display: 'flex', flexDirection: 'column', gap: isMobile ? '10px' : '16px' }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', background: 'var(--bg-card)', padding: '16px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
                 <input type="checkbox" checked={autoPrint || false} onChange={e => setAutoPrint?.(e.target.checked)} style={{ width: '24px', height: '24px', accentColor: 'var(--accent-primary)', cursor: 'pointer' }} />
                 <span style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: '1rem' }}><Icons.Printer /> Imprimir Ticket Físico (Opcional)</span>
               </label>
 
               <div style={{ display: 'flex', gap: '16px' }}>
-                <button onClick={() => setIsCharging(false)} style={{ flex: 1, padding: '20px', background: 'transparent', border: '2px solid var(--border-color)', color: 'var(--text-secondary)', borderRadius: '16px', fontSize: '1.1rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s' }}>
+                <button onClick={() => setIsCharging(false)} style={{ flex: 1, padding: isMobile ? '14px' : '20px', background: 'transparent', border: '2px solid var(--border-color)', color: 'var(--text-secondary)', borderRadius: '16px', fontSize: '1.1rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s' }}>
                   Cancelar (Esc)
                 </button>
                 <button 
                   onClick={confirmCharge} 
                   disabled={isConfirmDisabled}
-                  style={{ flex: 2, padding: '20px', background: isConfirmDisabled ? 'var(--bg-hover)' : 'var(--gradient-primary)', color: isConfirmDisabled ? 'var(--text-secondary)' : 'white', border: 'none', borderRadius: '16px', fontSize: '1.2rem', fontWeight: 800, cursor: isConfirmDisabled ? 'not-allowed' : 'pointer', transition: 'all 0.2s', boxShadow: isConfirmDisabled ? 'none' : '0 10px 25px -5px rgba(20,187,166, 0.4)' }}>
+                  style={{ flex: 2, padding: isMobile ? '14px' : '20px', background: isConfirmDisabled ? 'var(--bg-hover)' : 'var(--gradient-primary)', color: isConfirmDisabled ? 'var(--text-secondary)' : 'white', border: 'none', borderRadius: '16px', fontSize: '1.2rem', fontWeight: 800, cursor: isConfirmDisabled ? 'not-allowed' : 'pointer', transition: 'all 0.2s', boxShadow: isConfirmDisabled ? 'none' : '0 10px 25px -5px rgba(20,187,166, 0.4)' }}>
                   {isProcessing ? 'PROCESANDO...' : 'PROCESAR VENTA'}
                 </button>
               </div>
