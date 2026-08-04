@@ -1,17 +1,19 @@
 
 import { apiPut } from '../../services/apiClient';
 import * as QZTray from '../../services/qzTray';
+import useIsMobile from '../../hooks/useIsMobile';
 
 export default function ConfigPrinting({ printConfig, setPrintConfig, qzConnected, setQzConnected, addToast }) {
+  const isMobile = useIsMobile();
   return (
-    <div style={{ background: 'var(--bg-card)', padding: '24px', borderRadius: '16px', border: '1px solid var(--border-color)', margin: '16px 40px' }}>
+    <div style={{ background: 'var(--bg-card)', padding: isMobile ? '16px' : '24px', borderRadius: '16px', border: '1px solid var(--border-color)', margin: isMobile ? '16px 0' : '16px 40px' }}>
       <h3 style={{ margin: '0 0 16px 0', fontSize: '1.3rem', fontWeight: 700, color: 'var(--text-primary)' }}>
         🖨️ Impresión y Cajón Fiscal
         <span style={{ fontSize: '0.75rem', marginLeft: '12px', padding: '2px 8px', borderRadius: '8px', background: qzConnected ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)', color: qzConnected ? 'var(--accent-success)' : 'var(--accent-danger)' }}>
           QZ Tray: {qzConnected ? 'Conectado' : 'No disponible'}
         </span>
       </h3>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px' }}>
         <label style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-primary)', fontSize: '0.9rem' }}>
           <input type="checkbox" checked={printConfig.enabled} onChange={e => setPrintConfig({...printConfig, enabled: e.target.checked})} />
           Habilitar impresión automática
@@ -37,7 +39,7 @@ export default function ConfigPrinting({ printConfig, setPrintConfig, qzConnecte
           <input type="text" value={printConfig.printer_name} onChange={e => setPrintConfig({...printConfig, printer_name: e.target.value})} placeholder="Nombre de impresora (opcional)" style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '6px 12px', borderRadius: '6px', outline: 'none' }} />
         </div>
       </div>
-      <div style={{ marginTop: '16px', display: 'flex', gap: '12px' }}>
+      <div style={{ marginTop: '16px', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
         <button onClick={async () => {
           try {
             await apiPut('/config/printing', printConfig);
