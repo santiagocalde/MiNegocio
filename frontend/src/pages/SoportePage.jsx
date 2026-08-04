@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { usePanelContext } from '../context/PanelContext';
 import { WHATSAPP_LINK } from '../utils/constants';
 import { Icons } from '../components/ui/Icons';
