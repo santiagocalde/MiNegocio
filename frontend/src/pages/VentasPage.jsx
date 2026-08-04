@@ -86,7 +86,7 @@ export default function VentasPage() {
             updateQty={cart.updateQty} setItemQty={cart.setItemQty} removeItem={cart.removeItem} />
           </div>
         </div>
-        <div data-tour="payment-panel" style={{ flex: 1, minHeight: 0, overflowY: "auto" }} style={{ flex: isMobile ? '1' : undefined }}>
+        <div data-tour="payment-panel" style={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
         <PaymentPanel cart={cart.cart} total={cart.total} adjustedTotal={cart.adjustedTotal}
           effectiveTotal={cart.effectiveTotal} subtotal={cart.subtotal} iva={cart.iva}
           discount={cart.discount} ivaRate={cart.ivaRate} change={cart.change}
@@ -147,7 +147,7 @@ export default function VentasPage() {
       <FiadoModal isFiadoOpen={sales.isFiadoOpen} setIsFiadoOpen={sales.setIsFiadoOpen}
         adjustedTotal={cart.adjustedTotal} total={cart.total}
         fiadoName={sales.fiadoName} setFiadoName={sales.setFiadoName}
-        fiadoRef={fiadoRef} confirmFiado={sales.confirmFiado}
+        fiadoRef={fiadoRef} confirmFiado={sales.confirmFiado} onFiadoClose={() => backend.fetchCustomers()}
         customers={backend.customers} />
 
       <CancelConfirmModal isCancelConfirm={cart.isCancelConfirm} setIsCancelConfirm={cart.setIsCancelConfirm}
