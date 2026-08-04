@@ -71,14 +71,12 @@ services:
   frontend:
     build: ./frontend
     ports:
-      - "80:80"
-      - "443:443"
+      - "127.0.0.1:8080:80"
+      - "127.0.0.1:8443:443"
     depends_on:
       - backend
     restart: unless-stopped
     healthcheck:
-      # localhost resuelve a IPv6 (::1) y nginx escucha en IPv4; usar 127.0.0.1.
-      # El :80 hace 301 a HTTPS con cert self-signed → --no-check-certificate.
       test: ["CMD", "wget", "--quiet", "--tries=1", "--no-check-certificate", "-O", "/dev/null", "http://127.0.0.1/"]
       interval: 30s
       timeout: 5s

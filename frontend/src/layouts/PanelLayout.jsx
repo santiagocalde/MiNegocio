@@ -162,6 +162,30 @@ export default function PanelLayout() {
             </button>
           </div>
         )}
+
+        {/* Barra superior fija con Ayuda, Conectado y Cerrar Sesion */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 12, padding: '10px 24px', borderBottom: '1px solid var(--border-color)', background: 'var(--bg-card)', flexShrink: 0 }}>
+          <button onClick={() => backend.setShowHelp?.(true)} style={{ background: 'transparent', color: 'var(--text-primary)', border: '1px solid var(--border-color)', padding: '8px 14px', borderRadius: 8, fontSize: '0.9rem', cursor: 'pointer', fontWeight: 600, transition: 'all 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-hover)'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+            Ayuda
+          </button>
+
+          {backend.backendStatus?.status === 'ok' ? (
+            <span style={{ background: 'var(--bg-hover)', color: 'var(--accent-success)', border: '1px solid rgba(16,185,129,0.2)', padding: '6px 14px', borderRadius: 8, fontSize: '0.85rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent-success)', boxShadow: '0 0 6px var(--accent-success)' }}></span>
+              Conectado
+            </span>
+          ) : (
+            <span style={{ background: 'var(--bg-hover)', color: 'var(--accent-danger)', border: '1px solid rgba(239,68,68,0.2)', padding: '6px 14px', borderRadius: 8, fontSize: '0.85rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent-danger)', boxShadow: '0 0 6px var(--accent-danger)' }}></span>
+              Sin conexion
+            </span>
+          )}
+
+          <button onClick={() => { localStorage.removeItem('saas_token'); window.location.href = '/'; }} style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.15)', color: 'var(--text-secondary)', padding: '8px 14px', borderRadius: 8, fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }} onMouseEnter={e => { e.currentTarget.style.background = 'var(--bg-hover)'; e.currentTarget.style.borderColor = 'rgba(239,68,68,0.3)'; e.currentTarget.style.color = 'var(--accent-danger)'; }} onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)'; e.currentTarget.style.color = 'var(--text-secondary)'; }}>
+            Cerrar Sesion
+          </button>
+        </div>
+
         <Suspense fallback={
           <div style={{ padding: 40, color: 'var(--text-secondary)', fontSize: '1.1rem', fontWeight: 600 }}>
             Cargando...
