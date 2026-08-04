@@ -505,6 +505,25 @@ async def cobrar_fiado(sale_id: int) -> dict:
                     sale["total"], b_id, sale["fiado_name"]
                 )
             await conn.execute("UPDATE sales SET is_fiado = false WHERE id = $1", sale_id)
+    else:
+        import aiosqlite
+        async with aiosqlite.connect(main.DB_PATH) as db:
+            sale_row = await db.execute_fetchall(
+                "SELECT id, is_fiado, fiado_name, total FROM sales WHERE id = ?",
+                (sale_id,)
+            )
+            if not sale_row:
+                raise HTTPException(404, detail="Venta no encontrada")
+            sale = sale_row[0]
+            if not sale[1]:
+                raise HTTPException(400, detail="Esta venta no es un fiado")
+            if sale[2]:
+                await db.execute(
+                    "UPDATE customers SET balance = balance - ? WHERE business_id = ? AND name = ?",
+                    (sale[3], b_id, sale[2])
+                )
+            await db.execute("UPDATE sales SET is_fiado = 0 WHERE id = ?", (sale_id,))
+            await db.commit()
     return {"success": True, "message": "Fiado cobrado"}
 
 
