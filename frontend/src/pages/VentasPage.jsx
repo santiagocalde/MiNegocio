@@ -73,15 +73,15 @@ export default function VentasPage() {
         currentSucursalId={currentSucursalId} setCurrentSucursalId={setCurrentSucursalId} />
 
       <div style={{ padding: '16px 24px', width: '100%', height: isMobile ? 'calc(100dvh - 60px)' : 'calc(100% - 72px)', display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '16px', alignItems: 'flex-start', boxSizing: 'border-box' }}>
-        <div style={{ flex: isMobile ? '0 0 auto' : '2', display: 'flex', flexDirection: 'column', gap: '16px', height: isMobile ? 'auto' : '100%', maxHeight: isMobile ? '40vh' : undefined }}>
-          <div data-tour="search-bar" style={{ width: '100%' }}>
+        <div style={{ flex: isMobile ? '0 0 auto' : '2', display: 'flex', flexDirection: 'column', gap: '16px', minHeight: 0, height: isMobile ? 'auto' : '100%', maxHeight: isMobile ? '40vh' : undefined }}>
+          <div data-tour="search-bar" style={{ width: '100%', flexShrink: 0 }}>
           <SearchBar search={cart.search} setSearch={cart.setSearch} searchRef={searchRef}
             searchError={cart.searchError} flash={cart.flash}
             productsDB={backend.productsDB} handleQuickAdd={cart.handleQuickAdd}
             setShowPriceCheck={backend.setShowPriceCheck} addToast={addToast}
             handleEmptyEnter={() => { if (cart.cart.length > 0) sales.setIsCharging(true); }} />
           </div>
-          <div data-tour="cart-panel">
+          <div data-tour="cart-panel" style={{ flex: '1 1 auto', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
           <CartPanel cart={cart.cart} total={cart.total} adjustedTotal={cart.adjustedTotal}
             updateQty={cart.updateQty} setItemQty={cart.setItemQty} removeItem={cart.removeItem} />
           </div>
