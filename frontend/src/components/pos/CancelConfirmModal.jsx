@@ -4,7 +4,7 @@ import { apiPost } from '../../services/apiClient';
 export default function CancelConfirmModal({ isCancelConfirm, setIsCancelConfirm, clearCart, cart, adjustedTotal, total, currentOperator }) {
   if (!isCancelConfirm) return null;
   return (
-    <div className="modal-overlay"><div className="modal-content" style={{ width: '400px' }}>
+    <div className="modal-overlay"><div className="modal-content" style={{ maxWidth: '400px', width: '100%', maxHeight: '80vh', overflowY: 'auto' }}>
       <h2 className="modal-title" style={{ color: 'var(--accent-danger)' }}>¿Anular Venta?</h2>
       <p style={{ textAlign: 'center', fontSize: '1.2rem', marginBottom: '32px' }}>Se vaciará el carrito y se perderán los productos escaneados.</p>
       <div className="modal-actions">

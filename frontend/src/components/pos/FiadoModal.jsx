@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import useIsMobile from '../../hooks/useIsMobile';
 
 export default function FiadoModal({ isFiadoOpen, setIsFiadoOpen, adjustedTotal, total, fiadoName, setFiadoName, fiadoRef, confirmFiado, customers }) {
   const [fiadoAmount, setFiadoAmount] = useState('');
+  const isMobile = useIsMobile();
   const maxFiado = adjustedTotal ?? total;
   const manualMode = !maxFiado || maxFiado <= 0;
 
@@ -12,7 +14,7 @@ export default function FiadoModal({ isFiadoOpen, setIsFiadoOpen, adjustedTotal,
   };
 
   return (
-    <div className="modal-overlay" onKeyDown={e => { if (e.key === 'Escape') { setIsFiadoOpen(false); setFiadoName(''); } if (e.key === 'Enter' && fiadoName) handleConfirm(); }}><div className="modal-content">
+    <div className="modal-overlay" onKeyDown={e => { if (e.key === 'Escape') { setIsFiadoOpen(false); setFiadoName(''); } if (e.key === 'Enter' && fiadoName) handleConfirm(); }}><div className="modal-content" style={{ maxHeight: isMobile ? "90dvh" : "80vh", overflowY: "auto", padding: isMobile ? "20px" : undefined }}>
       <h2 className="modal-title">{manualMode ? 'Anotar Deuda' : 'Vender Fiado'}</h2>
       {manualMode
         ? <p style={{ textAlign: 'center', fontSize: '1rem', marginBottom: '16px', color: 'var(--text-secondary)' }}>Sin productos en el carrito. Anotá cuánto te debe el cliente.</p>

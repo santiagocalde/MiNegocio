@@ -4,7 +4,7 @@ function DuplicateCodeModal({ showDuplicateCodeModal, setShowDuplicateCodeModal,
   if (!showDuplicateCodeModal) return null;
   return (
     <div className="modal-overlay" onClick={() => setShowDuplicateCodeModal(false)}>
-      <div className="modal-content" onClick={e => e.stopPropagation()} style={{ width: '500px' }}>
+      <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px', width: '100%', maxHeight: '80vh', overflowY: 'auto' }}>
         <h2 className="modal-title" style={{ color: 'var(--accent-warning)', fontSize: '1.4rem' }}>⚠️ Código de Barras Duplicado</h2>
         <p style={{ textAlign: 'center', color: 'var(--text-secondary)', marginBottom: '16px' }}>¿Cuál querés agregar?</p>
         {duplicateCodeMatches.map((p, idx) => (

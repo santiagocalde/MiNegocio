@@ -51,7 +51,7 @@ export default function PaymentPanel({
     localStorage.setItem('minegocio_quick_buttons', JSON.stringify(newBtns));
   };
   return (
-    <div style={{ position: 'relative', flex: 1, display: 'flex', flexDirection: 'column', gap: '12px' }}>
+    <div style={{ position: 'relative', flex: 1, display: 'flex', flexDirection: 'column', gap: '12px', minHeight: 0, overflowY: 'auto' }}>
       <div style={{ background: 'var(--bg-card)', padding: isMobile ? '10px 12px' : '12px 16px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: rowMb }}>
           <h2 style={{ fontSize: isMobile ? '1.05rem' : '1.3rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)', letterSpacing: '-0.2px' }}>Resumen</h2>

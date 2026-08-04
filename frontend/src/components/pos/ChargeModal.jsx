@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import useIsMobile from '../../hooks/useIsMobile';
 import { Icons } from '../ui/Icons';
 
 const PAYMENT_METHODS = [
@@ -25,6 +26,7 @@ export default function ChargeModal({
     (useSplitPayment && splitPayments.reduce((s, p) => s + (parseFloat(p.amount) || 0), 0) < finalTotal);
 
   const transferAlias = businessConfig?.catalogo_whatsapp || businessConfig?.mp_collector_id || null;
+  const isMobile = useIsMobile();
 
   // El hook debe llamarse SIEMPRE (antes de cualquier return) para no violar las Reglas de Hooks
   useEffect(() => {
@@ -44,19 +46,19 @@ export default function ChargeModal({
       <div style={{ background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '24px', width: '900px', maxWidth: '95vw', maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 25px 50px -12px rgba(30,58,95, 0.5)' }}>
         
         {/* Header */}
-        <div style={{ padding: '24px 32px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-card)' }}>
+        <div style={{ padding: isMobile ? '16px' : '24px 32px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-card)' }}>
           <div>
-            <h2 style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>Procesar Venta</h2>
+            <h2 style={{ fontSize: isMobile ? '1.3rem' : '1.75rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>Procesar Venta</h2>
             <p style={{ color: 'var(--text-secondary)', margin: '4px 0 0 0', fontSize: '0.95rem' }}>Confirme el método de pago e importe</p>
           </div>
-          <button onClick={() => { if(!isProcessing) setIsCharging(false); }} style={{ background: 'var(--bg-hover)', border: 'none', borderRadius: '50%', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1.2rem', transition: 'all 0.2s' }}><Icons.X /></button>
+          <button onClick={() => { if(!isProcessing) setIsCharging(false); }} style={{ background: 'var(--bg-hover)', border: 'none', borderRadius: '50%', width: isMobile ? '44px' : '36px', height: isMobile ? '44px' : '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1.2rem', transition: 'all 0.2s' }}><Icons.X /></button>
         </div>
 
         {/* 2-Column Layout */}
-        <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+        <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', flex: 1, overflow: isMobile ? 'auto' : 'hidden' }}>
           
           {/* Left Column: Cart Summary */}
-          <div style={{ width: '40%', borderRight: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', background: 'rgba(30,58,95,0.1)' }}>
+          <div style={{ width: isMobile ? '100%' : '40%', borderRight: isMobile ? 'none' : '1px solid var(--border-color)', borderBottom: isMobile ? '1px solid var(--border-color)' : 'none', display: 'flex', maxHeight: isMobile ? '150px' : undefined, flexDirection: 'column', background: 'rgba(30,58,95,0.1)' }}>
             <div style={{ padding: '20px 24px', fontWeight: 700, color: 'var(--text-secondary)', fontSize: '0.9rem', letterSpacing: '1px', textTransform: 'uppercase', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>Resumen ({cart?.length || 0} ítems)</div>
             
             <div style={{ flex: 1, overflowY: 'auto', padding: '12px 24px' }}>
