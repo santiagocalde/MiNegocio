@@ -39,7 +39,7 @@ export default function LandingHero({ isLoggedIn, goPanel, goOnboard }) {
             marginBottom: 32,
             fontWeight: 600,
           }}>
-            ⭐ +24 kioscos · 156k ventas · 24/7 soporte
+            Más fácil que WhatsApp.
           </p>
         </Reveal>
         <Reveal delay={3}>
