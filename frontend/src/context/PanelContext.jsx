@@ -81,6 +81,24 @@ export function PanelProvider({ children }) {
   // (p. ej. tras un cierre de caja) para que el conteo esté siempre al día.
   useEffect(() => {
     if (!auth.isSaaSAuthenticated || auth.isAuthenticated) return;
+    // Asegurarse de que el token de auth este disponible antes de llamar a la API.
+    // Si el token no esta listo, reintentar en 200ms (race condition al cargar /panel).
+    const token = localStorage.getItem('saas_token');
+    if (!token) {
+      // Reintentar en 200ms cuando el token este disponible
+      const retry = setTimeout(() => {
+        if (!auth.isAuthenticated && !cancelled) {
+          // Forzar re-evaluacion: alternar el gate para que el efecto se dispare de nuevo
+          setOwnerGate('checking');
+          setTimeout(() => {
+            if (localStorage.getItem('saas_token') && !auth.isAuthenticated) {
+              auth.openOwnerTurn().catch(() => setOwnerGate('owner'));
+            }
+          }, 100);
+        }
+      }, 300);
+      return () => clearTimeout(retry);
+    }
     let cancelled = false;
     apiGet('/operators')
       .then(r => r.ok ? r.json() : null)
@@ -96,7 +114,7 @@ export function PanelProvider({ children }) {
           setOwnerGate('pin');
         }
       })
-      .catch(() => { if (!cancelled) setOwnerGate('pin'); });
+      .catch(() => { if (!cancelled) { const tk = localStorage.getItem('saas_token'); setOwnerGate(tk ? 'owner' : 'pin'); } });
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [auth.isSaaSAuthenticated, auth.isAuthenticated]);
