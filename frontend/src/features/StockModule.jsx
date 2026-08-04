@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { TableVirtuoso } from 'react-virtuoso';
 import { usePanelContext } from '../context/PanelContext';
 import { apiGet, apiPost, apiPatch, apiPut, apiDelete, SERVER_URL } from '../services/apiClient';
@@ -7,6 +7,7 @@ import EmptyState from '../components/ui/EmptyState';
 import useSortable from '../hooks/useSortable.jsx';
 import ConfirmModal from '../components/ui/ConfirmModal';
 import ProductThumb from '../components/ui/ProductThumb';
+import CameraBarcodeScanner from '../components/ui/CameraBarcodeScanner';
 
 const Icons = {
   Search: () => <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>,
@@ -111,6 +112,18 @@ export default function StockModule() {
   const [showNewCategory, setShowNewCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [promptState, setPromptState] = useState({ isOpen: false, title: '', value: '', onConfirm: null });
+  const [showScanner, setShowScanner] = useState(false);
+  const [scanTarget, setScanTarget] = useState(null); // 'code' when scanning for product code
+
+  const handleBarcodeScan = useCallback((code) => {
+    setShowScanner(false);
+    if (!code) return;
+    if (scanTarget === 'code') {
+      setNewProduct(prev => ({ ...prev, code }));
+      addToast('Código escaneado: ' + code, 'success');
+    }
+    setScanTarget(null);
+  }, [scanTarget, addToast]);
 
   const handleCreateCategory = async () => {
     if(!newCategoryName.trim()) return;
@@ -639,7 +652,15 @@ export default function StockModule() {
                 { label: 'Stock', key: 'stock', type: 'number' }, { label: 'Stock Mínimo', key: 'min_stock', type: 'number' },
               ].map(f => (
                 <div key={f.key}>
-                  <label style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '6px', fontWeight: 600 }}>{f.label}</label>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                    <label style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 600 }}>{f.label}</label>
+                    {f.key === 'code' && (
+                      <button onClick={() => { setScanTarget('code'); setShowScanner(true); }} title="Escanear código de barras" style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '2px 6px', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', fontWeight: 600 }} onMouseEnter={e => { e.currentTarget.style.color = 'var(--accent-primary)'; e.currentTarget.style.background = 'rgba(20,187,166,0.1)'; }} onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.background = 'transparent'; }}>
+                        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                        Escanear
+                      </button>
+                    )}
+                  </div>
                   <input type={f.type} value={newProduct[f.key]} onChange={e => setNewProduct({ ...newProduct, [f.key]: e.target.value })}
                     style={{ width: '100%', padding: '10px 12px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '8px', outline: 'none', fontSize: '0.95rem', boxSizing: 'border-box' }} />
                 </div>
@@ -734,6 +755,9 @@ export default function StockModule() {
             </div>
           </div>
         </div>
+      )}
+      {showScanner && (
+        <CameraBarcodeScanner onScan={handleBarcodeScan} onClose={() => { setShowScanner(false); setScanTarget(null); }} />
       )}
       {promptState.isOpen && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(30,58,95,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100 }}>

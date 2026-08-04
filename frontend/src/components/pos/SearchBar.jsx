@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { Icons } from '../ui/Icons';
 import AddAmountModal from './AddAmountModal';
+import CameraBarcodeScanner from '../ui/CameraBarcodeScanner';
 import useIsMobile from '../../hooks/useIsMobile';
 
 export default function SearchBar({
@@ -8,7 +9,25 @@ export default function SearchBar({
   productsDB, handleQuickAdd, setShowPriceCheck, addToast, handleEmptyEnter
 }) {
   const [showAddAmountModal, setShowAddAmountModal] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
   const isMobile = useIsMobile();
+
+  const handleBarcodeScan = useCallback((code) => {
+    setShowScanner(false);
+    if (!code || !productsDB) return;
+    setSearch(code);
+    const exact = productsDB.find(p => p.code === code);
+    if (exact) {
+      addToast(`Escaneado: ${exact.name}`, 'info');
+      handleQuickAdd(exact.code, exact.name, exact.price);
+      setSearch('');
+      searchRef.current?.focus();
+    } else {
+      addToast(`Producto con código ${code} no encontrado`, 'error');
+      setSearch(code);
+      searchRef.current?.focus();
+    }
+  }, [productsDB, handleQuickAdd, setSearch, searchRef, addToast]);
   const autocomplete = useMemo(() => {
     if (!search.trim() || !productsDB) return [];
     return productsDB
@@ -39,6 +58,9 @@ export default function SearchBar({
 
       <div className={`search-bar ${flash ? 'flash' : ''}`} style={{ margin: 0, position: 'relative', borderColor: searchError ? 'var(--accent-danger)' : 'var(--border-color)', borderWidth: searchError ? '2px' : '1px' }}>
         <Icons.Search />
+        <button onClick={() => setShowScanner(true)} title="Escanear con cámara" style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '6px', transition: 'all 0.2s' }} onMouseEnter={e => { e.currentTarget.style.color = 'var(--accent-primary)'; e.currentTarget.style.background = 'rgba(20,187,166,0.1)'; }} onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.background = 'transparent'; }}>
+          <Icons.Camera style={{ width: '18px', height: '18px' }} />
+        </button>
         <input
           ref={searchRef}
           type="text"
@@ -122,6 +144,9 @@ export default function SearchBar({
           </div>
         )}
       </div>
+      {showScanner && (
+        <CameraBarcodeScanner onScan={handleBarcodeScan} onClose={() => setShowScanner(false)} />
+      )}
       <AddAmountModal show={showAddAmountModal} setShow={setShowAddAmountModal} handleQuickAdd={handleQuickAdd} />
     </div>
   );
