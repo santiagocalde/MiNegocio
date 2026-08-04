@@ -24,7 +24,7 @@ const cards = [
   },
   {
     icon: Svg.Message, title: 'Soporte Técnico',
-    desc: '¿Tenés un problema técnico o un error? Abrí un ticket con nuestro equipo y te lo resolvemos rápido.',
+    desc: '¿Tenés un problema técnico o un error? Escribinos por WhatsApp y te ayudamos al toque.',
     msg: 'Hola!%20Necesito%20soporte%20técnico%20para%20MiNegocio'
   },
 ];
