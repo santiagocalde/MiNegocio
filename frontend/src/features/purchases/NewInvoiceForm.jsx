@@ -76,8 +76,8 @@ export default function NewInvoiceForm({
           </form>
         </div>
 
-        <div style={{ flex: 1, overflowY: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+        <div style={{ flex: 1, overflowY: 'auto', overflowX: 'auto' }}>
+          <table style={{ width: '100%', minWidth: 540, borderCollapse: 'collapse', textAlign: 'left' }}>
             <thead style={{ position: 'sticky', top: 0, background: 'var(--bg-main)', zIndex: 1 }}>
               <tr style={{ color: 'var(--text-primary)', fontSize: '0.8rem', fontWeight: 700, borderBottom: '1px solid var(--border-color)' }}>
                 <th style={{ padding: '16px 24px' }}>Producto</th>
