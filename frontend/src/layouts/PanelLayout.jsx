@@ -162,6 +162,7 @@ export default function PanelLayout() {
             </button>
           </div>
         )}
+        {location.pathname === '/panel/inicio' && (
         <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 12, padding: '10px 24px', borderBottom: '1px solid var(--border-color)', background: 'var(--bg-card)', flexShrink: 0 }}>
           <button onClick={() => backend.setShowHelp?.(true)} style={{ background: 'transparent', color: 'var(--text-primary)', border: '1px solid var(--border-color)', padding: '8px 14px', borderRadius: 8, fontSize: '0.9rem', cursor: 'pointer', fontWeight: 600 }}>Ayuda</button>
           {backend.backendStatus?.status === 'ok' ? (
@@ -173,6 +174,7 @@ export default function PanelLayout() {
           )}
           <button onClick={() => { localStorage.removeItem('saas_token'); window.location.href = '/'; }} style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.15)', color: 'var(--text-secondary)', padding: '8px 14px', borderRadius: 8, fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer' }}>Cerrar Sesion</button>
         </div>
+        )}
 
         <Suspense fallback={
           <div style={{ padding: 40, color: 'var(--text-secondary)', fontSize: '1.1rem', fontWeight: 600 }}>
