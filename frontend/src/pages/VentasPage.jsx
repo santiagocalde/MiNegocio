@@ -70,8 +70,7 @@ export default function VentasPage() {
   return (
     <>
       <TopBar currentOperator={auth.currentOperator} sucursales={backend.sucursales}
-        currentSucursalId={currentSucursalId} setCurrentSucursalId={setCurrentSucursalId}
-        backendStatus={backend.backendStatus} addToast={addToast} setShowHelp={backend.setShowHelp} />
+        currentSucursalId={currentSucursalId} setCurrentSucursalId={setCurrentSucursalId} />
 
       <div style={{ padding: '16px 24px', width: '100%', height: 'calc(100% - 72px)', display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '16px', alignItems: 'flex-start', boxSizing: 'border-box' }}>
         <div style={{ flex: isMobile ? '0 0 auto' : '2', display: 'flex', flexDirection: 'column', gap: '16px', height: isMobile ? 'auto' : '100%', maxHeight: isMobile ? '50vh' : undefined }}>
