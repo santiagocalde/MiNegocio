@@ -57,6 +57,39 @@ export default function useAuth(addToast) {
     }
   };
 
+  // Abre turno sin PIN para cuentas de un solo operador (el dueño). El backend
+  // autoriza por el JWT de la cuenta y responde 409 si hay más de un operador
+  // (ahí sí hace falta el PIN). Devuelve true si abrió turno, false si no.
+  const openOwnerTurn = async () => {
+    try {
+      const res = await apiPost(`/login/owner`);
+      if (!res.ok) return false;
+      const data = await res.json();
+      const operatorObj = data.operator_id
+        ? { id: data.operator_id, name: data.name || data.operator_name || 'Dueño', role: data.role || 'admin' }
+        : { name: data.name || 'Dueño', role: 'admin' };
+      setCurrentOperator(operatorObj);
+      setCurrentTurnId(data.turn_id);
+      if (data.turn_opened_at) {
+        setTurnOpenedAt(data.turn_opened_at);
+        localStorage.setItem(K_TURN_OPENED, data.turn_opened_at);
+      } else {
+        setTurnOpenedAt(null);
+        localStorage.removeItem(K_TURN_OPENED);
+      }
+      localStorage.setItem(K_OPERATOR, JSON.stringify(operatorObj));
+      localStorage.setItem(K_TURN_ID, String(data.turn_id || ''));
+      localStorage.removeItem('minegocio_onboarding_pin');
+      if (data.turn_auto_opened) {
+        localStorage.setItem('minegocio_onboarding_pending', 'true');
+      }
+      setIsAuthenticated(true);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
   const handleSaaSCallback = (data) => {
     setIsSaaSAuthenticated(true);
     if (data.mode) setSaasMode(data.mode);
@@ -72,6 +105,7 @@ export default function useAuth(addToast) {
     initialCash, setInitialCash,
     pin, setPin,
     handlePin,
+    openOwnerTurn,
     handleSaaSCallback,
   };
 }
