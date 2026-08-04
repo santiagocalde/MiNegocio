@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Icons } from '../ui/Icons';
 import Tooltip from '../ui/Tooltip';
@@ -88,11 +88,13 @@ export default function Sidebar({
   // Se ajusta al cambiar de mobile↔desktop con el patrón de "estado derivado en
   // render" (sin effect) para no disparar renders en cascada.
   const [collapsed, setCollapsed] = useState(isMobile);
-  const [prevIsMobile, setPrevIsMobile] = useState(isMobile);
-  if (isMobile !== prevIsMobile) {
-    setPrevIsMobile(isMobile);
-    setCollapsed(isMobile);
-  }
+  const prevIsMobileRef = useRef(isMobile);
+  useEffect(() => {
+    if (prevIsMobileRef.current !== isMobile) {
+      prevIsMobileRef.current = isMobile;
+      setCollapsed(isMobile);
+    }
+  }, [isMobile]);
 
   const role = currentOperator?.role || 'admin';
 
