@@ -56,7 +56,7 @@ export default function CameraBarcodeScanner({ onScan, onClose }) {
       });
       if (!mountedRef.current) { stream.getTracks().forEach(t => t.stop()); return; }
       streamRef.current = stream;
-      if (!videoRef.current) { stream.getTracks().forEach(t => t.stop()); setError("No se pudo iniciar la camara"); return; }
+      
       videoRef.current.srcObject = stream;
       setMode("native");
       await videoRef.current.play();
@@ -93,6 +93,7 @@ export default function CameraBarcodeScanner({ onScan, onClose }) {
       const { default: Quagga } = await import("@ericblade/quagga2");
       quaggaRef.current = Quagga;
       setMode("quagga");
+      await new Promise(r => setTimeout(r, 50));
       const targetEl = document.getElementById("quagga-viewport");
       if (!targetEl || !mountedRef.current) return;
       Quagga.init({
@@ -164,8 +165,8 @@ export default function CameraBarcodeScanner({ onScan, onClose }) {
             {/* video y viewport SIEMPRE en el DOM: los refs deben existir cuando
                 arranca la camara, si no startNative/startQuagga fallan con null. */}
             <video ref={videoRef} autoPlay playsInline muted
-              style={{ width: "100%", height: "100%", objectFit: "cover", display: mode === "native" ? "block" : "none" }} />
-            <div id="quagga-viewport" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", display: mode === "quagga" ? "block" : "none" }} />
+              style={{ width: "100%", height: "100%", objectFit: "cover", opacity: mode === "native" ? 1 : 0, position: mode === "native" ? "relative" : "absolute", pointerEvents: mode === "native" ? "auto" : "none" }} />
+            <div id="quagga-viewport" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", opacity: mode === "quagga" ? 1 : 0, pointerEvents: mode === "quagga" ? "auto" : "none" }} />
             {mode === "detecting" && (
               <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff" }}>
                 <p style={{ fontSize: "0.95rem" }}>Iniciando camara...</p>
