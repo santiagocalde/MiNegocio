@@ -26,7 +26,7 @@ export default function LandingHero({ isLoggedIn, goPanel, goOnboard }) {
             paddingRight: '0.1em',
             color: '#ffffff'
           }}>
-            ¿Dejá el cuaderno.<br />
+            Dejá el cuaderno.<br />
             <span className="lp-gradient-text" style={{ fontStyle: 'italic' }}>Tu kiosco merece algo mejor.</span>
           </h1>
         </Reveal>
