@@ -75,7 +75,8 @@ export function PanelProvider({ children }) {
   }, []);
 
   // Decidir el gate de apertura de turno: si la cuenta tiene un solo operador
-  // (el dueño) se abre sin PIN; con dos o más se mantiene el PIN (atribución +
+  // (el dueño) se abre el turno AUTOMÁTICAMENTE, sin PIN ni toque, y entra
+  // derecho al panel. Con dos o más operadores se mantiene el PIN (atribución +
   // anti-robo). Se re-chequea cada vez que se vuelve a la pantalla de apertura
   // (p. ej. tras un cierre de caja) para que el conteo esté siempre al día.
   useEffect(() => {
@@ -83,13 +84,21 @@ export function PanelProvider({ children }) {
     let cancelled = false;
     apiGet('/operators')
       .then(r => r.ok ? r.json() : null)
-      .then(list => {
+      .then(async (list) => {
         if (cancelled) return;
         const count = Array.isArray(list) ? list.length : null;
-        setOwnerGate(count !== null && count <= 1 ? 'owner' : 'pin');
+        if (count !== null && count <= 1) {
+          // Dueño único: abrir el turno solo, sin fricción. Si por algún motivo
+          // falla (red, etc.), mostrar el botón "Abrir Caja" como respaldo.
+          const ok = await auth.openOwnerTurn();
+          if (!cancelled && !ok) setOwnerGate('owner');
+        } else {
+          setOwnerGate('pin');
+        }
       })
       .catch(() => { if (!cancelled) setOwnerGate('pin'); });
     return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [auth.isSaaSAuthenticated, auth.isAuthenticated]);
 
   useEffect(() => {
