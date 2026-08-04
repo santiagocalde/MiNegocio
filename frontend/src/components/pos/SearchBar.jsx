@@ -13,7 +13,6 @@ export default function SearchBar({
   const isMobile = useIsMobile();
 
   const handleBarcodeScan = useCallback((code) => {
-    setShowScanner(false);
     if (!code || !productsDB) return;
     setSearch(code);
     const exact = productsDB.find(p => p.code === code);
@@ -23,9 +22,7 @@ export default function SearchBar({
       setSearch('');
       searchRef.current?.focus();
     } else {
-      addToast(`Producto con código ${code} no encontrado`, 'error');
       setSearch(code);
-      searchRef.current?.focus();
     }
   }, [productsDB, handleQuickAdd, setSearch, searchRef, addToast]);
   const autocomplete = useMemo(() => {

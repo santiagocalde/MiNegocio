@@ -1,13 +1,35 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 
-export default function CameraBarcodeScanner({ onScan, onClose }) {
+function beepSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = "square";
+    osc.frequency.value = 1800;
+    gain.gain.value = 0.15;
+    osc.start();
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1);
+    osc.stop(ctx.currentTime + 0.1);
+  } catch(e) {}
+}
+
+export default function CameraBarcodeScanner({ onScan, onClose, onProductNotFound }) {
   const [error, setError] = useState(null);
   const [mode, setMode] = useState("detecting");
+  const [flashOn, setFlashOn] = useState(false);
+  const [scannedCount, setScannedCount] = useState(0);
+  const [lastCode, setLastCode] = useState(null);
   const videoRef = useRef(null);
   const streamRef = useRef(null);
   const quaggaRef = useRef(null);
   const stopRef = useRef(false);
   const mountedRef = useRef(true);
+  const lastScanRef = useRef("");
+  const lastScanTimeRef = useRef(0);
+  const flashTrackRef = useRef(null);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -30,6 +52,22 @@ export default function CameraBarcodeScanner({ onScan, onClose }) {
     }
   }
 
+  const handleScan = useCallback((code) => {
+    const now = Date.now();
+    if (code === lastScanRef.current && now - lastScanTimeRef.current < 1500) return;
+    lastScanRef.current = code;
+    lastScanTimeRef.current = now;
+    
+    // Feedback
+    beepSound();
+    try { navigator.vibrate?.(50); } catch(e) {}
+    
+    setScannedCount(n => n + 1);
+    setLastCode(code);
+    
+    onScan(code);
+  }, [onScan]);
+
   async function init() {
     try {
       if ("BarcodeDetector" in window) {
@@ -48,6 +86,14 @@ export default function CameraBarcodeScanner({ onScan, onClose }) {
     }
   }
 
+  function toggleFlash() {
+    if (flashTrackRef.current) {
+      flashTrackRef.current.applyConstraints({ advanced: [{ torch: !flashOn }] })
+        .then(() => setFlashOn(!flashOn))
+        .catch(() => {});
+    }
+  }
+
   async function startNative(formats) {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -57,19 +103,23 @@ export default function CameraBarcodeScanner({ onScan, onClose }) {
       if (!mountedRef.current) { stream.getTracks().forEach(t => t.stop()); return; }
       streamRef.current = stream;
       
-      videoRef.current.srcObject = stream;
+      const videoTrack = stream.getVideoTracks()[0];
+      flashTrackRef.current = videoTrack;
+      
       setMode("native");
+      await new Promise(r => setTimeout(r, 50));
+      if (!videoRef.current) { stream.getTracks().forEach(t => t.stop()); if (mountedRef.current) setError("No se pudo iniciar la camara"); return; }
+      videoRef.current.srcObject = stream;
       await videoRef.current.play();
+      
       const detector = new BarcodeDetector({ formats });
+      
       function tick() {
         if (stopRef.current || !mountedRef.current) return;
         if (videoRef.current && videoRef.current.readyState >= 2) {
           detector.detect(videoRef.current).then(barcodes => {
             if (!stopRef.current && barcodes.length > 0) {
-              stopRef.current = true;
-              cleanup();
-              onScan(barcodes[0].rawValue);
-              return;
+              handleScan(barcodes[0].rawValue);
             }
             requestAnimationFrame(tick);
           }).catch(() => { requestAnimationFrame(tick); });
@@ -96,6 +146,17 @@ export default function CameraBarcodeScanner({ onScan, onClose }) {
       await new Promise(r => setTimeout(r, 50));
       const targetEl = document.getElementById("quagga-viewport");
       if (!targetEl || !mountedRef.current) return;
+      
+      // Get stream for flashlight control
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "environment", width: { ideal: 640 }, height: { ideal: 480 } },
+          audio: false,
+        });
+        flashTrackRef.current = stream.getVideoTracks()[0];
+        stream.getTracks().forEach(t => t.stop());
+      } catch(e) {}
+      
       Quagga.init({
         inputStream: {
           name: "Live",
@@ -116,9 +177,7 @@ export default function CameraBarcodeScanner({ onScan, onClose }) {
         if (stopRef.current) return;
         const code = result.codeResult.code;
         if (code) {
-          stopRef.current = true;
-          cleanup();
-          onScan(code);
+          handleScan(code);
         }
       });
     } catch (e) {
@@ -137,6 +196,12 @@ export default function CameraBarcodeScanner({ onScan, onClose }) {
     </svg>
   );
 
+  const FlashIcon = () => (
+    <svg width="22" height="22" fill={flashOn ? "#FFD700" : "none"} stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+    </svg>
+  );
+
   return (
     <div style={{
       position: "fixed", inset: 0, background: "rgba(0,0,0,0.95)",
@@ -144,7 +209,7 @@ export default function CameraBarcodeScanner({ onScan, onClose }) {
       zIndex: 2000, flexDirection: "column", padding: "16px"
     }}>
       <style>
-        {"@keyframes scanner-laser { 0% { transform: translateY(-100%); } 100% { transform: translateY(100%); } } #quagga-viewport video, #quagga-viewport canvas { position:absolute; inset:0; width:100%!important; height:100%!important; object-fit:cover; }"}
+        {"@keyframes scanner-laser { 0% { transform: translateY(-100%); } 100% { transform: translateY(100%); } } #quagga-viewport video, #quagga-viewport canvas { position:absolute; inset:0; width:100% !important; height:100% !important; object-fit:cover; }"}
       </style>
       <div style={{
         position: "relative", width: "100%", maxWidth: "420px",
@@ -162,13 +227,11 @@ export default function CameraBarcodeScanner({ onScan, onClose }) {
           </div>
         ) : (
           <>
-            {/* video y viewport SIEMPRE en el DOM: los refs deben existir cuando
-                arranca la camara, si no startNative/startQuagga fallan con null. */}
             <video ref={videoRef} autoPlay playsInline muted
               style={{ width: "100%", height: "100%", objectFit: "cover", opacity: mode === "native" ? 1 : 0, position: mode === "native" ? "relative" : "absolute", pointerEvents: mode === "native" ? "auto" : "none" }} />
             <div id="quagga-viewport" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", opacity: mode === "quagga" ? 1 : 0, pointerEvents: mode === "quagga" ? "auto" : "none" }} />
             {mode === "detecting" && (
-              <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "#fff" }}>
                 <p style={{ fontSize: "0.95rem" }}>Iniciando camara...</p>
               </div>
             )}
@@ -191,21 +254,52 @@ export default function CameraBarcodeScanner({ onScan, onClose }) {
               </div>
             </div>
 
-            <div style={{ position: "absolute", bottom: "24px", left: 0, right: 0, textAlign: "center", pointerEvents: "none" }}>
-              <p style={{ color: "#fff", fontSize: "0.85rem", margin: 0, textShadow: "0 2px 4px rgba(0,0,0,0.8)" }}>
-                Apunta al codigo de barras
-              </p>
+            {/* Top controls: close + flashlight + counter */}
+            <div style={{ position: "absolute", top: "12px", left: "12px", right: "12px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                {scannedCount > 0 && (
+                  <div style={{ background: "rgba(20,187,166,0.9)", color: "#fff", padding: "4px 12px", borderRadius: "20px", fontSize: "0.8rem", fontWeight: 700 }}>
+                    {scannedCount} escaneado{scannedCount !== 1 ? "s" : ""}
+                  </div>
+                )}
+              </div>
+              <div style={{ display: "flex", gap: "8px" }}>
+                <button onClick={toggleFlash} style={{
+                  width: "36px", height: "36px", background: "rgba(0,0,0,0.5)",
+                  border: "1px solid rgba(255,255,255,0.2)", borderRadius: "50%",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  cursor: "pointer", color: flashOn ? "#FFD700" : "#fff"
+                }}>
+                  <FlashIcon />
+                </button>
+                <button onClick={onClose} style={{
+                  width: "36px", height: "36px", background: "rgba(0,0,0,0.5)",
+                  border: "1px solid rgba(255,255,255,0.2)", borderRadius: "50%",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  cursor: "pointer", color: "#fff"
+                }}>
+                  <CloseIcon />
+                </button>
+              </div>
             </div>
 
-            <button onClick={onClose} style={{
-              position: "absolute", top: "12px", right: "12px",
-              width: "36px", height: "36px", background: "rgba(0,0,0,0.5)",
-              border: "1px solid rgba(255,255,255,0.2)", borderRadius: "50%",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              cursor: "pointer", color: "#fff"
-            }}>
-              <CloseIcon />
-            </button>
+            {/* Bottom: status text + last scanned */}
+            <div style={{ position: "absolute", bottom: "16px", left: "12px", right: "12px", textAlign: "center", pointerEvents: "none" }}>
+              {lastCode ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                  <span style={{ background: "rgba(0,0,0,0.6)", color: "var(--accent-primary, #14BBA6)", padding: "4px 16px", borderRadius: "12px", fontSize: "0.85rem", fontWeight: 700, fontFamily: "var(--font-mono)" }}>
+                    {lastCode}
+                  </span>
+                  <p style={{ color: "#fff", fontSize: "0.78rem", margin: 0, textShadow: "0 2px 4px rgba(0,0,0,0.8)" }}>
+                    Apunta al siguiente producto
+                  </p>
+                </div>
+              ) : (
+                <p style={{ color: "#fff", fontSize: "0.85rem", margin: 0, textShadow: "0 2px 4px rgba(0,0,0,0.8)" }}>
+                  Apunta al codigo de barras
+                </p>
+              )}
+            </div>
           </>
         )}
       </div>

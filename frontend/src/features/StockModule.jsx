@@ -116,7 +116,6 @@ export default function StockModule() {
   const [scanTarget, setScanTarget] = useState(null); // 'code' when scanning for product code
 
   const handleBarcodeScan = useCallback((code) => {
-    setShowScanner(false);
     if (!code) return;
     if (scanTarget === 'code') {
       setNewProduct(prev => ({ ...prev, code }));
