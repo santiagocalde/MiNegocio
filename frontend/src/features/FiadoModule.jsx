@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { usePanelContext } from '../context/PanelContext';
 import { apiGet, apiPost } from '../services/apiClient';
 import { SkeletonCard } from '../components/ui/Skeleton';
+import useIsMobile from '../hooks/useIsMobile';
 
 const Icons = {
   Search: () => <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>,
@@ -14,6 +15,7 @@ const Icons = {
 
 export default function FiadoModule() {
   const { addToast, currentPlan } = usePanelContext();
+  const isMobile = useIsMobile();
   const [cobranza, setCobranza] = useState(null); // {nombre, telefono, texto, loading}
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -25,6 +27,7 @@ export default function FiadoModule() {
   const [newClientModal, setNewClientModal] = useState(false);
   const [newClientName, setNewClientName] = useState('');
   const [newClientPhone, setNewClientPhone] = useState('');
+  const [newClientAmount, setNewClientAmount] = useState('');
 
   const fetchCustomers = async () => {
     setLoading(true);
@@ -98,12 +101,13 @@ export default function FiadoModule() {
   const handleCreateClient = async () => {
     if (!newClientName.trim()) return;
     try {
-      const res = await apiPost('/customers', { name: newClientName, phone: newClientPhone });
+      const res = await apiPost('/customers', { name: newClientName, phone: newClientPhone, amount: Number(newClientAmount) || 0, operator: 'Cajero' });
       if (res.ok) {
         addToast?.('Cliente creado exitosamente.', 'success');
         setNewClientModal(false);
         setNewClientName('');
         setNewClientPhone('');
+        setNewClientAmount('');
         fetchCustomers();
       } else {
         addToast?.('Error al crear cliente.', 'error');
@@ -161,8 +165,8 @@ export default function FiadoModule() {
       </div>
 
       {/* BUSCADOR Y NUEVO CLIENTE */}
-      <div style={{ display: 'flex', gap: '16px', marginBottom: '24px', flexShrink: 0 }}>
-        <div style={{ position: 'relative', flex: 1 }}>
+      <div style={{ display: 'flex', gap: '16px', marginBottom: '24px', flexShrink: 0, flexWrap: 'wrap' }}>
+        <div style={{ position: 'relative', flex: 1, minWidth: isMobile ? '100%' : 220 }}>
           <span style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }}><Icons.Search /></span>
           <input 
             type="text" 
@@ -174,7 +178,7 @@ export default function FiadoModule() {
         </div>
         <button 
           onClick={() => setNewClientModal(true)}
-          style={{ padding: '0 24px', background: 'var(--gradient-primary)', color: 'white', border: 'none', borderRadius: '12px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 8px 16px -4px rgba(20,187,166,0.3)' }}
+          style={{ padding: isMobile ? '14px 24px' : '0 24px', width: isMobile ? '100%' : undefined, justifyContent: 'center', background: 'var(--gradient-primary)', color: 'white', border: 'none', borderRadius: '12px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 8px 16px -4px rgba(20,187,166,0.3)' }}
         >
           <span style={{ fontSize: '1.2rem' }}>+</span> Nuevo Cliente
         </button>
@@ -198,7 +202,7 @@ export default function FiadoModule() {
             <div key={c.id} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '16px', overflow: 'hidden', transition: 'all 0.2s' }}>
               <div 
                 onClick={() => handleExpand(c)}
-                style={{ padding: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', transition: 'all 0.15s', background: isExpanded ? 'rgba(255,255,255,0.02)' : 'transparent' }}
+                style={{ padding: '16px', display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'stretch' : 'center', gap: isMobile ? '12px' : 0, justifyContent: 'space-between', cursor: 'pointer', transition: 'all 0.15s', background: isExpanded ? 'rgba(255,255,255,0.02)' : 'transparent' }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1 }}>
                   <div style={{ width: '40px', height: '40px', background: 'rgba(255,255,255,0.05)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}>
@@ -226,8 +230,8 @@ export default function FiadoModule() {
                   </div>
                 </div>
                 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-                  <div style={{ textAlign: 'right' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '10px' : '20px', flexWrap: 'wrap', justifyContent: isMobile ? 'space-between' : 'flex-end' }}>
+                  <div style={{ textAlign: isMobile ? 'left' : 'right' }}>
                     <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', textTransform: 'uppercase', marginBottom: '2px' }}>Saldo Deudor</div>
                     <div style={{ fontFamily: 'var(--font-mono)', fontSize: '1.2rem', fontWeight: 800, color: 'var(--accent-warning)' }}>${(c.balance ?? 0).toLocaleString('es-AR')}</div>
                   </div>
@@ -253,8 +257,8 @@ export default function FiadoModule() {
               </div>
 
               {isExpanded && (
-                <div style={{ borderTop: '1px solid var(--border-color)', background: 'var(--bg-main)' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                <div style={{ borderTop: '1px solid var(--border-color)', background: 'var(--bg-main)', overflowX: 'auto' }}>
+                  <table style={{ width: '100%', minWidth: 380, borderCollapse: 'collapse', textAlign: 'left' }}>
                     <thead>
                       <tr style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: 600, borderBottom: '1px solid var(--border-color)' }}>
                         <th style={{ padding: '16px 24px' }}>Fecha</th>
@@ -365,9 +369,15 @@ export default function FiadoModule() {
               <input type="text" value={newClientName} onChange={e => setNewClientName(e.target.value)} style={{ width: '100%', background: 'var(--bg-main)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '12px 16px', borderRadius: '12px', fontSize: '1rem', outline: 'none' }} autoFocus />
             </div>
 
-            <div style={{ marginBottom: '24px' }}>
+            <div style={{ marginBottom: '16px' }}>
               <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Teléfono (Opcional)</label>
               <input type="text" value={newClientPhone} onChange={e => setNewClientPhone(e.target.value)} style={{ width: '100%', background: 'var(--bg-main)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '12px 16px', borderRadius: '12px', fontSize: '1rem', outline: 'none' }} />
+            </div>
+
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-secondary)' }}>¿Cuánto te debe? ($ opcional)</label>
+              <input type="number" inputMode="numeric" value={newClientAmount} onChange={e => setNewClientAmount(e.target.value)} placeholder="Ej: 5000" style={{ width: '100%', background: 'var(--bg-main)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '12px 16px', borderRadius: '12px', fontSize: '1rem', outline: 'none', boxSizing: 'border-box' }} />
+              <p style={{ margin: '8px 0 0', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>Si lo dejás vacío, el cliente aparece cuando le cargues una venta fiada.</p>
             </div>
 
             <div style={{ display: 'flex', gap: '12px' }}>

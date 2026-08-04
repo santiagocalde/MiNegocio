@@ -5,6 +5,7 @@ import { apiGet, apiPost } from '../services/apiClient';
 import { SkeletonTable } from '../components/ui/Skeleton';
 import EmptyState from '../components/ui/EmptyState';
 import FeatureGate from '../components/ui/FeatureGate';
+import useIsMobile from '../hooks/useIsMobile';
 
 const Icons = {
   Truck: () => <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 14V6h8v8m-8 0a2 2 0 100 4 2 2 0 000-4zm8 0a2 2 0 100 4 2 2 0 000-4zm-8-8h8m0 0l3 3v5h-3m-8-8H4v8h4" /></svg>,
@@ -13,6 +14,7 @@ const Icons = {
 
 export default function ProveedoresModule() {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const { addToast, currentPlan } = usePanelContext();
   const PLAN_WEIGHT = { trial: 1, simple: 1, pro: 2, ia: 3 };
   const isLocked = PLAN_WEIGHT[currentPlan] < PLAN_WEIGHT['simple'];
@@ -77,7 +79,7 @@ export default function ProveedoresModule() {
   return (
     <FeatureGate isLocked={isLocked} requiredPlan="Simple">
     <div style={{ padding: '12px 20px', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexShrink: 0 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', marginBottom: '12px', flexShrink: 0, flexWrap: 'wrap' }}>
         <h2 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>Gestión de Proveedores</h2>
         <button onClick={() => setShowModal(true)} style={{ background: 'var(--gradient-primary)', border: 'none', color: 'white', padding: '12px 24px', borderRadius: '8px', fontSize: '0.9rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', transition: 'all 0.15s' }}>
            <Icons.Plus /> Nuevo Proveedor
@@ -94,8 +96,8 @@ export default function ProveedoresModule() {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', paddingRight: '8px' }}>
              {proveedores.map(p => (
-               <div key={p.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-card)', padding: '16px 24px', borderRadius: '12px', border: '1px solid var(--border-color)', transition: 'all 0.15s, transform 0.2s', cursor: 'pointer' }} onMouseEnter={e=>e.currentTarget.style.transform='translateX(4px)'} onMouseLeave={e=>e.currentTarget.style.transform='none'}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '24px', flex: 1 }}>
+               <div key={p.id} style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'stretch' : 'center', gap: isMobile ? '12px' : 0, justifyContent: 'space-between', background: 'var(--bg-card)', padding: isMobile ? '14px 16px' : '16px 24px', borderRadius: '12px', border: '1px solid var(--border-color)', transition: 'all 0.15s, transform 0.2s', cursor: 'pointer' }} onMouseEnter={e=>{ if(!isMobile) e.currentTarget.style.transform='translateX(4px)'; }} onMouseLeave={e=>e.currentTarget.style.transform='none'}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '12px' : '24px', flex: 1, flexWrap: 'wrap' }}>
                      <div style={{ width: '48px', height: '48px', background: 'rgba(20,187,166, 0.1)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-primary)' }}>
                        <Icons.Truck />
                      </div>
@@ -103,14 +105,14 @@ export default function ProveedoresModule() {
                        <h3 style={{ margin: '0 0 4px 0', fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-primary)' }}>{p.name}</h3>
                        <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Contacto: {p.contact} • {p.phone}</p>
                      </div>
-                     <div style={{ width: '200px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+                     <div style={{ width: isMobile ? '100%' : '200px', display: 'flex', alignItems: 'center', gap: '16px' }}>
                         <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Deuda:</span>
                         <span style={{ fontSize: '1.2rem', fontWeight: 800, color: (p.debt ?? 0) > 0 ? 'var(--accent-danger)' : 'var(--accent-success)', fontFamily: 'var(--font-mono)' }}>${(p.debt ?? 0).toLocaleString('es-AR')}</span>
                      </div>
                   </div>
-                   <div style={{ display: 'flex', gap: '12px' }}>
-                      <button onClick={(e) => { e.stopPropagation(); navigate(`/panel/compras?supplier_id=${p.id}`); }} style={{ padding: '8px 16px', background: 'transparent', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '8px', fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s' }}>Historial</button>
-                       {p.debt > 0 && <button onClick={(e) => { e.stopPropagation(); setShowAbonar(p); setAbonarMonto(''); setAbonarMotivo(''); }} style={{ padding: '8px 16px', background: 'rgba(239, 68, 68, 0.1)', color: 'var(--accent-danger)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '8px', fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s' }}>Abonar</button>}
+                   <div style={{ display: 'flex', gap: '12px', width: isMobile ? '100%' : undefined }}>
+                      <button onClick={(e) => { e.stopPropagation(); navigate(`/panel/compras?supplier_id=${p.id}`); }} style={{ padding: '8px 16px', background: 'transparent', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '8px', fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s', flex: isMobile ? 1 : undefined }}>Historial</button>
+                       {p.debt > 0 && <button onClick={(e) => { e.stopPropagation(); setShowAbonar(p); setAbonarMonto(''); setAbonarMotivo(''); }} style={{ padding: '8px 16px', background: 'rgba(239, 68, 68, 0.1)', color: 'var(--accent-danger)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '8px', fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s', flex: isMobile ? 1 : undefined }}>Abonar</button>}
                    </div>
                </div>
              ))}
@@ -120,7 +122,7 @@ export default function ProveedoresModule() {
 
       {showModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(30,58,95,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '32px', width: '400px', boxShadow: '0 10px 25px rgba(30,58,95,0.5)' }}>
+          <div style={{ background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: isMobile ? '24px' : '32px', width: '400px', maxWidth: '92vw', boxSizing: 'border-box', boxShadow: '0 10px 25px rgba(30,58,95,0.5)' }}>
             <h2 style={{ fontSize: '1.5rem', fontWeight: 800, margin: '0 0 24px 0', color: 'var(--text-primary)' }}>Nuevo Proveedor</h2>
             <div style={{ marginBottom: '16px' }}>
               <label style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '6px', fontWeight: 600 }}>Nombre</label>
@@ -149,7 +151,7 @@ export default function ProveedoresModule() {
 
       {showAbonar && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(30,58,95,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '32px', width: '400px', boxShadow: '0 10px 25px rgba(30,58,95,0.5)' }}>
+          <div style={{ background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: isMobile ? '24px' : '32px', width: '400px', maxWidth: '92vw', boxSizing: 'border-box', boxShadow: '0 10px 25px rgba(30,58,95,0.5)' }}>
             <h2 style={{ fontSize: '1.5rem', fontWeight: 800, margin: '0 0 8px 0', color: 'var(--text-primary)' }}>Abonar a {showAbonar.name}</h2>
             <p style={{ color: 'var(--text-secondary)', marginBottom: '24px', fontSize: '0.9rem' }}>Deuda actual: ${(showAbonar.debt ?? 0).toLocaleString('es-AR')}</p>
             <div style={{ marginBottom: '16px' }}>

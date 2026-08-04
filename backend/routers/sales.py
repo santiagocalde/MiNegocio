@@ -733,23 +733,42 @@ async def customer_transactions(customer_id: int) -> list:
 
 
 @router.post("/api/customers", summary="Crear cliente")
-async def create_customer(name: str = Body(...), phone: Optional[str] = Body(None)) -> dict:
+async def create_customer(name: str = Body(...), phone: Optional[str] = Body(None),
+                          amount: float = Body(0), operator: str = Body("Sistema")) -> dict:
     b_id = _biz_id()
+    try:
+        debt = round(float(amount or 0), 2)
+    except (TypeError, ValueError):
+        debt = 0
+    if debt < 0:
+        debt = 0
     if USE_PG:
         from db_helpers import get_pg_pool
         pool = await get_pg_pool()
         async with pool.acquire() as conn:
-            row = await conn.fetchrow(
-                "INSERT INTO customers (business_id, name, phone) VALUES ($1,$2,$3) RETURNING id",
-                b_id, name.strip(), phone
-            )
-            return {"id": row["id"], "name": name.strip(), "phone": phone}
+            async with conn.transaction():
+                row = await conn.fetchrow(
+                    "INSERT INTO customers (business_id, name, phone, balance) VALUES ($1,$2,$3,$4) RETURNING id",
+                    b_id, name.strip(), phone, debt
+                )
+                if debt > 0:
+                    await conn.execute(
+                        "INSERT INTO customer_transactions (business_id, customer_id, amount, type, description, operator) VALUES ($1,$2,$3,'charge',$4,$5)",
+                        b_id, row["id"], debt, "Saldo inicial", operator
+                    )
+            return {"id": row["id"], "name": name.strip(), "phone": phone, "balance": debt}
     else:
         import aiosqlite
         async with aiosqlite.connect(main.DB_PATH) as db:
-            cur = await db.execute("INSERT INTO customers (name, phone) VALUES (?,?)", (name.strip(), phone))
+            cur = await db.execute("INSERT INTO customers (name, phone, balance) VALUES (?,?,?)", (name.strip(), phone, debt))
+            cid = cur.lastrowid
+            if debt > 0:
+                await db.execute(
+                    "INSERT INTO customer_transactions (customer_id, amount, type, description, operator) VALUES (?,?,?,?,?)",
+                    (cid, debt, 'charge', "Saldo inicial", operator)
+                )
             await db.commit()
-            return {"id": cur.lastrowid, "name": name.strip(), "phone": phone}
+            return {"id": cid, "name": name.strip(), "phone": phone, "balance": debt}
 
 
 @router.post("/api/customers/{customer_id}/pay", summary="Registrar pago de cliente")
