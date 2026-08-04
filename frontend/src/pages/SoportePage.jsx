@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { usePanelContext } from '../context/PanelContext';
 import { WHATSAPP_LINK } from '../utils/constants';
@@ -8,8 +9,11 @@ const FAQS = [
   { q: '¿Cómo agrego un producto al stock?', a: 'Andá a Inventario y usá el botón "Agregar Producto". Podés escanear el código de barras o ingresarlo manualmente.' },
   { q: '¿Cómo imprimo un ticket?', a: 'Las impresiones se configuran en Configuración > Impresión. Podés imprimir por ventana del navegador o por QZ Tray para impresión térmica directa.' },
   { q: '¿Cómo manejo ventas offline?', a: 'Si perdés conexión, las ventas se guardan automáticamente y se sincronizan cuando vuelvas a estar online. Podés ver el estado en el panel de sincronización.' },
-  { q: '¿Cómo cambio mi plan?', a: 'Andá a "Mi Plan" en el menú lateral. Ahí podés ver los planes disponibles y contactarnos para hacer el upgrade.' },
+  { q: '¿Cómo cambio mi plan?', a: 'Andá a "Mi Plan" en el menú lateral. Ahí podés ver los planes disponibles y suscribirte directamente con MercadoPago al plan que elijas.' },
   { q: '¿Cómo exporto reportes?', a: 'En Reportes, seleccioná el período y usá los botones de exportación a Excel. Disponible en planes Pro e IA.' },
+  { q: 'Como escaneo productos con la camara del celu?', a: 'En la barra de busqueda del POS o en Inventario, toca el icono de camara. Apunta al codigo de barras y se agrega automaticamente al carrito.' },
+  { q: 'Puedo abrir turno sin PIN?', a: 'Si sos el unico operador del negocio, el sistema abre tu turno automaticamente sin necesidad de PIN. Solo necesitas PIN cuando hay mas de un usuario configurado.' },
+  { q: 'Como actualizo precios en lote?', a: 'Anda a Inventario > Aumento Masivo. Ingresa el porcentaje y filtra por categoria si queres. Todos los precios se actualizan automaticamente.' },
 ];
 
 function ChevronDown() {
@@ -21,6 +25,7 @@ function ChevronUp() {
 }
 
 export default function SoportePage() {
+  const navigate = useNavigate();
   const { backend, currentPlan, trialDaysRemaining, isTrialExpired, trialEndDateFormatted } = usePanelContext();
   const [openFaq, setOpenFaq] = useState(null);
 
@@ -42,7 +47,7 @@ export default function SoportePage() {
           <p style={{ color: 'var(--text-secondary)', margin: '0 0 20px 0', fontSize: '0.9rem' }}>
             Respondemos en menos de 5 minutos en horario comercial
           </p>
-          <a href={WHATSAPP_LINK('Hola Necesito ayuda con MiNegocio')}
+          <a href={WHATSAPP_LINK('Hola, necesito ayuda con MiNegocio')}
             target="_blank" rel="noopener noreferrer"
             style={{
               display: 'inline-flex',
@@ -87,6 +92,12 @@ export default function SoportePage() {
               style={{ background: 'var(--gradient-primary)', color: 'white', textDecoration: 'none', padding: '8px 20px', borderRadius: 8, fontWeight: 600, fontSize: '0.85rem' }}>
               {currentPlan === 'trial' ? 'Ver Planes' : 'Gestionar'}
             </a>
+            {currentPlan !== 'trial' && currentPlan !== 'simple' && (
+              <button onClick={() => navigate('/panel/plan?cancel=1')}
+                style={{ background: 'transparent', border: '1px solid rgba(239,68,68,0.3)', color: 'var(--accent-danger)', padding: '6px 16px', borderRadius: 8, fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer', marginTop: '8px' }}>
+                Cancelar suscripcion
+              </button>
+            )}
           </div>
           {currentPlan === 'trial' && trialDaysRemaining > 0 && trialEndDateFormatted && (
             <div style={{ marginTop: 12, color: 'var(--text-secondary)', fontSize: '0.85rem' }}>

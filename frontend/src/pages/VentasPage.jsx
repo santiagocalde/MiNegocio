@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import useIsMobile from '../hooks/useIsMobile';
 import useCart from '../hooks/useCart';
 import useSales from '../hooks/useSales';
 import usePromotions from '../hooks/usePromotions';
@@ -17,6 +18,7 @@ import PriceCheckModal from '../components/pos/PriceCheckModal';
 import TicketPrint from '../components/TicketPrint';
 
 export default function VentasPage() {
+  const isMobile = useIsMobile();
   const { auth, backend, addToast, playBeep, currentSucursalId, setCurrentSucursalId } = usePanelContext();
   const ivaRate = backend.businessConfig?.iva_rate ?? 0;
   const cart = useCart(backend.productsDB, ivaRate, playBeep);
@@ -71,8 +73,8 @@ export default function VentasPage() {
         currentSucursalId={currentSucursalId} setCurrentSucursalId={setCurrentSucursalId}
         backendStatus={backend.backendStatus} addToast={addToast} setShowHelp={backend.setShowHelp} />
 
-      <div style={{ padding: '16px 24px', width: '100%', height: 'calc(100% - 72px)', display: 'flex', gap: '16px', alignItems: 'flex-start', boxSizing: 'border-box' }}>
-        <div style={{ flex: 2, display: 'flex', flexDirection: 'column', gap: '16px', height: '100%' }}>
+      <div style={{ padding: '16px 24px', width: '100%', height: 'calc(100% - 72px)', display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '16px', alignItems: 'flex-start', boxSizing: 'border-box' }}>
+        <div style={{ flex: isMobile ? '0 0 auto' : '2', display: 'flex', flexDirection: 'column', gap: '16px', height: isMobile ? 'auto' : '100%', maxHeight: isMobile ? '50vh' : undefined }}>
           <div data-tour="search-bar" style={{ width: '100%' }}>
           <SearchBar search={cart.search} setSearch={cart.setSearch} searchRef={searchRef}
             searchError={cart.searchError} flash={cart.flash}
@@ -85,7 +87,7 @@ export default function VentasPage() {
             updateQty={cart.updateQty} setItemQty={cart.setItemQty} removeItem={cart.removeItem} />
           </div>
         </div>
-        <div data-tour="payment-panel">
+        <div data-tour="payment-panel" style={{ flex: isMobile ? '1' : undefined }}>
         <PaymentPanel cart={cart.cart} total={cart.total} adjustedTotal={cart.adjustedTotal}
           effectiveTotal={cart.effectiveTotal} subtotal={cart.subtotal} iva={cart.iva}
           discount={cart.discount} ivaRate={cart.ivaRate} change={cart.change}
