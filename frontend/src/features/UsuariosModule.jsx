@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { usePanelContext } from '../context/PanelContext';
-import { apiGet, apiPut, apiDelete } from '../services/apiClient';
+import { apiGet, apiPost, apiPatch, apiDelete } from '../services/apiClient';
 import EmptyState from '../components/ui/EmptyState';
 import useSortable from '../hooks/useSortable.jsx';
 
@@ -55,7 +55,7 @@ export default function UsuariosModule() {
   };
 
   const handleSave = async () => {
-    if (!form.name.trim() || !form.pin.trim() || form.pin.length < 4) {
+    if (!form.name.trim() || (editIndex === null && (!form.pin.trim() || form.pin.length < 4))) {
       if (addToast) addToast('Nombre y PIN de 4 dígitos son obligatorios.', 'error');
       return;
     }
@@ -66,8 +66,22 @@ export default function UsuariosModule() {
       updatedList = [...usuarios, { id: Date.now(), name: form.name.trim(), pin: form.pin, role: form.role, last_login: '' }];
     }
     try {
-      const res = await apiPut('/operators', updatedList.map(u => ({ name: u.name, pin: u.pin?.toString(), role: u.role })));
-      if (res.ok) {
+      let responses;
+      if (editIndex !== null) {
+        if (!target?.id) throw new Error('Operador invalido');
+        const payload = { name: form.name.trim(), role: form.role };
+        if (form.pin) payload.pin = form.pin;
+        responses = [await apiPatch(`/operators/${target.id}`, payload)];
+      } else {
+        if (isFirstEmployee) {
+          const owner = usuarios[0];
+          if (!owner?.id) throw new Error('Operador dueño invalido');
+          const ownerRes = await apiPatch(`/operators/${owner.id}`, { pin: adminPin });
+          if (!ownerRes.ok) throw new Error('No se pudo guardar el PIN del dueño');
+        }
+        responses = [await apiPost('/operators', { name: form.name.trim(), pin: form.pin, role: form.role })];
+      }
+      if (responses.every(res => res.ok)) {
         if (addToast) addToast(editIndex !== null ? 'Usuario actualizado.' : 'Usuario creado.', 'success');
         setShowModal(false);
         const fresh = await apiGet('/operators');
@@ -169,7 +183,7 @@ export default function UsuariosModule() {
               <label style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '6px', fontWeight: 600 }}>Rol</label>
               <select value={form.role} onChange={e => setForm({ ...form, role: e.target.value })}
                 style={{ width: '100%', padding: '10px 12px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '8px', outline: 'none', fontSize: '0.95rem', boxSizing: 'border-box' }}>
-                <option value="cajero">Cajero</option>
+                <option value="cashier">Cajero</option>
                 <option value="admin">Admin</option>
               </select>
             </div>

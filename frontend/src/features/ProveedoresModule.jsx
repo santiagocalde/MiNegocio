@@ -166,11 +166,14 @@ export default function ProveedoresModule() {
               <button onClick={() => setShowAbonar(null)} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', padding: '10px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Cancelar</button>
               <button onClick={async () => {
                 if (!abonarMonto || parseFloat(abonarMonto) <= 0) return;
+                if (parseFloat(abonarMonto) > (showAbonar.debt || 0)) {
+                  addToast('El monto no puede superar la deuda.', 'error');
+                  return;
+                }
                 try {
-                  const res = await apiPost('/egresos', {
-                    monto: parseFloat(abonarMonto),
+                  const res = await apiPost(`/suppliers/${showAbonar.id}/pay`, {
+                    amount: parseFloat(abonarMonto),
                     motivo: abonarMotivo || `Pago a ${showAbonar.name}`,
-                    type: 'pago_proveedor',
                     operator: 'Dueño'
                   });
                   if (res.ok) {

@@ -71,18 +71,26 @@ export function PanelProvider({ children }) {
 
   useEffect(() => {
     const isPreview = localStorage.getItem('saas_mode') === 'preview';
-    if (auth.isAuthenticated && auth.currentTurnId && !isPreview) {
+    if (!auth.isAuthenticated || !auth.currentTurnId || isPreview) return;
+    let cancelled = false;
+    let attempts = 0;
+    const validate = () => {
       apiGet('/turns/active')
         .then(r => r.ok ? r.json() : null)
         .then(data => {
+          if (cancelled) return;
           if (!data || !data.id) {
-            auth.setIsAuthenticated(false);
-            auth.setCurrentTurnId(null);
-            auth.setTurnOpenedAt(null);
-            auth.setCurrentOperator(null);
-            localStorage.removeItem('minegocio_current_turn_id');
-            localStorage.removeItem('minegocio_current_operator');
-            localStorage.removeItem('minegocio_turn_opened_at');
+            if (++attempts < 2) {
+              setTimeout(validate, 1500);
+            } else {
+              auth.setIsAuthenticated(false);
+              auth.setCurrentTurnId(null);
+              auth.setTurnOpenedAt(null);
+              auth.setCurrentOperator(null);
+              localStorage.removeItem('minegocio_current_turn_id');
+              localStorage.removeItem('minegocio_current_operator');
+              localStorage.removeItem('minegocio_turn_opened_at');
+            }
           } else {
             if (String(data.id) !== String(auth.currentTurnId)) {
               auth.setCurrentTurnId(data.id);
@@ -97,8 +105,14 @@ export function PanelProvider({ children }) {
             }
           }
         })
-        .catch(() => { addToast('Error al validar turno. Reintentá.', 'error'); });
-    }
+        .catch(() => {
+          if (!cancelled && ++attempts < 2) {
+            setTimeout(validate, 1500);
+          }
+        });
+    };
+    validate();
+    return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [auth.isAuthenticated, addToast]);
 
