@@ -194,3 +194,21 @@ git branch --show-current
 4. **Siempre rate limit** en endpoints nuevos de auth/admin/AI
 5. **Pre-commit checklist** antes de cada commit
 6. **CLAUDE.md es la verdad** → si algo cambia, actualizalo acá
+
+
+---
+
+## 📱 Mobile vertical — APROBADO (2026-08-04)
+
+La experiencia mobile en vertical fue **revisada y aprobada por el dueño** en esta fecha
+(tag `mobile-vertical-ok-20260804`). Estos archivos tienen el layout responsive afinado.
+**NO modificar su comportamiento mobile (`isMobile`, breakpoints, stacking, scroll) sin
+autorización explícita del dueño:**
+
+- `frontend/src/pages/VentasPage.jsx` — carrito con scroll propio (maxHeight 40vh) para que el resumen no lo tape.
+- `frontend/src/components/pos/CartPanel.jsx`
+- `frontend/src/components/pos/ConfigPrinting.jsx` — sin desfase (margen 0, grid 1 col, botones wrap).
+- `frontend/src/features/FiadoModule.jsx` — fila apilada + alta de cliente con monto inicial.
+- `frontend/src/features/ProveedoresModule.jsx` — fila apilada + modales maxWidth 92vw.
+
+Si tenés que tocar estos archivos por otra razón, **preservá los `isMobile` existentes**.
