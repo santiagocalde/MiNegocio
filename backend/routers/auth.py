@@ -146,7 +146,7 @@ async def auth_register(request: Request, body: BusinessCreate) -> dict:
             """INSERT INTO businesses (email, password_hash, business_name, plan, phone, terms_accepted_at,
                                        owner_name, business_type, prior_pos, needs_arca, objective, source)
                VALUES ($1, $2, $3, 'trial', pgp_sym_encrypt($4, $5), now(), pgp_sym_encrypt($6, $5), $7, $8, $9, $10, $11)
-               RETURNING id, email, business_name, plan, status, pgp_sym_decrypt(phone, $5)""",
+               RETURNING id, email, business_name, plan, status, phone as decrypted_phone""",
             body.email.lower().strip(),
             hashed_pw,
             body.business_name.strip() or body.name.strip() or "Mi Kiosco",
@@ -192,7 +192,7 @@ async def auth_register(request: Request, body: BusinessCreate) -> dict:
         )
 
         await conn.execute(
-            "INSERT INTO auth_tokens (business_id, token, token_type, expires_at) VALUES ($1, $2, 'refresh', $3)",
+            "INSERT INTO auth_tokens (business_id, token, token_type, expires_at) VALUES ($1, $2, 'refresh', $3) ON CONFLICT (token) DO NOTHING",
             biz_id, refresh_token, datetime.now(timezone.utc) + timedelta(days=7)
         )
 
@@ -311,7 +311,7 @@ async def auth_login(request: Request, body: BusinessLogin) -> dict:
             JWT_SECRET, algorithm=JWT_ALGORITHM,
         )
         await conn.execute(
-            "INSERT INTO auth_tokens (business_id, token, token_type, expires_at) VALUES ($1, $2, 'refresh', $3)",
+            "INSERT INTO auth_tokens (business_id, token, token_type, expires_at) VALUES ($1, $2, 'refresh', $3) ON CONFLICT (token) DO NOTHING",
             biz_id, refresh_token, datetime.now(timezone.utc) + timedelta(days=7)
         )
 
@@ -322,10 +322,17 @@ async def auth_login(request: Request, body: BusinessLogin) -> dict:
             "SELECT 1 FROM superadmins WHERE email = $1", biz_email.lower().strip()
         ))
 
+        op_row = await conn.fetchrow(
+            "SELECT name FROM operators WHERE business_id = $1 AND role = 'admin' LIMIT 1",
+            biz_id
+        )
+        op_name = op_row["name"] if op_row else biz_name
+
     return {
         "access_token": access_token,
         "refresh_token": refresh_token,
         "token_type": "bearer",
+        "name": op_name,
         "business": {
             "id": biz_id, "email": biz_email,
             "business_name": biz_name, "plan": biz_plan, "status": biz_status,
@@ -383,7 +390,7 @@ async def auth_refresh(request: Request, authorization: str = Header(None)) -> d
             token,
         )
         await conn.execute(
-            "INSERT INTO auth_tokens (business_id, token, token_type, expires_at) VALUES ($1, $2, 'refresh', $3)",
+            "INSERT INTO auth_tokens (business_id, token, token_type, expires_at) VALUES ($1, $2, 'refresh', $3) ON CONFLICT (token) DO NOTHING",
             biz_id, new_refresh, datetime.now(timezone.utc) + timedelta(days=7)
         )
 
