@@ -2,6 +2,7 @@ import React from 'react';
 import { Icons } from '../ui/Icons';
 import { apiPut } from '../../services/apiClient';
 import { formatMoney } from '../../utils/format';
+import useIsMobile from '../../hooks/useIsMobile';
 
 export default function PaymentPanel({
   cart, total, adjustedTotal, subtotal, iva, discount, ivaRate,
@@ -16,6 +17,10 @@ export default function PaymentPanel({
   handleQuickAdd, handleRepeatSale
 }) {
   const ivaActual = String(businessConfig?.iva_rate ?? '0');
+  const isMobile = useIsMobile();
+  // Espaciados/fuentes más compactos en celular para que entre todo en pantalla.
+  const rowMb = isMobile ? '8px' : '16px';
+  const rowFs = isMobile ? '0.85rem' : '0.95rem';
 
   const cambiarIva = async (nuevoIva) => {
     const updated = { ...businessConfig, iva_rate: nuevoIva };
@@ -46,18 +51,18 @@ export default function PaymentPanel({
     localStorage.setItem('minegocio_quick_buttons', JSON.stringify(newBtns));
   };
   return (
-    <div style={{ position: 'relative', flex: 1, display: 'flex', flexDirection: 'column', gap: '12px' }}>
-      <div style={{ background: 'var(--bg-card)', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <h2 style={{ fontSize: '1.3rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)', letterSpacing: '-0.2px' }}>Resumen</h2>
-          <span style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '4px 12px', borderRadius: '12px', fontSize: '0.85rem', fontWeight: 600 }}>{cart.length} items</span>
+    <div style={{ position: 'relative', flex: 1, display: 'flex', flexDirection: 'column', gap: '12px', minHeight: 0, overflowY: 'auto' }}>
+      <div style={{ background: 'var(--bg-card)', padding: isMobile ? '10px 12px' : '12px 16px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: rowMb }}>
+          <h2 style={{ fontSize: isMobile ? '1.05rem' : '1.3rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)', letterSpacing: '-0.2px' }}>Resumen</h2>
+          <span style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '4px 12px', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 600 }}>{cart.length} items</span>
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', fontSize: '0.95rem', color: 'var(--text-secondary)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: rowMb, fontSize: rowFs, color: 'var(--text-secondary)' }}>
           <span>Subtotal:</span>
           <span style={{ color: 'var(--text-primary)', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{formatMoney(subtotal)}</span>
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', fontSize: '0.95rem', color: 'var(--text-secondary)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: rowMb, fontSize: rowFs, color: 'var(--text-secondary)' }}>
           <span>IVA{iva > 0 ? ` (${ivaRate}%)` : ''}:</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             {iva > 0 && <span style={{ color: 'var(--text-primary)', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{formatMoney(iva)}</span>}
@@ -71,23 +76,23 @@ export default function PaymentPanel({
           </div>
         </div>
         {discount > 0 && (
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', fontSize: '0.95rem', color: 'var(--accent-success)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: rowMb, fontSize: rowFs, color: 'var(--accent-success)' }}>
             <span>{promotionSavings > 0 ? 'Descuento + Promo:' : 'Descuento:'}</span>
             <span style={{ fontWeight: 600 }}>-{formatMoney(discount)}</span>
           </div>
         )}
 
-        <div style={{ height: '1px', background: 'var(--border-color)', margin: '12px 0' }}></div>
+        <div style={{ height: '1px', background: 'var(--border-color)', margin: isMobile ? '8px 0' : '12px 0' }}></div>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '18px' }}>
-          <span style={{ fontSize: '0.85rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px', color: 'var(--text-secondary)' }}>Total a cobrar</span>
-          <span style={{ fontSize: '1.9rem', fontWeight: 800, lineHeight: 1, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.5px' }}>{formatMoney(adjustedTotal ?? total)}</span>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: isMobile ? '12px' : '18px' }}>
+          <span style={{ fontSize: isMobile ? '0.78rem' : '0.85rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px', color: 'var(--text-secondary)' }}>Total a cobrar</span>
+          <span style={{ fontSize: isMobile ? '1.5rem' : '1.9rem', fontWeight: 800, lineHeight: 1, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.5px' }}>{formatMoney(adjustedTotal ?? total)}</span>
         </div>
 
         <button
           onClick={() => setIsCharging(true)}
           disabled={cart.length === 0 || isProcessing}
-          style={{ width: '100%', background: 'var(--gradient-primary)', color: 'white', border: 'none', padding: '18px 16px', borderRadius: '12px', fontSize: '1.1rem', fontWeight: 800, cursor: cart.length === 0 ? 'not-allowed' : 'pointer', opacity: cart.length === 0 ? 0.5 : 1, transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: cart.length === 0 ? 'none' : '0 8px 24px rgba(20,187,166,0.3)' }}
+          style={{ width: '100%', background: 'var(--gradient-primary)', color: 'white', border: 'none', padding: isMobile ? '13px 16px' : '18px 16px', borderRadius: '12px', fontSize: isMobile ? '1rem' : '1.1rem', fontWeight: 800, cursor: cart.length === 0 ? 'not-allowed' : 'pointer', opacity: cart.length === 0 ? 0.5 : 1, transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: cart.length === 0 ? 'none' : '0 8px 24px rgba(20,187,166,0.3)' }}
         >
           <Icons.Check /> {isProcessing ? 'Procesando...' : 'Procesar Venta'}
         </button>
