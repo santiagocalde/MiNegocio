@@ -26,8 +26,8 @@ export default function LandingHero({ isLoggedIn, goPanel, goOnboard }) {
             paddingRight: '0.1em',
             color: '#ffffff'
           }}>
-            ¿Seguís usando<br />
-            <span className="lp-gradient-text" style={{ fontStyle: 'italic' }}>hoja y lápiz?</span>
+            ¿Dejá el cuaderno.<br />
+            <span className="lp-gradient-text" style={{ fontStyle: 'italic' }}>Tu kiosco merece algo mejor.</span>
           </h1>
         </Reveal>
         <Reveal delay={2}>
@@ -39,7 +39,7 @@ export default function LandingHero({ isLoggedIn, goPanel, goOnboard }) {
             marginBottom: 32,
             fontWeight: 600,
           }}>
-            Digitalizá. Cobrá. Crecé.
+            ⭐ +24 kioscos · 156k ventas · 24/7 soporte
           </p>
         </Reveal>
         <Reveal delay={3}>
@@ -47,7 +47,7 @@ export default function LandingHero({ isLoggedIn, goPanel, goOnboard }) {
             fontSize: '1.25rem', color: 'rgba(230,255,251, 0.7)',
             lineHeight: 1.6, maxWidth: 650, margin: '0 auto 48px', fontWeight: 500
           }}>
-            <strong style={{ color: '#fff', fontWeight: 700 }}>El sistema de ventas para tu kiosco que funciona sin internet.</strong> Dejá de perder plata por cuentas mal hechas y recuperá las horas que perdés cerrando caja.
+            <strong style={{ color: '#fff', fontWeight: 700 }}>Vendé sin internet, controlá los fiados y sabé cuánta plata tenés en caja.</strong> Dejá de perder plata por cuentas mal hechas y recuperá las horas que perdés cerrando caja.
           </p>
         </Reveal>
         <Reveal delay={4}>
