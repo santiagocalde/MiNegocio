@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import ConfigPrinting from '../components/pos/ConfigPrinting';
 import { usePanelContext } from '../context/PanelContext';
-import { apiGet, apiPut } from '../services/apiClient';
+import { apiGet, apiPut, apiPatch } from '../services/apiClient';
 import { Icons } from '../components/ui/Icons';
 import useIsMobile from '../hooks/useIsMobile';
 
@@ -56,10 +56,22 @@ export default function ConfigPage() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await Promise.all([
-        apiPut('/config', config),
-        apiPut('/operators', operators),
-      ]);
+      const configRes = await apiPut('/config', config);
+      if (!configRes.ok) throw new Error('No se pudo guardar la configuracion');
+
+      const operatorResponses = await Promise.all(
+        operators
+          .filter(op => op.id)
+          .map(op => {
+            const payload = { name: op.name, role: op.role };
+            if (op.pin) payload.pin = op.pin;
+            return apiPatch(`/operators/${op.id}`, payload);
+          })
+      );
+      if (operatorResponses.some(res => !res.ok)) {
+        throw new Error('No se pudo actualizar un operador');
+      }
+
       backend.setBusinessConfig(config);
       backend.setOperators(operators);
       setSaved(true);
@@ -152,7 +164,7 @@ CUIT: ${config.cuit || '---'}  ${config.condicion_iva || '---'}`}
                   <div style={{ width: isMobile ? '78px' : '120px', flexShrink: 0 }}>
                     <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '4px' }}>PIN</label>
                     <input
-                      type="text"
+                      type="password"
                       maxLength={4}
                       value={op.pin}
                       onChange={e => {

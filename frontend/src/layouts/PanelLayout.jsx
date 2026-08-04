@@ -85,12 +85,16 @@ export default function PanelLayout() {
       return;
     }
     try {
-      const { apiPut } = await import('../services/apiClient');
+      const { apiPatch } = await import('../services/apiClient');
       const opName = auth.currentOperator?.name || 'Dueño';
-      // Usar PATCH para actualizar solo este operador, no reemplazar todos
-      await apiPut('/operators', [
-        { name: opName, pin: newPassword, role: 'admin' }
-      ]);
+      const operatorId = auth.currentOperator?.id;
+      if (!operatorId) throw new Error('No se encontro el operador actual');
+      const res = await apiPatch(`/operators/${operatorId}`, {
+        name: opName,
+        pin: newPassword,
+        role: 'admin',
+      });
+      if (!res.ok) throw new Error('No se pudo guardar el PIN');
     } catch { addToast('Error al guardar el PIN. Reintentá.', 'error'); }
     setShowCreatePassword(false);
     addToast('PIN guardado. ¡Bienvenido!', 'success');
