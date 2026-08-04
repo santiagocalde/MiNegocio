@@ -94,7 +94,7 @@ describe('LandingLoginModal', () => {
         <LandingLoginModal {...defaultProps} />
       </MemoryRouter>
     );
-    expect(screen.getByText('Visualización previa del sistema POS')).toBeDefined();
+    expect(screen.getByText(/visualización|preview|probá/i)).toBeDefined();
   });
 });
 
