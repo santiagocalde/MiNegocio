@@ -1,8 +1,8 @@
-import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { usePanelContext } from '../context/PanelContext';
 import { WHATSAPP_LINK } from '../utils/constants';
 import { Icons } from '../components/ui/Icons';
+import useIsMobile from '../hooks/useIsMobile';
 
 const FAQS = [
   { q: '¿Cómo abro un turno?', a: 'Ingresá tu PIN de 4 dígitos en la pantalla de inicio. Si no tenés turno abierto, pedile a un administrador que te asigne uno desde Configuración > Usuarios.' },
@@ -11,6 +11,7 @@ const FAQS = [
   { q: '¿Cómo manejo ventas offline?', a: 'Si perdés conexión, las ventas se guardan automáticamente y se sincronizan cuando vuelvas a estar online. Podés ver el estado en el panel de sincronización.' },
   { q: '¿Cómo cambio mi plan?', a: 'Andá a "Mi Plan" en el menú lateral. Ahí podés ver los planes disponibles y suscribirte directamente con MercadoPago al plan que elijas.' },
   { q: '¿Cómo exporto reportes?', a: 'En Reportes, seleccioná el período y usá los botones de exportación a Excel. Disponible en planes Pro e IA.' },
+,
   { q: 'Como escaneo productos con la camara del celu?', a: 'En la barra de busqueda del POS o en Inventario, toca el icono de camara. Apunta al codigo de barras y se agrega automaticamente al carrito.' },
   { q: 'Puedo abrir turno sin PIN?', a: 'Si sos el unico operador del negocio, el sistema abre tu turno automaticamente sin necesidad de PIN. Solo necesitas PIN cuando hay mas de un usuario configurado.' },
   { q: 'Como actualizo precios en lote?', a: 'Anda a Inventario > Aumento Masivo. Ingresa el porcentaje y filtra por categoria si queres. Todos los precios se actualizan automaticamente.' },
@@ -28,20 +29,21 @@ export default function SoportePage() {
   const navigate = useNavigate();
   const { backend, currentPlan, trialDaysRemaining, isTrialExpired, trialEndDateFormatted } = usePanelContext();
   const [openFaq, setOpenFaq] = useState(null);
+  const isMobile = useIsMobile();
 
   const planLabel = { trial: 'Trial', simple: 'Simple', pro: 'Pro', ia: 'IA' }[currentPlan] || 'Trial';
 
   const toggleFaq = (idx) => setOpenFaq(openFaq === idx ? null : idx);
 
   return (
-    <div style={{ padding: '32px 40px', width: '100%', height: '100%', overflowY: 'auto', boxSizing: 'border-box' }}>
+    <div style={{ padding: isMobile ? '16px 14px' : '32px 40px', width: '100%', height: '100%', overflowY: 'auto', boxSizing: 'border-box' }}>
       <div style={{ maxWidth: 720, margin: '0 auto' }}>
         <div style={{ marginBottom: 32 }}>
           <h2 style={{ fontSize: '1.8rem', fontWeight: 800, margin: '0 0 4px 0', color: 'var(--text-primary)' }}><Icons.HelpCircle /> Soporte</h2>
           <p style={{ color: 'var(--text-secondary)', margin: 0, fontSize: '0.95rem' }}>Centro de ayuda y contacto</p>
         </div>
 
-        <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 16, padding: 32, marginBottom: 24, textAlign: 'center' }}>
+        <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 16, padding: isMobile ? '20px 16px' : 32, marginBottom: 24, textAlign: 'center' }}>
           <div style={{ marginBottom: 12, color: 'var(--accent-primary)' }}><Icons.MessageCircle /></div>
           <h3 style={{ fontSize: '1.3rem', fontWeight: 700, margin: '0 0 8px 0', color: 'var(--text-primary)' }}>Hablanos por WhatsApp</h3>
           <p style={{ color: 'var(--text-secondary)', margin: '0 0 20px 0', fontSize: '0.9rem' }}>
@@ -139,9 +141,10 @@ export default function SoportePage() {
               <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>1.0.0</div>
             </div>
             <div>
-              <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Backend</span>
-              <div style={{ fontWeight: 700, color: backend.backendStatus?.status === 'ok' ? 'var(--accent-success)' : 'var(--accent-danger)' }}>
-                {backend.backendStatus?.status === 'ok' ? 'Conectado' : 'Desconectado'}
+              <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Conexión</span>
+              <div style={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6, color: backend.backendStatus?.status === 'ok' ? 'var(--accent-success)' : 'var(--accent-danger)' }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'currentColor', display: 'inline-block', flexShrink: 0 }}></span>
+                {backend.backendStatus?.status === 'ok' ? 'En línea' : 'Sin conexión'}
               </div>
             </div>
           </div>

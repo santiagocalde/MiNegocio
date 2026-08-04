@@ -23,8 +23,8 @@ export default function LandingSoporteHumano() {
             </p>
           </div>
         </Reveal>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 20, alignItems: 'center', margin: '40px 0' }}>
-          <Reveal delay={1}>
+        <div className="lp-soporte-grid" style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 20, alignItems: 'center', margin: '40px 0' }}>
+          <Reveal delay={1} className="lp-soporte-side">
             <div style={{ display: 'flex', flexDirection: 'column', gap: 50, alignItems: 'flex-end', paddingRight: 30 }}>
               <div style={{ background: 'rgba(30,58,95,0.8)', border: '1px solid rgba(20,187,166,0.3)', borderRadius: '16px', padding: '14px 18px', maxWidth: 220, backdropFilter: 'blur(10px)', boxShadow: '0 10px 30px rgba(30,58,95,0.4)', transform: 'rotate(-4deg) translateX(-20px)' }}>
                 <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#fff', marginBottom: 4 }}>Lunes a sábado 📅</div>
@@ -36,8 +36,8 @@ export default function LandingSoporteHumano() {
               </div>
             </div>
           </Reveal>
-          <Reveal delay={2} style={{ zIndex: 1 }}>
-            <div style={{ position: 'relative', width: 340 }}>
+          <Reveal delay={2} className="lp-soporte-chat" style={{ zIndex: 1 }}>
+            <div style={{ position: 'relative', width: '100%', maxWidth: 340, margin: '0 auto' }}>
               <div style={{ position: 'absolute', inset: '-40px', background: 'radial-gradient(ellipse at center, rgba(20,187,166,0.2) 0%, transparent 70%)', pointerEvents: 'none' }} />
               <div style={{ position: 'relative', background: 'rgba(30,58,95,0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 20, overflow: 'hidden', boxShadow: '0 40px 80px rgba(30,58,95,0.6)' }}>
                 <div style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -75,7 +75,7 @@ export default function LandingSoporteHumano() {
               </div>
             </div>
           </Reveal>
-          <Reveal delay={3}>
+          <Reveal delay={3} className="lp-soporte-side">
             <div style={{ display: 'flex', flexDirection: 'column', gap: 50, alignItems: 'flex-start', paddingLeft: 30 }}>
               <div style={{ background: 'rgba(30,58,95,0.8)', border: '1px solid rgba(16,185,129,0.3)', borderRadius: '16px', padding: '14px 18px', maxWidth: 220, backdropFilter: 'blur(10px)', boxShadow: '0 10px 30px rgba(30,58,95,0.4)', transform: 'rotate(5deg) translateX(10px)' }}>
                 <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#fff', marginBottom: 4 }}>Respuestas rápidas ⚡</div>
