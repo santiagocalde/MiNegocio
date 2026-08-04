@@ -28,7 +28,7 @@ export default function LandingSoporteHumano() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 50, alignItems: 'flex-end', paddingRight: 30 }}>
               <div style={{ background: 'rgba(30,58,95,0.8)', border: '1px solid rgba(20,187,166,0.3)', borderRadius: '16px', padding: '14px 18px', maxWidth: 220, backdropFilter: 'blur(10px)', boxShadow: '0 10px 30px rgba(30,58,95,0.4)', transform: 'rotate(-4deg) translateX(-20px)' }}>
                 <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#fff', marginBottom: 4 }}>Lunes a sábado 📅</div>
-                <div style={{ color: 'rgba(230,255,251,0.6)', fontSize: '0.75rem', lineHeight: 1.4 }}>Lunes a sabado, 08:00 a 20:00 (ARG).</div>
+                <div style={{ color: 'rgba(230,255,251,0.6)', fontSize: '0.75rem', lineHeight: 1.4 }}>Estamos en tu mismo horario.</div>
               </div>
               <div style={{ background: 'rgba(30,58,95,0.8)', border: '1px solid rgba(15,138,125,0.3)', borderRadius: '16px', padding: '14px 18px', maxWidth: 220, backdropFilter: 'blur(10px)', boxShadow: '0 10px 30px rgba(30,58,95,0.4)', transform: 'rotate(3deg) translateX(15px)' }}>
                 <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#fff', marginBottom: 4 }}>WhatsApp Directo 💬</div>

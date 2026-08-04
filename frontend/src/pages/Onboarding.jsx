@@ -220,7 +220,7 @@ export default function Onboarding() {
                 </select>
                 <div style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'rgba(255,255,255,0.5)' }}>▼</div>
               </div>
-              <input type="tel" placeholder="11 1234 5678" value={formData.telefono} onChange={e => setFormData({ ...formData, telefono: e.target.value.replace(/[^0-9]/g, '') })} style={{ flex: 1, padding: '16px 20px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, color: '#fff', fontSize: '1.1rem', outline: 'none', transition: 'all 0.2s' }} onFocus={e => e.target.style.borderColor = 'var(--lp-primary)'} onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'} autoFocus />
+              <input type="tel" placeholder="11 1234 5678" value={formData.telefono} onChange={e => setFormData({ ...formData, telefono: e.target.value.replace(/[^0-9]/g, '') })} style={{ flex: 1, minWidth: 0, padding: '16px 20px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, color: '#fff', fontSize: '1.1rem', outline: 'none', transition: 'all 0.2s' }} onFocus={e => e.target.style.borderColor = 'var(--lp-primary)'} onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'} autoFocus />
             </div>
             <button onClick={handleNext} disabled={formData.telefono.length < 8} className="lp-btn lp-btn--primary" style={{ width: '100%', padding: '16px', fontSize: '1.1rem', opacity: formData.telefono.length < 8 ? 0.5 : 1 }}>Continuar</button>
           </div>
@@ -372,11 +372,11 @@ export default function Onboarding() {
       <div className="lp-orb lp-orb--3" />
       
       {/* Header simple para poder volver */}
-      <nav style={{ padding: '32px 40px', position: 'relative', zIndex: 10, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+      <nav style={{ padding: 'clamp(16px, 4vw, 32px) clamp(16px, 4vw, 40px)', position: 'relative', zIndex: 10, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
          <a href="/" style={{ textDecoration: 'none' }}>
-            <img src={LogoPrincipal} alt="MiNegocio" style={{ height: 140, objectFit: 'contain', filter: 'drop-shadow(0 0 20px rgba(15,138,125, 0.3))', transform: 'scale(1.5)', marginTop: -20 }} />
+            <img src={LogoPrincipal} alt="MiNegocio" style={{ height: 'clamp(96px, 22vw, 210px)', objectFit: 'contain', filter: 'drop-shadow(0 0 20px rgba(15,138,125, 0.3))' }} />
          </a>
-        <button onClick={() => navigate('/')} style={{ position: 'absolute', left: 40, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '10px 16px', borderRadius: 10, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.9rem', fontWeight: 600 }}>
+        <button onClick={() => navigate('/')} style={{ position: 'absolute', left: 'clamp(16px, 4vw, 40px)', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '10px 16px', borderRadius: 10, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.9rem', fontWeight: 600 }}>
           <Svg.ArrowLeft /> Salir
         </button>
       </nav>
@@ -388,7 +388,7 @@ export default function Onboarding() {
                <div style={{ height: '100%', background: 'linear-gradient(90deg, var(--lp-primary), var(--lp-secondary))', width: `${progress}%`, transition: 'width 0.4s ease' }} />
             </div>
 
-            <div className="lp-glass" style={{ padding: '60px 48px', borderRadius: 24, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(30,58,95,0.85)', minHeight: 400, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <div className="lp-glass" style={{ padding: 'clamp(28px, 6vw, 60px) clamp(20px, 5vw, 48px)', borderRadius: 24, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(30,58,95,0.85)', minHeight: 400, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                {step > 1 && step < TOTAL_STEPS && (
                  <button onClick={handlePrev} style={{ background: 'none', border: 'none', color: 'var(--lp-text-muted)', display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer', marginBottom: 24, padding: 0, fontSize: '0.95rem' }} onMouseEnter={e => e.target.style.color = '#fff'} onMouseLeave={e => e.target.style.color = 'var(--lp-text-muted)'}>
                    <Svg.ArrowLeft /> Volver
