@@ -1,12 +1,14 @@
-import { useMemo, useState, useCallback } from 'react';
+import { useMemo, useState } from 'react';
 import { Icons } from '../ui/Icons';
 import AddAmountModal from './AddAmountModal';
+import useIsMobile from '../../hooks/useIsMobile';
 
 export default function SearchBar({
   search, setSearch, searchRef, searchError, flash,
   productsDB, handleQuickAdd, setShowPriceCheck, addToast, handleEmptyEnter
 }) {
   const [showAddAmountModal, setShowAddAmountModal] = useState(false);
+  const isMobile = useIsMobile();
   const autocomplete = useMemo(() => {
     if (!search.trim() || !productsDB) return [];
     return productsDB
@@ -15,28 +17,28 @@ export default function SearchBar({
   }, [search, productsDB]);
 
   return (
-    <div style={{ background: 'var(--bg-card)', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-        <div>
-          <h2 style={{ fontSize: '1.3rem', fontWeight: 800, margin: '0 0 2px 0', letterSpacing: '-0.2px' }}>Buscar Producto</h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0 }}>Escanee código de barras o escriba el nombre del producto</p>
-        </div>
+    <div style={{ background: 'var(--bg-card)', padding: isMobile ? '10px 12px' : '12px 16px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+      <div style={{ display: 'flex', justifyContent: isMobile ? 'flex-end' : 'space-between', alignItems: 'flex-start', marginBottom: isMobile ? '10px' : '16px' }}>
+        {/* En mobile el título y la ayuda son redundantes: el propio campo ya lo dice */}
+        {!isMobile && (
+          <div>
+            <h2 style={{ fontSize: '1.3rem', fontWeight: 800, margin: '0 0 2px 0', letterSpacing: '-0.2px' }}>Buscar Producto</h2>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0 }}>Escanee código de barras o escriba el nombre del producto</p>
+          </div>
+        )}
 
         <div style={{ display: 'flex', gap: '8px' }}>
-          <button onClick={() => setShowPriceCheck(true)} style={{ background: 'var(--bg-hover)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', padding: '8px 12px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }} onMouseEnter={e => e.target.style.background='rgba(255,255,255,0.1)'} onMouseLeave={e => e.target.style.background='var(--bg-hover)'}>
-            Consultar Precio
+          <button onClick={() => setShowPriceCheck(true)} title="Consultar Precio" style={{ background: 'var(--bg-hover)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', padding: '8px 12px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '6px' }} onMouseEnter={e => e.currentTarget.style.background='rgba(255,255,255,0.1)'} onMouseLeave={e => e.currentTarget.style.background='var(--bg-hover)'}>
+            <Icons.Search style={{ width: 15, height: 15 }} />{isMobile ? 'Precio' : 'Consultar Precio'}
           </button>
-          <button onClick={() => setShowAddAmountModal(true)} style={{ background: 'var(--bg-hover)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', padding: '8px 12px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }} onMouseEnter={e => e.target.style.background='rgba(255,255,255,0.1)'} onMouseLeave={e => e.target.style.background='var(--bg-hover)'}>
-            Agregar Monto
+          <button onClick={() => setShowAddAmountModal(true)} title="Agregar Monto" style={{ background: 'var(--bg-hover)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', padding: '8px 12px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '6px' }} onMouseEnter={e => e.currentTarget.style.background='rgba(255,255,255,0.1)'} onMouseLeave={e => e.currentTarget.style.background='var(--bg-hover)'}>
+            <Icons.DollarSign style={{ width: 15, height: 15 }} />{isMobile ? 'Monto' : 'Agregar Monto'}
           </button>
         </div>
       </div>
 
       <div className={`search-bar ${flash ? 'flash' : ''}`} style={{ margin: 0, position: 'relative', borderColor: searchError ? 'var(--accent-danger)' : 'var(--border-color)', borderWidth: searchError ? '2px' : '1px' }}>
         <Icons.Search />
-        <button onClick={() => setShowScanner(true)} title="Escanear con cámara" style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '6px', transition: 'all 0.2s' }} onMouseEnter={e => { e.currentTarget.style.color = 'var(--accent-primary)'; e.currentTarget.style.background = 'rgba(20,187,166,0.1)'; }} onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.background = 'transparent'; }}>
-          <Icons.Camera style={{ width: '18px', height: '18px' }} />
-        </button>
         <input
           ref={searchRef}
           type="text"
@@ -120,9 +122,6 @@ export default function SearchBar({
           </div>
         )}
       </div>
-      {showScanner && (
-        <CameraBarcodeScanner onScan={handleBarcodeScan} onClose={() => setShowScanner(false)} />
-      )}
       <AddAmountModal show={showAddAmountModal} setShow={setShowAddAmountModal} handleQuickAdd={handleQuickAdd} />
     </div>
   );
