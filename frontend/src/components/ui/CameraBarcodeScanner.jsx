@@ -1,8 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 
+let _scanAudioCtx = null;
 function beepSound() {
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    _scanAudioCtx = _scanAudioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const ctx = _scanAudioCtx;
+    if (ctx.state === "suspended") ctx.resume();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.connect(gain);
@@ -137,18 +140,7 @@ export default function CameraBarcodeScanner({ onScan, onClose }) {
       await new Promise(r => setTimeout(r, 50));
       const targetEl = document.getElementById("quagga-viewport");
       if (!targetEl || !mountedRef.current) return;
-      
-      // Get stream for flashlight control
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "environment", width: { ideal: 640 }, height: { ideal: 480 } },
-          audio: false,
-        });
-        flashTrackRef.current = stream.getVideoTracks()[0];
-        stream.getTracks().forEach(t => t.stop());
-      // eslint-disable-next-line no-empty
-      } catch {}
-      
+
       Quagga.init({
         inputStream: {
           name: "Live",
@@ -164,6 +156,8 @@ export default function CameraBarcodeScanner({ onScan, onClose }) {
         if (err) { if (mountedRef.current) setError("Error al iniciar el escaner"); return; }
         if (stopRef.current) { Quagga.stop(); return; }
         Quagga.start();
+        // eslint-disable-next-line no-empty
+        try { flashTrackRef.current = Quagga.CameraAccess.getActiveTrack(); } catch {}
       });
       Quagga.onDetected((result) => {
         if (stopRef.current) return;
