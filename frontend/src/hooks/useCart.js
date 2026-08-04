@@ -79,7 +79,7 @@ export default function useCart(productsDB, ivaRate, playBeep) {
   const handleQuickAdd = useCallback((code, name, price, extra) => {
     if (addLockRef.current) return;
     addLockRef.current = true;
-    const product = productsDB.find(p => p.code === code);
+    const product = productsDB?.find(p => p.code === code);
     if (!product && !extra) { addLockRef.current = false; return; }
     setCart(prev => {
       const ex = prev.find(item => item.code === code);

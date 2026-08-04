@@ -25,6 +25,11 @@ export function PanelProvider({ children }) {
   const [currentDateTime, setCurrentDateTime] = useState(new Date());
   const [needsSetup, setNeedsSetup] = useState(null);
   const [businessName, setBusinessName] = useState('MiNegocio');
+  // Gate de apertura de turno según cantidad de operadores:
+  //  'checking' → consultando; 'owner' → un solo operador (abrir sin PIN, un toque);
+  //  'pin' → dos o más operadores (se pide PIN, como siempre).
+  const [ownerGate, setOwnerGate] = useState('checking');
+  const [openingTurn, setOpeningTurn] = useState(false);
   const [businessType, setBusinessType] = useState(() => {
     try {
       const biz = JSON.parse(localStorage.getItem('saas_business') || '{}');
@@ -69,28 +74,38 @@ export function PanelProvider({ children }) {
     return () => { cancelled = true; clearTimeout(timeout); };
   }, []);
 
+  // Decidir el gate de apertura de turno: si la cuenta tiene un solo operador
+  // (el dueño) se abre sin PIN; con dos o más se mantiene el PIN (atribución +
+  // anti-robo). Se re-chequea cada vez que se vuelve a la pantalla de apertura
+  // (p. ej. tras un cierre de caja) para que el conteo esté siempre al día.
+  useEffect(() => {
+    if (!auth.isSaaSAuthenticated || auth.isAuthenticated) return;
+    let cancelled = false;
+    apiGet('/operators')
+      .then(r => r.ok ? r.json() : null)
+      .then(list => {
+        if (cancelled) return;
+        const count = Array.isArray(list) ? list.length : null;
+        setOwnerGate(count !== null && count <= 1 ? 'owner' : 'pin');
+      })
+      .catch(() => { if (!cancelled) setOwnerGate('pin'); });
+    return () => { cancelled = true; };
+  }, [auth.isSaaSAuthenticated, auth.isAuthenticated]);
+
   useEffect(() => {
     const isPreview = localStorage.getItem('saas_mode') === 'preview';
-    if (!auth.isAuthenticated || !auth.currentTurnId || isPreview) return;
-    let cancelled = false;
-    let attempts = 0;
-    const validate = () => {
+    if (auth.isAuthenticated && auth.currentTurnId && !isPreview) {
       apiGet('/turns/active')
         .then(r => r.ok ? r.json() : null)
         .then(data => {
-          if (cancelled) return;
           if (!data || !data.id) {
-            if (++attempts < 2) {
-              setTimeout(validate, 1500);
-            } else {
-              auth.setIsAuthenticated(false);
-              auth.setCurrentTurnId(null);
-              auth.setTurnOpenedAt(null);
-              auth.setCurrentOperator(null);
-              localStorage.removeItem('minegocio_current_turn_id');
-              localStorage.removeItem('minegocio_current_operator');
-              localStorage.removeItem('minegocio_turn_opened_at');
-            }
+            auth.setIsAuthenticated(false);
+            auth.setCurrentTurnId(null);
+            auth.setTurnOpenedAt(null);
+            auth.setCurrentOperator(null);
+            localStorage.removeItem('minegocio_current_turn_id');
+            localStorage.removeItem('minegocio_current_operator');
+            localStorage.removeItem('minegocio_turn_opened_at');
           } else {
             if (String(data.id) !== String(auth.currentTurnId)) {
               auth.setCurrentTurnId(data.id);
@@ -105,14 +120,8 @@ export function PanelProvider({ children }) {
             }
           }
         })
-        .catch(() => {
-          if (!cancelled && ++attempts < 2) {
-            setTimeout(validate, 1500);
-          }
-        });
-    };
-    validate();
-    return () => { cancelled = true; };
+        .catch(() => { addToast('Error al validar turno. Reintentá.', 'error'); });
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [auth.isAuthenticated, addToast]);
 
@@ -149,6 +158,33 @@ export function PanelProvider({ children }) {
 
   if (!auth.isAuthenticated) {
     if (auth.isSaaSAuthenticated) {
+      // Mientras se consulta la cantidad de operadores, mostrar un loader en vez
+      // de parpadear una pantalla de apertura que puede cambiar.
+      if (ownerGate === 'checking') {
+        return (
+          <div className="layout" style={{ justifyContent: 'center', alignItems: 'center', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ width: 40, height: 40, border: '3px solid var(--border-color)', borderTopColor: 'var(--accent-primary)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+            <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Cargando...</span>
+          </div>
+        );
+      }
+      // Cuenta de un solo operador (el dueño): abrir caja de un toque, sin PIN.
+      if (ownerGate === 'owner') {
+        return (
+          <div className="layout" style={{ justifyContent: 'center', alignItems: 'center', flexDirection: 'column' }}>
+            <div style={{ position: 'absolute', top: 20, right: 20, color: 'var(--text-secondary)' }}>
+              {currentDateTime.toLocaleString('es-AR')}
+              <button onClick={() => { localStorage.removeItem('saas_token'); localStorage.removeItem('saas_mode'); auth.setIsSaaSAuthenticated(false); }} style={{ marginLeft: 12, background: 'transparent', border: '1px solid var(--border-color)', borderRadius: 6, padding: '4px 12px', color: 'var(--text-secondary)', cursor: 'pointer' }}>Salir</button>
+            </div>
+            <div className="brand-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 80, height: 80, marginBottom: 24 }}><Icons.Store /></div>
+            <h1 style={{ fontSize: '2rem', marginBottom: '8px' }}>{businessName}</h1>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '24px' }}>Abrí la caja para empezar a vender</p>
+            <button onClick={async () => { setOpeningTurn(true); const ok = await auth.openOwnerTurn(); if (!ok) { setOpeningTurn(false); setOwnerGate('pin'); } }} disabled={openingTurn} style={{ background: 'var(--gradient-primary)', border: 'none', color: 'white', padding: '16px 56px', borderRadius: 12, fontSize: '1.1rem', fontWeight: 700, cursor: openingTurn ? 'default' : 'pointer', opacity: openingTurn ? 0.6 : 1 }}>
+              {openingTurn ? 'Abriendo...' : 'Abrir Caja'}
+            </button>
+          </div>
+        );
+      }
       return (
         <div className="layout" style={{ justifyContent: 'center', alignItems: 'center', flexDirection: 'column' }}>
           <div style={{ position: 'absolute', top: 20, right: 20, color: 'var(--text-secondary)' }}>
