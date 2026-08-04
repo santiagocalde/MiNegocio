@@ -173,10 +173,6 @@ export default function useBackend(currentOperator, currentTurnId, currentSucurs
     apiGet('/operators').then(r => r.json()).then(d => setOperators(Array.isArray(d) ? d : [])).catch(() => {});
     apiGet('/sucursales').then(r => r.json()).then(d => setSucursales(Array.isArray(d) ? d : [])).catch(() => {});
     apiGet('/customers').then(r => r.json()).then(d => setCustomers(Array.isArray(d) ? d : [])).catch(() => {});
-
-  const fetchCustomers = useCallback(() => {
-    apiGet('/customers').then(r => r.json()).then(d => setCustomers(Array.isArray(d) ? d : [])).catch(() => {});
-  }, []);
     // Item 13: SSE - Escuchar eventos en tiempo real
     const baseUrl = SERVER_URL.replace('/api', '');
     let retryDelay = 1000;
@@ -337,6 +333,10 @@ export default function useBackend(currentOperator, currentTurnId, currentSucurs
   }, [fetchProductsDB]);
 
   // Operator restoration from localStorage is handled in useAuth
+
+  const fetchCustomers = useCallback(() => {
+    apiGet('/customers').then(r => r.json()).then(d => setCustomers(Array.isArray(d) ? d : [])).catch(() => {});
+  }, []);
 
   return {
     productsDB, setProductsDB,

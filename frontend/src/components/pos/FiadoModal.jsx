@@ -11,6 +11,7 @@ export default function FiadoModal({ isFiadoOpen, setIsFiadoOpen, adjustedTotal,
 
   const handleConfirm = () => {
     confirmFiado(fiadoAmount ? parseFloat(fiadoAmount) : maxFiado);
+    onFiadoClose?.();
   };
 
   return (

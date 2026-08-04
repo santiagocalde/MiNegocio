@@ -62,7 +62,7 @@ export default function CameraBarcodeScanner({ onScan, onClose }) {
 
   const handleScan = useCallback((code) => {
     const now = Date.now();
-    if (code === lastScanRef.current && now - lastScanTimeRef.current < 1500) return;
+    if (code === lastScanRef.current && now - lastScanTimeRef.current < 3000) return;
     lastScanRef.current = code;
     lastScanTimeRef.current = now;
     
