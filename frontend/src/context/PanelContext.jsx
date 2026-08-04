@@ -83,12 +83,20 @@ export function PanelProvider({ children }) {
     let cancelled = false;
     apiGet('/operators')
       .then(r => r.ok ? r.json() : null)
-      .then(list => {
+      .then(async (list) => {
         if (cancelled) return;
-        const count = Array.isArray(list) ? list.length : null;
-        setOwnerGate(count !== null && count <= 1 ? 'owner' : 'pin');
+        if (!Array.isArray(list) || list.length <= 1) {
+          const ok = await auth.openOwnerTurn();
+          if (!cancelled && !ok) setOwnerGate('owner');
+        } else {
+          setOwnerGate('pin');
+        }
       })
-      .catch(() => { if (!cancelled) setOwnerGate('pin'); });
+      .catch(async () => {
+        if (cancelled) return;
+        const ok = await auth.openOwnerTurn();
+        if (!cancelled && !ok) setOwnerGate('owner');
+      });
     return () => { cancelled = true; };
   }, [auth.isSaaSAuthenticated, auth.isAuthenticated]);
 
