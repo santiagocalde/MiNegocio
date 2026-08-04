@@ -100,8 +100,10 @@ export default function useCart(productsDB, ivaRate, playBeep) {
   }, []);
 
   const updateQty = useCallback((id, delta) => {
-    setCart(prev => prev.map(item => item.id === id ? { ...item, qty: Math.max(0.01, item.qty + delta) } : item));
-  }, []);
+    setCart(prev => prev.map(item => item.id === id ? { ...item, qty: Math.max(1, item.qty + delta) } : item));
+    // Beep al sumar una unidad con el boton "+", mismo feedback que al escanear. El "-" no suena.
+    if (delta > 0 && playBeep) playBeep();
+  }, [playBeep]);
 
   const setItemQty = useCallback((id, val) => {
     setCart(prev => prev.map(item => item.id === id ? { ...item, qty: val } : item));

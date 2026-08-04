@@ -58,9 +58,13 @@ export default function CartPanel({ cart, total, adjustedTotal, updateQty, setIt
                     <input
                       id={`qty-input-${item.id}`}
                       type="number"
-                      step="0.01"
+                      step="1"
+                      min="1"
                       value={item.qty}
-                      onChange={e => { const val = parseFloat(e.target.value); if (!isNaN(val) && val > 0) setItemQty(item.id, val); }}
+                      onChange={e => {
+                        const v = parseInt(e.target.value, 10);
+                        if (!isNaN(v) && v >= 1) setItemQty(item.id, v);
+                      }}
                       style={{ width: '40px', textAlign: 'center', background: 'transparent', border: 'none', color: 'var(--text-primary)', outline: 'none', fontWeight: 600, fontSize: '0.9rem' }}
                     />
                     <button
