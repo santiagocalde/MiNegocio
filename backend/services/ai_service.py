@@ -35,7 +35,7 @@ logger = logging.getLogger("NovaStock.AI")
 
 AI_API_KEY  = (os.environ.get("AI_INVOICE_API_KEY")   or "").strip()
 AI_BASE_URL = (os.environ.get("AI_INVOICE_BASE_URL")   or "https://openrouter.ai/api/v1").rstrip("/")
-AI_MODEL    = (os.environ.get("AI_INVOICE_MODEL")      or "minimax-m3").strip()
+AI_MODEL    = (os.environ.get("AI_INVOICE_MODEL")      or "deepseek-v4-pro").strip()
 # Modelo para las funciones de TEXTO (resumen, precios, etc.). Si no se define,
 # usa el mismo que visión. Permite poner un modelo más barato para texto y dejar
 # el modelo con visión (minimax-m3) solo para el escáner de facturas.
