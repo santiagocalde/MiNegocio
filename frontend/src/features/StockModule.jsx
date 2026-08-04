@@ -643,7 +643,7 @@ export default function StockModule() {
       {/* MODAL NUEVO PRODUCTO */}
       {showNuevoProducto && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(30,58,95,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '32px', width: '480px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 10px 25px rgba(30,58,95,0.5)' }}>
+          <div style={{ background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '32px', width: '480px', maxWidth: '92vw', boxSizing: 'border-box', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 10px 25px rgba(30,58,95,0.5)' }}>
             <h2 style={{ fontSize: '1.5rem', fontWeight: 800, margin: '0 0 24px 0', color: 'var(--text-primary)' }}>Nuevo Producto</h2>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
               {[{ label: 'Código', key: 'code', type: 'text' }, { label: 'Nombre', key: 'name', type: 'text' },
@@ -698,7 +698,7 @@ export default function StockModule() {
       {/* MODAL AUMENTO MASIVO */}
       {showAumentoMasivo && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(30,58,95,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '32px', width: '400px', boxShadow: '0 10px 25px rgba(30,58,95,0.5)' }}>
+          <div style={{ background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '32px', width: '400px', maxWidth: '92vw', boxSizing: 'border-box', boxShadow: '0 10px 25px rgba(30,58,95,0.5)' }}>
             <h2 style={{ fontSize: '1.5rem', fontWeight: 800, margin: '0 0 16px 0', color: 'var(--text-primary)' }}>Aumento Masivo de Precios</h2>
             <p style={{ color: 'var(--text-secondary)', marginBottom: '24px', fontSize: '0.95rem' }}>
               Ingresa el porcentaje de inflación para actualizar todos los precios de venta automáticamente.
@@ -743,7 +743,7 @@ export default function StockModule() {
 
       {showNewCategory && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(30,58,95,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100 }}>
-          <div style={{ background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '24px', width: '300px' }}>
+          <div style={{ background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '24px', width: '300px', maxWidth: '92vw', boxSizing: 'border-box' }}>
             <h3 style={{ margin: '0 0 16px 0', color: 'var(--text-primary)' }}>Nueva Categoría</h3>
             <input type="text" value={newCategoryName} onChange={e => setNewCategoryName(e.target.value)} autoFocus
                    placeholder="Nombre de categoría"
@@ -760,7 +760,7 @@ export default function StockModule() {
       )}
       {promptState.isOpen && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(30,58,95,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100 }}>
-          <div style={{ background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '24px', width: '320px', boxShadow: '0 10px 25px rgba(0,0,0,0.5)' }}>
+          <div style={{ background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '24px', width: '320px', maxWidth: '92vw', boxSizing: 'border-box', boxShadow: '0 10px 25px rgba(0,0,0,0.5)' }}>
             <h3 style={{ margin: '0 0 16px 0', color: 'var(--text-primary)', fontSize: '1.1rem', fontWeight: 700 }}>{promptState.title}</h3>
             <input 
               type="number" 
