@@ -75,7 +75,7 @@ export default function usePlan(businessConfig) {
     const trialEndDateFormatted = trialEndDate ? formatDate(trialEndDate) : '';
 
     const planLabel = { trial: 'Trial', simple: 'Simple', pro: 'Pro', ia: 'IA' }[currentPlan] || 'Trial';
-    const canAccessIA = currentPlan === 'ia' || (currentPlan === 'trial' && !isTrialExpired);
+    const canAccessIA = currentPlan === 'ia';
     const isPaid = currentPlan === 'simple' || currentPlan === 'pro' || currentPlan === 'ia';
     const showGate = currentPlan === 'trial' && isTrialExpired && !isPaid;
 

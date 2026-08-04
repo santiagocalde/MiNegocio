@@ -7,7 +7,7 @@ from typing import Optional
 from fastapi import HTTPException
 
 PLAN_LIMITS = {
-    "trial":  {"max_products": 50,    "max_operators": 2,  "multi_sucursal": False, "purchases": False, "audit_cloud": False},
+    "trial":  {"max_products": 500,   "max_operators": 2,  "multi_sucursal": False, "purchases": True,  "audit_cloud": False},
     "simple": {"max_products": 3500,  "max_operators": 2,  "multi_sucursal": False, "purchases": True,  "audit_cloud": False},
     "pro":    {"max_products": 7000,  "max_operators": 5,  "multi_sucursal": True,  "purchases": True,  "audit_cloud": True},
     "ia":     {"max_products": 10000, "max_operators": 10, "multi_sucursal": True,  "purchases": True,  "audit_cloud": True},
