@@ -194,7 +194,7 @@ async def admin_change_plan(
         async with conn.transaction():
             new_plan_end = _now() + timedelta(days=30) if new_plan in ("simple","pro","ia") else None
             await conn.execute(
-                "UPDATE businesses SET plan = $1, plan_end_date = COALESCE($2, plan_end_date), plan_pending = NULL, updated_at = $3 WHERE id = $4",
+                "UPDATE businesses SET plan = $1, plan_end_date = COALESCE($2, plan_end_date), plan_pending = NULL, updated_at = $3, status = 'active' WHERE id = $4",
                 new_plan, new_plan_end, _now(), business_id
             )
             audit_id = await conn.fetchval(
@@ -256,7 +256,7 @@ async def admin_change_status(
                 from datetime import timedelta
                 new_end = _now() + timedelta(days=30)
                 await conn.execute(
-                    "UPDATE businesses SET plan_end_date = $1 WHERE id = $2 AND plan_end_date IS NULL OR plan_end_date < $1",
+                    "UPDATE businesses SET plan_end_date = $1 WHERE id = $2 AND (plan_end_date IS NULL OR plan_end_date < $1)",
                     new_end, business_id
                 )
             # Si un negocio activo pasa a suspendido/expirado, registrarlo como baja (churn).
@@ -346,7 +346,15 @@ async def admin_delete_business(
             raise HTTPException(404, detail="Negocio no encontrado")
         
         async with conn.transaction():
-            await conn.execute("DELETE FROM admin_audit_log WHERE business_id = $1", business_id)
+            # Guardar auditoria antes de eliminar (no borrar el historial)
+            await conn.fetchval(
+                """INSERT INTO admin_audit_log (superadmin_id, business_id, action, new_value, notes)
+                   VALUES ($1, $2, 'business_deleted', $3::jsonb, $4) RETURNING id""",
+                admin["sub"], business_id,
+                '{"business_name": "' + biz["business_name"].replace("'", "''") + '", "email": "' + biz["email"].replace("'", "''") + '", "plan": "' + biz["plan"] + '"}',
+                "Negocio eliminado permanentemente por superadmin"
+            )
+            await conn.execute("UPDATE admin_audit_log SET business_id = NULL WHERE business_id = $1", business_id)
             await conn.execute("DELETE FROM sale_items WHERE business_id = $1", business_id)
             await conn.execute("DELETE FROM stock_movements WHERE business_id = $1", business_id)
             await conn.execute("DELETE FROM customer_transactions WHERE business_id = $1", business_id)

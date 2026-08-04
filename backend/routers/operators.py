@@ -11,7 +11,7 @@ import aiosqlite
 import bcrypt
 import main
 from fastapi import APIRouter, HTTPException, Request
-from core.plan_limits import PLAN_LIMITS
+from core.plan_limits import PLAN_LIMITS, require_role
 from core.jwt_helpers import get_current_business
 from core.context import business_id_ctx
 from core.ratelimit import limiter
