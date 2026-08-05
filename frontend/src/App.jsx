@@ -25,6 +25,7 @@ const StockModule = lazy(() => import('./features/StockModule'));
 const PurchasesModule = lazy(() => import('./features/PurchasesModule'));
 const FiadoModule = lazy(() => import('./features/FiadoModule'));
 const ProveedoresModule = lazy(() => import('./features/ProveedoresModule'));
+const EtiquetasModule = lazy(() => import('./features/EtiquetasModule'));
 const CatalogoModule = lazy(() => import('./features/CatalogoModule'));
 const ReportsModule = lazy(() => import('./features/ReportsModule'));
 const PromotionModule = lazy(() => import('./features/PromotionModule'));
@@ -73,6 +74,7 @@ function App() {
           <Route path="compras" element={<PanelSuspense><PurchasesModule /></PanelSuspense>} />
           <Route path="clientes" element={<PanelSuspense><FiadoModule /></PanelSuspense>} />
           <Route path="proveedores" element={<PanelSuspense><ProveedoresModule /></PanelSuspense>} />
+          <Route path="etiquetas" element={<PanelSuspense><EtiquetasModule /></PanelSuspense>} />
           <Route path="catalogo-web" element={<PanelSuspense><CatalogoModule /></PanelSuspense>} />
           <Route path="reportes" element={<PanelSuspense><ReportsModule /></PanelSuspense>} />
           <Route path="promociones" element={<PanelSuspense><PromotionModule /></PanelSuspense>} />

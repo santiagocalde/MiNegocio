@@ -510,7 +510,7 @@ export default function StockModule() {
                     Sin proveedor
                   </td>
                   <td style={{ padding: '16px 24px', textAlign: 'center' }}>
-                    <div style={{ display: 'flex', gap: '4px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
                       <button onClick={() => {
                         setPromptState({
                           isOpen: true,

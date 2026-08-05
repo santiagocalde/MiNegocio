@@ -25,6 +25,7 @@ const NAV_ITEMS = [
       { label: 'Inventario', path: '/panel/inventario', icon: 'Box', roles: ['admin', 'manager'] },
       { label: 'Catálogo Web', short: 'Catálogo', path: '/panel/catalogo-web', icon: 'Edit', roles: ['admin', 'manager'], minPlan: 'pro', featureKey: 'catalogo' },
       { label: 'Proveedores', path: '/panel/proveedores', icon: 'Truck', roles: ['admin', 'manager'], minPlan: 'simple', featureKey: 'proveedores' },
+      { label: 'Etiquetas', path: '/panel/etiquetas', icon: 'Printer', roles: ['admin', 'manager'] },
     ],
   },
   {
@@ -67,6 +68,7 @@ const ICON_MAP = {
   Lock: Icons.Lock,
   Chart: Icons.Chart,
   Tag: Icons.Tag,
+  Printer: Icons.Printer,
   AI: Icons.Sparkles,
   Clipboard: Icons.Clipboard,
   Settings: Icons.Settings,
