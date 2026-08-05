@@ -2,22 +2,32 @@ import { Reveal } from './hooks/useReveal';
 
 /**
  * Barra de confianza inmediata — mobile y desktop.
- * Números reales que el kiosquero entiende en 2 segundos.
+ * Frases cortas que eliminan la duda más común del kiosquero.
  */
 export default function LandingTrustBar() {
+  const items = [
+    { icon: '⚡', text: 'En 3 minutos ya estás vendiendo' },
+    { icon: '📶', text: 'Funciona sin internet' },
+    { icon: '🇦🇷', text: 'Soporte argentino en minutos' },
+    { icon: '🔓', text: 'Cancelás cuando querés' },
+  ];
+
   return (
-    <section className="lp-section" style={{ padding: '12px 16px' }} aria-label="Confianza">
+    <section className="lp-section" style={{ padding: '16px 16px' }} aria-label="Garantías">
       <Reveal>
-        <div className="lp-trust-bar" style={{
-          maxWidth: 520, margin: '0 auto', display: 'flex',
-          flexWrap: 'wrap', gap: '8px 20px', justifyContent: 'center',
-          alignItems: 'center', fontSize: '0.82rem', color: 'rgba(230,255,251,0.72)',
-          background: 'rgba(20,187,166,0.06)', border: '1px solid rgba(20,187,166,0.12)',
-          borderRadius: 12, padding: '12px 18px'
+        <div style={{
+          maxWidth: 860, margin: '0 auto', display: 'flex',
+          flexWrap: 'wrap', gap: '10px 28px', justifyContent: 'center', alignItems: 'center',
+          background: 'rgba(20,187,166,0.06)', border: '1px solid rgba(20,187,166,0.14)',
+          borderRadius: 14, padding: '14px 24px'
         }}>
-          <span>Probado en un negocio real hace 3 meses</span>
-          <span style={{ color: 'rgba(230,255,251,0.3)' }}>|</span>
-          <span>Anda aunque se corte internet</span>
+          {items.map((item, i) => (
+            <span key={i} style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: '0.84rem', color: 'rgba(230,255,251,0.8)', fontWeight: 600, whiteSpace: 'nowrap' }}>
+              <span style={{ fontSize: '1rem' }}>{item.icon}</span>
+              {item.text}
+              {i < items.length - 1 && <span style={{ color: 'rgba(230,255,251,0.2)', marginLeft: 12 }}>·</span>}
+            </span>
+          ))}
         </div>
       </Reveal>
     </section>
