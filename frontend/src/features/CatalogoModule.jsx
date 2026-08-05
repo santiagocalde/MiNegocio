@@ -31,11 +31,11 @@ export default function CatalogoModule() {
   const PLAN_WEIGHT = { trial: 1, simple: 1, pro: 2, ia: 3 };
   const isLocked = PLAN_WEIGHT[currentPlan] < PLAN_WEIGHT['pro'];
   const THEMES = [
-    { id: 'ocean', name: 'Océano', colors: ['#0B132B', '#14BBA6'] },
-    { id: 'esmeralda', name: 'Esmeralda', colors: ['#052E2B', '#34D399'] },
-    { id: 'medianoche', name: 'Medianoche', colors: ['#17122B', '#A78BFA'] },
-    { id: 'ambar', name: 'Ámbar', colors: ['#241A0B', '#FBBF24'] },
-    { id: 'claro', name: 'Claro', colors: ['#F6F8FB', '#14BBA6'] },
+    { id: 'ocean', name: 'Océano', colors: ['#081228', '#2AD4C2'] },
+    { id: 'esmeralda', name: 'Esmeralda', colors: ['#03201A', '#4EE0A8'] },
+    { id: 'medianoche', name: 'Medianoche', colors: ['#150F2B', '#C0A8FF'] },
+    { id: 'ambar', name: 'Ámbar', colors: ['#291904', '#FFC53D'] },
+    { id: 'claro', name: 'Claro', colors: ['#EDF1F6', '#0E8F7F'] },
   ];
 
   const [isActive, setIsActive] = useState(false);

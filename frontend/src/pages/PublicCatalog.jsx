@@ -293,92 +293,92 @@ export default function PublicCatalog() {
         /* ===== Temas del catálogo (5 paletas fijas) ===== */
         /* Ocean (default, oscuro azul-verde) */
         .theme-ocean {
-          --bg-main: #0B132B;
-          --bg-card: #121E36;
-          --border-color: rgba(255, 255, 255, 0.06);
+          --bg-main: #081228;
+          --bg-card: #13213D;
+          --border-color: rgba(164, 201, 255, 0.14);
           --text-primary: #FFFFFF;
-          --text-secondary: rgba(230, 255, 251, 0.82);
-          --accent-primary: #14BBA6;
+          --text-secondary: rgba(214, 233, 255, 0.95);
+          --accent-primary: #2AD4C2;
           --accent-secondary: #0F8A7D;
-          --accent-highlight: #00E5FF;
-          --gradient-primary: linear-gradient(135deg, #14BBA6 0%, #0F8A7D 100%);
-          --cat-chip-bg: rgba(255, 255, 255, 0.05);
-          --cat-chip-hover: rgba(255, 255, 255, 0.1);
-          --cat-accent-soft: rgba(20, 187, 166, 0.1);
-          --cat-accent-border: rgba(20, 187, 166, 0.2);
-          --cat-overlay: rgba(11, 19, 43, 0.8);
-          --cat-glow: rgba(20, 187, 166, 0.3);
+          --accent-highlight: #57EFDC;
+          --gradient-primary: linear-gradient(135deg, #2AD4C2 0%, #0F8A7D 100%);
+          --cat-chip-bg: rgba(164, 201, 255, 0.08);
+          --cat-chip-hover: rgba(164, 201, 255, 0.16);
+          --cat-accent-soft: rgba(42, 212, 194, 0.16);
+          --cat-accent-border: rgba(42, 212, 194, 0.4);
+          --cat-overlay: rgba(6, 14, 32, 0.82);
+          --cat-glow: rgba(42, 212, 194, 0.35);
         }
         /* Esmeralda (oscuro verde) */
         .theme-esmeralda {
-          --bg-main: #052E2B;
-          --bg-card: #0A3D38;
-          --border-color: rgba(255, 255, 255, 0.07);
-          --text-primary: #F0FDFA;
-          --text-secondary: rgba(240, 253, 250, 0.8);
-          --accent-primary: #34D399;
+          --bg-main: #03201A;
+          --bg-card: #0A332B;
+          --border-color: rgba(148, 233, 205, 0.15);
+          --text-primary: #ECFDF5;
+          --text-secondary: rgba(209, 250, 235, 0.95);
+          --accent-primary: #4EE0A8;
           --accent-secondary: #059669;
-          --accent-highlight: #A7F3D0;
-          --gradient-primary: linear-gradient(135deg, #34D399 0%, #059669 100%);
-          --cat-chip-bg: rgba(255, 255, 255, 0.05);
-          --cat-chip-hover: rgba(255, 255, 255, 0.1);
-          --cat-accent-soft: rgba(52, 211, 153, 0.12);
-          --cat-accent-border: rgba(52, 211, 153, 0.25);
-          --cat-overlay: rgba(5, 46, 43, 0.85);
-          --cat-glow: rgba(52, 211, 153, 0.3);
+          --accent-highlight: #9CF3CB;
+          --gradient-primary: linear-gradient(135deg, #4EE0A8 0%, #059669 100%);
+          --cat-chip-bg: rgba(148, 233, 205, 0.08);
+          --cat-chip-hover: rgba(148, 233, 205, 0.16);
+          --cat-accent-soft: rgba(78, 224, 168, 0.16);
+          --cat-accent-border: rgba(78, 224, 168, 0.4);
+          --cat-overlay: rgba(3, 32, 26, 0.85);
+          --cat-glow: rgba(78, 224, 168, 0.35);
         }
-        /* Medianoche (oscuro azul-violeta) */
+        /* Medianoche (oscuro violeta) */
         .theme-medianoche {
-          --bg-main: #17122B;
-          --bg-card: #221B3D;
-          --border-color: rgba(255, 255, 255, 0.07);
-          --text-primary: #F5F3FF;
-          --text-secondary: rgba(245, 243, 255, 0.8);
-          --accent-primary: #A78BFA;
+          --bg-main: #150F2B;
+          --bg-card: #241A45;
+          --border-color: rgba(199, 183, 255, 0.15);
+          --text-primary: #F7F5FF;
+          --text-secondary: rgba(226, 220, 255, 0.95);
+          --accent-primary: #C0A8FF;
           --accent-secondary: #7C3AED;
-          --accent-highlight: #C4B5FD;
-          --gradient-primary: linear-gradient(135deg, #A78BFA 0%, #7C3AED 100%);
-          --cat-chip-bg: rgba(255, 255, 255, 0.05);
-          --cat-chip-hover: rgba(255, 255, 255, 0.1);
-          --cat-accent-soft: rgba(167, 139, 250, 0.12);
-          --cat-accent-border: rgba(167, 139, 250, 0.25);
-          --cat-overlay: rgba(23, 18, 43, 0.85);
-          --cat-glow: rgba(167, 139, 250, 0.3);
+          --accent-highlight: #E3D7FF;
+          --gradient-primary: linear-gradient(135deg, #C0A8FF 0%, #7C3AED 100%);
+          --cat-chip-bg: rgba(199, 183, 255, 0.08);
+          --cat-chip-hover: rgba(199, 183, 255, 0.16);
+          --cat-accent-soft: rgba(192, 168, 255, 0.16);
+          --cat-accent-border: rgba(192, 168, 255, 0.4);
+          --cat-overlay: rgba(15, 10, 34, 0.85);
+          --cat-glow: rgba(192, 168, 255, 0.35);
         }
         /* Ámbar (oscuro cálido) */
         .theme-ambar {
-          --bg-main: #241A0B;
-          --bg-card: #332614;
-          --border-color: rgba(255, 255, 255, 0.07);
+          --bg-main: #291904;
+          --bg-card: #3D2709;
+          --border-color: rgba(253, 208, 138, 0.18);
           --text-primary: #FFFBEB;
-          --text-secondary: rgba(255, 251, 235, 0.82);
-          --accent-primary: #FBBF24;
-          --accent-secondary: #D97706;
-          --accent-highlight: #FDE68A;
-          --gradient-primary: linear-gradient(135deg, #FBBF24 0%, #D97706 100%);
-          --cat-chip-bg: rgba(255, 255, 255, 0.05);
-          --cat-chip-hover: rgba(255, 255, 255, 0.1);
-          --cat-accent-soft: rgba(251, 191, 36, 0.12);
-          --cat-accent-border: rgba(251, 191, 36, 0.25);
-          --cat-overlay: rgba(36, 26, 11, 0.85);
-          --cat-glow: rgba(251, 191, 36, 0.3);
+          --text-secondary: rgba(255, 236, 190, 0.95);
+          --accent-primary: #FFC53D;
+          --accent-secondary: #C26A00;
+          --accent-highlight: #FFE08A;
+          --gradient-primary: linear-gradient(135deg, #FFC53D 0%, #C26A00 100%);
+          --cat-chip-bg: rgba(253, 208, 138, 0.1);
+          --cat-chip-hover: rgba(253, 208, 138, 0.2);
+          --cat-accent-soft: rgba(255, 197, 61, 0.18);
+          --cat-accent-border: rgba(255, 197, 61, 0.45);
+          --cat-overlay: rgba(28, 16, 2, 0.85);
+          --cat-glow: rgba(255, 197, 61, 0.35);
         }
         /* Claro (light, pedido por comercios) */
         .theme-claro {
-          --bg-main: #F6F8FB;
+          --bg-main: #EDF1F6;
           --bg-card: #FFFFFF;
-          --border-color: rgba(11, 19, 43, 0.1);
-          --text-primary: #0B132B;
-          --text-secondary: rgba(11, 19, 43, 0.68);
+          --border-color: rgba(13, 29, 55, 0.14);
+          --text-primary: #0D1D37;
+          --text-secondary: rgba(13, 29, 55, 0.8);
           --accent-primary: #0E8F7F;
           --accent-secondary: #14BBA6;
-          --accent-highlight: #0F8A7D;
+          --accent-highlight: #0B6E62;
           --gradient-primary: linear-gradient(135deg, #14BBA6 0%, #0E8F7F 100%);
-          --cat-chip-bg: rgba(11, 19, 43, 0.05);
-          --cat-chip-hover: rgba(11, 19, 43, 0.09);
-          --cat-accent-soft: rgba(14, 143, 127, 0.1);
-          --cat-accent-border: rgba(14, 143, 127, 0.25);
-          --cat-overlay: rgba(11, 19, 43, 0.6);
+          --cat-chip-bg: rgba(13, 29, 55, 0.06);
+          --cat-chip-hover: rgba(13, 29, 55, 0.12);
+          --cat-accent-soft: rgba(14, 143, 127, 0.12);
+          --cat-accent-border: rgba(14, 143, 127, 0.35);
+          --cat-overlay: rgba(13, 29, 55, 0.55);
           --cat-glow: rgba(20, 187, 166, 0.3);
         }
         @keyframes slideIn {
