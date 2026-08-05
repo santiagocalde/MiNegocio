@@ -180,49 +180,70 @@ async def import_products_csv(request: Request, csv_text: str = Body(..., media_
             cost_price = float(row.get('cost_price', 0))
             stock = int(float(row.get('stock', 0)))
             min_stock = int(float(row.get('min_stock', 5)))
-            iva = row.get('iva', '21%').strip()
-            parsed.append((code, name, price, cost_price, stock, min_stock, iva))
+            iva = (row.get('iva', '21%') or '21%').strip()
+            categoria = (row.get('categoria') or row.get('category') or '').strip()
+            parsed.append((code, name, price, cost_price, stock, min_stock, iva, categoria))
         except Exception as e:
             errors.append(f"Fila {i+2}: {str(e)}")
 
     imported = 0
+    categories_created = []
     if parsed:
         if USE_PG:
             from db_helpers import get_pg_pool
             pool = await get_pg_pool()
             async with pool.acquire() as conn:
                 async with conn.transaction():
-                    for code, name, price, cost, stock, min_stock, iva in parsed:
+                    for code, name, price, cost, stock, min_stock, iva, categoria in parsed:
+                        cat_id = None
+                        if categoria:
+                            cat_id = await conn.fetchval(
+                                "SELECT id FROM categories WHERE business_id = $1 AND name = $2", b_id, categoria)
+                            if not cat_id:
+                                cat_id = await conn.fetchval(
+                                    "INSERT INTO categories (business_id, name) VALUES ($1, $2) RETURNING id",
+                                    b_id, categoria)
+                                categories_created.append(categoria)
                         existing = await conn.fetchrow("SELECT id FROM products WHERE code = $1 AND business_id = $2", code, b_id)
                         if existing:
                             await conn.execute(
-                                "UPDATE products SET name=$1, price=$2, cost_price=$3, stock=$4, min_stock=$5, iva=$6, updated_at=now() WHERE code=$7 AND business_id=$8",
-                                name, price, cost, stock, min_stock, iva, code, b_id
+                                "UPDATE products SET name=$1, price=$2, cost_price=$3, stock=$4, min_stock=$5, iva=$6, category_id=$7, updated_at=now() WHERE code=$8 AND business_id=$9",
+                                name, price, cost, stock, min_stock, iva, cat_id, code, b_id
                             )
                         else:
                             await conn.execute(
-                                "INSERT INTO products (business_id, code, name, price, cost_price, stock, min_stock, iva) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)",
-                                b_id, code, name, price, cost, stock, min_stock, iva
+                                "INSERT INTO products (business_id, code, name, price, cost_price, stock, min_stock, iva, category_id) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)",
+                                b_id, code, name, price, cost, stock, min_stock, iva, cat_id
                             )
                         imported += 1
         else:
             async with aiosqlite.connect(main.DB_PATH) as db:
                 await db.execute("BEGIN IMMEDIATE")
-                for code, name, price, cost, stock, min_stock, iva in parsed:
+                for code, name, price, cost, stock, min_stock, iva, categoria in parsed:
+                    cat_id = None
+                    if categoria:
+                        cur = await db.execute("SELECT id FROM categories WHERE name = ?", (categoria,))
+                        row = await cur.fetchone()
+                        if row:
+                            cat_id = row[0]
+                        else:
+                            cur = await db.execute("INSERT INTO categories (name) VALUES (?)", (categoria,))
+                            cat_id = cur.lastrowid
+                            categories_created.append(categoria)
                     cur = await db.execute("SELECT id FROM products WHERE code = ?", (code,))
                     if await cur.fetchone():
                         await db.execute(
-                            "UPDATE products SET name=?, price=?, cost_price=?, stock=?, min_stock=?, iva=?, updated_at=datetime('now','localtime') WHERE code=?",
-                            (name, price, cost, stock, min_stock, iva, code)
+                            "UPDATE products SET name=?, price=?, cost_price=?, stock=?, min_stock=?, iva=?, category_id=?, updated_at=datetime('now','localtime') WHERE code=?",
+                            (name, price, cost, stock, min_stock, iva, cat_id, code)
                         )
                     else:
                         await db.execute(
-                            "INSERT INTO products (code, name, price, cost_price, stock, min_stock, iva) VALUES (?,?,?,?,?,?,?)",
-                            (code, name, price, cost, stock, min_stock, iva)
+                            "INSERT INTO products (code, name, price, cost_price, stock, min_stock, iva, category_id) VALUES (?,?,?,?,?,?,?,?)",
+                            (code, name, price, cost, stock, min_stock, iva, cat_id)
                         )
                     imported += 1
                 await db.commit()
-    return {"imported": imported, "errors": errors, "total_rows": len(rows)}
+    return {"imported": imported, "errors": errors, "categories_created": categories_created, "total_rows": len(rows)}
 
 
 @router.post("/api/products", status_code=201, summary="Crear producto")

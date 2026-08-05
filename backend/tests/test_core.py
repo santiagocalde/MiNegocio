@@ -186,5 +186,64 @@ async def test_health_endpoint(test_db, client):
     assert res.status_code == 200
 
 
+# ── Tests de import CSV con categorías ────────────────────────
+
+@pytest.mark.asyncio
+async def test_import_products_csv_creates_categories(test_db, client):
+    csv_text = (
+        "code,name,price,cost_price,stock,min_stock,iva,categoria\n"
+        "1,Termostato heladera,4500,3000,10,3,21%,Repuestos\n"
+        "2,Capacitor arranque,3800,2500,20,5,21%,Repuestos\n"
+        "3,Martillo,12000,8000,5,2,21%,Herramientas\n"
+    )
+    async with client as ac:
+        res = await ac.post("/api/products/import", content=csv_text)
+    assert res.status_code == 200, res.text
+    data = res.json()
+    assert data["imported"] == 3
+    assert data["errors"] == []
+    assert sorted(data["categories_created"]) == ["Herramientas", "Repuestos"]
+
+    import aiosqlite
+    async with aiosqlite.connect(test_db) as db:
+        cur = await db.execute("SELECT COUNT(*) FROM categories")
+        assert (await cur.fetchone())[0] == 2
+        cur = await db.execute(
+            "SELECT p.name, c.name FROM products p LEFT JOIN categories c ON c.id = p.category_id ORDER BY p.name"
+        )
+        rows = await cur.fetchall()
+    assert ("Termostato heladera", "Repuestos") in rows
+    assert ("Capacitor arranque", "Repuestos") in rows
+    assert ("Martillo", "Herramientas") in rows
+
+
+@pytest.mark.asyncio
+async def test_import_products_csv_updates_category_on_existing(test_db, client):
+    import aiosqlite
+    async with aiosqlite.connect(test_db) as db:
+        await db.execute(
+            "INSERT INTO products (code, name, price, stock) VALUES ('1', 'Termostato heladera', 4000, 5)"
+        )
+        await db.commit()
+
+    csv_text = "code,name,price,cost_price,stock,min_stock,iva,categoria\n1,Termostato heladera,4500,3000,10,3,21%,Repuestos\n"
+    async with client as ac:
+        res = await ac.post("/api/products/import", content=csv_text)
+    assert res.status_code == 200, res.text
+    data = res.json()
+    assert data["imported"] == 1
+    assert data["errors"] == []
+
+    async with aiosqlite.connect(test_db) as db:
+        cur = await db.execute(
+            "SELECT p.name, p.price, p.stock, c.name FROM products p LEFT JOIN categories c ON c.id = p.category_id WHERE p.code = '1'"
+        )
+        name, price, stock, categoria = await cur.fetchone()
+    assert name == "Termostato heladera"
+    assert price == 4500
+    assert stock == 10
+    assert categoria == "Repuestos"
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

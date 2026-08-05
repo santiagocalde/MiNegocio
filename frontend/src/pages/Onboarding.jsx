@@ -19,6 +19,7 @@ const tiposNegocio = [
   { id: 'dietetica', label: 'Dietética', icon: <Icons.Sparkles /> },
   { id: 'panaderia', label: 'Panadería', icon: <Icons.Tag /> },
   { id: 'ferreteria', label: 'Ferretería', icon: <Icons.Settings /> },
+  { id: 'electrodomesticos', label: 'Repuestos y Electrodomésticos', icon: <Icons.Settings /> },
   { id: 'libreria', label: 'Librería', icon: <Icons.Book /> },
   { id: 'petshop', label: 'Pet Shop', icon: <Icons.Users /> },
   { id: 'otro', label: 'Otro', icon: <Icons.Crown /> },

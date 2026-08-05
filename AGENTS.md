@@ -57,3 +57,7 @@ MiNegocio POS — SaaS para kioscos y negocios argentinos. Backend FastAPI + Fro
 - Toda query SQL debe funcionar en SQLite y PostgreSQL.
 - Todo endpoint scopeado por tenant con `_biz_id()`.
 - No agregar Tailwind ni estilos default — usar el sistema Ocean Dark.
+
+## Mejoras pendientes
+
+- **Multinegocio (sucursales) a medio construir**: existe tabla `sucursales`, CRUD `/api/sucursales` y selector en el POS (gateado a Plan Pro+), PERO las altas de productos/stock no mandan `sucursal_id` (todo cae a sucursal 1) y el catálogo/stock es compartido. Hasta completar el flujo por-sucursal, para negocios con 2 locales conviene crear 2 cuentas separadas. Archivos clave: `routers/config.py` (CRUD sucursales), `routers/products.py`, `routers/sales.py`, `frontend/src/components/pos/TopBar.jsx` (selector).

@@ -727,7 +727,15 @@ async def admin_import_products(
                     min_stock = int(float(row.get('min_stock') or row.get('stock_minimo') or 5))
                     iva = str(row.get('iva') or '21%')
                     category_id = row.get('category_id') or row.get('categoria_id') or None
-                    
+                    categoria = (row.get('categoria') or row.get('category') or '').strip()
+                    if categoria and not category_id:
+                        category_id = await conn.fetchval(
+                            "SELECT id FROM categories WHERE business_id = $1 AND name = $2", business_id, categoria)
+                        if not category_id:
+                            category_id = await conn.fetchval(
+                                "INSERT INTO categories (business_id, name) VALUES ($1, $2) RETURNING id",
+                                business_id, categoria)
+
                     await conn.execute(
                         """INSERT INTO products (business_id, code, name, price, cost_price, stock, min_stock, iva, category_id)
                            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)""",
@@ -767,14 +775,14 @@ async def admin_export_products(
     pool = await _get_pool()
     async with pool.acquire() as conn:
         rows = await conn.fetch(
-            "SELECT code, name, price, cost_price, stock, min_stock, iva FROM products WHERE business_id = $1 ORDER BY name",
+            "SELECT p.code, p.name, p.price, p.cost_price, p.stock, p.min_stock, p.iva, c.name AS categoria FROM products p LEFT JOIN categories c ON c.id = p.category_id WHERE p.business_id = $1 ORDER BY p.name",
             business_id
         )
     out = io.StringIO()
     writer = csv.writer(out)
-    writer.writerow(["code", "name", "price", "cost_price", "stock", "min_stock", "iva"])
+    writer.writerow(["code", "name", "price", "cost_price", "stock", "min_stock", "iva", "categoria"])
     for r in rows:
-        writer.writerow([r["code"], r["name"], r["price"], r["cost_price"], r["stock"], r["min_stock"], r["iva"]])
+        writer.writerow([r["code"], r["name"], r["price"], r["cost_price"], r["stock"], r["min_stock"], r["iva"], r["categoria"]])
     out.seek(0)
     fname = f"productos_{business_id[:8]}_{_now().date()}.csv"
     return StreamingResponse(

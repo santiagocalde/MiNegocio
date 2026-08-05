@@ -62,6 +62,14 @@ STARTER_CATALOG = {
         "Electricidad": ["Lámpara LED", "Cinta aisladora", "Cable x metro", "Zapatilla eléctrica"],
         "Pintura": ["Pintura látex 1L", "Pincel", "Rodillo", "Cinta de papel"],
     },
+    "electrodomesticos": {
+        "Motores y Compresores": ["Motor lavarropas", "Compresor heladera", "Relé compresor", "Protector térmico", "Condensador"],
+        "Lavado y Cocina": ["Resistencia lavarropas", "Bomba de desagote lavarropas", "Válvula de agua lavarropas", "Resistencia horno eléctrico", "Ventilador horno"],
+        "Control y Sensores": ["Termostato heladera", "Termostato horno", "Timer lavarropas", "Selector lavarropas", "Sensor de puerta"],
+        "Correas y Rodamientos": ["Correa lavarropas", "Rodamiento lavarropas", "Rodamiento motor", "Sello mecánico"],
+        "Electricidad y Luces": ["Capacitor arranque", "Foco LED", "Portalámpara", "Cable x metro", "Enchufe"],
+        "Accesorios": ["Burlete heladera", "Manija puerta", "Manguera desagote", "Filtro de manguera", "Goma sello lavarropas"],
+    },
     "libreria": {
         "Escolar": ["Cuaderno", "Carpeta", "Lápiz", "Goma", "Lapicera", "Resaltador", "Cartuchera"],
         "Oficina": ["Resma A4", "Abrochadora", "Broches", "Cinta scotch", "Tijera"],
