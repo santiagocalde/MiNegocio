@@ -217,7 +217,7 @@ export default function ReportsModule() {
               </thead>
               <tbody>
                 {ganancias.mensual.map((m) => (
-                  <tr key={m.mes} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                  <tr key={m.mes} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background='rgba(255,255,255,0.02)'} onMouseLeave={e => e.currentTarget.style.background='transparent'}>
                     <td style={{ padding: '12px 16px', fontWeight: 700 }}>{m.mes}</td>
                     <td style={{ padding: '12px 16px', fontFamily: 'var(--font-mono)' }}>{formatPesos(m.ingresos)}</td>
                     <td style={{ padding: '12px 16px', fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>{formatPesos(m.costo)}</td>
