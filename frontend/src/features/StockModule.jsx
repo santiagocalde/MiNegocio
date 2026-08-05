@@ -125,6 +125,14 @@ export default function StockModule() {
   const [promptState, setPromptState] = useState({ isOpen: false, title: '', value: '', onConfirm: null });
   const [showScanner, setShowScanner] = useState(false);
   const [scanTarget, setScanTarget] = useState(null); // 'code' when scanning for product code
+  const lastScanRef = useRef({ code: '', time: 0 });
+
+  const isDuplicateScan = useCallback((code) => {
+    const now = Date.now();
+    if (code === lastScanRef.current.code && now - lastScanRef.current.time < 3000) return true;
+    lastScanRef.current = { code, time: now };
+    return false;
+  }, []);
 
   const handleBarcodeScan = useCallback((code) => {
     if (!code) return;
@@ -344,7 +352,13 @@ export default function StockModule() {
   const totalValorizado = filteredProducts.reduce((acc, p) => acc + valorizedStock(p).value, 0);
 
   const handleSearch = (e) => {
-    if (e.key === 'Enter') fetchProducts(query);
+    if (e.key === 'Enter') {
+      if (isDuplicateScan(query)) {
+        setQuery('');
+        return;
+      }
+      fetchProducts(query);
+    }
   };
 
   // derived data
