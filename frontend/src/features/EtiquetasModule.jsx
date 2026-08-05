@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-
-const apiGet = url => fetch('/api' + url, { headers: { Authorization: 'Bearer ' + (localStorage.getItem('access_token') || '') } }).then(r => r.ok ? r.json() : Promise.reject(r));
+import { apiGet } from '../services/apiClient';
 const formatPesos = (v) => (v ?? 0).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 
 export default function EtiquetasModule() {
@@ -55,7 +54,7 @@ export default function EtiquetasModule() {
   }, [selectedProducts, s]);
 
   useEffect(() => {
-    apiGet('/products?limit=9999').then(data => {
+    apiGet('/products?limit=9999').then(r => r.ok && r.json()).then(data => {
       setProducts(data || []);
       const cats = [...new Set((data || []).map(p => p.category_name).filter(Boolean))];
       setCategories(cats.sort());
