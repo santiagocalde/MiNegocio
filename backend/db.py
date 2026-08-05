@@ -472,6 +472,12 @@ async def init_pg() -> None:
             ALTER TABLE businesses ADD COLUMN IF NOT EXISTS needs_arca TEXT DEFAULT '';
             ALTER TABLE businesses ADD COLUMN IF NOT EXISTS objective TEXT DEFAULT '';
             ALTER TABLE businesses ADD COLUMN IF NOT EXISTS source TEXT DEFAULT '';
+            -- El enlace del catálogo web debe ser único entre todos los negocios.
+            -- el índice parcial ignora NULL/vacío (negocios sin catálogo) y evita
+            -- que dos comercios activen el mismo enlace (backend ya devuelve 409).
+            CREATE UNIQUE INDEX IF NOT EXISTS uq_business_config_catalogo_slug
+                ON business_config(catalogo_slug)
+                WHERE catalogo_slug IS NOT NULL AND catalogo_slug <> '';
             -- Día de trial (2/4/6/7) del último recordatorio enviado, para no
             -- reenviar el mismo email en cada reinicio del backend.
             ALTER TABLE businesses ADD COLUMN IF NOT EXISTS trial_email_sent_day INT;

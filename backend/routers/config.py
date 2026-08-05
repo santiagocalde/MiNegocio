@@ -153,11 +153,19 @@ async def update_config(request: Request, data: dict) -> dict:
                 merged = {c: (data[c] if c in data else cur.get(c)) for c in COLS}
                 placeholders = ", ".join(f"${i + 2}" for i in range(len(COLS)))
                 setters = ", ".join(f"{c}=EXCLUDED.{c}" for c in COLS)
-                await conn.execute(
-                    f"INSERT INTO business_config (business_id, {', '.join(COLS)}) VALUES ($1, {placeholders}) "
-                    f"ON CONFLICT (business_id) DO UPDATE SET {setters}",
-                    b_id, *[merged[c] for c in COLS]
-                )
+                try:
+                    await conn.execute(
+                        f"INSERT INTO business_config (business_id, {', '.join(COLS)}) VALUES ($1, {placeholders}) "
+                        f"ON CONFLICT (business_id) DO UPDATE SET {setters}",
+                        b_id, *[merged[c] for c in COLS]
+                    )
+                except Exception as e:
+                    # Aunque ya chequeamos duplicados arriba, el índice único de la DB
+                    # (uq_business_config_catalogo_slug) cierra la carrera: si dos
+                    # negocios eligen el mismo enlace a la vez, uno recibe 409.
+                    if getattr(e, "sqlstate", "") == "23505":
+                        raise HTTPException(409, "Ese enlace de catálogo ya está en uso por otro negocio. Elegí otro.")
+                    raise
         return {"success": True}
     else:
         import aiosqlite

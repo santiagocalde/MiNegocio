@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { usePanelContext } from '../context/PanelContext';
 import { apiGet, apiPut } from '../services/apiClient';
-import { API_ROOT } from '../config';
 import FeatureGate from '../components/ui/FeatureGate';
 
 const Icons = {
@@ -36,6 +35,8 @@ export default function CatalogoModule() {
   const [whatsapp, setWhatsapp] = useState('');
   const [slug, setSlug] = useState('');
   const [saving, setSaving] = useState(false);
+  const [sendingList, setSendingList] = useState(false);
+  const [priceParts, setPriceParts] = useState([]);
 
   useEffect(() => {
     apiGet('/config').then(r => r.ok && r.json()).then(data => {
@@ -43,10 +44,12 @@ export default function CatalogoModule() {
         setStoreName(data.nombre || data.business_name || 'Mi Kiosco');
         setWhatsapp(data.catalogo_whatsapp || data.telefono || data.phone || '');
         setIsActive(!!data.catalogo_activo);
-        setSlug(data.catalogo_slug || makeUniqueSlug(data.nombre || data.business_name));
+        setSlug(data.catalogo_slug || '');
       }
     }).catch(() => {});
   }, []);
+
+  useEffect(() => { setPriceParts([]); }, [slug, whatsapp, storeName]);
 
   const handleSave = async () => {
     try {
@@ -103,16 +106,16 @@ export default function CatalogoModule() {
       if (addToast) addToast('Primero configurá el WhatsApp para recibir pedidos.', 'error');
       return;
     }
+    if (sendingList) return;
+    setSendingList(true);
+    setPriceParts([]);
     try {
-      const res = await fetch(`${API_ROOT}/api/catalogo?slug=${encodeURIComponent(slug)}`);
-      if (!res.ok) {
-        if (addToast) addToast('Tu catálogo no está activo todavía o no tiene productos.', 'error');
-        return;
-      }
-      const data = await res.json();
-      const list = Array.isArray(data) ? data : (data?.products || []);
+      const res = await apiGet('/products?limit=5000');
+      if (!res.ok) throw new Error('bad');
+      const products = await res.json();
+      const list = Array.isArray(products) ? products : [];
       if (!list.length) {
-        if (addToast) addToast('No hay productos publicados todavía.', 'error');
+        if (addToast) addToast('Todavía no hay productos cargados.', 'error');
         return;
       }
       const byCat = {};
@@ -120,19 +123,42 @@ export default function CatalogoModule() {
         const cat = p.category_name || 'General';
         (byCat[cat] = byCat[cat] || []).push(p);
       });
-      let msg = `*${storeName || 'Lista de precios'}*\n_Lista de precios al día_\n\n`;
-      Object.keys(byCat).forEach(cat => {
-        msg += `▫️ *${cat}*\n`;
-        byCat[cat].forEach(p => {
-          msg += `${p.name}: $${Number(p.price || 0).toLocaleString('es-AR')}\n`;
-        });
-        msg += '\n';
-      });
-      msg += `\nHacé tu pedido: ${whatsapp}`;
-      msg = msg.slice(0, 3800);
-      window.open(`https://wa.me/${numero}?text=${encodeURIComponent(msg)}`, '_blank');
+      const header = `*${storeName || 'Lista de precios'}*\n_Lista de precios al día_\n\n`;
+      const footer = `\nHacé tu pedido: ${whatsapp}`;
+      const blocks = Object.keys(byCat).map(cat =>
+        `▫️ *${cat}*\n` + byCat[cat].map(p => {
+          const price = Number(p.price || 0);
+          return `${p.name}: ${price > 0 ? '$' + price.toLocaleString('es-AR') : 'consultar'}`;
+        }).join('\n') + '\n'
+      );
+      const MAX = 3400;
+      const parts = [];
+      let cur = header;
+      for (const b of blocks) {
+        if (cur.length + b.length + footer.length > MAX && cur.trim() !== header.trim()) {
+          parts.push(cur + footer);
+          cur = header;
+        }
+        cur += b;
+      }
+      if (cur.length > header.length || (blocks.length && cur.trim() !== header.trim())) {
+        parts.push(cur + footer);
+      }
+      if (!parts.length) {
+        if (addToast) addToast('Todavía no hay productos publicados.', 'error');
+        return;
+      }
+      setPriceParts(parts);
+      if (parts.length === 1) {
+        window.open(`https://wa.me/${numero}?text=${encodeURIComponent(parts[0])}`, '_blank');
+        if (addToast) addToast('Lista armada: se abrió WhatsApp con tu lista de precios.', 'success');
+      } else {
+        if (addToast) addToast(`La lista es larga: se armó en ${parts.length} mensajes. Enviá cada parte.`, 'error');
+      }
     } catch {
-      if (addToast) addToast('No se pudo armar la lista de precios.', 'error');
+      if (addToast) addToast('No se pudo armar la lista de precios. Revisá tu conexión.', 'error');
+    } finally {
+      setSendingList(false);
     }
   };
 
@@ -194,22 +220,32 @@ export default function CatalogoModule() {
               <h3 style={{ margin: '0 0 8px 0', fontSize: '1.2rem', color: 'var(--text-primary)' }}>Tu Enlace Único</h3>
               <p style={{ margin: '0 0 24px 0', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Compartí este link en Instagram, WhatsApp o Facebook.</p>
               
-               <div style={{ background: 'rgba(255,255,255,0.05)', padding: '16px', borderRadius: '8px', fontFamily: 'var(--font-mono)', fontSize: '0.9rem', color: 'var(--accent-primary)', marginBottom: '16px', border: '1px dashed rgba(20,187,166, 0.3)' }}>
-                  {window.location.origin}/t/{slug}
+<div style={{ background: 'rgba(255,255,255,0.05)', padding: '16px', borderRadius: '8px', fontFamily: slug ? 'var(--font-mono)' : 'var(--font-main)', fontSize: '0.9rem', color: slug ? 'var(--accent-primary)' : 'var(--text-secondary)', marginBottom: '16px', border: '1px dashed rgba(20,187,166, 0.3)' }}>
+                  {slug ? `${window.location.origin}/t/${slug}` : 'Presioná "Generar" para crear tu enlace único'}
                </div>
                
                <div style={{ display: 'flex', gap: '12px' }}>
-                 <button onClick={() => { navigator.clipboard?.writeText(`${window.location.origin}/t/${slug}`); if (addToast) addToast('Enlace copiado al portapapeles.', 'success'); }} style={{ flex: 1, background: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', padding: '12px', borderRadius: '8px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer', transition: 'all 0.15s' }}>
-                    <Icons.Share /> Copiar
-                 </button>
-                 <button onClick={() => window.open(`/t/${slug}`, '_blank')} style={{ flex: 1, background: 'var(--gradient-primary)', color: 'white', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer', transition: 'all 0.15s' }}>
-                    Visitar Tienda
-                 </button>
+                 <button disabled={!slug} onClick={() => { navigator.clipboard?.writeText(`${window.location.origin}/t/${slug}`); if (addToast) addToast('Enlace copiado al portapapeles.', 'success'); }} style={{ flex: 1, background: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', padding: '12px', borderRadius: '8px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: slug ? 'pointer' : 'not-allowed', opacity: slug ? 1 : 0.5, transition: 'all 0.15s' }}>
+                     <Icons.Share /> Copiar
+                  </button>
+                  <button disabled={!slug} onClick={() => window.open(`/t/${slug}`, '_blank')} style={{ flex: 1, background: 'var(--gradient-primary)', color: 'white', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: slug ? 'pointer' : 'not-allowed', opacity: slug ? 1 : 0.5, transition: 'all 0.15s' }}>
+                     Visitar Tienda
+                  </button>
                </div>
 
-               <button onClick={sendPriceList} style={{ width: '100%', marginTop: '12px', background: 'rgba(37, 211, 102, 0.12)', color: '#25D366', border: '1px solid rgba(37, 211, 102, 0.4)', padding: '14px', borderRadius: '8px', fontWeight: 800, fontSize: '0.95rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', transition: 'all 0.15s' }}>
-                  Enviar Lista de Precios por WhatsApp
+               <button onClick={sendPriceList} disabled={sendingList} style={{ width: '100%', marginTop: '12px', background: 'rgba(37, 211, 102, 0.12)', color: '#25D366', border: '1px solid rgba(37, 211, 102, 0.4)', padding: '14px', borderRadius: '8px', fontWeight: 800, fontSize: '0.95rem', cursor: sendingList ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', transition: 'all 0.15s', opacity: sendingList ? 0.7 : 1 }}>
+                  {sendingList ? 'Armando lista...' : 'Enviar Lista de Precios por WhatsApp'}
                </button>
+               {priceParts.length > 1 && (
+                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
+                   <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.78rem' }}>La lista es larga: se dividió en {priceParts.length} mensajes. Enviá cada parte por separado.</p>
+                   {priceParts.map((part, i) => (
+                     <button key={i} onClick={() => window.open(`https://wa.me/${(whatsapp || '').replace(/[^0-9]/g, '')}?text=${encodeURIComponent(part)}`, '_blank')} style={{ width: '100%', background: 'rgba(37, 211, 102, 0.08)', color: '#25D366', border: '1px solid rgba(37, 211, 102, 0.3)', padding: '12px', borderRadius: '8px', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer', transition: 'all 0.15s' }}>
+                       Enviar Parte {i + 1} de {priceParts.length}
+                     </button>
+                   ))}
+                 </div>
+               )}
                <p style={{ margin: '12px 0 0 0', color: 'var(--text-secondary)', fontSize: '0.78rem' }}>Armá una lista de precios al día, agrupada por categoría, y enviala por WhatsApp. Ideal para pedidos por mayor.</p>
            </div>
         </div>
