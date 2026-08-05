@@ -296,5 +296,51 @@ async def test_turn_close_twice_rejected(test_db, client):
         assert r2.status_code == 400
 
 
+async def _seed_operator(db_path, name, pin="0000", role="cajero"):
+    import bcrypt
+    async with aiosqlite.connect(db_path) as db:
+        hashed = bcrypt.hashpw(pin.encode(), bcrypt.gensalt()).decode()
+        cur = await db.execute(
+            "INSERT INTO operators (name, pin, role) VALUES (?,?,?)", (name, hashed, role)
+        )
+        await db.commit()
+        return cur.lastrowid
+
+
+@pytest.mark.asyncio
+async def test_turn_close_admin_without_pin_allowed(test_db, client):
+    """Admin cierra sin PIN (firma no requerida)."""
+    op_id = await _seed_operator(test_db, "Owner", role="admin")
+    async with client as ac:
+        turn = await _open_turn(ac)
+        r = await ac.patch(f"/api/turns/{turn}/close", json={
+            "sales_total": 0, "counted_cash": 100, "operator_id": op_id,
+        })
+        assert r.status_code == 200, r.text
+
+
+@pytest.mark.asyncio
+async def test_turn_close_cashier_without_pin_rejected(test_db, client):
+    """El cajero SIEMPRE debe firmar con su PIN."""
+
+    op_id = await _seed_operator(test_db, "Cajero", role="cajero", pin="4321")
+    async with client as ac:
+        turn = await _open_turn(ac)
+        r = await ac.patch(f"/api/turns/{turn}/close", json={
+            "sales_total": 0, "counted_cash": 100, "operator_id": op_id,
+        })
+        assert r.status_code == 403, r.text
+
+        r2 = await ac.patch(f"/api/turns/{turn}/close", json={
+            "sales_total": 0, "counted_cash": 100, "operator_id": op_id, "pin": "9999",
+        })
+        assert r2.status_code == 403, r2.text
+
+        r3 = await ac.patch(f"/api/turns/{turn}/close", json={
+            "sales_total": 0, "counted_cash": 100, "operator_id": op_id, "pin": "4321",
+        })
+        assert r3.status_code == 200, r3.text
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

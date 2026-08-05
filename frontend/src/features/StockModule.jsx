@@ -107,7 +107,7 @@ export default function StockModule() {
 
   const [showNuevoProducto, setShowNuevoProducto] = useState(false);
   const [categories, setCategories] = useState([]);
-  const [newProduct, setNewProduct] = useState({ code: '', name: '', price: '', cost_price: '', stock: '', min_stock: '5', iva: '21%', category_id: '' });
+  const [newProduct, setNewProduct] = useState({ code: '', name: '', price: '', cost_price: '', stock: '', min_stock: '5', iva: '21%', category_id: '', codigos_extra: '' });
   const [confirmState, setConfirmState] = useState({ isOpen: false, title: '', message: '', onConfirm: null, confirmLabel: 'Confirmar', variant: 'danger' });
   const [showNewCategory, setShowNewCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -167,11 +167,12 @@ export default function StockModule() {
         min_stock: parseInt(newProduct.min_stock) || 5,
         iva: newProduct.iva || '21%',
         category_id: newProduct.category_id ? parseInt(newProduct.category_id) : null,
+        extra_codes: (newProduct.codigos_extra || '').split(',').map(c => c.trim()).filter(Boolean),
       });
       if (res.ok) {
         if (addToast) addToast('Producto creado exitosamente.', 'success');
         setShowNuevoProducto(false);
-        setNewProduct({ code: '', name: '', price: '', cost_price: '', stock: '', min_stock: '5', iva: '21%', category_id: '' });
+        setNewProduct({ code: '', name: '', price: '', cost_price: '', stock: '', min_stock: '5', iva: '21%', category_id: '', codigos_extra: '' });
         fetchProducts();
         if (onProductsUpdated) onProductsUpdated();
       } else {
@@ -545,6 +546,30 @@ export default function StockModule() {
                           }
                         });
                       }} style={{ background: 'rgba(168, 85, 247, 0.15)', color: '#C084FC', border: '1px solid rgba(168, 85, 247, 0.45)', padding: '6px 12px', borderRadius: '6px', fontSize: '0.82rem', cursor: 'pointer', fontWeight: 700, whiteSpace: 'nowrap' }}>Nombre</button>
+                      <button onClick={() => {
+                        setPromptState({
+                          isOpen: true,
+                          title: `Códigos de barra para ${p.name}`,
+                          value: (p.extra_codes || []).join(', '),
+                          text: true,
+                          hint: 'Separados por coma. Los códigos cargados reemplazan a los anteriores.',
+                          onConfirm: async (codes) => {
+                            setPromptState(prev => ({...prev, isOpen: false}));
+                            try {
+                              const res = await apiPut(`/products/${p.id}`, { extra_codes: (codes || '').split(',').map(c => c.trim()).filter(Boolean) });
+                              if (res.ok) {
+                                if (addToast) addToast(`Códigos de ${p.name} actualizados.`, 'success');
+                                fetchProducts();
+                                if (onProductsUpdated) onProductsUpdated();
+                              } else {
+                                if (addToast) addToast('No se pudieron actualizar los códigos. Reintentá o revisá tu conexión.', 'error');
+                              }
+                            } catch {
+                              if (addToast) addToast('Sin internet. Revisá tu conexión.', 'error');
+                            }
+                          }
+                        });
+                      }} style={{ background: 'rgba(251, 146, 60, 0.15)', color: '#FBBF24', border: '1px solid rgba(251, 146, 60, 0.45)', padding: '6px 12px', borderRadius: '6px', fontSize: '0.82rem', cursor: 'pointer', fontWeight: 700, whiteSpace: 'nowrap' }}>Códigos</button>
                       <button onClick={() => { setConfirmState({ isOpen: true, title: 'Eliminar Producto', message: 'Estas por eliminar ' + p.name + '. Esta accion no se puede deshacer.', confirmLabel: 'Eliminar', variant: 'danger', onConfirm: () => { setConfirmState(prev => ({...prev, isOpen: false})); apiDelete('/products/' + p.id).then(r => { if (r.ok) { addToast(p.name + ' eliminado.', 'success'); fetchProducts(); if (onProductsUpdated) onProductsUpdated(); } else addToast('No se pudo eliminar. Reintenta.', 'error'); }).catch(() => addToast('Sin internet.', 'error')); } }); }} style={{ background: 'rgba(239, 68, 68, 0.08)', color: 'var(--accent-danger)', border: '1px solid rgba(239, 68, 68, 0.2)', padding: '4px 8px', borderRadius: '6px', fontSize: '0.75rem', cursor: 'pointer', fontWeight: 600, whiteSpace: 'nowrap', marginLeft: 'auto' }}><Icons.Trash /></button>
                       {p.is_virtual === 1 && p.stock > 0 && (
                         <button onClick={() => handleUnpack(p.id)} style={{ background: 'rgba(59, 130, 246, 0.1)', color: 'var(--accent-primary)', border: '1px solid rgba(59, 130, 246, 0.2)', padding: '6px 12px', borderRadius: '6px', fontSize: '0.8rem', cursor: 'pointer', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Icons.Package style={{ width: '14px', height: '14px' }} /> Desarmar</button>
@@ -683,8 +708,21 @@ export default function StockModule() {
                 </select>
               </div>
             </div>
+            <div style={{ marginTop: '16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                <label style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 600 }}>Códigos de barra adicionales</label>
+                <button onClick={() => { setScanTarget('code'); setShowScanner(true); }} title="Escanear código de barras" style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '2px 6px', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', fontWeight: 600 }} onMouseEnter={e => { e.currentTarget.style.color = 'var(--accent-primary)'; e.currentTarget.style.background = 'rgba(20,187,166,0.1)'; }} onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.background = 'transparent'; }}>
+                  <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                  Escanear
+                </button>
+              </div>
+              <input value={newProduct.codigos_extra} onChange={e => setNewProduct({ ...newProduct, codigos_extra: e.target.value })}
+                placeholder="Ej: 7790001234567, 7790007654321 (separados por coma)"
+                style={{ width: '100%', padding: '10px 12px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '8px', outline: 'none', fontSize: '0.95rem', boxSizing: 'border-box' }} />
+              <p style={{ margin: '6px 0 0 0', color: 'var(--text-secondary)', fontSize: '0.78rem' }}>Si el mismo producto llega con distintos códigos de barra, agregalos acá: al escanear cualquiera se vende igual.</p>
+            </div>
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '24px' }}>
-              <button onClick={() => { setShowNuevoProducto(false); setNewProduct({ code: '', name: '', price: '', cost_price: '', stock: '', min_stock: '5', iva: '21%', category_id: '' }); }}
+              <button onClick={() => { setShowNuevoProducto(false); setNewProduct({ code: '', name: '', price: '', cost_price: '', stock: '', min_stock: '5', iva: '21%', category_id: '', codigos_extra: '' }); }}
                 style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', padding: '10px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Cancelar</button>
               <button onClick={handleCreateProduct}
                 style={{ background: 'var(--gradient-primary)', border: 'none', color: 'white', padding: '10px 24px', borderRadius: '8px', cursor: 'pointer', fontWeight: 700 }}>
@@ -762,9 +800,10 @@ export default function StockModule() {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(30,58,95,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100 }}>
           <div style={{ background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '24px', width: '320px', maxWidth: '92vw', boxSizing: 'border-box', boxShadow: '0 10px 25px rgba(0,0,0,0.5)' }}>
             <h3 style={{ margin: '0 0 16px 0', color: 'var(--text-primary)', fontSize: '1.1rem', fontWeight: 700 }}>{promptState.title}</h3>
+            {promptState.hint && <p style={{ margin: '0 0 12px 0', color: 'var(--text-secondary)', fontSize: '0.85rem', textAlign: 'center' }}>{promptState.hint}</p>}
             <input 
-              type="number" 
-              step="any" 
+              type={promptState.text ? 'text' : 'number'} 
+              step={promptState.text ? undefined : 'any'} 
               value={promptState.value} 
               onChange={e => setPromptState({...promptState, value: e.target.value})} 
               autoFocus
@@ -772,7 +811,7 @@ export default function StockModule() {
                 if (e.key === 'Enter') promptState.onConfirm(promptState.value);
                 if (e.key === 'Escape') setPromptState({...promptState, isOpen: false});
               }}
-              style={{ width: '100%', padding: '12px 16px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '8px', marginBottom: '24px', outline: 'none', boxSizing: 'border-box', fontSize: '1.2rem', fontWeight: 800, textAlign: 'center' }} 
+              style={{ width: '100%', padding: '12px 16px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '8px', marginBottom: '24px', outline: 'none', boxSizing: 'border-box', fontSize: '1.2rem', fontWeight: 800, textAlign: promptState.text ? 'left' : 'center' }} 
             />
             <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
               <button onClick={() => setPromptState({...promptState, isOpen: false})} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', padding: '10px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Cancelar</button>

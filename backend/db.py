@@ -226,6 +226,15 @@ async def init_pg() -> None:
             CREATE INDEX IF NOT EXISTS idx_products_category ON products(category_id);
             CREATE INDEX IF NOT EXISTS idx_products_is_active ON products(is_active);
 
+            CREATE TABLE IF NOT EXISTS product_barcodes (
+                id          SERIAL PRIMARY KEY,
+                business_id TEXT NOT NULL REFERENCES businesses(id),
+                product_id  INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+                code        TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_product_barcodes_code ON product_barcodes(code);
+            CREATE INDEX IF NOT EXISTS idx_product_barcodes_product ON product_barcodes(product_id);
+
             CREATE TABLE IF NOT EXISTS categories (
                 id              SERIAL PRIMARY KEY,
                 business_id     TEXT NOT NULL REFERENCES businesses(id),

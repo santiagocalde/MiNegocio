@@ -130,17 +130,20 @@ async def close_turn(turn_id: int, body: TurnClose) -> dict:
         from db_helpers import get_pg_pool
         pool = await get_pg_pool()
 
-        if body.operator_id and body.pin:
+        if body.operator_id:
             async with pool.acquire() as conn:
                 op_row = await conn.fetchrow(
-                    "SELECT pin FROM operators WHERE id = $1 AND business_id = $2",
+                    "SELECT pin, role FROM operators WHERE id = $1 AND business_id = $2",
                     body.operator_id, b_id
                 )
                 if not op_row:
                     raise HTTPException(403, detail="Operador no encontrado")
-                if not bcrypt.checkpw(body.pin.encode(), op_row["pin"].encode()):
-                    if not (not op_row["pin"].startswith("$2b$") and body.pin == op_row["pin"]):
-                        raise HTTPException(403, detail="PIN incorrecto")
+                if op_row["role"] != "admin":
+                    if not body.pin:
+                        raise HTTPException(403, detail="El cajero debe ingresar su PIN para cerrar el turno")
+                    if not bcrypt.checkpw(body.pin.encode(), op_row["pin"].encode()):
+                        if not (not op_row["pin"].startswith("$2b$") and body.pin == op_row["pin"]):
+                            raise HTTPException(403, detail="PIN incorrecto")
 
         async with pool.acquire() as conn:
             async with conn.transaction():
@@ -179,15 +182,18 @@ async def close_turn(turn_id: int, body: TurnClose) -> dict:
                 "status": "perfecto" if abs(difference) < 0.01 else ("sobrante" if difference > 0 else "faltante")}
     else:
         import aiosqlite
-        if body.operator_id and body.pin:
+        if body.operator_id:
             async with aiosqlite.connect(main.DB_PATH) as db:
-                cur = await db.execute("SELECT pin FROM operators WHERE id = ?", (body.operator_id,))
+                cur = await db.execute("SELECT pin, role FROM operators WHERE id = ?", (body.operator_id,))
                 op_row = await cur.fetchone()
                 if not op_row:
                     raise HTTPException(403, detail="Operador no encontrado")
-                if not bcrypt.checkpw(body.pin.encode(), op_row[0].encode()):
-                    if not (not op_row[0].startswith("$2b$") and body.pin == op_row[0]):
-                        raise HTTPException(403, detail="PIN incorrecto")
+                if op_row[1] != "admin":
+                    if not body.pin:
+                        raise HTTPException(403, detail="El cajero debe ingresar su PIN para cerrar el turno")
+                    if not bcrypt.checkpw(body.pin.encode(), op_row[0].encode()):
+                        if not (not op_row[0].startswith("$2b$") and body.pin == op_row[0]):
+                            raise HTTPException(403, detail="PIN incorrecto")
 
         async with main.db_write_lock:
             async with aiosqlite.connect(main.DB_PATH) as db:

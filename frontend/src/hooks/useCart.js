@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import { findProductByAnyCode } from '../utils/productLookup';
 
 export default function useCart(productsDB, ivaRate, playBeep) {
   const [cart, setCart] = useState(() => {
@@ -79,13 +80,14 @@ export default function useCart(productsDB, ivaRate, playBeep) {
   const handleQuickAdd = useCallback((code, name, price, extra) => {
     if (addLockRef.current) return;
     addLockRef.current = true;
-    const product = productsDB?.find(p => p.code === code);
+    const product = findProductByAnyCode(productsDB, code);
+    const canonicalCode = product?.code || code;
     if (!product && !extra) { addLockRef.current = false; return; }
     setCart(prev => {
-      const ex = prev.find(item => item.code === code);
-      if (ex) return prev.map(item => item.code === code ? { ...item, qty: item.qty + 1 } : item);
-      const itemId = product?.id || (extra?.id || code);
-      return [...prev, { id: itemId, code, name, price, stock: product?.stock || 0, qty: 1, ...extra }];
+      const ex = prev.find(item => item.code === canonicalCode);
+      if (ex) return prev.map(item => item.code === canonicalCode ? { ...item, qty: item.qty + 1 } : item);
+      const itemId = product?.id || (extra?.id || canonicalCode);
+      return [...prev, { id: itemId, code: canonicalCode, name, price, stock: product?.stock || 0, qty: 1, ...extra }];
     });
     setTimeout(() => { addLockRef.current = false; }, 300);
     if (playBeep) playBeep();

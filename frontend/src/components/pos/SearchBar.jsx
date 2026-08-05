@@ -3,6 +3,7 @@ import { Icons } from '../ui/Icons';
 import AddAmountModal from './AddAmountModal';
 import CameraBarcodeScanner from '../ui/CameraBarcodeScanner';
 import useIsMobile from '../../hooks/useIsMobile';
+import { findProductByAnyCode } from '../../utils/productLookup';
 
 export default function SearchBar({
   search, setSearch, searchRef, searchError, flash,
@@ -15,7 +16,7 @@ export default function SearchBar({
   const handleBarcodeScan = useCallback((code) => {
     if (!code || !productsDB) return;
     setSearch(code);
-    const exact = productsDB.find(p => p.code === code);
+    const exact = findProductByAnyCode(productsDB, code);
     if (exact) {
       addToast(`Escaneado: ${exact.name}`, 'info');
       handleQuickAdd(exact.code, exact.name, exact.price);
@@ -28,7 +29,7 @@ export default function SearchBar({
   const autocomplete = useMemo(() => {
     if (!search.trim() || !productsDB) return [];
     return productsDB
-      .filter(p => p.code?.startsWith(search) || p.name?.toLowerCase().startsWith(search.toLowerCase()))
+      .filter(p => p.code?.startsWith(search) || (p.extra_codes || []).some(c => c?.startsWith(search)) || p.name?.toLowerCase().startsWith(search.toLowerCase()))
       .slice(0, 5);
   }, [search, productsDB]);
 
@@ -68,7 +69,7 @@ export default function SearchBar({
             setSearch(e.target.value);
             if (e.target.value.trim().length > 0 && e.target.value.trim().length < 3) {
               const term = e.target.value.trim();
-              const codeMatch = autocomplete.find(p => p.code === term);
+              const codeMatch = findProductByAnyCode(productsDB, term);
               if (codeMatch) { handleQuickAdd(codeMatch.code, codeMatch.name, codeMatch.price); setSearch(''); searchRef.current?.focus(); }
             }
           }}
@@ -85,7 +86,7 @@ export default function SearchBar({
                 const productCode = term.slice(2, 7);
                 const priceCents = parseInt(term.slice(7, 12), 10);
                 const scalePrice = priceCents / 100;
-                const match = productsDB?.find(p => p.code === productCode);
+                const match = findProductByAnyCode(productsDB, productCode);
                 if (match) {
                   addToast(`Balanza: ${match.name} - $${scalePrice.toFixed(2)}`, 'info');
                   handleQuickAdd(match.code, match.name, scalePrice);
@@ -99,7 +100,7 @@ export default function SearchBar({
                 }
               }
               // Búsqueda normal por código exacto
-              const exact = productsDB?.find(p => p.code === term);
+              const exact = findProductByAnyCode(productsDB, term);
               if (exact) {
                 handleQuickAdd(exact.code, exact.name, exact.price);
                 setSearch('');

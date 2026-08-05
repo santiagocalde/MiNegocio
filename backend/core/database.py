@@ -40,6 +40,14 @@ async def init_db(DB_PATH: str, logger) -> None:
                 updated_at  TEXT    DEFAULT (datetime('now','localtime'))
             );
 
+            CREATE TABLE IF NOT EXISTS product_barcodes (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                product_id  INTEGER NOT NULL,
+                code        TEXT    NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_product_barcodes_code ON product_barcodes(code);
+            CREATE INDEX IF NOT EXISTS idx_product_barcodes_product ON product_barcodes(product_id);
+
             CREATE TABLE IF NOT EXISTS categories (
                 id   INTEGER PRIMARY KEY AUTOINCREMENT,
                 business_id TEXT DEFAULT 'kiosco_default', 

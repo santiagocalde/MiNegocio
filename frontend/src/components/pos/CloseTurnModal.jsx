@@ -1,16 +1,30 @@
 import { useState } from 'react';
 import { apiPatch } from '../../services/apiClient';
 
-export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, currentOperator, todaySalesTotal, countedCash, setCountedCash, closeCajaPin, setCloseCajaPin, calculateCajaDiff, cashRef, addToast, currentTurnId, onTurnClosed }) {
+export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, currentOperator, todaySalesTotal, resumenData, countedCash, setCountedCash, closeCajaPin, setCloseCajaPin, calculateCajaDiff, cashRef, addToast, currentTurnId, onTurnClosed }) {
   const [closing, setClosing] = useState(false);
   if (!isClosingCaja) return null;
+
+  const methodRows = [
+    { label: 'Efectivo', value: resumenData?.total_efectivo || 0 },
+    { label: 'Transferencia', value: resumenData?.total_transferencia || 0 },
+    { label: 'MercadoPago', value: resumenData?.total_mp || 0 },
+    { label: 'Tarjeta', value: resumenData?.total_tarjeta || 0 },
+    { label: 'Fiado', value: resumenData?.total_fiado || 0 },
+  ].filter(m => m.value > 0);
+
+  const isAdmin = currentOperator?.role === 'admin';
 
   const handleCloseTurn = async () => {
     if (!currentTurnId) {
       if (addToast) addToast('No hay turno activo.', 'error');
       return;
     }
-    if (!closeCajaPin || closeCajaPin.length < 4) {
+    if (!countedCash) {
+      if (addToast) addToast('Ingresa cuánto efectivo contaste.', 'error');
+      return;
+    }
+    if (!isAdmin && (!closeCajaPin || closeCajaPin.length < 4)) {
       if (addToast) addToast('Ingresa tu PIN de 4 digitos.', 'error');
       return;
     }
@@ -19,8 +33,8 @@ export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, curren
       const res = await apiPatch(`/turns/${currentTurnId}/close`, {
         sales_total: todaySalesTotal || 0,
         counted_cash: parseFloat(countedCash) || 0,
-        pin: closeCajaPin,
-        operator_id: currentOperator?.id || null,
+        operator_id: isAdmin ? null : (currentOperator?.id || null),
+        pin: isAdmin ? undefined : closeCajaPin,
         notes: calculateCajaDiff() !== 0 ? (calculateCajaDiff() > 0 ? `Sobrante: $${calculateCajaDiff()}` : `Faltante: $${Math.abs(calculateCajaDiff())}`) : 'Caja cerrada sin diferencias.',
       });
       if (res.ok) {
@@ -46,7 +60,20 @@ export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, curren
       {currentOperator?.role === 'admin' && (
         <>
         <p style={{ textAlign: 'center', color: 'var(--text-secondary)', marginBottom: '8px' }}>Hoy el sistema registró ventas por:</p>
-        <div className="modal-amount" style={{ color: 'var(--text-primary)', marginBottom: '24px', textAlign: 'center' }}>${(todaySalesTotal || 0).toLocaleString('es-AR')}</div>
+        <div className="modal-amount" style={{ color: 'var(--text-primary)', marginBottom: '8px', textAlign: 'center' }}>${(todaySalesTotal || 0).toLocaleString('es-AR')}</div>
+        {methodRows.length > 0 && (
+          <div style={{ border: '1px solid var(--border-color)', borderRadius: '8px', padding: '12px 16px', marginBottom: '12px' }}>
+            {methodRows.map(m => (
+              <div key={m.label} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: '0.9rem' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>{m.label}</span>
+                <span style={{ color: 'var(--text-primary)', fontWeight: 700 }}>${m.value.toLocaleString('es-AR')}</span>
+              </div>
+            ))}
+          </div>
+        )}
+        <p style={{ textAlign: 'center', color: 'var(--text-secondary)', marginBottom: '16px', fontSize: '0.8rem' }}>
+          El arqueo compara solo el <strong>efectivo físico</strong> del cajón. Las transferencias y posnet van a tu cuenta bancaria aparte.
+        </p>
         </>
       )}
       {currentOperator?.role !== 'admin' && (
@@ -57,10 +84,12 @@ export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, curren
       <div className="input-group"><label style={{ fontSize: '1.1rem', color: 'var(--accent-primary)', fontWeight: 600 }}>Cuanto efectivo contaste en el cajon fisico?</label>
         <input ref={cashRef} type="number" value={countedCash} onChange={e => setCountedCash(e.target.value)} autoFocus />
       </div>
-      <div className="input-group"><label style={{ fontSize: '1.1rem', color: 'var(--text-secondary)' }}>Firma del Cierre (PIN 4 digitos)</label>
-        <input type="password" value={closeCajaPin} onChange={e => setCloseCajaPin(e.target.value.replace(/[^0-9]/g, '').slice(0, 4))} placeholder="****" />
-      </div>
-      {countedCash && closeCajaPin.length === 4 && currentOperator?.role === 'admin' && (
+      {!isAdmin && (
+        <div className="input-group"><label style={{ fontSize: '1.1rem', color: 'var(--text-secondary)' }}>Firma del Cierre (PIN 4 digitos)</label>
+          <input type="password" value={closeCajaPin} onChange={e => setCloseCajaPin(e.target.value.replace(/[^0-9]/g, '').slice(0, 4))} placeholder="****" />
+        </div>
+      )}
+      {countedCash && (isAdmin || closeCajaPin.length === 4) && (
         <div style={{ textAlign: 'center', marginBottom: '24px', padding: '16px', borderRadius: '12px', background: calculateCajaDiff() === 0 ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)' }}>
           {calculateCajaDiff() === 0 ? <span style={{ color: 'var(--accent-success)', fontWeight: 700, fontSize: '1.5rem' }}>Caja perfecta! No sobra ni falta.</span> : (
             <div><span style={{ color: 'var(--accent-danger)', fontWeight: 800, fontSize: '1.8rem' }}>{calculateCajaDiff() > 0 ? `Sobra $${calculateCajaDiff().toLocaleString('es-AR')}` : `Falta $${Math.abs(calculateCajaDiff()).toLocaleString('es-AR')}`}</span>
@@ -71,7 +100,7 @@ export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, curren
       )}
       <div className="modal-actions">
         <button className="btn btn-modal-cancel" onClick={() => { setIsClosingCaja(false); setCountedCash(''); setCloseCajaPin(''); }} disabled={closing}>Cancelar (Esc)</button>
-        <button className="btn btn-modal-confirm" style={{ background: 'var(--accent-danger)', opacity: !countedCash || closeCajaPin.length < 4 || closing ? 0.5 : 1 }} onClick={handleCloseTurn} disabled={!countedCash || closeCajaPin.length < 4 || closing}>
+        <button className="btn btn-modal-confirm" style={{ background: 'var(--accent-danger)', opacity: !countedCash || (!isAdmin && closeCajaPin.length < 4) || closing ? 0.5 : 1 }} onClick={handleCloseTurn} disabled={!countedCash || (!isAdmin && closeCajaPin.length < 4) || closing}>
           {closing ? 'Cerrando turno...' : 'Confirmar y Reportar'}
         </button>
       </div>

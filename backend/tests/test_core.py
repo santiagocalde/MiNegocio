@@ -247,5 +247,79 @@ async def test_import_products_csv_updates_category_on_existing(test_db, client)
     assert categoria == "Repuestos"
 
 
+# ── Tests de códigos de barra múltiples ──────────────────────
+
+@pytest.mark.asyncio
+async def test_create_product_with_extra_codes(test_db, client):
+    async with client as ac:
+        r = await ac.post("/api/products", json={
+            "code": "MC1", "name": "Multi", "price": 100, "stock": 5,
+            "extra_codes": ["779000111", "779000222"],
+        })
+        assert r.status_code == 201, r.text
+        res = await ac.get("/api/products")
+    assert res.status_code == 200, res.text
+    data = res.json()
+    p = next(x for x in data if x["code"] == "MC1")
+    assert p["extra_codes"] == ["779000111", "779000222"]
+
+
+@pytest.mark.asyncio
+async def test_create_product_extra_codes_dedupes_and_skips_main(test_db, client):
+    async with client as ac:
+        r = await ac.post("/api/products", json={
+            "code": "MC2", "name": "Dupe", "price": 100,
+            "extra_codes": [" 779000111 ", "779000222", "779000111", "MC2", ""],
+        })
+        assert r.status_code == 201, r.text
+        res = await ac.get("/api/products")
+    p = next(x for x in res.json() if x["code"] == "MC2")
+    assert p["extra_codes"] == ["779000111", "779000222"]
+
+
+@pytest.mark.asyncio
+async def test_import_csv_with_extra_codes(test_db, client):
+    csv_text = (
+        "code,name,price,cost_price,stock,min_stock,iva,codigos_extra\n"
+        "E1,Filtro aire,5000,3000,10,3,21%,779000111|779000222\n"
+        "E2,Correa,7000,4000,5,2,21%,779000333\n"
+    )
+    async with client as ac:
+        res = await ac.post("/api/products/import", content=csv_text)
+    assert res.status_code == 200, res.text
+    assert res.json()["imported"] == 2
+    assert res.json()["errors"] == []
+
+    import aiosqlite
+    async with aiosqlite.connect(test_db) as db:
+        cur = await db.execute(
+            "SELECT p.code, b.code FROM product_barcodes b JOIN products p ON p.id = b.product_id ORDER BY b.code"
+        )
+        rows = await cur.fetchall()
+    assert [tuple(r) for r in rows] == [
+        ("E1", "779000111"), ("E1", "779000222"), ("E2", "779000333"),
+    ]
+
+
+@pytest.mark.asyncio
+async def test_update_product_replaces_extra_codes(test_db, client):
+    async with client as ac:
+        r = await ac.post("/api/products", json={"code": "UP1", "name": "Upd", "price": 100, "extra_codes": ["A1", "A2"]})
+        pid = r.json()["id"]
+        r2 = await ac.put(f"/api/products/{pid}", json={"extra_codes": ["B1"]})
+        assert r2.status_code == 200, r2.text
+        res = await ac.get("/api/products")
+        p = next(x for x in res.json() if x["code"] == "UP1")
+        assert p["extra_codes"] == ["B1"]
+
+        # Un PUT sin extra_codes no los borra.
+        r3 = await ac.put(f"/api/products/{pid}", json={"name": "Renombrado"})
+        assert r3.status_code == 200, r3.text
+        res = await ac.get("/api/products")
+        p = next(x for x in res.json() if x["code"] == "UP1")
+        assert p["name"] == "Renombrado"
+        assert p["extra_codes"] == ["B1"]
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

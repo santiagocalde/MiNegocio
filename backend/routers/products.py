@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends, Query, Body, Request
 from fastapi.responses import Response
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
+import re
 import aiosqlite
 import main
 from main import row_to_dict, USE_PG, get_current_business, check_product_limit, check_plan_limits
@@ -11,6 +12,23 @@ router = APIRouter()
 
 def _biz_id():
     return main.business_id_ctx.get() if hasattr(main, 'business_id_ctx') else None
+
+def _parse_extra_codes(value, main_code: str = "") -> list[str]:
+    """Normaliza codigos de barra alternativos (lista o string separado por coma/barra/enter)."""
+    if value is None:
+        return []
+    if isinstance(value, str):
+        parts = re.split(r"[|;,\n]", value)
+    else:
+        parts = [str(v) for v in value]
+    seen = set()
+    out = []
+    for p in parts:
+        c = p.strip()
+        if c and c != main_code and c not in seen:
+            seen.add(c)
+            out.append(c)
+    return out
 
 async def _check_product_limit(request: Request, extra: int = 0):
     auth = request.headers.get("Authorization")
@@ -64,35 +82,53 @@ async def list_products(q: Optional[str] = Query(None), limit: int = Query(500),
         async with pool.acquire() as conn:
             if q:
                 rows = await conn.fetch(
-                    "SELECT p.*, c.name AS category_name FROM products p "
+                    "SELECT p.*, c.name AS category_name, "
+                    "(SELECT COALESCE(string_agg(pb.code, ','), '') FROM product_barcodes pb WHERE pb.product_id = p.id) AS extra_codes_raw "
+                    "FROM products p "
                     "LEFT JOIN categories c ON c.id = p.category_id "
                     "WHERE p.business_id = $1 AND p.is_active = 1 AND (p.code ILIKE $2 OR p.name ILIKE $2) ORDER BY p.name LIMIT $3",
                     b_id, f"%{q}%", limit
                 )
             else:
                 rows = await conn.fetch(
-                    "SELECT p.*, c.name AS category_name FROM products p "
+                    "SELECT p.*, c.name AS category_name, "
+                    "(SELECT COALESCE(string_agg(pb.code, ','), '') FROM product_barcodes pb WHERE pb.product_id = p.id) AS extra_codes_raw "
+                    "FROM products p "
                     "LEFT JOIN categories c ON c.id = p.category_id "
                     "WHERE p.business_id = $1 AND p.is_active = 1 ORDER BY p.name LIMIT $2",
                     b_id, limit
                 )
-            return [dict(r) for r in rows]
+            out = []
+            for r in rows:
+                d = dict(r)
+                d["extra_codes"] = [c for c in (d.pop("extra_codes_raw", "") or "").split(",") if c]
+                out.append(d)
+            return out
     else:
         async with aiosqlite.connect(main.DB_PATH) as db:
             if q:
                 cur = await db.execute(
-                    "SELECT p.*, c.name AS category_name FROM products p "
+                    "SELECT p.*, c.name AS category_name, "
+                    "(SELECT COALESCE(GROUP_CONCAT(pb.code, ','), '') FROM product_barcodes pb WHERE pb.product_id = p.id) AS extra_codes_raw "
+                    "FROM products p "
                     "LEFT JOIN categories c ON c.id = p.category_id "
                     "WHERE p.is_active = 1 AND (p.code LIKE ? OR p.name LIKE ?) ORDER BY p.name LIMIT ?",
                     (f"%{q}%", f"%{q}%", limit)
                 )
             else:
                 cur = await db.execute(
-                    "SELECT p.*, c.name AS category_name FROM products p "
+                    "SELECT p.*, c.name AS category_name, "
+                    "(SELECT COALESCE(GROUP_CONCAT(pb.code, ','), '') FROM product_barcodes pb WHERE pb.product_id = p.id) AS extra_codes_raw "
+                    "FROM products p "
                     "LEFT JOIN categories c ON c.id = p.category_id "
                     "WHERE p.is_active = 1 ORDER BY p.name LIMIT ?", (limit,))
             rows = await cur.fetchall()
-            return [row_to_dict(r, cur.description) for r in rows]
+            out = []
+            for r in rows:
+                d = row_to_dict(r, cur.description)
+                d["extra_codes"] = [c for c in (d.pop("extra_codes_raw", "") or "").split(",") if c]
+                out.append(d)
+            return out
 
 
 @router.get("/api/products/dead-stock", summary="Productos sin rotacion")
@@ -182,7 +218,8 @@ async def import_products_csv(request: Request, csv_text: str = Body(..., media_
             min_stock = int(float(row.get('min_stock', 5)))
             iva = (row.get('iva', '21%') or '21%').strip()
             categoria = (row.get('categoria') or row.get('category') or '').strip()
-            parsed.append((code, name, price, cost_price, stock, min_stock, iva, categoria))
+            extra = _parse_extra_codes(row.get('codigos_extra') or row.get('extra_codes'), code)
+            parsed.append((code, name, price, cost_price, stock, min_stock, iva, categoria, extra))
         except Exception as e:
             errors.append(f"Fila {i+2}: {str(e)}")
 
@@ -194,7 +231,7 @@ async def import_products_csv(request: Request, csv_text: str = Body(..., media_
             pool = await get_pg_pool()
             async with pool.acquire() as conn:
                 async with conn.transaction():
-                    for code, name, price, cost, stock, min_stock, iva, categoria in parsed:
+                    for code, name, price, cost, stock, min_stock, iva, categoria, extra in parsed:
                         cat_id = None
                         if categoria:
                             cat_id = await conn.fetchval(
@@ -206,20 +243,27 @@ async def import_products_csv(request: Request, csv_text: str = Body(..., media_
                                 categories_created.append(categoria)
                         existing = await conn.fetchrow("SELECT id FROM products WHERE code = $1 AND business_id = $2", code, b_id)
                         if existing:
+                            pid = existing["id"]
                             await conn.execute(
                                 "UPDATE products SET name=$1, price=$2, cost_price=$3, stock=$4, min_stock=$5, iva=$6, category_id=$7, updated_at=now() WHERE code=$8 AND business_id=$9",
                                 name, price, cost, stock, min_stock, iva, cat_id, code, b_id
                             )
                         else:
-                            await conn.execute(
-                                "INSERT INTO products (business_id, code, name, price, cost_price, stock, min_stock, iva, category_id) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)",
+                            pid = await conn.fetchval(
+                                "INSERT INTO products (business_id, code, name, price, cost_price, stock, min_stock, iva, category_id) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id",
                                 b_id, code, name, price, cost, stock, min_stock, iva, cat_id
+                            )
+                        if extra:
+                            await conn.execute("DELETE FROM product_barcodes WHERE product_id = $1", pid)
+                            await conn.executemany(
+                                "INSERT INTO product_barcodes (business_id, product_id, code) VALUES ($1, $2, $3)",
+                                [(b_id, pid, c) for c in extra],
                             )
                         imported += 1
         else:
             async with aiosqlite.connect(main.DB_PATH) as db:
                 await db.execute("BEGIN IMMEDIATE")
-                for code, name, price, cost, stock, min_stock, iva, categoria in parsed:
+                for code, name, price, cost, stock, min_stock, iva, categoria, extra in parsed:
                     cat_id = None
                     if categoria:
                         cur = await db.execute("SELECT id FROM categories WHERE name = ?", (categoria,))
@@ -230,16 +274,25 @@ async def import_products_csv(request: Request, csv_text: str = Body(..., media_
                             cur = await db.execute("INSERT INTO categories (name) VALUES (?)", (categoria,))
                             cat_id = cur.lastrowid
                             categories_created.append(categoria)
-                    cur = await db.execute("SELECT id FROM products WHERE code = ?", (code,))
-                    if await cur.fetchone():
+                    sel = await db.execute("SELECT id FROM products WHERE code = ?", (code,))
+                    prow = await sel.fetchone()
+                    if prow:
+                        pid = prow[0]
                         await db.execute(
                             "UPDATE products SET name=?, price=?, cost_price=?, stock=?, min_stock=?, iva=?, category_id=?, updated_at=datetime('now','localtime') WHERE code=?",
                             (name, price, cost, stock, min_stock, iva, cat_id, code)
                         )
                     else:
-                        await db.execute(
+                        cur = await db.execute(
                             "INSERT INTO products (code, name, price, cost_price, stock, min_stock, iva, category_id) VALUES (?,?,?,?,?,?,?,?)",
                             (code, name, price, cost, stock, min_stock, iva, cat_id)
+                        )
+                        pid = cur.lastrowid
+                    if extra:
+                        await db.execute("DELETE FROM product_barcodes WHERE product_id = ?", (pid,))
+                        await db.executemany(
+                            "INSERT INTO product_barcodes (product_id, code) VALUES (?, ?)",
+                            [(pid, c) for c in extra],
                         )
                     imported += 1
                 await db.commit()
@@ -264,7 +317,13 @@ async def create_product(request: Request, product: dict = Body(...)) -> Dict[st
                 product.get("stock", 0), product.get("min_stock", 5), product.get("iva", "21%"),
                 product.get("category_id"), 1 if product.get("is_virtual") else 0,
                 product.get("parent_id"), product.get("pack_size", 1), product.get("expiry_date", ""))
-            return {"id": row["id"], **product}
+            extra = _parse_extra_codes(product.get("extra_codes"), code)
+            if extra:
+                await conn.executemany(
+                    "INSERT INTO product_barcodes (business_id, product_id, code) VALUES ($1, $2, $3)",
+                    [(b_id, row["id"], c) for c in extra],
+                )
+            return {"id": row["id"], **product, "extra_codes": extra}
     else:
         async with aiosqlite.connect(main.DB_PATH) as db:
             cur = await db.execute(
@@ -274,8 +333,14 @@ async def create_product(request: Request, product: dict = Body(...)) -> Dict[st
                  product.get("category_id"), 1 if product.get("is_virtual") else 0,
                  product.get("parent_id"), product.get("pack_size", 1), product.get("expiry_date", ""))
             )
+            extra = _parse_extra_codes(product.get("extra_codes"), code)
+            if extra:
+                await db.executemany(
+                    "INSERT INTO product_barcodes (product_id, code) VALUES (?, ?)",
+                    [(cur.lastrowid, c) for c in extra],
+                )
             await db.commit()
-            return {"id": cur.lastrowid, **product}
+            return {"id": cur.lastrowid, **product, "extra_codes": extra}
 
 
 @router.patch("/api/products/{product_id}/price", summary="Actualizar precio")
@@ -340,6 +405,7 @@ async def update_stock(product_id: int, body: dict) -> dict:
 @router.put("/api/products/{product_id}", summary="Actualizar producto")
 async def update_product(product_id: int, body: dict) -> dict:
     b_id = _biz_id()
+    extra_codes = _parse_extra_codes(body.get("extra_codes"), body.get("code", "")) if "extra_codes" in body else None
     if USE_PG:
         from db_helpers import get_pg_pool
         pool = await get_pg_pool()
@@ -354,9 +420,17 @@ async def update_product(product_id: int, body: dict) -> dict:
                     sets.append(f"{k} = ${n}")
                     params.append(body[k])
                     n += 1
-            if not sets: return {"message": "Sin cambios"}
-            params.append(product_id)
-            await conn.execute(f"UPDATE products SET {', '.join(sets)}, updated_at = now() WHERE id = ${n}", *params)
+            if sets:
+                params.append(product_id)
+                await conn.execute(f"UPDATE products SET {', '.join(sets)}, updated_at = now() WHERE id = ${n}", *params)
+            if extra_codes is not None:
+                await conn.execute("DELETE FROM product_barcodes WHERE product_id = $1", product_id)
+                if extra_codes:
+                    await conn.executemany(
+                        "INSERT INTO product_barcodes (business_id, product_id, code) VALUES ($1, $2, $3)",
+                        [(b_id, product_id, c) for c in extra_codes],
+                    )
+            if not sets and extra_codes is None: return {"message": "Sin cambios"}
             return {"success": True}
     else:
         async with aiosqlite.connect(main.DB_PATH) as db:
@@ -368,9 +442,16 @@ async def update_product(product_id: int, body: dict) -> dict:
                 if k in body:
                     sets.append(f"{k} = ?")
                     params.append(body[k])
-            if not sets: return {"message": "Sin cambios"}
-            params.append(product_id)
-            await db.execute(f"UPDATE products SET {', '.join(sets)}, updated_at = datetime('now','localtime') WHERE id = ?", tuple(params))
+            if sets:
+                params.append(product_id)
+                await db.execute(f"UPDATE products SET {', '.join(sets)}, updated_at = datetime('now','localtime') WHERE id = ?", tuple(params))
+            if extra_codes is not None:
+                await db.execute("DELETE FROM product_barcodes WHERE product_id = ?", (product_id,))
+                if extra_codes:
+                    await db.executemany(
+                        "INSERT INTO product_barcodes (product_id, code) VALUES (?, ?)",
+                        [(product_id, c) for c in extra_codes],
+                    )
             await db.commit()
             return {"success": True}
 

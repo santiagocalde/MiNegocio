@@ -193,6 +193,7 @@ export default function PanelLayout() {
 
       <CloseTurnModal isClosingCaja={closeTurn.isClosingCaja} setIsClosingCaja={closeTurn.setIsClosingCaja}
         currentOperator={auth.currentOperator} todaySalesTotal={backend.todaySalesTotal}
+        resumenData={backend.resumenData}
         countedCash={closeTurn.countedCash} setCountedCash={closeTurn.setCountedCash}
         closeCajaPin={closeTurn.closeCajaPin} setCloseCajaPin={closeTurn.setCloseCajaPin}
         calculateCajaDiff={closeTurn.calculateCajaDiff} cashRef={closeTurn.cashRef} addToast={addToast}
