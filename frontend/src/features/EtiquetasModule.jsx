@@ -7,7 +7,7 @@ const A4_MM = [210, 297];
 const MARGIN_MM = 6;
 const GAP_MM = 4;
 const MM_TO_PX = 3.78;
-const PREVIEW_SCALE = 0.42;
+const PREVIEW_SCALE = 0.50;
 
 const SIZE_PRESETS = {
   small:  { mm: [70, 32],  priceFont: 13, nameFont: 8  },
@@ -165,7 +165,7 @@ export default function EtiquetasModule() {
 
       <div style={{ flex: 1, display: 'flex', gap: '8px', minHeight: 0, overflow: 'hidden' }}>
         {/* Lista de productos */}
-        <div style={{ width: '340px', minWidth: '260px', flexShrink: 0, overflowY: 'auto', background: 'var(--bg-card)', borderRadius: '10px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ width: '300px', minWidth: '240px', flexShrink: 0, overflowY: 'auto', background: 'var(--bg-card)', borderRadius: '10px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column' }}>
           <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--border-color)', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.4px', flexShrink: 0 }}>
             Productos ({filtered.length})
             {isFull && <span style={{ color: 'var(--accent-warning)', marginLeft: 8 }}>· hoja llena</span>}
@@ -207,7 +207,7 @@ export default function EtiquetasModule() {
                 style={{ padding: '3px 10px', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: wrappedPage >= totalPages - 1 ? 'var(--text-secondary)' : 'var(--text-primary)', cursor: wrappedPage >= totalPages - 1 ? 'default' : 'pointer', fontSize: '0.75rem', fontWeight: 700, opacity: wrappedPage >= totalPages - 1 ? 0.4 : 1 }}>→</button>
             </div>
           </div>
-          <div style={{ flex: 1, overflow: 'auto', padding: '6px', display: 'flex', justifyContent: 'center', background: '#e2e6ea' }}>
+          <div style={{ flex: 1, overflow: 'auto', padding: '4px', display: 'flex', justifyContent: 'center', background: '#e2e6ea' }}>
             {selectedProducts.length === 0 ? (
               <div style={{ color: '#94a3b8', fontSize: '0.85rem', alignSelf: 'center', textAlign: 'center', padding: 20 }}>
                 Seleccioná productos de la izquierda<br/>para previsualizar las etiquetas<br/><br/>
