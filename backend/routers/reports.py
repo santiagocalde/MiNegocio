@@ -81,6 +81,171 @@ async def export_sales_excel(desde: Optional[str] = None, hasta: Optional[str] =
                              headers={"Content-Disposition": "attachment; filename=ventas.xlsx"})
 
 
+@router.get("/api/reports/ganancias", summary="Ganancia mensual: ingresos - costo - gastos")
+async def ganancias_report(desde: Optional[str] = None, hasta: Optional[str] = None):
+    """Ganancia neta por mes: ingresos (ventas) - costo de mercaderia - gastos.
+
+    - Ingresos: total de ventas del mes.
+    - Costo: suma de unit_cost * quantity de sale_items (costo al momento de vender).
+      Las ventas anteriores a que se guardara unit_cost usan el cost_price actual
+      del producto como aproximacion.
+    - Gastos: egresos_caja con type='gasto' (no cuentan retiros/sangrias del dueno).
+    - Retiros: egresos_caja con type='retiro' (informativos, no afectan ganancia).
+    - Ganancia neta: ingresos - costo - gastos.
+    """
+    b_id = _biz_id()
+
+    def _to_date(s, default=None):
+        if not s:
+            return default
+        try:
+            return date.fromisoformat(str(s)[:10])
+        except ValueError:
+            return default
+
+    desde_d = _to_date(desde)
+    hasta_d = _to_date(hasta)
+
+    if USE_PG:
+        from db_helpers import get_pg_pool
+        pool = await get_pg_pool()
+        async with pool.acquire() as conn:
+            params = [b_id]
+            sale_clauses = ["s.business_id = $1"]
+            egreso_clauses = ["e.business_id = $1"]
+            n = 2
+            if desde_d:
+                sale_clauses.append(f"s.timestamp >= ${n}::date")
+                egreso_clauses.append(f"e.timestamp >= ${n}::date")
+                params.append(desde_d); n += 1
+            if hasta_d:
+                sale_clauses.append(f"s.timestamp < (${n}::date + interval '1 day')")
+                egreso_clauses.append(f"e.timestamp < (${n}::date + interval '1 day')")
+                params.append(hasta_d); n += 1
+            sale_where = " AND ".join(sale_clauses)
+            egreso_where = " AND ".join(egreso_clauses)
+
+            rows = await conn.fetch(f"""
+                SELECT date_trunc('month', s.timestamp)::date as mes,
+                       COALESCE(SUM(s.total), 0) as ingresos,
+                       COALESCE(SUM(COALESCE(si.unit_cost, 0) * si.quantity), 0) as costo
+                FROM sales s
+                LEFT JOIN sale_items si ON si.sale_id = s.id
+                WHERE {sale_where}
+                GROUP BY 1
+            """, *params)
+
+            egr = await conn.fetch(f"""
+                SELECT date_trunc('month', e.timestamp)::date as mes,
+                       COALESCE(SUM(CASE WHEN e.type = 'gasto' THEN e.monto ELSE 0 END), 0) as gastos,
+                       COALESCE(SUM(CASE WHEN e.type = 'retiro' THEN e.monto ELSE 0 END), 0) as retiros
+                FROM egresos_caja e
+                WHERE {egreso_where}
+                GROUP BY 1
+            """, *params)
+
+            # Backfill: ventas sin unit_cost (anteriores al cambio) → cost_price actual del producto
+            backfill = await conn.fetch(f"""
+                SELECT date_trunc('month', s.timestamp)::date as mes,
+                       COALESCE(SUM(COALESCE(p.cost_price, 0) * si.quantity), 0) as costo_fallback
+                FROM sales s
+                JOIN sale_items si ON si.sale_id = s.id
+                LEFT JOIN products p ON p.id = si.product_id
+                WHERE {sale_where} AND (si.unit_cost IS NULL OR si.unit_cost = 0)
+                GROUP BY 1
+            """, *params)
+    else:
+        import aiosqlite
+        async with aiosqlite.connect(main.DB_PATH) as db:
+            clauses = []
+            params = []
+            if desde_d:
+                clauses.append("s.timestamp >= date(?, 'start of month')"); params.append(desde_d.isoformat())
+            if hasta_d:
+                clauses.append("s.timestamp < date(?, '+1 day')"); params.append(hasta_d.isoformat())
+            sale_where = (" WHERE " + " AND ".join(clauses)) if clauses else ""
+            egr_where = sale_where.replace("s.timestamp", "e.timestamp")
+
+            cur = await db.execute(f"""
+                SELECT strftime('%Y-%m', s.timestamp) as mes,
+                       COALESCE(SUM(s.total), 0) as ingresos,
+                       COALESCE(SUM(COALESCE(si.unit_cost, 0) * si.quantity), 0) as costo
+                FROM sales s
+                LEFT JOIN sale_items si ON si.sale_id = s.id
+                {sale_where}
+                GROUP BY 1
+            """, tuple(params))
+            rows = [row_to_dict(r, cur.description) for r in await cur.fetchall()]
+
+            cur = await db.execute(f"""
+                SELECT strftime('%Y-%m', e.timestamp) as mes,
+                       COALESCE(SUM(CASE WHEN e.type = 'gasto' THEN e.monto ELSE 0 END), 0) as gastos,
+                       COALESCE(SUM(CASE WHEN e.type = 'retiro' THEN e.monto ELSE 0 END), 0) as retiros
+                FROM egresos_caja e
+                {egr_where}
+                GROUP BY 1
+            """, tuple(params))
+            egr = [row_to_dict(r, cur.description) for r in await cur.fetchall()]
+
+            cur = await db.execute(f"""
+                SELECT strftime('%Y-%m', s.timestamp) as mes,
+                       COALESCE(SUM(COALESCE(p.cost_price, 0) * si.quantity), 0) as costo_fallback
+                FROM sales s
+                JOIN sale_items si ON si.sale_id = s.id
+                LEFT JOIN products p ON p.id = si.product_id
+                WHERE ({" AND ".join(clauses) if clauses else "1=1"})
+                  AND (si.unit_cost IS NULL OR si.unit_cost = 0)
+                GROUP BY 1
+            """, tuple(params))
+            backfill = [row_to_dict(r, cur.description) for r in await cur.fetchall()]
+
+    fallback_map = {r["mes"]: float(r["costo_fallback"] or 0) for r in backfill}
+
+    meses = {}
+    for r in rows:
+        mes = r["mes"]
+        meses[mes] = {
+            "mes": mes, "ingresos": float(r["ingresos"] or 0),
+            "costo": float(r["costo"] or 0),
+            "gastos": 0.0, "retiros": 0.0,
+        }
+    for r in egr:
+        mes = r["mes"]
+        m = meses.setdefault(mes, {"mes": mes, "ingresos": 0.0, "costo": 0.0, "gastos": 0.0, "retiros": 0.0})
+        m["gastos"] += float(r["gastos"] or 0)
+        m["retiros"] += float(r["retiros"] or 0)
+
+    result = []
+    for mes in sorted(meses.keys(), reverse=True):
+        m = meses[mes]
+        # unit_cost guardado al vender (nuevo) + fallback cost_price actual para
+        # las ventas que no guardaban costo (historial pre-cambio).
+        costo = round(m["costo"] + (fallback_map.get(mes, 0) or 0), 2)
+        bruto = round(m["ingresos"] - costo, 2)
+        gastos = round(m["gastos"], 2)
+        result.append({
+            "mes": mes,
+            "ingresos": round(m["ingresos"], 2),
+            "costo": round(costo, 2),
+            "bruto": bruto,
+            "gastos": gastos,
+            "retiros": round(m["retiros"], 2),
+            "ganancia": round(bruto - gastos, 2),
+        })
+
+    return {
+        "mensual": result,
+        "totales": {
+            "ingresos": round(sum(x["ingresos"] for x in result), 2),
+            "costo": round(sum(x["costo"] for x in result), 2),
+            "bruto": round(sum(x["bruto"] for x in result), 2),
+            "gastos": round(sum(x["gastos"] for x in result), 2),
+            "retiros": round(sum(x["retiros"] for x in result), 2),
+            "ganancia": round(sum(x["ganancia"] for x in result), 2),
+        },
+    }
+
+
 @router.get("/api/reports/margins", summary="Margen de ganancia por producto")
 async def margins_report():
     """Margen por producto activo, usando price y cost_price ya cargados.

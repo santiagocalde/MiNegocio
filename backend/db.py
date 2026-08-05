@@ -489,6 +489,7 @@ async def init_pg() -> None:
             ALTER TABLE products ADD COLUMN IF NOT EXISTS en_catalogo INTEGER DEFAULT 1;
             ALTER TABLE products ADD COLUMN IF NOT EXISTS image_url TEXT DEFAULT '';
             ALTER TABLE sale_items ALTER COLUMN product_id DROP NOT NULL;
+            ALTER TABLE sale_items ADD COLUMN IF NOT EXISTS unit_cost NUMERIC(12,2) DEFAULT 0;
             ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS debt NUMERIC(12,2) DEFAULT 0;
 
             CREATE TABLE IF NOT EXISTS audit_log (

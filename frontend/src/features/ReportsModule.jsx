@@ -22,6 +22,7 @@ export default function ReportsModule() {
   const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState('');
   const [salesData, setSalesData] = useState([]);
+  const [ganancias, setGanancias] = useState({ mensual: [], totales: { ingresos: 0, costo: 0, bruto: 0, gastos: 0, retiros: 0, ganancia: 0 } });
   const [summary, setSummary] = useState({ totalVentas: 0, ingresos: 0, metodoUsado: 'Efectivo', pctEfectivo: 0, productoPopular: '...', pctProducto: 0 });
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -88,6 +89,28 @@ export default function ReportsModule() {
     }
     if (!silent) setLoading(false);
   }, [sucursalId, dateFrom, dateTo]);
+
+  const fetchGanancias = useCallback(async (silent = false) => {
+    try {
+      let path = `/reports/ganancias`;
+      if (dateFrom) path += `?desde=${dateFrom}`;
+      if (dateTo) path += `${dateFrom ? '&' : '?'}hasta=${dateTo}`;
+      const res = await apiGet(path);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && Array.isArray(data.mensual)) setGanancias(data);
+      }
+    } catch(err) {
+      console.error('Ganancias fetch error:', err);
+    }
+  }, [dateFrom, dateTo]);
+
+  useEffect(() => {
+    if (dateFrom && dateTo) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      fetchGanancias();
+    }
+  }, [fetchGanancias, dateFrom, dateTo]);
 
   useEffect(() => {
     const today = new Date();
@@ -165,6 +188,51 @@ export default function ReportsModule() {
           <svg style={{ position: 'absolute', top: '20px', right: '20px', color: 'var(--text-secondary)', opacity: 0.5 }} width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
         </div>
       </div>
+
+      {ganancias.mensual.length > 0 && (
+        <div style={{ marginBottom: '20px', background: 'var(--bg-card)', borderRadius: '12px', border: '1px solid var(--border-color)', overflow: 'hidden', flexShrink: 0 }}>
+          <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+            <div>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 700, margin: '0 0 4px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+                Ganancias Mensuales
+              </h3>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>Ganancia neta = ventas - costo de mercadería - gastos del periodo.</p>
+            </div>
+            <div style={{ fontSize: '1rem', fontWeight: 800, color: ganancias.totales.ganancia >= 0 ? 'var(--accent-success)' : 'var(--accent-danger)' }}>
+              {formatPesos(ganancias.totales.ganancia)}
+            </div>
+          </div>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+              <thead>
+                <tr style={{ color: 'var(--text-primary)', fontSize: '0.8rem', fontWeight: 700, borderBottom: '1px solid var(--border-color)' }}>
+                  <th style={{ padding: '12px 16px' }}>Mes</th>
+                  <th style={{ padding: '12px 16px' }}>Ingresos</th>
+                  <th style={{ padding: '12px 16px' }}>Costo</th>
+                  <th style={{ padding: '12px 16px' }}>Gastos</th>
+                  <th style={{ padding: '12px 16px' }}>Retiros</th>
+                  <th style={{ padding: '12px 16px' }}>Ganancia</th>
+                </tr>
+              </thead>
+              <tbody>
+                {ganancias.mensual.map((m) => (
+                  <tr key={m.mes} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                    <td style={{ padding: '12px 16px', fontWeight: 700 }}>{m.mes}</td>
+                    <td style={{ padding: '12px 16px', fontFamily: 'var(--font-mono)' }}>{formatPesos(m.ingresos)}</td>
+                    <td style={{ padding: '12px 16px', fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>{formatPesos(m.costo)}</td>
+                    <td style={{ padding: '12px 16px', fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>{formatPesos(m.gastos)}</td>
+                    <td style={{ padding: '12px 16px', fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>{formatPesos(m.retiros)}</td>
+                    <td style={{ padding: '12px 16px', fontFamily: 'var(--font-mono)', fontWeight: 700, color: m.ganancia >= 0 ? 'var(--accent-success)' : 'var(--accent-danger)' }}>
+                      {formatPesos(m.ganancia)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {canAccessIA ? (
         <div style={{ display: 'flex', gap: '12px', marginBottom: isMobile ? '12px' : '24px', flexWrap: 'wrap' }}>
