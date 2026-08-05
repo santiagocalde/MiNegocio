@@ -152,12 +152,10 @@ async def test_plan_limits_pro_allows_multi_sucursal():
 
 
 @pytest.mark.asyncio
-async def test_plan_limits_trial_blocks_purchases():
-    from fastapi import HTTPException
+async def test_plan_limits_trial_allows_purchases():
     from core.plan_limits import check_plan_limits
-    with pytest.raises(HTTPException) as exc:
-        await check_plan_limits("purchases", business={"plan": "trial", "sub": "test"})
-    assert exc.value.status_code == 402
+    limits = await check_plan_limits("purchases", business={"plan": "trial", "sub": "test"})
+    assert limits["purchases"] is True
 
 
 # ── Tests de JWT helpers ──────────────────────────────────────

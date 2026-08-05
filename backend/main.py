@@ -282,7 +282,7 @@ class TenantMiddleware(BaseHTTPMiddleware):
                 "/api/billing/webhook", "/api/plans", "/api/metrics", "/api/track",
                 "/api/testimonials", "/api/send-contact", "/api/catalogo", "/docs", "/openapi",
             )
-            path = request.url.path
+            path = request.scope["path"]
             if SAAS_MODE and not b_id and path.startswith("/api/"):
                 if not any(path.startswith(p) for p in public_prefixes):
                     if request.method == "OPTIONS":
