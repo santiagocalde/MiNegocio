@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback } from 'react';
+import { useMemo, useState, useRef, useCallback } from 'react';
 import { Icons } from '../ui/Icons';
 import AddAmountModal from './AddAmountModal';
 import CameraBarcodeScanner from '../ui/CameraBarcodeScanner';
@@ -12,6 +12,14 @@ export default function SearchBar({
   const [showAddAmountModal, setShowAddAmountModal] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
   const isMobile = useIsMobile();
+  const lastScanRef = useRef({ code: '', time: 0 });
+
+  const isDuplicateScan = useCallback((code) => {
+    const now = Date.now();
+    if (code === lastScanRef.current.code && now - lastScanRef.current.time < 3000) return true;
+    lastScanRef.current = { code, time: now };
+    return false;
+  }, []);
 
   const handleBarcodeScan = useCallback((code) => {
     if (!code || !productsDB) return;
@@ -70,7 +78,7 @@ export default function SearchBar({
             if (e.target.value.trim().length > 0 && e.target.value.trim().length < 3) {
               const term = e.target.value.trim();
               const codeMatch = findProductByAnyCode(productsDB, term);
-              if (codeMatch) { handleQuickAdd(codeMatch.code, codeMatch.name, codeMatch.price); setSearch(''); searchRef.current?.focus(); }
+              if (codeMatch && !isDuplicateScan(term)) { handleQuickAdd(codeMatch.code, codeMatch.name, codeMatch.price); setSearch(''); searchRef.current?.focus(); }
             }
           }}
           onKeyDown={e => {
@@ -88,6 +96,7 @@ export default function SearchBar({
                 const scalePrice = priceCents / 100;
                 const match = findProductByAnyCode(productsDB, productCode);
                 if (match) {
+                  if (isDuplicateScan(term)) return;
                   addToast(`Balanza: ${match.name} - $${scalePrice.toFixed(2)}`, 'info');
                   handleQuickAdd(match.code, match.name, scalePrice);
                   setSearch('');
@@ -101,11 +110,11 @@ export default function SearchBar({
               }
               // Búsqueda normal por código exacto
               const exact = findProductByAnyCode(productsDB, term);
-              if (exact) {
+              if (exact && !isDuplicateScan(term)) {
                 handleQuickAdd(exact.code, exact.name, exact.price);
                 setSearch('');
                 searchRef.current?.focus();
-              } else if (autocomplete.length === 1) {
+              } else if (autocomplete.length === 1 && !isDuplicateScan(term)) {
                 handleQuickAdd(autocomplete[0].code, autocomplete[0].name, autocomplete[0].price);
                 setSearch('');
                 searchRef.current?.focus();
