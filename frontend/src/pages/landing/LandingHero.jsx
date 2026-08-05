@@ -25,7 +25,7 @@ function TypewriterRubro() {
     <span style={{ whiteSpace: 'nowrap' }}>
       <style>{'@keyframes lp-caret{50%{opacity:0}}'}</style>
       {txt}
-      <span style={{ borderRight: '3px solid currentColor', marginLeft: 1, animation: 'lp-caret 0.9s step-end infinite' }}>&nbsp;</span>
+      <span style={{ borderRight: '3px solid currentColor', animation: 'lp-caret 0.9s step-end infinite', marginRight: 0 }}></span>
     </span>
   );
 }
@@ -45,18 +45,18 @@ export default function LandingHero({ isLoggedIn, goPanel, goOnboard }) {
           </div>
           <h1 style={{
             fontFamily: '"Inter", "SF Pro Display", -apple-system, BlinkMacSystemFont, var(--lp-font-display), sans-serif',
-            fontSize: 'clamp(2.5rem, 8.5vw, 6.5rem)',
+            fontSize: 'clamp(1.9rem, 6.5vw, 5.5rem)',
             lineHeight: 1.15,
-            letterSpacing: '-2px',
+            letterSpacing: '-1px',
             fontWeight: 800,
             marginBottom: 24,
             paddingTop: '0.05em',
-            paddingLeft: '0.1em',
+            marginLeft: '-0.6em', paddingLeft: 0,
             paddingRight: '0.1em',
             color: '#ffffff'
           }}>
             Dejá el cuaderno.<br />
-            <span className="lp-gradient-text" style={{ fontStyle: 'italic' }}>Tu <TypewriterRubro /> merece algo mejor.</span>
+            <span className="lp-gradient-text" style={{ fontStyle: 'italic', whiteSpace: 'nowrap' }}>Tu <TypewriterRubro /> merece algo mejor.</span>
           </h1>
         </Reveal>
         <Reveal delay={2}>
