@@ -3,7 +3,7 @@ import { Reveal } from './hooks/useReveal';
 
 const Svg = { ArrowRight: () => <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg> };
 function TypewriterRubro() {
-  const words = ['kiosco', 'almacén', 'fiambrería', 'verdulería', 'despensa', 'maxikiosco'];
+  const words = ['kiosco', 'almacén', 'fiambrería', 'verdulería', 'despensa', 'maxikiosco', 'vinería'];
   const [i, setI] = useState(0);
   const [txt, setTxt] = useState('');
   const [del, setDel] = useState(false);

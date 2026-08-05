@@ -22,6 +22,7 @@ const tiposNegocio = [
   { id: 'electrodomesticos', label: 'Repuestos y Electrodomésticos', icon: <Icons.Settings /> },
   { id: 'libreria', label: 'Librería', icon: <Icons.Book /> },
   { id: 'petshop', label: 'Pet Shop', icon: <Icons.Users /> },
+  { id: 'vineria', label: 'Vinería', icon: <Icons.Sparkles /> },
   { id: 'otro', label: 'Otro', icon: <Icons.Crown /> },
 ];
 
