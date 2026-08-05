@@ -116,6 +116,9 @@ export default function StockModule() {
   const [filterCategory, setFilterCategory] = useState('');
   const [filterStock, setFilterStock] = useState('all');
 
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState(new Set());
+
   const [showNuevoProducto, setShowNuevoProducto] = useState(false);
   const [categories, setCategories] = useState([]);
   const [newProduct, setNewProduct] = useState({ code: '', name: '', price: '', cost_price: '', stock: '', min_stock: '5', iva: '21%', category_id: '', codigos_extra: '' });
@@ -158,6 +161,49 @@ export default function StockModule() {
       console.error('Stock: no se pudo crear la categoría:', e);
       if (addToast) addToast('No se pudo crear la categoría. Revisá la conexión.', 'error');
     }
+  };
+
+  const toggleSelect = (id) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const selectAllFiltered = () => {
+    const ids = filteredProducts.map(p => p.id);
+    setSelectedIds(new Set(ids));
+  };
+
+  const clearSelection = () => {
+    setSelectedIds(new Set());
+    setSelectMode(false);
+  };
+
+  const handleBatchDelete = () => {
+    if (selectedIds.size === 0) return;
+    setConfirmState({
+      isOpen: true,
+      title: 'Eliminar productos',
+      message: `¿Eliminar ${selectedIds.size} productos? Esta acción no se puede deshacer.`,
+      confirmLabel: `Eliminar ${selectedIds.size}`,
+      variant: 'danger',
+      onConfirm: async () => {
+        setConfirmState(prev => ({ ...prev, isOpen: false }));
+        let count = 0;
+        for (const id of selectedIds) {
+          try {
+            const res = await apiDelete('/products/' + id);
+            if (res.ok) count++;
+          } catch { /* seguir con los demás */ }
+        }
+        if (addToast) addToast(`${count} producto(s) eliminado(s).`, 'success');
+        clearSelection();
+        fetchProducts();
+        if (onProductsUpdated) onProductsUpdated();
+      }
+    });
   };
 
   useEffect(() => {
@@ -420,7 +466,31 @@ export default function StockModule() {
         <button onClick={() => setShowFilters(!showFilters)} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '0 16px', borderRadius: '8px', fontSize: '0.95rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Icons.Filter /> Filtros
         </button>
+        <button onClick={() => { setSelectMode(!selectMode); if (selectMode) setSelectedIds(new Set()); }} style={{ background: selectMode ? 'rgba(239,68,68,0.12)' : 'var(--bg-card)', border: selectMode ? '1px solid rgba(239,68,68,0.3)' : '1px solid var(--border-color)', color: selectMode ? 'var(--accent-danger)' : 'var(--text-primary)', padding: '0 16px', borderRadius: '8px', fontSize: '0.95rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Icons.Trash /> {selectMode ? 'Cancelar' : 'Seleccionar'}
+        </button>
       </div>
+
+      {selectMode && (
+        <div style={{ display: 'flex', gap: 10, marginBottom: 12, flexShrink: 0, alignItems: 'center', flexWrap: 'wrap' }}>
+          <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 600 }}>{selectedIds.size} seleccionados</span>
+          <button onClick={selectAllFiltered} style={{ padding: '6px 14px', borderRadius: 6, border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-primary)', cursor: 'pointer', fontWeight: 600, fontSize: '0.82rem' }}>Seleccionar todos</button>
+          <button onClick={clearSelection} style={{ padding: '6px 14px', borderRadius: 6, border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-secondary)', cursor: 'pointer', fontWeight: 600, fontSize: '0.82rem' }}>Limpiar</button>
+          <button
+            disabled={selectedIds.size === 0}
+            onClick={handleBatchDelete}
+            style={{
+              marginLeft: 'auto', padding: '6px 20px', borderRadius: 6, border: 'none', fontWeight: 700, fontSize: '0.85rem',
+              cursor: selectedIds.size === 0 ? 'not-allowed' : 'pointer',
+              background: selectedIds.size === 0 ? 'var(--bg-hover)' : 'rgba(239,68,68,0.15)',
+              color: selectedIds.size === 0 ? 'var(--text-secondary)' : 'var(--accent-danger)',
+              opacity: selectedIds.size === 0 ? 0.5 : 1,
+            }}
+          >
+            Eliminar {selectedIds.size > 0 ? selectedIds.size : ''}
+          </button>
+        </div>
+      )}
 
       {showFilters && (
         <div style={{ display: 'flex', gap: 12, marginBottom: 24, padding: 16, background: 'var(--bg-card)', borderRadius: 12, border: '1px solid var(--border-color)', flexWrap: 'wrap', alignItems: 'flex-end', flexShrink: 0 }}>
@@ -463,6 +533,7 @@ export default function StockModule() {
               className="virtuoso-stock-table"
               fixedHeaderContent={() => (
                 <tr style={{ color: 'var(--text-primary)', fontSize: '0.8rem', fontWeight: 700, borderBottom: '1px solid var(--border-color)' }}>
+                  {selectMode && <th style={{ padding: '10px 8px', width: '36px', background: 'var(--bg-main)' }}></th>}
                   <th style={{ padding: '10px 16px', width: '64px', background: 'var(--bg-main)' }}>Imagen</th>
                   <th style={{ padding: '10px 16px', background: 'var(--bg-main)', cursor: 'pointer' }} onClick={() => toggleSort('name')}>Producto<SortIcon columnKey="name" /></th>
                   <th style={{ padding: '10px 16px', background: 'var(--bg-main)', cursor: 'pointer' }} onClick={() => toggleSort('category_name')}>Categoría<SortIcon columnKey="category_name" /></th>
@@ -476,6 +547,11 @@ export default function StockModule() {
               )}
               itemContent={(index, p) => (
                 <>
+                  {selectMode && (
+                    <td style={{ padding: '8px 8px' }}>
+                      <input type="checkbox" checked={selectedIds.has(p.id)} onChange={() => toggleSelect(p.id)} style={{ accentColor: '#14BBA6', width: 16, height: 16, cursor: 'pointer' }} />
+                    </td>
+                  )}
                   <td style={{ padding: '8px 16px' }}>
                     <ProductThumb name={p.name} size={40} />
                   </td>
