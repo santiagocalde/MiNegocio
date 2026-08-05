@@ -21,6 +21,8 @@ export default function EtiquetasModule() {
   const s = sizes[labelSize];
   const MM_TO_PX = 3.78;
 
+  const selectedProducts = useMemo(() => products.filter(p => selected.has(p.id)), [products, selected]);
+
   const handlePrint = useCallback(() => {
     const labelsHtml = selectedProducts.map(p => {
       const shortName = p.name.length > 22 ? p.name.slice(0, 20) + '...' : p.name;
@@ -80,8 +82,6 @@ export default function EtiquetasModule() {
 
   const selectAll = () => setSelected(new Set(filtered.map(p => p.id)));
   const clearAll = () => setSelected(new Set());
-
-  const selectedProducts = useMemo(() => products.filter(p => selected.has(p.id)), [products, selected]);
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', gap: '12px', overflow: 'hidden' }}>
