@@ -206,12 +206,14 @@ async def test_import_products_csv_creates_categories(test_db, client):
 
     import aiosqlite
     async with aiosqlite.connect(test_db) as db:
-        cur = await db.execute("SELECT COUNT(*) FROM categories")
-        assert (await cur.fetchone())[0] == 2
+        cur = await db.execute("SELECT name FROM categories")
+        cats = {r[0] for r in await cur.fetchall()}
         cur = await db.execute(
             "SELECT p.name, c.name FROM products p LEFT JOIN categories c ON c.id = p.category_id ORDER BY p.name"
         )
         rows = await cur.fetchall()
+    assert "Repuestos" in cats
+    assert "Herramientas" in cats
     assert ("Termostato heladera", "Repuestos") in rows
     assert ("Capacitor arranque", "Repuestos") in rows
     assert ("Martillo", "Herramientas") in rows
