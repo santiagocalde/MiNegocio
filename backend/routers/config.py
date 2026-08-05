@@ -64,16 +64,23 @@ async def public_catalogo(request: Request, slug: str = Query("")) -> dict:
     pool = await get_pg_pool()
     async with pool.acquire() as conn:
         cfg = await conn.fetchrow(
-            "SELECT business_id, nombre, catalogo_whatsapp FROM business_config "
-            "WHERE catalogo_slug = $1 AND catalogo_activo = 1 LIMIT 1",
+            "SELECT bc.business_id, bc.nombre, bc.catalogo_whatsapp, b.plan, b.status "
+            "FROM business_config bc JOIN businesses b ON b.id = bc.business_id "
+            "WHERE bc.catalogo_slug = $1 AND bc.catalogo_activo = 1 LIMIT 1",
             slug,
         )
-        if not cfg:
+        # El catálogo web es una feature del Plan Pro+: si el negocio no está en
+        # Pro/IA no existimos (404, no revelamos el motivo).
+        if not cfg or cfg["plan"] not in ("pro", "ia"):
             raise HTTPException(404, detail="Catálogo no disponible")
         prods = await conn.fetch(
-            "SELECT id, name, price, category_id FROM products "
-            "WHERE business_id = $1 AND is_active = 1 AND price > 0 "
-            "ORDER BY name LIMIT 2000",
+            "SELECT p.id, p.name, p.price, p.category_id, c.name AS category_name, "
+            "CASE WHEN p.stock <= 0 THEN 'agotado' "
+            "     WHEN p.stock <= COALESCE(p.min_stock, 5) THEN 'queda-poco' "
+            "     ELSE 'hay' END AS availability "
+            "FROM products p LEFT JOIN categories c ON c.id = p.category_id "
+            "WHERE p.business_id = $1 AND p.is_active = 1 AND p.price > 0 "
+            "ORDER BY p.name LIMIT 2000",
             cfg["business_id"],
         )
         return {
@@ -84,7 +91,7 @@ async def public_catalogo(request: Request, slug: str = Query("")) -> dict:
 
 
 @router.put("/api/config", summary="Actualizar configuracion del negocio")
-async def update_config(data: dict) -> dict:
+async def update_config(request: Request, data: dict) -> dict:
     iva_rate_raw = data.get("iva_rate")
     if iva_rate_raw is not None:
         try:
@@ -119,6 +126,26 @@ async def update_config(data: dict) -> dict:
         pool = await get_pg_pool()
         async with pool.acquire() as conn:
             b_id = _biz_id()
+            # Catálogo web = feature de Plan Pro+. Niego la activación si el plan
+            # no lo incluye y exijo un enlace único antes de activar.
+            if data.get("catalogo_activo") == 1:
+                biz = await conn.fetchrow("SELECT plan FROM businesses WHERE id = $1", b_id)
+                if not biz or biz["plan"] not in ("pro", "ia"):
+                    raise HTTPException(
+                        status_code=402,
+                        detail="El catálogo web requiere Plan Pro o superior. Tu plan actual es '{}'.".format(
+                            biz["plan"] or "desconocido" if biz else "desconocido"
+                        ),
+                    )
+                if not data.get("catalogo_slug"):
+                    raise HTTPException(400, detail="Elegí un enlace único para tu catálogo antes de activarlo.")
+            if data.get("catalogo_slug"):
+                dup = await conn.fetchrow(
+                    "SELECT business_id FROM business_config WHERE catalogo_slug = $1 AND business_id <> $2 LIMIT 1",
+                    data["catalogo_slug"], b_id,
+                )
+                if dup:
+                    raise HTTPException(409, "Ese enlace de catálogo ya está en uso por otro negocio. Elegí otro.")
             async with conn.transaction():
                 # Merge no destructivo: lo enviado pisa, lo no enviado se conserva
                 existing = await conn.fetchrow("SELECT * FROM business_config WHERE business_id = $1", b_id)

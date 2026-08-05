@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { usePanelContext } from '../context/PanelContext';
 import { apiGet, apiPut } from '../services/apiClient';
+import { API_ROOT } from '../config';
 import FeatureGate from '../components/ui/FeatureGate';
 
 const Icons = {
@@ -8,6 +9,22 @@ const Icons = {
   Globe: () => <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg>,
   Share: () => <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>,
   Store: () => <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+};
+
+const slugify = (s = '') => (s || '').toString().toLowerCase()
+  .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 50);
+
+const makeUniqueSlug = (name = '') => {
+  const base = slugify(name) || 'kiosco';
+  return `${base}-${Math.random().toString(36).slice(2, 6)}`;
+};
+
+const readErrorDetail = async (res) => {
+  try {
+    const body = await res.json();
+    return typeof body?.detail === 'string' ? body.detail : null;
+  } catch { return null; }
 };
 
 export default function CatalogoModule() {
@@ -26,8 +43,7 @@ export default function CatalogoModule() {
         setStoreName(data.nombre || data.business_name || 'Mi Kiosco');
         setWhatsapp(data.catalogo_whatsapp || data.telefono || data.phone || '');
         setIsActive(!!data.catalogo_activo);
-        const fallback = (data.nombre || 'mikiosco').replace(/[^a-z0-9]/gi, '').toLowerCase() || 'mikiosco';
-        setSlug(data.catalogo_slug || fallback);
+        setSlug(data.catalogo_slug || makeUniqueSlug(data.nombre || data.business_name));
       }
     }).catch(() => {});
   }, []);
@@ -42,6 +58,10 @@ export default function CatalogoModule() {
       });
       if (res.ok) {
         if (addToast) addToast('Configuración guardada correctamente.', 'success');
+      } else if (res.status === 409) {
+        if (addToast) addToast('Ese enlace ya está en uso por otro negocio. Elegí otro.', 'error');
+      } else if (res.status === 402) {
+        if (addToast) addToast('El catálogo web requiere Plan Pro o superior.', 'error');
       } else {
         if (addToast) addToast('No se pudo guardar la configuración del catálogo. Reintentá o revisá tu conexión.', 'error');
       }
@@ -66,12 +86,54 @@ export default function CatalogoModule() {
         if (addToast) addToast(newVal ? 'Catálogo activado.' : 'Catálogo desactivado.', 'success');
       } else {
         setIsActive(!newVal);
-        if (addToast) addToast('No se pudo cambiar el estado del catálogo. Reintentá o revisá tu conexión.', 'error');
+        const detail = await readErrorDetail(res);
+        if (addToast) addToast(detail || 'No se pudo cambiar el estado del catálogo. Reintentá o revisá tu conexión.', 'error');
       }
     } catch {
       setIsActive(!newVal);
       if (addToast) addToast('Sin internet. Revisá tu conexión.', 'error');
     } finally { setSaving(false); }
+  };
+
+  const nuevoEnlace = () => setSlug(makeUniqueSlug(storeName || 'miKiosco'));
+
+  const sendPriceList = async () => {
+    const numero = (whatsapp || '').replace(/[^0-9]/g, '');
+    if (!numero) {
+      if (addToast) addToast('Primero configurá el WhatsApp para recibir pedidos.', 'error');
+      return;
+    }
+    try {
+      const res = await fetch(`${API_ROOT}/api/catalogo?slug=${encodeURIComponent(slug)}`);
+      if (!res.ok) {
+        if (addToast) addToast('Tu catálogo no está activo todavía o no tiene productos.', 'error');
+        return;
+      }
+      const data = await res.json();
+      const list = Array.isArray(data) ? data : (data?.products || []);
+      if (!list.length) {
+        if (addToast) addToast('No hay productos publicados todavía.', 'error');
+        return;
+      }
+      const byCat = {};
+      list.forEach(p => {
+        const cat = p.category_name || 'General';
+        (byCat[cat] = byCat[cat] || []).push(p);
+      });
+      let msg = `*${storeName || 'Lista de precios'}*\n_Lista de precios al día_\n\n`;
+      Object.keys(byCat).forEach(cat => {
+        msg += `▫️ *${cat}*\n`;
+        byCat[cat].forEach(p => {
+          msg += `${p.name}: $${Number(p.price || 0).toLocaleString('es-AR')}\n`;
+        });
+        msg += '\n';
+      });
+      msg += `\nHacé tu pedido: ${whatsapp}`;
+      msg = msg.slice(0, 3800);
+      window.open(`https://wa.me/${numero}?text=${encodeURIComponent(msg)}`, '_blank');
+    } catch {
+      if (addToast) addToast('No se pudo armar la lista de precios.', 'error');
+    }
   };
 
   return (
@@ -109,6 +171,15 @@ export default function CatalogoModule() {
                <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: 600 }}>WhatsApp para recibir pedidos</label>
                <input type="text" value={whatsapp} onChange={e => setWhatsapp(e.target.value)} placeholder="+54 9 11 1234-5678" style={{ width: '100%', background: 'var(--bg-main)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '16px', borderRadius: '8px', fontSize: '1rem', outline: 'none' }} />
              </div>
+
+             <div className="input-group">
+               <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: 600 }}>Enlace único de tu tienda</label>
+               <div style={{ display: 'flex', gap: '8px' }}>
+                 <input type="text" value={slug} onChange={e => setSlug(slugify(e.target.value))} placeholder="mi-kiosco-3f8k" style={{ flex: 1, background: 'var(--bg-main)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '16px', borderRadius: '8px', fontSize: '1rem', outline: 'none', fontFamily: 'var(--font-mono)' }} />
+                 <button onClick={nuevoEnlace} title="Generar enlace nuevo" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', padding: '0 16px', borderRadius: '8px', fontWeight: 700, cursor: 'pointer', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>Generar</button>
+               </div>
+               <span style={{ display: 'block', marginTop: '6px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Este enlace es único para tu negocio: {window.location.origin}/t/{slug || '...'}</span>
+             </div>
              
              <div style={{ display: 'flex', gap: '16px', marginTop: '8px' }}>
                 <button onClick={handleSave} style={{ background: 'var(--gradient-primary)', color: 'white', border: 'none', padding: '16px', borderRadius: '8px', fontWeight: 800, fontSize: '1rem', cursor: 'pointer', transition: 'all 0.15s', flex: 1 }}>Guardar Cambios</button>
@@ -124,17 +195,22 @@ export default function CatalogoModule() {
               <p style={{ margin: '0 0 24px 0', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Compartí este link en Instagram, WhatsApp o Facebook.</p>
               
                <div style={{ background: 'rgba(255,255,255,0.05)', padding: '16px', borderRadius: '8px', fontFamily: 'var(--font-mono)', fontSize: '0.9rem', color: 'var(--accent-primary)', marginBottom: '16px', border: '1px dashed rgba(20,187,166, 0.3)' }}>
-                  {window.location.origin}/t/{slug || 'mikiosco'}
+                  {window.location.origin}/t/{slug}
                </div>
                
                <div style={{ display: 'flex', gap: '12px' }}>
-                 <button onClick={() => { navigator.clipboard?.writeText(`${window.location.origin}/t/${slug || 'mikiosco'}`); if (addToast) addToast('Enlace copiado al portapapeles.', 'success'); }} style={{ flex: 1, background: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', padding: '12px', borderRadius: '8px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer', transition: 'all 0.15s' }}>
+                 <button onClick={() => { navigator.clipboard?.writeText(`${window.location.origin}/t/${slug}`); if (addToast) addToast('Enlace copiado al portapapeles.', 'success'); }} style={{ flex: 1, background: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', padding: '12px', borderRadius: '8px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer', transition: 'all 0.15s' }}>
                     <Icons.Share /> Copiar
                  </button>
-                 <button onClick={() => window.open(`/t/${slug || 'mikiosco'}`, '_blank')} style={{ flex: 1, background: 'var(--gradient-primary)', color: 'white', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer', transition: 'all 0.15s' }}>
+                 <button onClick={() => window.open(`/t/${slug}`, '_blank')} style={{ flex: 1, background: 'var(--gradient-primary)', color: 'white', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer', transition: 'all 0.15s' }}>
                     Visitar Tienda
                  </button>
                </div>
+
+               <button onClick={sendPriceList} style={{ width: '100%', marginTop: '12px', background: 'rgba(37, 211, 102, 0.12)', color: '#25D366', border: '1px solid rgba(37, 211, 102, 0.4)', padding: '14px', borderRadius: '8px', fontWeight: 800, fontSize: '0.95rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', transition: 'all 0.15s' }}>
+                  Enviar Lista de Precios por WhatsApp
+               </button>
+               <p style={{ margin: '12px 0 0 0', color: 'var(--text-secondary)', fontSize: '0.78rem' }}>Armá una lista de precios al día, agrupada por categoría, y enviala por WhatsApp. Ideal para pedidos por mayor.</p>
            </div>
         </div>
       </div>

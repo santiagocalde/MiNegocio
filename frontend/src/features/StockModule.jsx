@@ -85,6 +85,17 @@ function saveCache(products, deadStock) {
   }
 }
 
+const APPROX_COST_RATIO = 0.6;
+
+const valorizedStock = (p) => {
+  const stock = Number(p.stock) || 0;
+  const cost = Number(p.cost_price) || 0;
+  const effCost = cost > 0 ? cost : Math.round((Number(p.price) || 0) * APPROX_COST_RATIO);
+  return { value: Math.round(stock * effCost), approx: cost <= 0, effCost: Math.round(effCost) };
+};
+
+const formatMoney = (n) => '$' + Number(n || 0).toLocaleString('es-AR');
+
 export default function StockModule() {
   const { backend, addToast } = usePanelContext();
   const onProductsUpdated = backend.fetchProductsDB;
@@ -330,6 +341,8 @@ export default function StockModule() {
     return true;
   });
 
+  const totalValorizado = filteredProducts.reduce((acc, p) => acc + valorizedStock(p).value, 0);
+
   const handleSearch = (e) => {
     if (e.key === 'Enter') fetchProducts(query);
   };
@@ -419,10 +432,13 @@ export default function StockModule() {
 
       {/* MAIN TABLE */}
       <div style={{ flex: 1, background: 'var(--bg-card)', borderRadius: '16px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        <div style={{ padding: '10px 20px', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ padding: '10px 20px', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Productos</span>
           <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>·</span>
           <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{filteredProducts.length} resultados</span>
+          <span style={{ flex: 1 }} />
+          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Stock valorizado</span>
+          <span style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--accent-primary)', fontFamily: 'var(--font-mono)' }}>{formatMoney(totalValorizado)}</span>
         </div>
 
         <div style={{ flex: 1 }}>
@@ -439,6 +455,7 @@ export default function StockModule() {
                   <th style={{ padding: '10px 16px', background: 'var(--bg-main)', cursor: 'pointer' }} onClick={() => toggleSort('price')}>Precio<SortIcon columnKey="price" /></th>
                   <th style={{ padding: '10px 16px', background: 'var(--bg-main)' }}>Estado</th>
                   <th style={{ padding: '10px 16px', background: 'var(--bg-main)', cursor: 'pointer' }} onClick={() => toggleSort('stock')}>Stock<SortIcon columnKey="stock" /></th>
+                  <th style={{ padding: '10px 16px', background: 'var(--bg-main)' }}>Stock Valorizado</th>
                   <th style={{ padding: '10px 16px', background: 'var(--bg-main)' }}>Proveedor</th>
                   <th style={{ padding: '10px 16px', textAlign: 'center', background: 'var(--bg-main)' }}>Acciones</th>
                 </tr>
@@ -468,6 +485,12 @@ export default function StockModule() {
                   <td style={{ padding: '8px 16px' }}>
                     <div style={{ fontWeight: 800, fontSize: '0.9rem', color: (p.stock ?? 0) === 0 ? 'var(--accent-danger)' : 'var(--text-primary)', marginBottom: '1px' }}>{p.stock ?? 0} u</div>
                     <div style={{ color: 'var(--text-secondary)', fontSize: '0.78rem' }}>Alerta: {p.min_stock ?? 0} u</div>
+                  </td>
+                  <td style={{ padding: '8px 16px' }}>
+                    <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--accent-primary)', fontFamily: 'var(--font-mono)' }}>{formatMoney(valorizedStock(p).value)}</div>
+                    {valorizedStock(p).approx ? (
+                      <div style={{ color: 'var(--accent-warning)', fontSize: '0.72rem' }} title="Sin costo cargado: se usa aprox. 60% del precio">costo aprox.</div>
+                    ) : null}
                   </td>
                   <td style={{ padding: '8px 16px', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
                     Sin proveedor
@@ -546,6 +569,30 @@ export default function StockModule() {
                           }
                         });
                       }} style={{ background: 'rgba(168, 85, 247, 0.15)', color: '#C084FC', border: '1px solid rgba(168, 85, 247, 0.45)', padding: '6px 12px', borderRadius: '6px', fontSize: '0.82rem', cursor: 'pointer', fontWeight: 700, whiteSpace: 'nowrap' }}>Nombre</button>
+                      <button onClick={() => {
+                        setPromptState({
+                          isOpen: true,
+                          title: `Costo de ${p.name} (actual: ${p.cost_price ? '$' + p.cost_price : 'sin cargar'})`,
+                          value: p.cost_price ?? '',
+                          onConfirm: async (newCost) => {
+                            setPromptState(prev => ({...prev, isOpen: false}));
+                            if (newCost !== null && newCost !== '' && !isNaN(newCost) && parseFloat(newCost) >= 0) {
+                              try {
+                                const res = await apiPut(`/products/${p.id}`, { cost_price: parseFloat(newCost) });
+                                if (res.ok) {
+                                  if (addToast) addToast(`Costo de ${p.name} actualizado.`, 'success');
+                                  fetchProducts();
+                                  if (onProductsUpdated) onProductsUpdated();
+                                } else {
+                                  if (addToast) addToast('No se pudo actualizar el costo. Reintentá o revisá tu conexión.', 'error');
+                                }
+                              } catch {
+                                if (addToast) addToast('Sin internet. Revisá tu conexión.', 'error');
+                              }
+                            }
+                          }
+                        });
+                      }} style={{ background: 'rgba(245, 158, 11, 0.15)', color: '#FBBF24', border: '1px solid rgba(245, 158, 11, 0.45)', padding: '6px 12px', borderRadius: '6px', fontSize: '0.82rem', cursor: 'pointer', fontWeight: 700, whiteSpace: 'nowrap' }}>Costo</button>
                       <button onClick={() => {
                         setPromptState({
                           isOpen: true,

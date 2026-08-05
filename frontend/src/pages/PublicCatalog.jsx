@@ -11,6 +11,12 @@ const Icons = {
   Trash: () => <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
 };
 
+const AVAILABILITY = {
+  hay:        { label: 'En stock',     color: 'var(--accent-success)', bg: 'rgba(16, 185, 129, 0.15)' },
+  'queda-poco': { label: 'Queda poco', color: 'var(--accent-warning)', bg: 'rgba(245, 158, 11, 0.15)' },
+  agotado:    { label: 'Agotado',      color: 'var(--accent-danger)', bg: 'rgba(239, 68, 68, 0.15)' },
+};
+
 export default function PublicCatalog() {
   const { slug } = useParams();
   const [products, setProducts] = useState([]);
@@ -19,6 +25,8 @@ export default function PublicCatalog() {
   const [cart, setCart] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [whatsapp, setWhatsapp] = useState('');
+  const [storeName, setStoreName] = useState('Mi Tienda');
+  const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
     fetch(`${API_ROOT}/api/catalogo?slug=${encodeURIComponent(slug || '')}`)
@@ -26,16 +34,21 @@ export default function PublicCatalog() {
       .then(data => {
         const list = Array.isArray(data) ? data : (data?.products || []);
         setProducts(list);
-        if (!Array.isArray(data)) setWhatsapp(data?.catalogo_whatsapp || data?.whatsapp || '');
+        if (!Array.isArray(data)) {
+          setStoreName(data?.nombre || 'Mi Tienda');
+          setWhatsapp(data?.catalogo_whatsapp || data?.whatsapp || data?.telefono || '');
+        }
         setLoading(false);
       })
       .catch(() => {
         setProducts([]);
+        setNotFound(true);
         setLoading(false);
       });
   }, [slug]);
 
   const addToCart = (product) => {
+    if (product.availability === 'agotado') return;
     setCart(prev => {
       const existing = prev.find(item => item.id === product.id);
       if (existing) {
@@ -76,26 +89,26 @@ export default function PublicCatalog() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg-main)', color: 'var(--text-primary)', fontFamily: 'var(--font-main)', paddingBottom: '100px' }}>
-      
+    <div className="catalog-page" style={{ minHeight: '100vh', background: 'var(--bg-main)', color: 'var(--text-primary)', fontFamily: 'var(--font-main)', paddingBottom: '100px' }}>
+
       {/* HEADER */}
-      <header style={{ background: 'var(--bg-card)', padding: '24px', position: 'sticky', top: 0, zIndex: 10, borderBottom: '1px solid var(--border-color)', boxShadow: '0 4px 20px rgba(0,0,0,0.2)' }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <div style={{ width: '48px', height: '48px', background: 'var(--gradient-primary)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', boxShadow: '0 4px 12px rgba(20,187,166,0.3)' }}>
+      <header className="catalog-header" style={{ background: 'var(--bg-card)', padding: '24px', position: 'sticky', top: 0, zIndex: 10, borderBottom: '1px solid var(--border-color)', boxShadow: '0 4px 20px rgba(0,0,0,0.2)' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', minWidth: 0 }}>
+            <div className="catalog-logo" style={{ width: '48px', height: '48px', background: 'var(--gradient-primary)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', boxShadow: '0 4px 12px rgba(20,187,166,0.3)', flexShrink: 0 }}>
               <Icons.Store />
             </div>
-            <div>
-              <h1 style={{ fontSize: '1.5rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
-                {slug ? slug.charAt(0).toUpperCase() + slug.slice(1) : 'Mi Tienda'}
+            <div style={{ minWidth: 0 }}>
+              <h1 className="catalog-title" style={{ fontSize: '1.5rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {storeName}
               </h1>
-              <p style={{ color: 'var(--accent-primary)', fontSize: '0.85rem', margin: '4px 0 0 0', fontWeight: 600 }}>Catálogo Online</p>
+              <p style={{ color: 'var(--accent-primary)', fontSize: '0.85rem', margin: '4px 0 0 0', fontWeight: 600 }}>Catálogo Online · Precios al día</p>
             </div>
           </div>
 
-          <button onClick={() => setIsCartOpen(true)} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-color)', padding: '12px 20px', borderRadius: '12px', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', transition: 'all 0.15s', position: 'relative' }} onMouseEnter={e=>e.target.style.background='rgba(255,255,255,0.1)'} onMouseLeave={e=>e.target.style.background='rgba(255,255,255,0.05)'}>
+          <button onClick={() => setIsCartOpen(true)} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-color)', padding: '12px 20px', borderRadius: '12px', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', transition: 'all 0.15s', position: 'relative', flexShrink: 0 }} onMouseEnter={e=>e.target.style.background='rgba(255,255,255,0.1)'} onMouseLeave={e=>e.target.style.background='rgba(255,255,255,0.05)'}>
              <Icons.ShoppingCart />
-             <span style={{ fontWeight: 800 }}>{formatPrice(cartTotal)}</span>
+             <span className="cart-total" style={{ fontWeight: 800 }}>{formatPrice(cartTotal)}</span>
              {cart.length > 0 && (
                <span style={{ position: 'absolute', top: '-8px', right: '-8px', background: 'var(--accent-danger)', color: 'white', fontSize: '0.75rem', fontWeight: 800, width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%' }}>
                  {cart.reduce((a,c) => a + c.qty, 0)}
@@ -106,12 +119,12 @@ export default function PublicCatalog() {
       </header>
 
       {/* SEARCH */}
-      <div style={{ maxWidth: '1200px', margin: '32px auto 0', padding: '0 24px' }}>
+      <div className="catalog-search" style={{ maxWidth: '1200px', margin: '32px auto 0', padding: '0 24px' }}>
         <div style={{ position: 'relative' }}>
           <span style={{ position: 'absolute', left: '20px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }}><Icons.Search /></span>
-          <input 
-            type="text" 
-            placeholder="Buscar productos..." 
+          <input
+            type="text"
+            placeholder="Buscar productos..."
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
             style={{ width: '100%', background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '20px 20px 20px 56px', borderRadius: '16px', fontSize: '1.1rem', outline: 'none', boxShadow: '0 8px 32px rgba(0,0,0,0.1)' }}
@@ -120,38 +133,57 @@ export default function PublicCatalog() {
       </div>
 
       {/* PRODUCTS GRID */}
-      <main style={{ maxWidth: '1200px', margin: '32px auto', padding: '0 24px' }}>
+      <main className="catalog-main" style={{ maxWidth: '1200px', margin: '32px auto', padding: '0 24px' }}>
         {loading ? (
            <div style={{ textAlign: 'center', padding: '64px', color: 'var(--text-secondary)' }}>Cargando catálogo...</div>
+        ) : notFound ? (
+           <div style={{ textAlign: 'center', padding: '64px', color: 'var(--text-secondary)', background: 'var(--bg-card)', borderRadius: '16px', border: '1px solid var(--border-color)' }}>Este catálogo no está disponible.</div>
         ) : filteredProducts.length === 0 ? (
            <div style={{ textAlign: 'center', padding: '64px', color: 'var(--text-secondary)', background: 'var(--bg-card)', borderRadius: '16px', border: '1px solid var(--border-color)' }}>No se encontraron productos.</div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '24px' }}>
-            {filteredProducts.map(p => (
-              <div key={p.id} style={{ background: 'var(--bg-card)', borderRadius: '16px', border: '1px solid var(--border-color)', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', transition: 'transform 0.2s, box-shadow 0.2s' }} onMouseEnter={e=>{e.currentTarget.style.transform='translateY(-4px)'; e.currentTarget.style.boxShadow='0 12px 24px rgba(0,0,0,0.2)'}} onMouseLeave={e=>{e.currentTarget.style.transform='none'; e.currentTarget.style.boxShadow='none'}}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <span style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--text-secondary)', padding: '4px 8px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase' }}>{p.category}</span>
-                </div>
-                
-                <div>
-                  <h3 style={{ margin: '0 0 8px 0', fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)' }}>{p.name}</h3>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--accent-primary)', fontFamily: 'var(--font-mono)' }}>{formatPrice(p.price)}</div>
-                </div>
+          <div className="catalog-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '24px' }}>
+            {filteredProducts.map(p => {
+              const av = AVAILABILITY[p.availability] || AVAILABILITY.hay;
+              const out = p.availability === 'agotado';
+              return (
+                <div key={p.id} className="product-card" style={{ background: 'var(--bg-card)', borderRadius: '16px', border: '1px solid var(--border-color)', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', transition: 'transform 0.2s, box-shadow 0.2s', opacity: out ? 0.72 : 1 }} onMouseEnter={e=>{ if(!out){e.currentTarget.style.transform='translateY(-4px)'; e.currentTarget.style.boxShadow='0 12px 24px rgba(0,0,0,0.2)'} }} onMouseLeave={e=>{e.currentTarget.style.transform='none'; e.currentTarget.style.boxShadow='none'}}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+                    <span style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--text-secondary)', padding: '4px 8px', borderRadius: '6px', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase' }}>{p.category_name || p.category || 'General'}</span>
+                    <span style={{ background: av.bg, color: av.color, padding: '4px 8px', borderRadius: '6px', fontSize: '0.72rem', fontWeight: 800, whiteSpace: 'nowrap' }}>{av.label}</span>
+                  </div>
 
-                <button onClick={() => addToCart(p)} style={{ width: '100%', padding: '12px', background: 'rgba(20,187,166,0.1)', color: 'var(--accent-primary)', border: '1px solid rgba(20,187,166,0.2)', borderRadius: '8px', fontSize: '0.95rem', fontWeight: 800, cursor: 'pointer', transition: 'all 0.15s', marginTop: 'auto' }} onMouseEnter={e=>{e.target.style.background='var(--gradient-primary)'; e.target.style.color='white'}} onMouseLeave={e=>{e.target.style.background='rgba(20,187,166,0.1)'; e.target.style.color='var(--accent-primary)'}}>
-                  Agregar al Pedido
-                </button>
-              </div>
-            ))}
+                  <div>
+                    <h3 style={{ margin: '0 0 8px 0', fontSize: '1.18rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.3 }}>{p.name}</h3>
+                    <div style={{ fontSize: '1.5rem', fontWeight: 800, color: out ? 'var(--text-secondary)' : 'var(--accent-primary)', fontFamily: 'var(--font-mono)' }}>{formatPrice(p.price)}</div>
+                  </div>
+
+                  <button onClick={() => addToCart(p)} disabled={out} style={{ width: '100%', padding: '12px', background: out ? 'rgba(255,255,255,0.03)' : 'rgba(20,187,166,0.1)', color: out ? 'var(--text-secondary)' : 'var(--accent-primary)', border: out ? '1px solid var(--border-color)' : '1px solid rgba(20,187,166,0.2)', borderRadius: '8px', fontSize: '0.95rem', fontWeight: 800, cursor: out ? 'not-allowed' : 'pointer', transition: 'all 0.15s', marginTop: 'auto' }} onMouseEnter={e=>{ if(!out){e.target.style.background='var(--gradient-primary)'; e.target.style.color='white'} }} onMouseLeave={e=>{ if(!out){e.target.style.background='rgba(20,187,166,0.1)'; e.target.style.color='var(--accent-primary)'} }}>
+                    {out ? 'Agotado' : 'Agregar al Pedido'}
+                  </button>
+                </div>
+              );
+            })}
           </div>
         )}
       </main>
 
-      {/* CART DRAWER / MODAL */}
+      {/* QR / PRESENTACION */}
+      <div className="catalog-footer" style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px 24px', textAlign: 'center' }}>
+        {whatsapp && (
+          <a href={`https://wa.me/${whatsapp.replace(/[^0-9]/g, '')}`} target="_blank" rel="noreferrer"
+             style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: 700, textDecoration: 'none', marginTop: '24px' }}>
+            <span style={{ width: '38px', height: '38px', borderRadius: '50%', background: 'rgba(37, 211, 102, 0.12)', color: '#25D366', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900 }}>WA</span>
+            Consultá por WhatsApp: {whatsapp}
+          </a>
+        )}
+        <p style={{ margin: '16px 0 0', color: 'var(--text-secondary)', fontSize: '0.75rem' }}>Catálogo generado por {storeName}</p>
+      </div>
+
+      {/* CART DRAWER */}
       {isCartOpen && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(11, 19, 43, 0.8)', backdropFilter: 'blur(8px)', zIndex: 100, display: 'flex', justifyContent: 'flex-end' }}>
           <div style={{ background: 'var(--bg-main)', width: '100%', maxWidth: '450px', height: '100%', display: 'flex', flexDirection: 'column', borderLeft: '1px solid var(--border-color)', boxShadow: '-10px 0 30px rgba(0,0,0,0.5)', animation: 'slideIn 0.3s ease-out' }}>
-             
+
              <div style={{ padding: '24px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '12px' }}>
                  <Icons.ShoppingCart /> Tu Pedido
@@ -204,6 +236,16 @@ export default function PublicCatalog() {
         @keyframes slideIn {
           from { transform: translateX(100%); }
           to { transform: translateX(0); }
+        }
+        @media (max-width: 640px) {
+          .catalog-header { padding: 16px !important; }
+          .catalog-logo { width: 40px !important; height: 40px !important; }
+          .catalog-title { font-size: 1.15rem !important; }
+          .cart-total { font-size: 0.8rem !important; }
+          .catalog-search, .catalog-main, .catalog-footer { padding-left: 16px !important; padding-right: 16px !important; }
+          .catalog-search { margin-top: 20px !important; }
+          .catalog-main { margin-top: 20px !important; }
+          .catalog-grid { grid-template-columns: 1fr !important; gap: 16px !important; }
         }
       `}</style>
     </div>
