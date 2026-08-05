@@ -200,7 +200,9 @@ async def asesor_precios(recs: list, biz_id: str = "") -> str:
     user = (
         "Estos son los ajustes de precio que ya calculé para el kiosco:\n" + detalle +
         "\n\nEscribí un resumen de 2 a 3 frases para el dueño, en criollo, diciéndole cuáles son "
-        "los más urgentes y por qué conviene ajustarlos. NO inventes ni cambies los números, "
+        "los más urgentes y por qué conviene ajustarlos. Sensatez: son ajustes PROGRESIVOS y "
+        "chicos (pocos puntos por vez, para el mercado argentino), así que avisá que, si hace falta, "
+        "se vuelve a subir en unos días. NO inventes ni cambies los números, "
         "usá exactamente los que te di. Texto corrido, sin viñetas."
     )
     return await _texto(user, "precios", biz_id, {"recs": [r["name"] for r in recs]})
