@@ -232,7 +232,7 @@ async def import_products_csv(request: Request, csv_text: str = Body(..., media_
             pool = await get_pg_pool()
             async with pool.acquire() as conn:
                 async with conn.transaction():
-for code, name, price, cost, stock, min_stock, iva, categoria, pack_size, extra in parsed:
+                    for code, name, price, cost, stock, min_stock, iva, categoria, pack_size, extra in parsed:
                         cat_id = None
                         if categoria:
                             cat_id = await conn.fetchval(
