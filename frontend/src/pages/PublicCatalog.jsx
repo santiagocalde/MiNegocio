@@ -29,6 +29,12 @@ export default function PublicCatalog() {
   const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
+    document.body.classList.add('landing-open');
+    window.scrollTo(0, 0);
+    return () => document.body.classList.remove('landing-open');
+  }, []);
+
+  useEffect(() => {
     fetch(`${API_ROOT}/api/catalogo?slug=${encodeURIComponent(slug || '')}`)
       .then(res => res.ok ? res.json() : Promise.reject())
       .then(data => {
