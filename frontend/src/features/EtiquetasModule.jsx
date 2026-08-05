@@ -7,7 +7,7 @@ const A4_MM = [210, 297];
 const MARGIN_MM = 6;
 const GAP_MM = 4;
 const MM_TO_PX = 3.78;
-const PREVIEW_SCALE = 0.50;
+const PREVIEW_SCALE = 0.62;
 
 const SIZE_PRESETS = {
   a4: {
@@ -239,7 +239,7 @@ export default function EtiquetasModule() {
 
         {/* Preview */}
         <div style={{ flex: 1, minWidth: 0, background: 'var(--bg-card)', borderRadius: '10px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
+          <div style={{ padding: '8px 14px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
             <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
               Vista previa · {isA4 ? `pág ${wrappedPage + 1}/${totalPages}` : `${selected.size} etiquetas`} · {presets.mm[0]}×{presets.mm[1]}mm
             </span>
@@ -252,7 +252,7 @@ export default function EtiquetasModule() {
               </div>
             )}
           </div>
-          <div style={{ flex: 1, overflow: 'auto', padding: '4px', display: 'flex', justifyContent: 'center', background: '#e2e6ea' }}>
+          <div style={{ flex: 1, overflow: 'auto', padding: '2px', display: 'flex', justifyContent: 'center', background: '#e2e6ea' }}>
             {selectedProducts.length === 0 ? (
               <div style={{ color: '#94a3b8', fontSize: '0.85rem', alignSelf: 'center', textAlign: 'center', padding: 20 }}>
                 Seleccioná productos de la izquierda<br/>para previsualizar las etiquetas<br/><br/>
