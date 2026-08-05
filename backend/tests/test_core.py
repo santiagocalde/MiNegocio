@@ -197,7 +197,7 @@ async def test_import_products_csv_creates_categories(test_db, client):
         "3,Martillo,12000,8000,5,2,21%,Herramientas\n"
     )
     async with client as ac:
-        res = await ac.post("/api/products/import", content=csv_text)
+        res = await ac.post("/api/products/import", content=csv_text, headers={"Content-Type": "text/plain"})
     assert res.status_code == 200, res.text
     data = res.json()
     assert data["imported"] == 3
@@ -230,7 +230,7 @@ async def test_import_products_csv_updates_category_on_existing(test_db, client)
 
     csv_text = "code,name,price,cost_price,stock,min_stock,iva,categoria\n1,Termostato heladera,4500,3000,10,3,21%,Repuestos\n"
     async with client as ac:
-        res = await ac.post("/api/products/import", content=csv_text)
+        res = await ac.post("/api/products/import", content=csv_text, headers={"Content-Type": "text/plain"})
     assert res.status_code == 200, res.text
     data = res.json()
     assert data["imported"] == 1
@@ -285,7 +285,7 @@ async def test_import_csv_with_extra_codes(test_db, client):
         "E2,Correa,7000,4000,5,2,21%,779000333\n"
     )
     async with client as ac:
-        res = await ac.post("/api/products/import", content=csv_text)
+        res = await ac.post("/api/products/import", content=csv_text, headers={"Content-Type": "text/plain"})
     assert res.status_code == 200, res.text
     assert res.json()["imported"] == 2
     assert res.json()["errors"] == []
