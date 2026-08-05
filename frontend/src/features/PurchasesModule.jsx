@@ -102,8 +102,10 @@ export default function PurchasesModule() {
   const handleQuickAddNew = () => {
     const name = searchQuery.trim();
     if (!name) return;
-    quickAddCounter.current += 1;
-    setCart([{ product_id: quickAddCounter.current, product_name: name, quantity: 1, unit_cost: 0 }, ...cart]);
+    // id negativo: unico en el carrito y el backend lo trata como producto nuevo
+    // (product_id 0), sin pisar el stock de un producto real con ese id.
+    quickAddCounter.current -= 1;
+    setCart([{ product_id: quickAddCounter.current, product_name: name, quantity: 1, unit_cost: 0, is_new: true }, ...cart]);
     setSearchQuery('');
     setShowQuickAdd(false);
     searchInputRef.current?.focus();
@@ -163,7 +165,7 @@ export default function PurchasesModule() {
       <div style={{ padding: '12px 20px', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
 
       {/* HEADER COMPARTIDO */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexShrink: 0 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '12px', flexShrink: 0 }}>
         <h2 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>Gestión de Compras</h2>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>

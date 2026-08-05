@@ -7,7 +7,7 @@ export default function PurchaseDetailModal({ purchase, onClose }) {
   const total = items.reduce((acc, i) => acc + (i.unit_cost || 0) * (i.quantity || 0), 0);
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(30,58,95,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }} onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} style={{ background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '32px', width: '550px', maxHeight: '80vh', overflow: 'auto', boxShadow: '0 10px 25px rgba(30,58,95,0.5)' }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '32px', width: '550px', maxWidth: '92vw', boxSizing: 'border-box', maxHeight: '80vh', overflow: 'auto', boxShadow: '0 10px 25px rgba(30,58,95,0.5)' }}>
         <h2 style={{ fontSize: '1.5rem', fontWeight: 800, margin: '0 0 20px 0', color: 'var(--text-primary)' }}>Detalle de Compra</h2>
         <div style={{ display: 'flex', gap: 32, marginBottom: 20 }}>
           <div>

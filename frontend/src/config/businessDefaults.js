@@ -1,19 +1,19 @@
 const BUSINESS_FEATURES = {
-  kiosco:        { compras: true, proveedores: false, fiados: true,  catalogo: true, auditoria: false, promociones: true,  recomendaciones: false },
-  almacen:       { compras: true, proveedores: true,  fiados: true,  catalogo: true, auditoria: false, promociones: true,  recomendaciones: false },
-  minimercado:   { compras: true, proveedores: true,  fiados: true,  catalogo: true, auditoria: false, promociones: true,  recomendaciones: false },
-  autoservicio:  { compras: true, proveedores: true,  fiados: false, catalogo: true, auditoria: true,  promociones: true,  recomendaciones: false },
-  dietetica:     { compras: true, proveedores: true,  fiados: false, catalogo: true, auditoria: false, promociones: false, recomendaciones: false },
-  panaderia:     { compras: true, proveedores: true,  fiados: true,  catalogo: true, auditoria: false, promociones: true,  recomendaciones: false },
-  ferreteria:    { compras: true, proveedores: true,  fiados: true,  catalogo: true, auditoria: false, promociones: true,  recomendaciones: false },
-  libreria:      { compras: true, proveedores: true,  fiados: false, catalogo: true, auditoria: false, promociones: false, recomendaciones: false },
-  petshop:       { compras: true, proveedores: true,  fiados: false, catalogo: true, auditoria: false, promociones: true,  recomendaciones: false },
-  otro:          { compras: true, proveedores: true,  fiados: true,  catalogo: true, auditoria: false, promociones: true,  recomendaciones: false },
+  kiosco:        { compras: true, proveedores: false, fiados: true,  catalogo: true, auditoria: false, promociones: true,  recomendaciones: true },
+  almacen:       { compras: true, proveedores: true,  fiados: true,  catalogo: true, auditoria: false, promociones: true,  recomendaciones: true },
+  minimercado:   { compras: true, proveedores: true,  fiados: true,  catalogo: true, auditoria: false, promociones: true,  recomendaciones: true },
+  autoservicio:  { compras: true, proveedores: true,  fiados: false, catalogo: true, auditoria: true,  promociones: true,  recomendaciones: true },
+  dietetica:     { compras: true, proveedores: true,  fiados: false, catalogo: true, auditoria: false, promociones: false, recomendaciones: true },
+  panaderia:     { compras: true, proveedores: true,  fiados: true,  catalogo: true, auditoria: false, promociones: true,  recomendaciones: true },
+  ferreteria:    { compras: true, proveedores: true,  fiados: true,  catalogo: true, auditoria: false, promociones: true,  recomendaciones: true },
+  libreria:      { compras: true, proveedores: true,  fiados: false, catalogo: true, auditoria: false, promociones: false, recomendaciones: true },
+  petshop:       { compras: true, proveedores: true,  fiados: false, catalogo: true, auditoria: false, promociones: true,  recomendaciones: true },
+  otro:          { compras: true, proveedores: true,  fiados: true,  catalogo: true, auditoria: false, promociones: true,  recomendaciones: true },
 };
 
 export const DEFAULT_FEATURES = {
   compras: true, proveedores: true, fiados: true, catalogo: true,
-  auditoria: false, promociones: true, recomendaciones: false,
+  auditoria: false, promociones: true, recomendaciones: true,
 };
 
 export function getBusinessFeatures(businessType) {

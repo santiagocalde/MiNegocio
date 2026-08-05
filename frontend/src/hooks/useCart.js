@@ -68,7 +68,7 @@ export default function useCart(productsDB, ivaRate, playBeep) {
         const saved = localStorage.getItem('minegocio_cart');
         if (saved) {
           const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed) && parsed.length > 0) setCart(parsed);
+          if (Array.isArray(parsed)) { if (parsed.length > 0) setCart(parsed); else if (parsed.length === 0) setCart([]); }
         }
       } catch { /* noop */ }
     };

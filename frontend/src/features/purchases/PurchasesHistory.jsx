@@ -40,8 +40,8 @@ export default function PurchasesHistory({
               </div>
             ) : (
                 purchases.map(p => (
-                  <div key={p.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-card)', padding: '16px 24px', borderRadius: '12px', border: '1px solid var(--border-color)', transition: 'transform 0.2s', cursor: 'pointer' }} onMouseEnter={e=>e.currentTarget.style.transform='translateX(4px)'} onMouseLeave={e=>e.currentTarget.style.transform='none'}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '24px', flex: 1 }}>
+                  <div key={p.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', background: 'var(--bg-card)', padding: '16px', borderRadius: '12px', border: '1px solid var(--border-color)', transition: 'transform 0.2s', cursor: 'pointer' }} onMouseEnter={e=>e.currentTarget.style.transform='translateX(4px)'} onMouseLeave={e=>e.currentTarget.style.transform='none'}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: 1, flexWrap: 'wrap' }}>
                       <div style={{ width: '48px', height: '48px', background: 'rgba(20,187,166, 0.1)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-primary)' }}>
                         <Icons.Box />
                       </div>
@@ -53,7 +53,7 @@ export default function PurchasesHistory({
                           <span>Factura: {p.invoice_number || 'S/N'}</span>
                         </div>
                       </div>
-                      <div style={{ width: '150px' }}>
+                      <div style={{ flexShrink: 0 }}>
                         <span style={{ background: 'rgba(16, 185, 129, 0.15)', color: 'var(--accent-success)', padding: '4px 12px', borderRadius: '99px', fontSize: '0.75rem', fontWeight: 700, border: '1px solid rgba(16, 185, 129, 0.2)' }}>
                           Completado
                         </span>

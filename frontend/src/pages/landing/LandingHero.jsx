@@ -1,6 +1,35 @@
+import { useState, useEffect } from 'react';
 import { Reveal } from './hooks/useReveal';
 
 const Svg = { ArrowRight: () => <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg> };
+function TypewriterRubro() {
+  const words = ['kiosco', 'almacén', 'fiambrería', 'verdulería', 'despensa', 'maxikiosco'];
+  const [i, setI] = useState(0);
+  const [txt, setTxt] = useState('');
+  const [del, setDel] = useState(false);
+
+  useEffect(() => {
+    const full = words[i];
+    let delay = del ? 55 : 110;
+    if (!del && txt === full) delay = 1400;
+    if (del && txt === '') delay = 250;
+    const t = setTimeout(() => {
+      if (!del && txt === full) { setDel(true); return; }
+      if (del && txt === '') { setDel(false); setI((i + 1) % words.length); return; }
+      setTxt(full.slice(0, del ? txt.length - 1 : txt.length + 1));
+    }, delay);
+    return () => clearTimeout(t);
+  }, [txt, del, i]);
+
+  return (
+    <span style={{ whiteSpace: 'nowrap' }}>
+      <style>{'@keyframes lp-caret{50%{opacity:0}}'}</style>
+      {txt}
+      <span style={{ borderRight: '3px solid currentColor', animation: 'lp-caret 0.9s step-end infinite', marginRight: 0 }}></span>
+    </span>
+  );
+}
+
 
 export default function LandingHero({ isLoggedIn, goPanel, goOnboard }) {
   return (
@@ -16,18 +45,18 @@ export default function LandingHero({ isLoggedIn, goPanel, goOnboard }) {
           </div>
           <h1 style={{
             fontFamily: '"Inter", "SF Pro Display", -apple-system, BlinkMacSystemFont, var(--lp-font-display), sans-serif',
-            fontSize: 'clamp(2.5rem, 8.5vw, 6.5rem)',
+            fontSize: 'clamp(1.9rem, 6.5vw, 5.5rem)',
             lineHeight: 1.15,
-            letterSpacing: '-2px',
+            letterSpacing: '-1px',
             fontWeight: 800,
             marginBottom: 24,
             paddingTop: '0.05em',
-            paddingLeft: '0.1em',
+            marginLeft: '-0.6em', paddingLeft: 0,
             paddingRight: '0.1em',
             color: '#ffffff'
           }}>
             Dejá el cuaderno.<br />
-            <span className="lp-gradient-text" style={{ fontStyle: 'italic' }}>Tu kiosco merece algo mejor.</span>
+            <span className="lp-gradient-text" style={{ fontStyle: 'italic', whiteSpace: 'nowrap' }}>Tu <TypewriterRubro /> merece algo mejor.</span>
           </h1>
         </Reveal>
         <Reveal delay={2}>
