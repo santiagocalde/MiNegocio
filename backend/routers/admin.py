@@ -175,6 +175,16 @@ async def admin_change_plan(
     if new_plan not in ("trial", "simple", "pro", "ia"):
         raise HTTPException(400, detail="Plan inválido. Usar: trial, simple, pro, ia")
     
+    # Duración opcional en días para el período (defecto: 30). Ej.: {"new_plan":"ia","days":7}
+    days = None
+    if body.get("days") is not None:
+        try:
+            days = int(body.get("days"))
+        except (TypeError, ValueError):
+            raise HTTPException(400, detail="Días inválidos")
+        if days < 1 or days > 365:
+            raise HTTPException(400, detail="Los días deben estar entre 1 y 365")
+
     pool = await _get_pool()
     async with pool.acquire() as conn:
         old = await conn.fetchrow("SELECT plan, status, email, business_name FROM businesses WHERE id = $1", business_id)
@@ -192,7 +202,7 @@ async def admin_change_plan(
                 logger.warning(f"Downgrade {business_id}: {op_count} operadores exceden limite {new_plan} ({limit['max_operators']})")
         
         async with conn.transaction():
-            new_plan_end = _now() + timedelta(days=30) if new_plan in ("simple","pro","ia") else None
+            new_plan_end = _now() + timedelta(days=days) if days else (_now() + timedelta(days=30) if new_plan in ("simple","pro","ia") else None)
             await conn.execute(
                 "UPDATE businesses SET plan = $1, plan_end_date = COALESCE($2, plan_end_date), plan_pending = NULL, updated_at = $3, status = 'active' WHERE id = $4",
                 new_plan, new_plan_end, _now(), business_id

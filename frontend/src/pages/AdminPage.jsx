@@ -470,7 +470,7 @@ function ActivityFeed({ token }) {
 function Businesses({ token, toast }) {
   const [data, setData] = useState(null); const [search, setSearch] = useState('');
   const [page, setPage] = useState(1); const [sFilter, setSFilter] = useState(''); const [pFilter, setPFilter] = useState('');
-  const [detail, setDetail] = useState(null); const [del, setDel] = useState(null);
+  const [detail, setDetail] = useState(null); const [del, setDel] = useState(null); const [planDays, setPlanDays] = useState(null);
   const [exporting, setExporting] = useState(false);
 
   const load = useCallback(async () => {
@@ -484,7 +484,7 @@ function Businesses({ token, toast }) {
   useEffect(() => { load(); }, [page, sFilter, pFilter]);
 
   const doSearch = e => { e.preventDefault(); setPage(1); load(); };
-  const chPlan = async (id, np) => { if (!window.confirm(`Cambiar plan a ${PLAN[np]?.label || np}?`)) return; const r = await fetchAdmin(`${API}/businesses/${id}/plan`, token, { method: 'PUT', body: JSON.stringify({ new_plan: np, notes: 'Actualizacion manual' }) }); if (r.ok) { toast('Plan actualizado'); load(); } };
+  const chPlan = async (id, np, days = 30) => { if (!window.confirm(`Cambiar plan a ${PLAN[np]?.label || np} por ${days} días?`)) return; const r = await fetchAdmin(`${API}/businesses/${id}/plan`, token, { method: 'PUT', body: JSON.stringify({ new_plan: np, days, notes: `Actualizacion manual (${days} días)` }) }); if (r.ok) { toast('Plan actualizado'); load(); setDetail(null); } else toast('Error al cambiar plan'); };
   const chStatus = async (id, ns) => { const r = await fetchAdmin(`${API}/businesses/${id}/status`, token, { method: 'PUT', body: JSON.stringify({ status: ns, reason: 'Accion administrativa' }) }); if (r.ok) { toast('Estado actualizado'); load(); } };
   const extendPlan = async (id, days) => { const r = await fetchAdmin(`${API}/businesses/${id}/extend`, token, { method: 'POST', body: JSON.stringify({ days, notes: `Extensión manual +${days}d` }) }); if (r.ok) { toast(`+${days} días concedidos`); setDetail(null); load(); } else toast('Error al extender'); };
   const doDelete = async (id, name) => {
@@ -622,6 +622,27 @@ function Businesses({ token, toast }) {
                 </div>
               </div>
             )}
+            <div style={{ marginTop: 16, padding: '14px 16px', background: 'rgba(20,187,166,0.03)', borderRadius: 10, border: '1px solid rgba(20,187,166,0.1)' }}>
+              <div style={{ color: '#94A3B8', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 10 }}>Cambiar plan y duración</div>
+              <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                {['trial','simple','pro','ia'].map(p => (
+                  <button key={p} onClick={() => { setPlanDays(null); chPlan(detail.id, p, 30); }} style={{ ...S.ghostBtn, flex: 1, justifyContent: 'center', fontWeight: 700, background: detail.plan === p ? 'rgba(20,187,166,0.12)' : 'rgba(255,255,255,0.02)', borderColor: detail.plan === p ? 'rgba(20,187,166,0.4)' : 'rgba(255,255,255,0.08)', color: detail.plan === p ? '#14BBA6' : '#94A3B8' }}>{PLAN[p]?.label || p}</button>
+                ))}
+              </div>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <input
+                  type="number"
+                  min={1}
+                  max={365}
+                  value={planDays ?? ''}
+                  onChange={e => setPlanDays(e.target.value === '' ? null : Number(e.target.value))}
+                  placeholder="Días (ej. 7)"
+                  style={{ width: 90, padding: '8px 10px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)', color: TEXT, outline: 'none', fontSize: '0.82rem' }}
+                />
+                <button onClick={() => { if (!planDays) { toast('Poné una cantidad de días'); return; } chPlan(detail.id, detail.plan, planDays); }} style={{ ...S.ghostBtn, flex: 1, justifyContent: 'center', color: ACCENT, background: 'rgba(20,187,166,0.06)', borderColor: 'rgba(20,187,166,0.18)', fontWeight: 700 }}>Ajustar a {planDays || '…'} días</button>
+              </div>
+              <div style={{ color: MUTED, fontSize: '0.72rem', marginTop: 8 }}>Por defecto el cambio de plan habilita 30 días. Con "Ajustar" fijás exactamente la duración (ej. IA 1 semana).</div>
+            </div>
             <div style={{ marginTop: 16, padding: '14px 16px', background: 'rgba(20,187,166,0.03)', borderRadius: 10, border: '1px solid rgba(20,187,166,0.1)' }}>
               <div style={{ color: '#94A3B8', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 10 }}>Extender prueba / plan</div>
               <div style={{ display: 'flex', gap: 8 }}>
