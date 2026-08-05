@@ -216,10 +216,11 @@ async def import_products_csv(request: Request, csv_text: str = Body(..., media_
             cost_price = float(row.get('cost_price', 0))
             stock = int(float(row.get('stock', 0)))
             min_stock = int(float(row.get('min_stock', 5)))
+            pack_size = int(float(row.get('pack_size', 1) or 1))
             iva = (row.get('iva', '21%') or '21%').strip()
             categoria = (row.get('categoria') or row.get('category') or '').strip()
             extra = _parse_extra_codes(row.get('codigos_extra') or row.get('extra_codes'), code)
-            parsed.append((code, name, price, cost_price, stock, min_stock, iva, categoria, extra))
+            parsed.append((code, name, price, cost_price, stock, min_stock, iva, categoria, pack_size, extra))
         except Exception as e:
             errors.append(f"Fila {i+2}: {str(e)}")
 
@@ -231,7 +232,7 @@ async def import_products_csv(request: Request, csv_text: str = Body(..., media_
             pool = await get_pg_pool()
             async with pool.acquire() as conn:
                 async with conn.transaction():
-                    for code, name, price, cost, stock, min_stock, iva, categoria, extra in parsed:
+for code, name, price, cost, stock, min_stock, iva, categoria, pack_size, extra in parsed:
                         cat_id = None
                         if categoria:
                             cat_id = await conn.fetchval(
@@ -245,13 +246,13 @@ async def import_products_csv(request: Request, csv_text: str = Body(..., media_
                         if existing:
                             pid = existing["id"]
                             await conn.execute(
-                                "UPDATE products SET name=$1, price=$2, cost_price=$3, stock=$4, min_stock=$5, iva=$6, category_id=$7, updated_at=now() WHERE code=$8 AND business_id=$9",
-                                name, price, cost, stock, min_stock, iva, cat_id, code, b_id
+                                "UPDATE products SET name=$1, price=$2, cost_price=$3, stock=$4, min_stock=$5, pack_size=$6, iva=$7, category_id=$8, updated_at=now() WHERE code=$9 AND business_id=$10",
+                                name, price, cost, stock, min_stock, pack_size, iva, cat_id, code, b_id
                             )
                         else:
                             pid = await conn.fetchval(
-                                "INSERT INTO products (business_id, code, name, price, cost_price, stock, min_stock, iva, category_id) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id",
-                                b_id, code, name, price, cost, stock, min_stock, iva, cat_id
+                                "INSERT INTO products (business_id, code, name, price, cost_price, stock, min_stock, pack_size, iva, category_id) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id",
+                                b_id, code, name, price, cost, stock, min_stock, pack_size, iva, cat_id
                             )
                         if extra:
                             await conn.execute("DELETE FROM product_barcodes WHERE product_id = $1", pid)
@@ -263,7 +264,7 @@ async def import_products_csv(request: Request, csv_text: str = Body(..., media_
         else:
             async with aiosqlite.connect(main.DB_PATH) as db:
                 await db.execute("BEGIN IMMEDIATE")
-                for code, name, price, cost, stock, min_stock, iva, categoria, extra in parsed:
+                for code, name, price, cost, stock, min_stock, iva, categoria, pack_size, extra in parsed:
                     cat_id = None
                     if categoria:
                         cur = await db.execute("SELECT id FROM categories WHERE name = ?", (categoria,))
@@ -279,13 +280,13 @@ async def import_products_csv(request: Request, csv_text: str = Body(..., media_
                     if prow:
                         pid = prow[0]
                         await db.execute(
-                            "UPDATE products SET name=?, price=?, cost_price=?, stock=?, min_stock=?, iva=?, category_id=?, updated_at=datetime('now','localtime') WHERE code=?",
-                            (name, price, cost, stock, min_stock, iva, cat_id, code)
+                            "UPDATE products SET name=?, price=?, cost_price=?, stock=?, min_stock=?, pack_size=?, iva=?, category_id=?, updated_at=datetime('now','localtime') WHERE code=?",
+                            (name, price, cost, stock, min_stock, pack_size, iva, cat_id, code)
                         )
                     else:
                         cur = await db.execute(
-                            "INSERT INTO products (code, name, price, cost_price, stock, min_stock, iva, category_id) VALUES (?,?,?,?,?,?,?,?)",
-                            (code, name, price, cost, stock, min_stock, iva, cat_id)
+                            "INSERT INTO products (code, name, price, cost_price, stock, min_stock, pack_size, iva, category_id) VALUES (?,?,?,?,?,?,?,?,?)",
+                            (code, name, price, cost, stock, min_stock, pack_size, iva, cat_id)
                         )
                         pid = cur.lastrowid
                     if extra:
