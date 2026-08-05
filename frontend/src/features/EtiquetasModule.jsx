@@ -4,10 +4,10 @@ import { apiGet } from '../services/apiClient';
 const formatPesos = (v) => (v ?? 0).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 
 const A4_MM = [210, 297];
-const MARGIN_MM = 8;
-const GAP_MM = 5;
+const MARGIN_MM = 6;
+const GAP_MM = 4;
 const MM_TO_PX = 3.78;
-const PREVIEW_SCALE = 0.48;
+const PREVIEW_SCALE = 0.42;
 
 const SIZE_PRESETS = {
   small:  { mm: [70, 32],  priceFont: 13, nameFont: 8  },
@@ -207,7 +207,7 @@ export default function EtiquetasModule() {
                 style={{ padding: '3px 10px', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: wrappedPage >= totalPages - 1 ? 'var(--text-secondary)' : 'var(--text-primary)', cursor: wrappedPage >= totalPages - 1 ? 'default' : 'pointer', fontSize: '0.75rem', fontWeight: 700, opacity: wrappedPage >= totalPages - 1 ? 0.4 : 1 }}>→</button>
             </div>
           </div>
-          <div style={{ flex: 1, overflow: 'auto', padding: '10px', display: 'flex', justifyContent: 'center', background: '#e2e6ea' }}>
+          <div style={{ flex: 1, overflow: 'auto', padding: '6px', display: 'flex', justifyContent: 'center', background: '#e2e6ea' }}>
             {selectedProducts.length === 0 ? (
               <div style={{ color: '#94a3b8', fontSize: '0.85rem', alignSelf: 'center', textAlign: 'center', padding: 20 }}>
                 Seleccioná productos de la izquierda<br/>para previsualizar las etiquetas<br/><br/>
@@ -216,11 +216,11 @@ export default function EtiquetasModule() {
             ) : (
               <div style={{
                 width: Math.round(A4_MM[0] * MM_TO_PX * PREVIEW_SCALE),
-                minHeight: Math.round(A4_MM[1] * MM_TO_PX * PREVIEW_SCALE),
+                height: Math.round(A4_MM[1] * MM_TO_PX * PREVIEW_SCALE),
                 background: '#fff', boxShadow: '0 1px 6px rgba(0,0,0,0.12)',
                 padding: Math.round(MARGIN_MM * MM_TO_PX * PREVIEW_SCALE),
                 display: 'flex', flexWrap: 'wrap', gap: Math.round(GAP_MM * MM_TO_PX * PREVIEW_SCALE),
-                alignContent: 'flex-start', boxSizing: 'border-box',
+                alignContent: 'flex-start', boxSizing: 'border-box', flexShrink: 0,
               }}>
                 {currentPage.map(p => {
                   const shortName = p.name.length > 16 ? p.name.slice(0, 14) + '..' : p.name;
