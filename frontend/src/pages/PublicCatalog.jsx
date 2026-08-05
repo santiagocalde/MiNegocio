@@ -6,6 +6,7 @@ const Icons = {
   Search: () => <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>,
   ShoppingCart: () => <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>,
   Store: () => <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>,
+  MapPin: () => <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
   Plus: () => <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 4v16m8-8H4" /></svg>,
   Minus: () => <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M20 12H4" /></svg>,
   Trash: () => <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
@@ -26,6 +27,10 @@ export default function PublicCatalog() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [whatsapp, setWhatsapp] = useState('');
   const [storeName, setStoreName] = useState('Mi Tienda');
+  const [subtitulo, setSubtitulo] = useState('');
+  const [direccion, setDireccion] = useState('');
+  const [theme, setTheme] = useState('ocean');
+  const [activeCategory, setActiveCategory] = useState('');
   const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
@@ -42,6 +47,9 @@ export default function PublicCatalog() {
         setProducts(list);
         if (!Array.isArray(data)) {
           setStoreName(data?.nombre || 'Mi Tienda');
+          setSubtitulo(data?.subtitulo || '');
+          setDireccion(data?.direccion || '');
+          setTheme(data?.theme || 'ocean');
           setWhatsapp(data?.catalogo_whatsapp || data?.whatsapp || data?.telefono || '');
         }
         setLoading(false);
@@ -78,7 +86,12 @@ export default function PublicCatalog() {
 
   const formatPrice = (p) => '$' + Number(p || 0).toLocaleString('es-AR');
 
-  const filteredProducts = products.filter(p => (p.name || '').toLowerCase().includes(searchTerm.toLowerCase()));
+  const searched = products.filter(p => (p.name || '').toLowerCase().includes(searchTerm.toLowerCase()));
+  const categories = [...new Set(products.map(p => p.category_name || p.category || 'General'))].sort();
+  const shown = searched.filter(p => !activeCategory || (p.category_name || p.category || 'General') === activeCategory);
+  const grouped = categories
+    .filter(c => shown.some(p => (p.category_name || p.category || 'General') === c))
+    .map(c => ({ name: c, items: shown.filter(p => (p.category_name || p.category || 'General') === c) }));
 
   const sendWhatsAppOrder = () => {
     const numero = (whatsapp || '').replace(/[^0-9]/g, '');
@@ -95,24 +108,29 @@ export default function PublicCatalog() {
   };
 
   return (
-    <div className="catalog-page" style={{ minHeight: '100vh', background: 'var(--bg-main)', color: 'var(--text-primary)', fontFamily: 'var(--font-main)', paddingBottom: '100px' }}>
+    <div className={`catalog-page theme-${theme}`} data-theme={theme} style={{ minHeight: '100vh', background: 'var(--bg-main)', color: 'var(--text-primary)', fontFamily: 'var(--font-main)', paddingBottom: '100px' }}>
 
       {/* HEADER */}
       <header className="catalog-header" style={{ background: 'var(--bg-card)', padding: '24px', position: 'sticky', top: 0, zIndex: 10, borderBottom: '1px solid var(--border-color)', boxShadow: '0 4px 20px rgba(0,0,0,0.2)' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px', minWidth: 0 }}>
-            <div className="catalog-logo" style={{ width: '48px', height: '48px', background: 'var(--gradient-primary)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', boxShadow: '0 4px 12px rgba(20,187,166,0.3)', flexShrink: 0 }}>
+            <div className="catalog-logo" style={{ width: '48px', height: '48px', background: 'var(--gradient-primary)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', boxShadow: '0 4px 12px var(--cat-glow)', flexShrink: 0 }}>
               <Icons.Store />
             </div>
             <div style={{ minWidth: 0 }}>
               <h1 className="catalog-title" style={{ fontSize: '1.5rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {storeName}
               </h1>
-              <p style={{ color: 'var(--accent-primary)', fontSize: '0.85rem', margin: '4px 0 0 0', fontWeight: 600 }}>Catálogo Online · Precios al día</p>
+              <p style={{ color: 'var(--accent-primary)', fontSize: '0.85rem', margin: '4px 0 0 0', fontWeight: 600 }}>{subtitulo || 'Catálogo Online · Precios al día'}</p>
+              {direccion && (
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', margin: '4px 0 0 0', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <Icons.MapPin /> {direccion}
+                </p>
+              )}
             </div>
           </div>
 
-          <button onClick={() => setIsCartOpen(true)} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-color)', padding: '12px 20px', borderRadius: '12px', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', transition: 'all 0.15s', position: 'relative', flexShrink: 0 }} onMouseEnter={e=>e.target.style.background='rgba(255,255,255,0.1)'} onMouseLeave={e=>e.target.style.background='rgba(255,255,255,0.05)'}>
+          <button onClick={() => setIsCartOpen(true)} style={{ background: 'var(--cat-chip-bg)', border: '1px solid var(--border-color)', padding: '12px 20px', borderRadius: '12px', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', transition: 'all 0.15s', position: 'relative', flexShrink: 0 }} onMouseEnter={e=>e.target.style.background='var(--cat-chip-hover)'} onMouseLeave={e=>e.target.style.background='var(--cat-chip-bg)'}>
              <Icons.ShoppingCart />
              <span className="cart-total" style={{ fontWeight: 800 }}>{formatPrice(cartTotal)}</span>
              {cart.length > 0 && (
@@ -136,39 +154,72 @@ export default function PublicCatalog() {
             style={{ width: '100%', background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '20px 20px 20px 56px', borderRadius: '16px', fontSize: '1.1rem', outline: 'none', boxShadow: '0 8px 32px rgba(0,0,0,0.1)' }}
           />
         </div>
+        {categories.length > 1 && (
+          <div className="catalog-cats" style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '20px' }}>
+            <button
+              onClick={() => setActiveCategory('')}
+              style={{ padding: '10px 18px', borderRadius: '999px', fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s', border: activeCategory === '' ? '1px solid var(--accent-primary)' : '1px solid var(--border-color)', background: activeCategory === '' ? 'var(--cat-accent-soft)' : 'var(--cat-chip-bg)', color: activeCategory === '' ? 'var(--accent-primary)' : 'var(--text-secondary)' }}>
+              Todos
+            </button>
+            {categories.map(c => (
+              <button
+                key={c}
+                onClick={() => setActiveCategory(activeCategory === c ? '' : c)}
+                style={{ padding: '10px 18px', borderRadius: '999px', fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s', border: activeCategory === c ? '1px solid var(--accent-primary)' : '1px solid var(--border-color)', background: activeCategory === c ? 'var(--cat-accent-soft)' : 'var(--cat-chip-bg)', color: activeCategory === c ? 'var(--accent-primary)' : 'var(--text-secondary)' }}>
+                {c}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* PRODUCTS GRID */}
+      {/* PRODUCTS */}
       <main className="catalog-main" style={{ maxWidth: '1200px', margin: '32px auto', padding: '0 24px' }}>
         {loading ? (
            <div style={{ textAlign: 'center', padding: '64px', color: 'var(--text-secondary)' }}>Cargando catálogo...</div>
         ) : notFound ? (
            <div style={{ textAlign: 'center', padding: '64px', color: 'var(--text-secondary)', background: 'var(--bg-card)', borderRadius: '16px', border: '1px solid var(--border-color)' }}>Este catálogo no está disponible.</div>
-        ) : filteredProducts.length === 0 ? (
+        ) : shown.length === 0 ? (
            <div style={{ textAlign: 'center', padding: '64px', color: 'var(--text-secondary)', background: 'var(--bg-card)', borderRadius: '16px', border: '1px solid var(--border-color)' }}>No se encontraron productos.</div>
         ) : (
-          <div className="catalog-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '24px' }}>
-            {filteredProducts.map(p => {
-              const av = AVAILABILITY[p.availability] || AVAILABILITY.hay;
-              const out = p.availability === 'agotado';
-              return (
-                <div key={p.id} className="product-card" style={{ background: 'var(--bg-card)', borderRadius: '16px', border: '1px solid var(--border-color)', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', transition: 'transform 0.2s, box-shadow 0.2s', opacity: out ? 0.72 : 1 }} onMouseEnter={e=>{ if(!out){e.currentTarget.style.transform='translateY(-4px)'; e.currentTarget.style.boxShadow='0 12px 24px rgba(0,0,0,0.2)'} }} onMouseLeave={e=>{e.currentTarget.style.transform='none'; e.currentTarget.style.boxShadow='none'}}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
-                    <span style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--text-secondary)', padding: '4px 8px', borderRadius: '6px', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase' }}>{p.category_name || p.category || 'General'}</span>
-                    <span style={{ background: av.bg, color: av.color, padding: '4px 8px', borderRadius: '6px', fontSize: '0.72rem', fontWeight: 800, whiteSpace: 'nowrap' }}>{av.label}</span>
-                  </div>
+          <div className="catalog-groups" style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
+            {grouped.map(group => (
+              <section key={group.name}>
+                {!activeCategory && (
+                  <h2 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 20px 0', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    {group.name}
+                    <span style={{ background: 'var(--cat-chip-bg)', color: 'var(--text-secondary)', padding: '3px 10px', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 700 }}>{group.items.length}</span>
+                  </h2>
+                )}
+                <div className="catalog-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '24px' }}>
+                  {group.items.map(p => {
+                    const av = AVAILABILITY[p.availability] || AVAILABILITY.hay;
+                    const out = p.availability === 'agotado';
+                    return (
+                      <div key={p.id} className="product-card" style={{ background: 'var(--bg-card)', borderRadius: '16px', border: '1px solid var(--border-color)', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', transition: 'transform 0.2s, box-shadow 0.2s', opacity: out ? 0.72 : 1 }} onMouseEnter={e=>{ if(!out){e.currentTarget.style.transform='translateY(-4px)'; e.currentTarget.style.boxShadow='0 12px 24px rgba(0,0,0,0.2)'} }} onMouseLeave={e=>{e.currentTarget.style.transform='none'; e.currentTarget.style.boxShadow='none'}}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+                          {activeCategory ? (
+                            <span style={{ background: 'var(--cat-chip-bg)', color: 'var(--text-secondary)', padding: '4px 8px', borderRadius: '6px', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase' }}>{p.category_name || p.category || 'General'}</span>
+                          ) : (
+                            <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: 'var(--accent-primary)', opacity: 0.7 }}></span>
+                          )}
+                          <span style={{ background: av.bg, color: av.color, padding: '4px 8px', borderRadius: '6px', fontSize: '0.72rem', fontWeight: 800, whiteSpace: 'nowrap' }}>{av.label}</span>
+                        </div>
 
-                  <div>
-                    <h3 style={{ margin: '0 0 8px 0', fontSize: '1.18rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.3 }}>{p.name}</h3>
-                    <div style={{ fontSize: '1.5rem', fontWeight: 800, color: out ? 'var(--text-secondary)' : 'var(--accent-primary)', fontFamily: 'var(--font-mono)' }}>{formatPrice(p.price)}</div>
-                  </div>
+                        <div>
+                          <h3 style={{ margin: '0 0 8px 0', fontSize: '1.18rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.3 }}>{p.name}</h3>
+                          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: out ? 'var(--text-secondary)' : 'var(--accent-primary)', fontFamily: 'var(--font-mono)' }}>{formatPrice(p.price)}</div>
+                        </div>
 
-                  <button onClick={() => addToCart(p)} disabled={out} style={{ width: '100%', padding: '12px', background: out ? 'rgba(255,255,255,0.03)' : 'rgba(20,187,166,0.1)', color: out ? 'var(--text-secondary)' : 'var(--accent-primary)', border: out ? '1px solid var(--border-color)' : '1px solid rgba(20,187,166,0.2)', borderRadius: '8px', fontSize: '0.95rem', fontWeight: 800, cursor: out ? 'not-allowed' : 'pointer', transition: 'all 0.15s', marginTop: 'auto' }} onMouseEnter={e=>{ if(!out){e.target.style.background='var(--gradient-primary)'; e.target.style.color='white'} }} onMouseLeave={e=>{ if(!out){e.target.style.background='rgba(20,187,166,0.1)'; e.target.style.color='var(--accent-primary)'} }}>
-                    {out ? 'Agotado' : 'Agregar al Pedido'}
-                  </button>
+                        <button onClick={() => addToCart(p)} disabled={out} style={{ width: '100%', padding: '12px', background: out ? 'var(--cat-chip-bg)' : 'var(--cat-accent-soft)', color: out ? 'var(--text-secondary)' : 'var(--accent-primary)', border: out ? '1px solid var(--border-color)' : '1px solid var(--cat-accent-border)', borderRadius: '8px', fontSize: '0.95rem', fontWeight: 800, cursor: out ? 'not-allowed' : 'pointer', transition: 'all 0.15s', marginTop: 'auto' }} onMouseEnter={e=>{ if(!out){e.target.style.background='var(--gradient-primary)'; e.target.style.color='white'} }} onMouseLeave={e=>{ if(!out){e.target.style.background='var(--cat-accent-soft)'; e.target.style.color='var(--accent-primary)'} }}>
+                          {out ? 'Agotado' : 'Agregar al Pedido'}
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
-              );
-            })}
+              </section>
+            ))}
           </div>
         )}
       </main>
@@ -187,14 +238,14 @@ export default function PublicCatalog() {
 
       {/* CART DRAWER */}
       {isCartOpen && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(11, 19, 43, 0.8)', backdropFilter: 'blur(8px)', zIndex: 100, display: 'flex', justifyContent: 'flex-end' }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'var(--cat-overlay)', backdropFilter: 'blur(8px)', zIndex: 100, display: 'flex', justifyContent: 'flex-end' }}>
           <div style={{ background: 'var(--bg-main)', width: '100%', maxWidth: '450px', height: '100%', display: 'flex', flexDirection: 'column', borderLeft: '1px solid var(--border-color)', boxShadow: '-10px 0 30px rgba(0,0,0,0.5)', animation: 'slideIn 0.3s ease-out' }}>
 
              <div style={{ padding: '24px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '12px' }}>
                  <Icons.ShoppingCart /> Tu Pedido
                </h2>
-               <button onClick={() => setIsCartOpen(false)} style={{ background: 'rgba(255,255,255,0.05)', border: 'none', width: '40px', height: '40px', borderRadius: '50%', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+               <button onClick={() => setIsCartOpen(false)} style={{ background: 'var(--cat-chip-bg)', border: 'none', width: '40px', height: '40px', borderRadius: '50%', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                  <Icons.Plus style={{ transform: 'rotate(45deg)' }} />
                </button>
              </div>
@@ -229,7 +280,7 @@ export default function PublicCatalog() {
                    <span style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', fontWeight: 600 }}>Total a pagar</span>
                    <span style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>{formatPrice(cartTotal)}</span>
                  </div>
-                 <button onClick={sendWhatsAppOrder} style={{ width: '100%', padding: '16px', background: 'var(--gradient-primary)', color: 'white', border: 'none', borderRadius: '12px', fontSize: '1.1rem', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', boxShadow: '0 8px 24px rgba(20,187,166,0.3)' }}>
+                 <button onClick={sendWhatsAppOrder} style={{ width: '100%', padding: '16px', background: 'var(--gradient-primary)', color: 'white', border: 'none', borderRadius: '12px', fontSize: '1.1rem', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', boxShadow: '0 8px 24px var(--cat-glow)' }}>
                     Enviar Pedido por WhatsApp
                  </button>
                </div>
@@ -239,6 +290,97 @@ export default function PublicCatalog() {
       )}
 
       <style>{`
+        /* ===== Temas del catálogo (5 paletas fijas) ===== */
+        /* Ocean (default, oscuro azul-verde) */
+        .theme-ocean {
+          --bg-main: #0B132B;
+          --bg-card: #121E36;
+          --border-color: rgba(255, 255, 255, 0.06);
+          --text-primary: #FFFFFF;
+          --text-secondary: rgba(230, 255, 251, 0.82);
+          --accent-primary: #14BBA6;
+          --accent-secondary: #0F8A7D;
+          --accent-highlight: #00E5FF;
+          --gradient-primary: linear-gradient(135deg, #14BBA6 0%, #0F8A7D 100%);
+          --cat-chip-bg: rgba(255, 255, 255, 0.05);
+          --cat-chip-hover: rgba(255, 255, 255, 0.1);
+          --cat-accent-soft: rgba(20, 187, 166, 0.1);
+          --cat-accent-border: rgba(20, 187, 166, 0.2);
+          --cat-overlay: rgba(11, 19, 43, 0.8);
+          --cat-glow: rgba(20, 187, 166, 0.3);
+        }
+        /* Esmeralda (oscuro verde) */
+        .theme-esmeralda {
+          --bg-main: #052E2B;
+          --bg-card: #0A3D38;
+          --border-color: rgba(255, 255, 255, 0.07);
+          --text-primary: #F0FDFA;
+          --text-secondary: rgba(240, 253, 250, 0.8);
+          --accent-primary: #34D399;
+          --accent-secondary: #059669;
+          --accent-highlight: #A7F3D0;
+          --gradient-primary: linear-gradient(135deg, #34D399 0%, #059669 100%);
+          --cat-chip-bg: rgba(255, 255, 255, 0.05);
+          --cat-chip-hover: rgba(255, 255, 255, 0.1);
+          --cat-accent-soft: rgba(52, 211, 153, 0.12);
+          --cat-accent-border: rgba(52, 211, 153, 0.25);
+          --cat-overlay: rgba(5, 46, 43, 0.85);
+          --cat-glow: rgba(52, 211, 153, 0.3);
+        }
+        /* Medianoche (oscuro azul-violeta) */
+        .theme-medianoche {
+          --bg-main: #17122B;
+          --bg-card: #221B3D;
+          --border-color: rgba(255, 255, 255, 0.07);
+          --text-primary: #F5F3FF;
+          --text-secondary: rgba(245, 243, 255, 0.8);
+          --accent-primary: #A78BFA;
+          --accent-secondary: #7C3AED;
+          --accent-highlight: #C4B5FD;
+          --gradient-primary: linear-gradient(135deg, #A78BFA 0%, #7C3AED 100%);
+          --cat-chip-bg: rgba(255, 255, 255, 0.05);
+          --cat-chip-hover: rgba(255, 255, 255, 0.1);
+          --cat-accent-soft: rgba(167, 139, 250, 0.12);
+          --cat-accent-border: rgba(167, 139, 250, 0.25);
+          --cat-overlay: rgba(23, 18, 43, 0.85);
+          --cat-glow: rgba(167, 139, 250, 0.3);
+        }
+        /* Ámbar (oscuro cálido) */
+        .theme-ambar {
+          --bg-main: #241A0B;
+          --bg-card: #332614;
+          --border-color: rgba(255, 255, 255, 0.07);
+          --text-primary: #FFFBEB;
+          --text-secondary: rgba(255, 251, 235, 0.82);
+          --accent-primary: #FBBF24;
+          --accent-secondary: #D97706;
+          --accent-highlight: #FDE68A;
+          --gradient-primary: linear-gradient(135deg, #FBBF24 0%, #D97706 100%);
+          --cat-chip-bg: rgba(255, 255, 255, 0.05);
+          --cat-chip-hover: rgba(255, 255, 255, 0.1);
+          --cat-accent-soft: rgba(251, 191, 36, 0.12);
+          --cat-accent-border: rgba(251, 191, 36, 0.25);
+          --cat-overlay: rgba(36, 26, 11, 0.85);
+          --cat-glow: rgba(251, 191, 36, 0.3);
+        }
+        /* Claro (light, pedido por comercios) */
+        .theme-claro {
+          --bg-main: #F6F8FB;
+          --bg-card: #FFFFFF;
+          --border-color: rgba(11, 19, 43, 0.1);
+          --text-primary: #0B132B;
+          --text-secondary: rgba(11, 19, 43, 0.68);
+          --accent-primary: #0E8F7F;
+          --accent-secondary: #14BBA6;
+          --accent-highlight: #0F8A7D;
+          --gradient-primary: linear-gradient(135deg, #14BBA6 0%, #0E8F7F 100%);
+          --cat-chip-bg: rgba(11, 19, 43, 0.05);
+          --cat-chip-hover: rgba(11, 19, 43, 0.09);
+          --cat-accent-soft: rgba(14, 143, 127, 0.1);
+          --cat-accent-border: rgba(14, 143, 127, 0.25);
+          --cat-overlay: rgba(11, 19, 43, 0.6);
+          --cat-glow: rgba(20, 187, 166, 0.3);
+        }
         @keyframes slideIn {
           from { transform: translateX(100%); }
           to { transform: translateX(0); }

@@ -64,12 +64,14 @@ async def public_catalogo(request: Request, slug: str = Query("")) -> dict:
     pool = await get_pg_pool()
     async with pool.acquire() as conn:
         cfg = await conn.fetchrow(
-            "SELECT bc.business_id, bc.nombre, bc.catalogo_whatsapp, b.plan, b.status "
+            "SELECT bc.business_id, bc.nombre, bc.subtitulo, bc.direccion, "
+            "bc.catalogo_whatsapp, COALESCE(bc.catalogo_tema, 'ocean') AS catalogo_tema, "
+            "b.plan, b.status "
             "FROM business_config bc JOIN businesses b ON b.id = bc.business_id "
             "WHERE bc.catalogo_slug = $1 AND bc.catalogo_activo = 1 LIMIT 1",
             slug,
         )
-        # El catálogo web es una feature del Plan Pro+: si el negocio no está en
+        # El Catálogo web es un feature del Plan Pro+: si el negocio no está en
         # Pro/IA no existimos (404, no revelamos el motivo).
         if not cfg or cfg["plan"] not in ("pro", "ia"):
             raise HTTPException(404, detail="Catálogo no disponible")
@@ -80,12 +82,16 @@ async def public_catalogo(request: Request, slug: str = Query("")) -> dict:
             "     ELSE 'hay' END AS availability "
             "FROM products p LEFT JOIN categories c ON c.id = p.category_id "
             "WHERE p.business_id = $1 AND p.is_active = 1 AND p.price > 0 "
+            "AND p.en_catalogo = 1 "
             "ORDER BY p.name LIMIT 2000",
             cfg["business_id"],
         )
         return {
             "nombre": cfg["nombre"] or "Catálogo",
+            "subtitulo": cfg["subtitulo"] or "",
+            "direccion": cfg["direccion"] or "",
             "catalogo_whatsapp": cfg["catalogo_whatsapp"] or "",
+            "theme": cfg["catalogo_tema"] or "ocean",
             "products": [dict(p) for p in prods],
         }
 
@@ -119,10 +125,16 @@ async def update_config(request: Request, data: dict) -> dict:
             data["catalogo_slug"] = re.sub(r"[^a-z0-9-]", "", str(data["catalogo_slug"]).strip().lower())[:60]
         if "catalogo_activo" in data:
             data["catalogo_activo"] = 1 if data["catalogo_activo"] in (True, 1, "1", "true", "True") else 0
+        # Tema del catálogo: solo 5 paletas fijas (whitelist), nunca CSS arbitrario.
+        if "catalogo_tema" in data:
+            tema = str(data["catalogo_tema"]).strip().lower()
+            if tema not in ("ocean", "esmeralda", "medianoche", "ambar", "claro"):
+                tema = "ocean"
+            data["catalogo_tema"] = tema
 
         COLS = ["nombre", "subtitulo", "direccion", "telefono", "cuit", "condicion_iva",
                 "numero_caja", "mensaje_ticket", "iva_rate", "mp_access_token", "mp_collector_id",
-                "catalogo_activo", "catalogo_slug", "catalogo_whatsapp"]
+                "catalogo_activo", "catalogo_slug", "catalogo_whatsapp", "catalogo_tema"]
         pool = await get_pg_pool()
         async with pool.acquire() as conn:
             b_id = _biz_id()

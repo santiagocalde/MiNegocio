@@ -30,10 +30,22 @@ export default function CatalogoModule() {
   const { addToast, currentPlan } = usePanelContext();
   const PLAN_WEIGHT = { trial: 1, simple: 1, pro: 2, ia: 3 };
   const isLocked = PLAN_WEIGHT[currentPlan] < PLAN_WEIGHT['pro'];
+  const THEMES = [
+    { id: 'ocean', name: 'Océano', colors: ['#0B132B', '#14BBA6'] },
+    { id: 'esmeralda', name: 'Esmeralda', colors: ['#052E2B', '#34D399'] },
+    { id: 'medianoche', name: 'Medianoche', colors: ['#17122B', '#A78BFA'] },
+    { id: 'ambar', name: 'Ámbar', colors: ['#241A0B', '#FBBF24'] },
+    { id: 'claro', name: 'Claro', colors: ['#F6F8FB', '#14BBA6'] },
+  ];
+
   const [isActive, setIsActive] = useState(false);
   const [storeName, setStoreName] = useState('');
+  const [subtitulo, setSubtitulo] = useState('');
+  const [direccion, setDireccion] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
   const [slug, setSlug] = useState('');
+  const [theme, setTheme] = useState('ocean');
+  const [products, setProducts] = useState([]);
   const [saving, setSaving] = useState(false);
   const [sendingList, setSendingList] = useState(false);
   const [priceParts, setPriceParts] = useState([]);
@@ -42,10 +54,20 @@ export default function CatalogoModule() {
     apiGet('/config').then(r => r.ok && r.json()).then(data => {
       if (data) {
         setStoreName(data.nombre || data.business_name || 'Mi Kiosco');
+        setSubtitulo(data.subtitulo || '');
+        setDireccion(data.direccion || '');
         setWhatsapp(data.catalogo_whatsapp || data.telefono || data.phone || '');
         setIsActive(!!data.catalogo_activo);
         setSlug(data.catalogo_slug || '');
+        setTheme(data.catalogo_tema || 'ocean');
       }
+    }).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    apiGet('/products?limit=5000').then(r => r.ok && r.json()).then(d => {
+      const list = Array.isArray(d) ? d : [];
+      setProducts(list.filter(p => p.is_active !== 0));
     }).catch(() => {});
   }, []);
 
@@ -55,9 +77,12 @@ export default function CatalogoModule() {
     try {
       const res = await apiPut('/config', {
         nombre: storeName,
+        subtitulo,
+        direccion,
         catalogo_whatsapp: whatsapp,
         catalogo_slug: slug,
         catalogo_activo: isActive,
+        catalogo_tema: theme,
       });
       if (res.ok) {
         if (addToast) addToast('Configuración guardada correctamente.', 'success');
@@ -81,9 +106,12 @@ export default function CatalogoModule() {
     try {
       const res = await apiPut('/config', {
         nombre: storeName,
+        subtitulo,
+        direccion,
         catalogo_whatsapp: whatsapp,
         catalogo_slug: slug,
         catalogo_activo: newVal,
+        catalogo_tema: theme,
       });
       if (res.ok) {
         if (addToast) addToast(newVal ? 'Catálogo activado.' : 'Catálogo desactivado.', 'success');
@@ -99,6 +127,20 @@ export default function CatalogoModule() {
   };
 
   const nuevoEnlace = () => setSlug(makeUniqueSlug(storeName || 'miKiosco'));
+
+  const toggleProductoCatalogo = async (producto, mostrar) => {
+    try {
+      const res = await apiPut(`/products/${producto.id}`, { en_catalogo: mostrar ? 1 : 0 });
+      if (res.ok) {
+        setProducts(prev => prev.map(p => p.id === producto.id ? { ...p, en_catalogo: mostrar ? 1 : 0 } : p));
+        if (addToast) addToast(`"${producto.name}" ${mostrar ? 'visible' : 'oculto'} en el catálogo.`, 'success');
+      } else {
+        if (addToast) addToast('No se pudo actualizar el producto. Reintentá.', 'error');
+      }
+    } catch {
+      if (addToast) addToast('Sin internet. Revisá tu conexión.', 'error');
+    }
+  };
 
   const sendPriceList = async () => {
     const numero = (whatsapp || '').replace(/[^0-9]/g, '');
@@ -191,6 +233,50 @@ export default function CatalogoModule() {
              <div className="input-group">
                <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: 600 }}>Nombre de la Tienda</label>
                <input type="text" value={storeName} onChange={e => setStoreName(e.target.value)} style={{ width: '100%', background: 'var(--bg-main)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '16px', borderRadius: '8px', fontSize: '1rem', outline: 'none' }} />
+             </div>
+
+             <div className="input-group">
+               <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: 600 }}>Eslogan (aparece debajo del nombre)</label>
+               <input type="text" value={subtitulo} onChange={e => setSubtitulo(e.target.value)} placeholder="Ej: Atención 7 días, envíos gratis" maxLength={120} style={{ width: '100%', background: 'var(--bg-main)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '16px', borderRadius: '8px', fontSize: '1rem', outline: 'none' }} />
+             </div>
+
+             <div className="input-group">
+               <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: 600 }}>Dirección</label>
+               <input type="text" value={direccion} onChange={e => setDireccion(e.target.value)} placeholder="Ej: Av. Corrientes 1234, CABA" maxLength={150} style={{ width: '100%', background: 'var(--bg-main)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '16px', borderRadius: '8px', fontSize: '1rem', outline: 'none' }} />
+             </div>
+
+             <div className="input-group">
+               <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: 600 }}>Diseño de tu tienda</label>
+               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px' }}>
+                 {THEMES.map(t => (
+                   <button key={t.id} onClick={() => setTheme(t.id)} title={t.name}
+                     style={{ height: '48px', borderRadius: '10px', cursor: 'pointer', border: theme === t.id ? '2px solid var(--accent-primary)' : '1px solid var(--border-color)', background: t.colors[0], display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', transition: 'all 0.15s', padding: 0, flexDirection: 'column' }}>
+                     <span style={{ width: '20px', height: '20px', borderRadius: '50%', background: t.colors[1], border: '2px solid rgba(255,255,255,0.6)' }}></span>
+                     <span style={{ fontSize: '0.62rem', fontWeight: 700, color: '#fff', textShadow: '0 1px 2px rgba(0,0,0,0.6)', lineHeight: 1 }}>{t.name}</span>
+                   </button>
+                 ))}
+               </div>
+               <span style={{ display: 'block', marginTop: '6px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Colores y letra del catálogo público. 5 diseños fijos: {THEMES.map(t => t.name).join(', ')}.</span>
+             </div>
+
+             <div className="input-group">
+               <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: 600 }}>Productos visibles en el catálogo ({products.filter(p => p.en_catalogo !== 0).length}/{products.length})</label>
+               <div style={{ maxHeight: '260px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '6px', background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '8px' }}>
+                 {products.length === 0 && <span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', padding: '8px' }}>Cargando productos...</span>}
+                 {products.map(p => (
+                   <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 8px', borderRadius: '6px', background: 'rgba(255,255,255,0.02)' }}>
+                     <button
+                       onClick={() => toggleProductoCatalogo(p, p.en_catalogo === 0)}
+                       style={{ flexShrink: 0, width: '36px', height: '20px', borderRadius: '999px', border: 'none', cursor: 'pointer', position: 'relative', transition: 'background 0.15s', background: p.en_catalogo !== 0 ? 'var(--accent-success)' : 'rgba(255,255,255,0.12)' }}
+                       title={p.en_catalogo !== 0 ? 'Visible en el catálogo' : 'Oculto del catálogo'}>
+                       <span style={{ position: 'absolute', top: '3px', width: '14px', height: '14px', borderRadius: '50%', background: '#fff', transition: 'left 0.15s', left: p.en_catalogo !== 0 ? '19px' : '3px' }}></span>
+                     </button>
+                     <span style={{ flex: 1, fontSize: '0.85rem', color: 'var(--text-primary)', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</span>
+                     <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', flexShrink: 0 }}>{p.category_name || ''}</span>
+                   </div>
+                 ))}
+               </div>
+               <span style={{ display: 'block', marginTop: '6px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Desactivá un producto para ocultarlo del catálogo público. No afecta tu stock ni las ventas.</span>
              </div>
 
              <div className="input-group">

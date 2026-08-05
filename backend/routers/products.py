@@ -415,7 +415,7 @@ async def update_product(product_id: int, body: dict) -> dict:
             sets = []
             params = []
             n = 1
-            for k in ('code', 'name', 'price', 'cost_price', 'stock', 'min_stock', 'iva', 'category_id', 'expiry_date'):
+            for k in ('code', 'name', 'price', 'cost_price', 'stock', 'min_stock', 'iva', 'category_id', 'expiry_date', 'en_catalogo'):
                 if k in body:
                     sets.append(f"{k} = ${n}")
                     params.append(body[k])
@@ -438,7 +438,7 @@ async def update_product(product_id: int, body: dict) -> dict:
             if not await cur.fetchone(): raise HTTPException(404, detail="Producto no encontrado")
             sets = []
             params = []
-            for k in ('code', 'name', 'price', 'cost_price', 'stock', 'min_stock', 'iva', 'category_id', 'expiry_date'):
+            for k in ('code', 'name', 'price', 'cost_price', 'stock', 'min_stock', 'iva', 'category_id', 'expiry_date', 'en_catalogo'):
                 if k in body:
                     sets.append(f"{k} = ?")
                     params.append(body[k])

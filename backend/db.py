@@ -482,6 +482,11 @@ async def init_pg() -> None:
             -- reenviar el mismo email en cada reinicio del backend.
             ALTER TABLE businesses ADD COLUMN IF NOT EXISTS trial_email_sent_day INT;
             ALTER TABLE business_config ADD COLUMN IF NOT EXISTS print_config TEXT;
+            -- Personalización del catálogo web: tema de color (5 fijos) para el
+            -- render público. El eslogan y la dirección ya viven en subtitulo/direccion.
+            ALTER TABLE business_config ADD COLUMN IF NOT EXISTS catalogo_tema TEXT DEFAULT 'ocean';
+            -- Visibilidad por producto en el catálogo público (elegir qué mostrar).
+            ALTER TABLE products ADD COLUMN IF NOT EXISTS en_catalogo INTEGER DEFAULT 1;
             ALTER TABLE products ADD COLUMN IF NOT EXISTS image_url TEXT DEFAULT '';
             ALTER TABLE sale_items ALTER COLUMN product_id DROP NOT NULL;
             ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS debt NUMERIC(12,2) DEFAULT 0;
