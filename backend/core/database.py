@@ -205,6 +205,26 @@ async def init_db(DB_PATH: str, logger) -> None:
                 unit_price  REAL NOT NULL DEFAULT 0
             );
 
+            CREATE TABLE IF NOT EXISTS remitos (
+                id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                business_id     TEXT DEFAULT 'kiosco_default',
+                quote_id        INTEGER REFERENCES quotes(id),
+                customer_id     INTEGER,
+                address         TEXT,
+                driver          TEXT,
+                scheduled_date  TEXT,
+                status          TEXT DEFAULT 'pending',
+                created_at      TEXT DEFAULT (datetime('now','localtime'))
+            );
+
+            CREATE TABLE IF NOT EXISTS remito_items (
+                id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                remito_id       INTEGER NOT NULL REFERENCES remitos(id) ON DELETE CASCADE,
+                product_id      INTEGER NOT NULL,
+                quantity        REAL NOT NULL DEFAULT 1,
+                unit_price      REAL NOT NULL DEFAULT 0
+            );
+
             CREATE TABLE IF NOT EXISTS sucursales (
                 id          INTEGER PRIMARY KEY AUTOINCREMENT,
                 business_id TEXT DEFAULT 'kiosco_default', 
