@@ -65,15 +65,13 @@ export default function LandingShowcase() {
   const cur = screens[safe];
 
   return (
-    <section id="sistema" className="lp-section" style={{ padding: '90px 24px' }}>
+    <section id="sistema" className="lp-section" style={{ padding: '64px 24px' }}>
       <div className="lp-container">
         <Reveal>
-          <div style={{ textAlign: 'center', marginBottom: 40 }}>
-            <span style={{ display: 'inline-block', padding: '6px 14px', borderRadius: 100, background: 'rgba(20,187,166,0.1)', border: '1px solid rgba(20,187,166,0.2)', color: 'var(--lp-primary)', fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: 18 }}>
-              El sistema por dentro
-            </span>
-            <h2 className="lp-section-title" style={{ fontSize: '2.5rem', marginBottom: 12 }}>Mirá cómo se ve trabajando</h2>
-            <p className="lp-section-sub" style={{ fontSize: '1.1rem', color: 'rgba(230,255,251,0.65)', maxWidth: 620, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 28, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <span className="lp-eyebrow" style={{ marginBottom: 14 }}>El sistema por dentro</span>
+            <h2 className="lp-section-title">Mirá cómo se ve trabajando</h2>
+            <p className="lp-section-sub" style={{ maxWidth: 560 }}>
               Todo lo que necesitás para tu kiosco en una sola pantalla, simple y clara. Pasá por cada módulo.
             </p>
           </div>
@@ -89,11 +87,11 @@ export default function LandingShowcase() {
                 <button key={s.name} onClick={() => go(i)}
                   aria-label={`Ver ${s.name}`} aria-pressed={i === safe}
                   style={{
-                    padding: '7px 15px', borderRadius: 8, cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600,
+                    padding: '7px 15px', borderRadius: 9, cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600,
                     transition: 'all 0.2s', border: '1px solid',
-                    borderColor: i === safe ? 'rgba(20,187,166,0.4)' : 'rgba(255,255,255,0.08)',
-                    background: i === safe ? 'var(--lp-gradient-main)' : 'rgba(255,255,255,0.02)',
-                    color: i === safe ? '#fff' : 'var(--lp-text-muted)',
+                    borderColor: i === safe ? 'var(--lp-primary)' : 'var(--lp-line-strong)',
+                    background: i === safe ? 'var(--lp-primary)' : 'var(--lp-paper-raised)',
+                    color: i === safe ? '#fff' : 'var(--lp-ink-soft)',
                   }}>
                   {s.name}
                 </button>
@@ -102,12 +100,12 @@ export default function LandingShowcase() {
 
             {/* Mockup (con barra de navegador en celular; en PC se muestra discreto, solo la imagen) */}
             <div className="lp-glass lp-showcase-mockup" style={{ overflow: 'hidden', padding: 0 }}>
-              <div className="lp-showcase-chrome" style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px', background: 'rgba(255,255,255,0.025)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+              <div className="lp-showcase-chrome" style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '10px 16px', background: 'var(--lp-paper-sunken)', borderBottom: '1px solid var(--lp-line)' }}>
                 <span style={{ width: 11, height: 11, borderRadius: '50%', background: '#ff5f57' }} />
                 <span style={{ width: 11, height: 11, borderRadius: '50%', background: '#febc2e' }} />
                 <span style={{ width: 11, height: 11, borderRadius: '50%', background: '#28c840' }} />
                 <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
-                  <span style={{ fontSize: '0.72rem', color: 'rgba(230,255,251,0.45)', background: 'rgba(0,0,0,0.2)', padding: '3px 14px', borderRadius: 6, fontFamily: 'var(--lp-font-mono, monospace)' }}>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--lp-ink-faint)', background: 'var(--lp-paper)', border: '1px solid var(--lp-line)', padding: '3px 14px', borderRadius: 6, fontFamily: 'var(--lp-font-mono, monospace)' }}>
                     mi-negocio.app/panel
                   </span>
                 </div>
@@ -130,20 +128,20 @@ export default function LandingShowcase() {
             {/* Caption + flechas debajo: SOLO celular (en PC las flechas van sobre la imagen) */}
             <div className="lp-showcase-caption-row" style={{ alignItems: 'center', justifyContent: 'space-between', gap: 16, marginTop: 18 }}>
               <button onClick={() => go(active - 1)} aria-label="Anterior" className="lp-show-arrow"
-                style={{ flexShrink: 0, width: 38, height: 38, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)', color: 'var(--lp-text)', cursor: 'pointer', fontSize: '1.1rem', lineHeight: 1 }}>‹</button>
+                style={{ flexShrink: 0, width: 38, height: 38, borderRadius: '50%', border: '1px solid var(--lp-line-strong)', background: 'var(--lp-paper-raised)', color: 'var(--lp-ink)', cursor: 'pointer', fontSize: '1.1rem', lineHeight: 1 }}>‹</button>
               <div style={{ textAlign: 'center', flex: 1, minHeight: 44 }}>
-                <div style={{ fontWeight: 700, color: 'var(--lp-text)', fontSize: '1rem' }}>{cur.name}</div>
-                <div style={{ color: 'rgba(230,255,251,0.6)', fontSize: '0.9rem', marginTop: 2 }}>{cur.desc}</div>
+                <div style={{ fontWeight: 700, color: 'var(--lp-ink)', fontSize: '1rem' }}>{cur.name}</div>
+                <div style={{ color: 'var(--lp-ink-soft)', fontSize: '0.9rem', marginTop: 2 }}>{cur.desc}</div>
               </div>
               <button onClick={() => go(active + 1)} aria-label="Siguiente" className="lp-show-arrow"
-                style={{ flexShrink: 0, width: 38, height: 38, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)', color: 'var(--lp-text)', cursor: 'pointer', fontSize: '1.1rem', lineHeight: 1 }}>›</button>
+                style={{ flexShrink: 0, width: 38, height: 38, borderRadius: '50%', border: '1px solid var(--lp-line-strong)', background: 'var(--lp-paper-raised)', color: 'var(--lp-ink)', cursor: 'pointer', fontSize: '1.1rem', lineHeight: 1 }}>›</button>
             </div>
 
             {/* Dots */}
             <div style={{ display: 'flex', justifyContent: 'center', gap: 7, marginTop: 16 }}>
               {screens.map((s, i) => (
                 <button key={s.name} onClick={() => go(i)} aria-label={`Ir a ${s.name}`}
-                  style={{ width: i === safe ? 22 : 7, height: 7, borderRadius: 4, border: 'none', cursor: 'pointer', padding: 0, transition: 'all 0.3s', background: i === safe ? 'var(--lp-primary)' : 'rgba(255,255,255,0.15)' }} />
+                  style={{ width: i === safe ? 22 : 7, height: 7, borderRadius: 4, border: 'none', cursor: 'pointer', padding: 0, transition: 'all 0.3s', background: i === safe ? 'var(--lp-primary)' : 'var(--lp-line-strong)' }} />
               ))}
             </div>
           </div>

@@ -1,72 +1,76 @@
-const Svg = {
-  X: () => <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 18L18 6M6 6l12 12" /></svg>,
-};
+import { useState } from 'react';
 
-export default function LandingContactModal({ showContactModal, setShowContactModal, contactSent, setContactSent, contactLoading, contactForm, setContactForm, handleContactSubmit, contactError }) {
+const Svg = { X: () => <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 18L18 6M6 6l12 12" /></svg> };
+
+export default function LandingContactModal({ showContactModal, setShowContactModal }) {
+  const [contactForm, setContactForm] = useState({ nombre: '', contacto: '', mensaje: '' });
+  const [contactSent, setContactSent] = useState(false);
+  const [contactLoading, setContactLoading] = useState(false);
+  const [contactError, setContactError] = useState('');
+
+  const handleContactSubmit = async () => {
+    if (!contactForm.nombre.trim() || !contactForm.mensaje.trim()) return;
+    setContactLoading(true); setContactError('');
+    try {
+      const res = await fetch('/api/send-contact-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: contactForm.nombre, contact: contactForm.contacto, message: contactForm.mensaje }),
+      });
+      if (res.ok) { setContactSent(true); } else { setContactError('No se pudo enviar. Probá de nuevo.'); }
+    } catch { setContactError('Error de conexión.'); }
+    setContactLoading(false);
+  };
+
   if (!showContactModal) return null;
 
+  const inputStyle = {
+    width: '100%', padding: '14px 16px', marginTop: 6,
+    background: 'var(--lp-paper-sunken)', border: '1px solid var(--lp-line-strong)',
+    borderRadius: 12, color: 'var(--lp-ink)', outline: 'none',
+    fontSize: '0.95rem', transition: 'border-color 0.2s',
+  };
+
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(10, 15, 30, 0.85)', backdropFilter: 'blur(20px)', padding: 20, animation: 'fadeIn 0.2s ease' }} onMouseDown={(e) => { if (e.target === e.currentTarget) setShowContactModal(false); }} onKeyDown={(e) => { if (e.key === 'Escape') setShowContactModal(false); }}>
-      <style>{`
-        .contact-input {
-          width: 100%; padding: 14px 16px; background: rgba(255,255,255,0.02);
-          border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; color: #fff;
-          outline: none; font-size: 0.95rem; font-family: inherit; transition: all 0.3s ease;
-          backdrop-filter: blur(10px);
-        }
-        .contact-input:focus {
-          border-color: var(--lp-primary) !important;
-          background: rgba(20, 187, 166, 0.05) !important;
-          box-shadow: 0 0 0 4px rgba(20, 187, 166, 0.15) !important;
-        }
-        .contact-btn {
-          background: linear-gradient(135deg, var(--lp-primary), var(--lp-secondary));
-          background-size: 200% auto;
-          animation: gradient-shift 3s ease infinite;
-          border: none;
-        }
-        @keyframes gradient-shift {
-          0% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-          100% { background-position: 0% 50%; }
-        }
-      `}</style>
-      <div onMouseDown={e => e.stopPropagation()} onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 500, background: 'linear-gradient(145deg, rgba(25, 35, 55, 0.95) 0%, rgba(15, 20, 35, 0.98) 100%)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 24, padding: '40px', position: 'relative', boxShadow: '0 40px 80px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255,255,255,0.1)' }}>
-        <button onClick={() => setShowContactModal(false)} style={{ position: 'absolute', top: 20, right: 20, background: 'rgba(255,255,255,0.05)', border: 'none', color: 'var(--lp-text-muted)', width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s' }} onMouseEnter={e => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.background = 'rgba(255,255,255,0.1)' }} onMouseLeave={e => { e.currentTarget.style.color = 'var(--lp-text-muted)'; e.currentTarget.style.background = 'rgba(255,255,255,0.05)' }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(11,19,43,0.85)', backdropFilter: 'blur(20px)', padding: 20 }}
+      onMouseDown={e => { if (e.target === e.currentTarget) setShowContactModal(false); }}>
+      <div onMouseDown={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 460, background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line-strong)', borderRadius: 24, padding: '40px 38px 32px', position: 'relative', boxShadow: 'var(--lp-shadow-lg)' }}>
+        <button onClick={() => setShowContactModal(false)} style={{ position: 'absolute', top: 20, right: 20, background: 'var(--lp-paper-sunken)', border: 'none', color: 'var(--lp-ink-faint)', width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s' }}
+          onMouseEnter={e => { e.currentTarget.style.color = 'var(--lp-ink)'; e.currentTarget.style.background = 'var(--lp-primary-wash)'; }}
+          onMouseLeave={e => { e.currentTarget.style.color = 'var(--lp-ink-faint)'; e.currentTarget.style.background = 'var(--lp-paper-sunken)'; }}>
           <Svg.X />
         </button>
-        <h2 style={{ fontSize: '2rem', fontWeight: 800, color: '#fff', marginBottom: 8, letterSpacing: '-0.5px' }}>Escribinos</h2>
-        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.95rem', marginBottom: 28, lineHeight: 1.5 }}>
-          Respondemos rápido.<br/>
-          <span style={{ color: '#fff', fontWeight: 600 }}>Email:</span> upcodednow@gmail.com <br/>
-          <span style={{ color: '#fff', fontWeight: 600 }}>WhatsApp:</span> +54 9 11 4427-6384
+        <h2 style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--lp-ink)', marginBottom: 8, letterSpacing: '-0.5px' }}>Escribinos</h2>
+        <p style={{ color: 'var(--lp-ink-faint)', fontSize: '0.9rem', marginBottom: 20 }}>
+          <span style={{ color: 'var(--lp-ink-soft)', fontWeight: 600 }}>Email:</span> upcodednow@gmail.com <br/>
+          <span style={{ color: 'var(--lp-ink-soft)', fontWeight: 600 }}>WhatsApp:</span> +54 9 11 4427-6384
         </p>
+
         {contactSent ? (
-          <div style={{ textAlign: 'center', padding: '32px 0' }}>
-            <div style={{ width: 64, height: 64, background: 'rgba(16,185,129,0.1)', color: '#10b981', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', boxShadow: '0 0 30px rgba(16,185,129,0.2)' }}>
-              <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-            </div>
-            <h3 style={{ fontSize: '1.4rem', color: '#fff', marginBottom: 8, fontWeight: 700 }}>¡Mensaje enviado!</h3>
-            <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.95rem' }}>Nos pondremos en contacto con vos a la brevedad.</p>
-            <button onClick={() => { setContactSent(false); setShowContactModal(false); }} className="lp-btn lp-btn--ghost" style={{ marginTop: 24, padding: '10px 24px', fontSize: '0.9rem', borderRadius: 100 }}>Cerrar</button>
+          <div style={{ textAlign: 'center', padding: '20px 0' }}>
+            <h3 style={{ fontSize: '1.4rem', color: 'var(--lp-ink)', marginBottom: 8, fontWeight: 700 }}>¡Mensaje enviado!</h3>
+            <p style={{ color: 'var(--lp-ink-faint)', marginBottom: 24 }}>Te respondemos en menos de 24 horas.</p>
+            <button onClick={() => setShowContactModal(false)} className="lp-btn lp-btn--primary" style={{ padding: '14px 32px' }}>Listo</button>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            {contactError && <div style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', padding: '10px 14px', borderRadius: 8, fontWeight: 500, fontSize: '0.85rem' }}>{contactError}</div>}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+            {contactError && <div style={{ background: 'rgba(239,68,68,0.08)', color: '#ef4444', padding: '10px 14px', borderRadius: 8, fontWeight: 600, fontSize: '0.85rem' }}>{contactError}</div>}
             <div>
-              <label style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.8)', fontWeight: 600, display: 'block', marginBottom: 8, letterSpacing: '0.3px' }}>Nombre completo</label>
-              <input className="contact-input" type="text" value={contactForm.nombre} onChange={e => setContactForm({...contactForm, nombre: e.target.value})} placeholder="Ej. Juan Pérez" />
+              <label style={{ fontSize: '0.85rem', color: 'var(--lp-ink-soft)', fontWeight: 500 }}>Tu Nombre</label>
+              <input placeholder="Ej: Carlos" value={contactForm.nombre} onChange={e => setContactForm({ ...contactForm, nombre: e.target.value })} style={inputStyle} onFocus={e => e.target.style.borderColor = 'var(--lp-primary)'} onBlur={e => e.target.style.borderColor = 'var(--lp-line-strong)'} />
             </div>
             <div>
-              <label style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.8)', fontWeight: 600, display: 'block', marginBottom: 8, letterSpacing: '0.3px' }}>Email o Teléfono</label>
-              <input className="contact-input" type="text" value={contactForm.contacto} onChange={e => setContactForm({...contactForm, contacto: e.target.value})} placeholder="Para que podamos contactarte" />
+              <label style={{ fontSize: '0.85rem', color: 'var(--lp-ink-soft)', fontWeight: 500 }}>Email o WhatsApp (opcional)</label>
+              <input placeholder="Opcional" value={contactForm.contacto} onChange={e => setContactForm({ ...contactForm, contacto: e.target.value })} style={inputStyle} onFocus={e => e.target.style.borderColor = 'var(--lp-primary)'} onBlur={e => e.target.style.borderColor = 'var(--lp-line-strong)'} />
             </div>
             <div>
-              <label style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.8)', fontWeight: 600, display: 'block', marginBottom: 8, letterSpacing: '0.3px' }}>Mensaje</label>
-              <textarea className="contact-input" value={contactForm.mensaje} onChange={e => setContactForm({...contactForm, mensaje: e.target.value})} placeholder="¿En qué te podemos ayudar?" rows="4" style={{ resize: 'none' }} />
+              <label style={{ fontSize: '0.85rem', color: 'var(--lp-ink-soft)', fontWeight: 500 }}>Mensaje</label>
+              <textarea placeholder="¿En qué podemos ayudarte?" value={contactForm.mensaje} onChange={e => setContactForm({ ...contactForm, mensaje: e.target.value })} rows={4}
+                style={{ ...inputStyle, resize: 'vertical', minHeight: 100, fontFamily: 'inherit' }} onFocus={e => e.target.style.borderColor = 'var(--lp-primary)'} onBlur={e => e.target.style.borderColor = 'var(--lp-line-strong)'} />
             </div>
-            <button className={(contactLoading || !contactForm.nombre || !contactForm.mensaje) ? '' : 'contact-btn'} onClick={handleContactSubmit} disabled={contactLoading || !contactForm.nombre || !contactForm.mensaje} style={{ width: '100%', padding: '16px', borderRadius: 12, border: 'none', background: (contactLoading || !contactForm.nombre || !contactForm.mensaje) ? 'rgba(255,255,255,0.05)' : '', color: (contactLoading || !contactForm.nombre || !contactForm.mensaje) ? 'rgba(255,255,255,0.4)' : '#fff', fontSize: '1.05rem', fontWeight: 700, cursor: (contactLoading || !contactForm.nombre || !contactForm.mensaje) ? 'not-allowed' : 'pointer', marginTop: 8, boxShadow: (contactLoading || !contactForm.nombre || !contactForm.mensaje) ? 'none' : '0 10px 30px rgba(20,187,166, 0.3)', transition: 'all 0.3s' }}>
-              {contactLoading ? 'Enviando...' : 'Enviar Mensaje'}
+            <button onClick={handleContactSubmit} disabled={contactLoading || !contactForm.nombre || !contactForm.mensaje}
+              className="lp-btn lp-btn--primary" style={{ width: '100%', padding: '16px', fontSize: '1.05rem', fontWeight: 700, borderRadius: 12, opacity: (contactLoading || !contactForm.nombre || !contactForm.mensaje) ? 0.5 : 1, cursor: (contactLoading || !contactForm.nombre || !contactForm.mensaje) ? 'not-allowed' : 'pointer' }}>
+              {contactLoading ? 'Enviando...' : 'Enviar mensaje'}
             </button>
           </div>
         )}

@@ -24,20 +24,20 @@ export default function LandingTestimonials() {
   // En mobile: menos testimonios (3) y más cortos, para que sea cercano y no largo.
   const visible = isMobile ? testimonials.slice(0, 3) : testimonials;
   return (
-    <section className="lp-section" style={{ padding: isMobile ? '56px 16px' : '100px 24px' }}>
+    <section className="lp-section" style={{ padding: isMobile ? '48px 16px' : '64px 24px' }}>
       <div style={{ maxWidth: 1000, margin: '0 auto' }}>
         <Reveal>
-          <div style={{ textAlign: 'center', marginBottom: isMobile ? 26 : 40 }}>
-            <h2 className="lp-section-title" style={{ fontSize: isMobile ? '1.7rem' : '2.5rem', marginBottom: 10 }}>Lo que dicen los que ya lo usan</h2>
-            <p className="lp-section-sub" style={{ maxWidth: 500, margin: '0 auto', fontSize: isMobile ? '0.95rem' : '1.1rem', color: 'rgba(230,255,251, 0.65)' }}>Kiosqueros de verdad, como vos.</p>
+          <div style={{ textAlign: 'center', marginBottom: isMobile ? 24 : 32 }}>
+            <h2 className="lp-section-title">Lo que dicen los que ya lo usan</h2>
+            <p className="lp-section-sub" style={{ maxWidth: 500 }}>Kiosqueros de verdad, como vos.</p>
           </div>
         </Reveal>
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(260px, 1fr))', gap: isMobile ? 12 : 16 }}>
           {visible.map((t, i) => (
             <Reveal key={t.id} delay={i + 1} style={{ height: '100%' }}>
-              <div className="lp-glass" style={{ padding: isMobile ? 16 : 24, height: '100%', display: 'flex', flexDirection: 'column', transition: 'transform 0.2s, border-color 0.2s, box-shadow 0.2s' }} onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.borderColor = 'rgba(20,187,166,0.2)'; e.currentTarget.style.boxShadow = '0 8px 30px rgba(20,187,166,0.08)'; }} onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; e.currentTarget.style.boxShadow = 'none'; }}>
+              <div className="lp-glass" style={{ padding: isMobile ? 16 : 24, height: '100%', display: 'flex', flexDirection: 'column', transition: 'transform 0.2s, border-color 0.2s, box-shadow 0.2s' }} onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.borderColor = 'rgba(20,187,166,0.2)'; e.currentTarget.style.boxShadow = '0 8px 30px rgba(20,187,166,0.08)'; }} onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = 'var(--lp-line)'; e.currentTarget.style.boxShadow = 'var(--lp-shadow-sm)'; }}>
                 <div style={{ display: 'flex', gap: 2, marginBottom: 10, color: '#F5C518' }}>{Array.from({ length: t.stars }).map((_, j) => <Svg.Star key={j} />)}</div>
-                <p style={{ fontSize: isMobile ? '0.88rem' : '0.9rem', lineHeight: 1.55, marginBottom: 14, fontStyle: 'italic', flex: 1,
+                <p style={{ fontSize: isMobile ? '0.88rem' : '0.92rem', lineHeight: 1.55, marginBottom: 14, fontStyle: 'italic', color: 'var(--lp-ink-soft)', flex: 1,
                   ...(isMobile ? { display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' } : {}) }}>"{t.text}"</p>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <div aria-hidden="true" style={{ flexShrink: 0, width: 34, height: 34, borderRadius: '50%', background: 'var(--lp-gradient-main)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.9rem' }}>
