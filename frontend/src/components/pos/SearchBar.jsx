@@ -7,7 +7,7 @@ import { findProductByAnyCode } from '../../utils/productLookup';
 
 export default function SearchBar({
   search, setSearch, searchRef, searchError, flash,
-  productsDB, handleQuickAdd, setShowPriceCheck, addToast, handleEmptyEnter
+  productsDB, handleQuickAdd, setShowPriceCheck, addToast, handleEmptyEnter, listType
 }) {
   const [showAddAmountModal, setShowAddAmountModal] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
@@ -21,19 +21,21 @@ export default function SearchBar({
     return false;
   }, []);
 
+  const getPrice = (p) => (listType === 'b' ? p.price_b || p.price : p.price) || 0;
+
   const handleBarcodeScan = useCallback((code) => {
     if (!code || !productsDB) return;
     setSearch(code);
     const exact = findProductByAnyCode(productsDB, code);
     if (exact) {
       addToast(`Escaneado: ${exact.name}`, 'info');
-      handleQuickAdd(exact.code, exact.name, exact.price);
+      handleQuickAdd(exact.code, exact.name, getPrice(exact));
       setSearch('');
       searchRef.current?.focus();
     } else {
       setSearch(code);
     }
-  }, [productsDB, handleQuickAdd, setSearch, searchRef, addToast]);
+  }, [productsDB, handleQuickAdd, setSearch, searchRef, addToast, listType]);
   const autocomplete = useMemo(() => {
     if (!search.trim() || !productsDB) return [];
     return productsDB
@@ -78,7 +80,7 @@ export default function SearchBar({
             if (e.target.value.trim().length > 0 && e.target.value.trim().length < 3) {
               const term = e.target.value.trim();
               const codeMatch = findProductByAnyCode(productsDB, term);
-              if (codeMatch && !isDuplicateScan(term)) { handleQuickAdd(codeMatch.code, codeMatch.name, codeMatch.price); setSearch(''); searchRef.current?.focus(); }
+              if (codeMatch && !isDuplicateScan(term)) { handleQuickAdd(codeMatch.code, codeMatch.name, getPrice(codeMatch)); setSearch(''); searchRef.current?.focus(); }
             }
           }}
           onKeyDown={e => {
@@ -111,11 +113,11 @@ export default function SearchBar({
               // Búsqueda normal por código exacto
               const exact = findProductByAnyCode(productsDB, term);
               if (exact && !isDuplicateScan(term)) {
-                handleQuickAdd(exact.code, exact.name, exact.price);
+                handleQuickAdd(exact.code, exact.name, getPrice(exact));
                 setSearch('');
                 searchRef.current?.focus();
               } else if (autocomplete.length === 1 && !isDuplicateScan(term)) {
-                handleQuickAdd(autocomplete[0].code, autocomplete[0].name, autocomplete[0].price);
+                handleQuickAdd(autocomplete[0].code, autocomplete[0].name, getPrice(autocomplete[0]));
                 setSearch('');
                 searchRef.current?.focus();
               }
@@ -129,9 +131,9 @@ export default function SearchBar({
               <button
                 id={`autocomplete-${i}`}
                 key={p.id}
-                onClick={() => { handleQuickAdd(p.code, p.name, p.price); setSearch(''); searchRef.current?.focus(); }}
+                onClick={() => { handleQuickAdd(p.code, p.name, getPrice(p)); setSearch(''); searchRef.current?.focus(); }}
                 onKeyDown={e => {
-                  if (e.key === 'Enter') { handleQuickAdd(p.code, p.name, p.price); setSearch(''); searchRef.current?.focus(); }
+                  if (e.key === 'Enter') { handleQuickAdd(p.code, p.name, getPrice(p)); setSearch(''); searchRef.current?.focus(); }
                   if (e.key === 'ArrowDown') document.getElementById(`autocomplete-${i + 1}`)?.focus();
                   if (e.key === 'ArrowUp') { if (i === 0) searchRef.current?.focus(); else document.getElementById(`autocomplete-${i - 1}`)?.focus(); }
                 }}
@@ -143,7 +145,7 @@ export default function SearchBar({
               >
                 <span style={{ fontWeight: 600 }}>{p.name}</span>
                 <div style={{ display: 'flex', gap: '16px', color: 'var(--text-secondary)' }}>
-                  <span>${p.price}</span>
+                  <span>${(listType === 'b' ? p.price_b || p.price : p.price)}</span>
                   <span style={{ color: p.stock > 0 ? 'var(--accent-success)' : 'var(--accent-danger)' }}>Stock: {p.stock}</span>
                 </div>
               </button>
