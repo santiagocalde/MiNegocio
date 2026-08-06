@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const Svg = {
@@ -31,12 +31,17 @@ const cards = [
 
 export default function SoportePublicoPage() {
   const navigate = useNavigate();
+  const [theme] = useState(() => { try { return localStorage.getItem('lp_theme') || 'light'; } catch { return 'light'; } });
 
   useEffect(() => {
     document.body.classList.add('landing-open');
+    document.body.setAttribute('data-lp-theme', theme);
     window.scrollTo(0, 0);
-    return () => document.body.classList.remove('landing-open');
-  }, []);
+    return () => {
+      document.body.classList.remove('landing-open');
+      document.body.removeAttribute('data-lp-theme');
+    };
+  }, [theme]);
 
   return (
     <div className="lp-noise" style={{ fontFamily: 'var(--lp-font-body)', color: 'var(--lp-text)', minHeight: '100vh', position: 'relative', padding: '40px 24px' }}>

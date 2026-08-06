@@ -11,6 +11,7 @@ const Svg = {
 
 export default function ContactoPage() {
   const navigate = useNavigate();
+  const [theme] = useState(() => { try { return localStorage.getItem('lp_theme') || 'light'; } catch { return 'light'; } });
   const [sent, setSent] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [loading, setLoading] = useState(false);
@@ -18,9 +19,13 @@ export default function ContactoPage() {
 
   useEffect(() => {
     document.body.classList.add('landing-open');
+    document.body.setAttribute('data-lp-theme', theme);
     window.scrollTo(0, 0);
-    return () => document.body.classList.remove('landing-open');
-  }, []);
+    return () => {
+      document.body.classList.remove('landing-open');
+      document.body.removeAttribute('data-lp-theme');
+    };
+  }, [theme]);
 
   const handleSend = async () => {
     if (!formData.nombre || !formData.contacto || !formData.mensaje) {
