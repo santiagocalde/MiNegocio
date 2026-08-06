@@ -121,7 +121,7 @@ export default function StockModule() {
 
   const [showNuevoProducto, setShowNuevoProducto] = useState(false);
   const [categories, setCategories] = useState([]);
-  const [newProduct, setNewProduct] = useState({ code: '', name: '', price: '', cost_price: '', price_b: '', stock: '', min_stock: '5', iva: '21%', category_id: '', unit_label: 'unidad', codigos_extra: '' });
+  const [newProduct, setNewProduct] = useState({ code: '', name: '', price: '', cost_price: '', stock: '', min_stock: '5', iva: '21%', category_id: '', codigos_extra: '' });
   const [confirmState, setConfirmState] = useState({ isOpen: false, title: '', message: '', onConfirm: null, confirmLabel: 'Confirmar', variant: 'danger' });
   const [showNewCategory, setShowNewCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -232,8 +232,6 @@ export default function StockModule() {
         min_stock: parseInt(newProduct.min_stock) || 5,
         iva: newProduct.iva || '21%',
         category_id: newProduct.category_id ? parseInt(newProduct.category_id) : null,
-        price_b: newProduct.price_b ? parseFloat(newProduct.price_b) : null,
-        unit_label: newProduct.unit_label || 'unidad',
         extra_codes: (newProduct.codigos_extra || '').split(',').map(c => c.trim()).filter(Boolean),
       });
       if (res.ok) {
@@ -819,7 +817,6 @@ export default function StockModule() {
               {[{ label: 'Código', key: 'code', type: 'text' }, { label: 'Nombre', key: 'name', type: 'text' },
                 { label: 'Precio Venta ($)', key: 'price', type: 'number' }, { label: 'Precio Costo ($)', key: 'cost_price', type: 'number' },
                 { label: 'Stock', key: 'stock', type: 'number' }, { label: 'Stock Mínimo', key: 'min_stock', type: 'number' },
-                { label: 'Precio Mayorista ($)', key: 'price_b', type: 'number' }, { label: 'Unidad', key: 'unit_label', type: 'text' },
               ].map(f => (
                 <div key={f.key}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>

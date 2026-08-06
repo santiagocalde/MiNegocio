@@ -185,56 +185,6 @@ async def init_db(DB_PATH: str, logger) -> None:
                 FOREIGN KEY (purchase_id) REFERENCES purchases(id)
             );
 
-            CREATE TABLE IF NOT EXISTS quotes (
-                id          INTEGER PRIMARY KEY AUTOINCREMENT,
-                business_id TEXT DEFAULT 'kiosco_default',
-                customer_id INTEGER,
-                status      TEXT DEFAULT 'draft',
-                list_type   TEXT DEFAULT 'a',
-                note        TEXT,
-                valid_days  INTEGER DEFAULT 15,
-                created_at  TEXT DEFAULT (datetime('now','localtime')),
-                expires_at  TEXT
-            );
-
-            CREATE TABLE IF NOT EXISTS quote_items (
-                id          INTEGER PRIMARY KEY AUTOINCREMENT,
-                quote_id    INTEGER NOT NULL REFERENCES quotes(id) ON DELETE CASCADE,
-                product_id  INTEGER NOT NULL,
-                quantity    REAL NOT NULL DEFAULT 1,
-                unit_price  REAL NOT NULL DEFAULT 0
-            );
-
-            CREATE TABLE IF NOT EXISTS remitos (
-                id              INTEGER PRIMARY KEY AUTOINCREMENT,
-                business_id     TEXT DEFAULT 'kiosco_default',
-                quote_id        INTEGER REFERENCES quotes(id),
-                customer_id     INTEGER,
-                address         TEXT,
-                driver          TEXT,
-                scheduled_date  TEXT,
-                status          TEXT DEFAULT 'pending',
-                created_at      TEXT DEFAULT (datetime('now','localtime'))
-            );
-
-            CREATE TABLE IF NOT EXISTS remito_items (
-                id              INTEGER PRIMARY KEY AUTOINCREMENT,
-                remito_id       INTEGER NOT NULL REFERENCES remitos(id) ON DELETE CASCADE,
-                product_id      INTEGER NOT NULL,
-                quantity        REAL NOT NULL DEFAULT 1,
-                unit_price      REAL NOT NULL DEFAULT 0
-            );
-
-            CREATE TABLE IF NOT EXISTS obras (
-                id              INTEGER PRIMARY KEY AUTOINCREMENT,
-                business_id     TEXT DEFAULT 'kiosco_default',
-                name            TEXT NOT NULL,
-                customer_id     INTEGER,
-                address         TEXT,
-                status          TEXT DEFAULT 'activa',
-                created_at      TEXT DEFAULT (datetime('now','localtime'))
-            );
-
             CREATE TABLE IF NOT EXISTS sucursales (
                 id          INTEGER PRIMARY KEY AUTOINCREMENT,
                 business_id TEXT DEFAULT 'kiosco_default', 
@@ -363,10 +313,6 @@ async def init_db(DB_PATH: str, logger) -> None:
         await add_column_if_not_exists(db, "sale_items", "unit_cost", "REAL", default="0")
         await add_column_if_not_exists(db, "products", "sucursal_id", "INTEGER", "sucursales(id)", "1")
         await add_column_if_not_exists(db, "sales", "sucursal_id", "INTEGER", "sucursales(id)", "1")
-
-        # Rubro Corralón: precio mayorista y unidad de medida
-        await add_column_if_not_exists(db, "products", "price_b", "REAL")
-        await add_column_if_not_exists(db, "products", "unit_label", "TEXT", default="'unidad'")
         # suppliers.phone: el frontend y el INSERT usan 'phone', pero el esquema SQLite
         # solo tenía 'cuit' -> crear proveedor en modo local fallaba con 500.
         await add_column_if_not_exists(db, "suppliers", "debt", "REAL", default="0")

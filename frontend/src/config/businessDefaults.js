@@ -8,7 +8,6 @@ const BUSINESS_FEATURES = {
   ferreteria:    { compras: true, proveedores: true,  fiados: true,  catalogo: true, auditoria: false, promociones: true,  recomendaciones: true },
   libreria:      { compras: true, proveedores: true,  fiados: false, catalogo: true, auditoria: false, promociones: false, recomendaciones: true },
   petshop:       { compras: true, proveedores: true,  fiados: false, catalogo: true, auditoria: false, promociones: true,  recomendaciones: true },
-  corralon:      { compras: true, proveedores: true,  fiados: true,  catalogo: false, auditoria: true,  promociones: true,  recomendaciones: true },
   vineria:       { compras: true, proveedores: true,  fiados: true,  catalogo: true, auditoria: true,  promociones: true,  recomendaciones: true },
   otro:          { compras: true, proveedores: true,  fiados: true,  catalogo: true, auditoria: false, promociones: true,  recomendaciones: true },
 };

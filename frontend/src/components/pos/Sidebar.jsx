@@ -42,7 +42,6 @@ const NAV_ITEMS = [
     category: 'SISTEMA',
     roles: ['admin'],
     items: [
-      ...(businessType === 'corralon' ? [{ label: 'Presupuestos', path: '/panel/presupuestos', icon: 'Clipboard' }] : []),
       { label: 'Historial', path: '/panel/auditoria', icon: 'Clipboard', minPlan: 'pro', featureKey: 'auditoria' },
       { label: 'Configuración', path: '/panel/configuracion', icon: 'Settings' },
       { label: 'Usuarios', path: '/panel/usuarios', icon: 'Users' },
@@ -106,14 +105,6 @@ export default function Sidebar({
 
   const features = getBusinessFeatures(businessType);
 
-  // Labels contextuales por rubro
-  const corralonLabels = businessType === 'corralon' ? {
-    'Inventario': 'Depósito',
-    'Punto de Venta': 'Mostrador',
-    'Fiados': 'Cuentas corrientes',
-    'Compras': 'Proveedores',
-  } : {};
-
   return (
     <>
     {isMobile && !collapsed && <div className="sidebar-backdrop" onClick={() => setCollapsed(true)} />}
@@ -156,7 +147,7 @@ export default function Sidebar({
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1 }}>
                       {ICON_MAP[item.icon] ? React.createElement(ICON_MAP[item.icon]) : <span style={{ width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icons.File /></span>}
-                      <span className="nav-label">{isMobile && item.short ? item.short : (corralonLabels[item.label] || item.label)}</span>
+                      <span className="nav-label">{isMobile && item.short ? item.short : item.label}</span>
                     </div>
                   </div>
                 );

@@ -420,61 +420,6 @@ async def init_pg() -> None:
             );
             CREATE INDEX IF NOT EXISTS idx_promotion_conditions_promo ON promotion_conditions(promotion_id);
 
-            CREATE TABLE IF NOT EXISTS quotes (
-                id              SERIAL PRIMARY KEY,
-                business_id     TEXT NOT NULL REFERENCES businesses(id),
-                customer_id     INTEGER REFERENCES customers(id),
-                status          TEXT DEFAULT 'draft',
-                list_type       TEXT DEFAULT 'a',
-                note            TEXT,
-                valid_days      INTEGER DEFAULT 15,
-                created_at      TIMESTAMPTZ DEFAULT now(),
-                expires_at      TIMESTAMPTZ
-            );
-            CREATE INDEX IF NOT EXISTS idx_quotes_business_id ON quotes(business_id);
-
-            CREATE TABLE IF NOT EXISTS quote_items (
-                id              SERIAL PRIMARY KEY,
-                quote_id        INTEGER NOT NULL REFERENCES quotes(id) ON DELETE CASCADE,
-                product_id      INTEGER NOT NULL,
-                quantity        NUMERIC(12,3) NOT NULL DEFAULT 1,
-                unit_price      NUMERIC(12,2) NOT NULL DEFAULT 0
-            );
-            CREATE INDEX IF NOT EXISTS idx_quote_items_quote_id ON quote_items(quote_id);
-
-            CREATE TABLE IF NOT EXISTS remitos (
-                id              SERIAL PRIMARY KEY,
-                business_id     TEXT NOT NULL REFERENCES businesses(id),
-                quote_id        INTEGER REFERENCES quotes(id),
-                customer_id     INTEGER REFERENCES customers(id),
-                address         TEXT,
-                driver          TEXT,
-                scheduled_date  DATE,
-                status          TEXT DEFAULT 'pending',
-                created_at      TIMESTAMPTZ DEFAULT now()
-            );
-            CREATE INDEX IF NOT EXISTS idx_remitos_business_id ON remitos(business_id);
-
-            CREATE TABLE IF NOT EXISTS remito_items (
-                id              SERIAL PRIMARY KEY,
-                remito_id       INTEGER NOT NULL REFERENCES remitos(id) ON DELETE CASCADE,
-                product_id      INTEGER NOT NULL,
-                quantity        NUMERIC(12,3) NOT NULL DEFAULT 1,
-                unit_price      NUMERIC(12,2) NOT NULL DEFAULT 0
-            );
-            CREATE INDEX IF NOT EXISTS idx_remito_items_remito_id ON remito_items(remito_id);
-
-            CREATE TABLE IF NOT EXISTS obras (
-                id              SERIAL PRIMARY KEY,
-                business_id     TEXT NOT NULL REFERENCES businesses(id),
-                name            TEXT NOT NULL,
-                customer_id     INTEGER REFERENCES customers(id),
-                address         TEXT,
-                status          TEXT DEFAULT 'activa',
-                created_at      TIMESTAMPTZ DEFAULT now()
-            );
-            CREATE INDEX IF NOT EXISTS idx_obras_business_id ON obras(business_id);
-
             CREATE TABLE IF NOT EXISTS sucursales (
                 id              SERIAL PRIMARY KEY,
                 business_id     TEXT NOT NULL REFERENCES businesses(id),
@@ -546,10 +491,6 @@ async def init_pg() -> None:
             ALTER TABLE sale_items ALTER COLUMN product_id DROP NOT NULL;
             ALTER TABLE sale_items ADD COLUMN IF NOT EXISTS unit_cost NUMERIC(12,2) DEFAULT 0;
             ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS debt NUMERIC(12,2) DEFAULT 0;
-
-            -- Rubro Corralón: precio mayorista/contratista (Lista B) y unidad de medida
-            ALTER TABLE products ADD COLUMN IF NOT EXISTS price_b NUMERIC(12,2);
-            ALTER TABLE products ADD COLUMN IF NOT EXISTS unit_label VARCHAR(20) DEFAULT 'unidad';
 
             CREATE TABLE IF NOT EXISTS audit_log (
                 id              SERIAL PRIMARY KEY,
