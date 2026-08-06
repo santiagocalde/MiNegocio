@@ -25,7 +25,7 @@ export default function LandingLoginModal({
     width: '100%', padding: '14px 16px', marginTop: 6,
     background: 'var(--lp-paper-sunken)', border: '1px solid var(--lp-line-strong)',
     borderRadius: 12, color: 'var(--lp-ink)', outline: 'none',
-    fontSize: '0.95rem', transition: 'border-color 0.2s, background 0.2s',
+    fontSize: '0.95rem', transition: 'border-color 0.2s',
   };
 
   return (
@@ -41,7 +41,7 @@ export default function LandingLoginModal({
       >
         <button
           onClick={() => setShowLoginModal(false)}
-          style={{ position: 'absolute', top: 20, right: 20, background: 'var(--lp-paper-sunken)', border: 'none', color: 'var(--lp-ink-faint)', width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s' }}
+          style={{ position: 'absolute', top: 20, right: 20, background: 'var(--lp-paper-sunken)', border: 'none', color: 'var(--lp-ink-faint)', width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'color 0.18s, transform 0.18s' }}
           onMouseEnter={e => { e.currentTarget.style.color = 'var(--lp-ink)'; e.currentTarget.style.background = 'var(--lp-primary-wash)'; }}
           onMouseLeave={e => { e.currentTarget.style.color = 'var(--lp-ink-faint)'; e.currentTarget.style.background = 'var(--lp-paper-sunken)'; }}
         >
@@ -53,7 +53,7 @@ export default function LandingLoginModal({
             <svg width="24" height="24" fill="none" stroke="var(--lp-primary)" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
           </div>
           <div>
-            <h2 style={{ color: 'var(--lp-ink)', fontSize: '1.6rem', fontWeight: 800, letterSpacing: '-0.5px', lineHeight: 1 }}>
+            <h2 style={{ color: 'var(--lp-ink)', fontFamily: 'var(--lp-font-display)', fontSize: '1.6rem', fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1 }}>
               {isRegister ? 'Creá tu cuenta' : 'Bienvenido'}
             </h2>
             <p style={{ color: 'var(--lp-ink-faint)', fontSize: '0.9rem', marginTop: 4 }}>
@@ -167,9 +167,9 @@ export default function LandingLoginModal({
           localStorage.setItem('minegocio_current_turn_id', 'preview-turn');
           window.location.href = '/panel?preview=true';
         }}
-        style={{ marginTop: 32, display: 'flex', alignItems: 'center', gap: 8, padding: '14px 28px', borderRadius: 100, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(11,19,43,0.6)', color: '#EDF3F2', fontSize: '0.95rem', fontWeight: 600, cursor: 'pointer', transition: 'transform 0.18s, box-shadow 0.18s, background 0.18s', backdropFilter: 'blur(10px)' }}
-        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(11,19,43,0.85)'; e.currentTarget.style.transform = 'scale(1.05)'; }}
-        onMouseLeave={e => { e.currentTarget.style.background = 'rgba(11,19,43,0.6)'; e.currentTarget.style.transform = 'scale(1)'; }}
+        style={{ marginTop: 32, display: 'flex', alignItems: 'center', gap: 8, padding: '14px 28px', borderRadius: 100, border: '1px solid var(--lp-line-strong)', background: 'var(--lp-paper-sunken)', color: 'var(--lp-ink-soft)', fontSize: '0.95rem', fontWeight: 600, cursor: 'pointer', transition: 'transform 0.18s, color 0.18s, border-color 0.18s' }}
+        onMouseEnter={e => { e.currentTarget.style.color = 'var(--lp-primary-ink)'; e.currentTarget.style.borderColor = 'var(--lp-primary)'; e.currentTarget.style.transform = 'scale(1.04)'; }}
+        onMouseLeave={e => { e.currentTarget.style.color = 'var(--lp-ink-soft)'; e.currentTarget.style.borderColor = 'var(--lp-line-strong)'; e.currentTarget.style.transform = 'scale(1)'; }}
       >
         <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
         Probá cómo funciona

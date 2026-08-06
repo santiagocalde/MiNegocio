@@ -4,6 +4,7 @@ import { Icons } from '../components/ui/Icons';
 import { API_ROOT } from '../config';
 import { getSource } from '../utils/attribution';
 import LogoPrincipal from '../assets/images/MiNegocio_transparente_real.png';
+import LogoLight from '../assets/images/MiNegocio_light.png';
 
 const Svg = {
   ArrowRight: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>,
@@ -216,7 +217,7 @@ export default function Onboarding() {
       case 1:
         return (
           <div style={{ animation: 'fadeIn 0.3s ease' }}>
-            <h2 style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--lp-ink)', marginBottom: 12 }}>¿Cuál es tu número de WhatsApp?</h2>
+            <h2 style={{ fontFamily: 'var(--lp-font-display)', fontSize: '1.8rem', fontWeight: 800, color: 'var(--lp-ink)', marginBottom: 12, letterSpacing: '-0.03em' }}>¿Cuál es tu número de WhatsApp?</h2>
             <p style={{ color: 'var(--lp-text-muted)', fontSize: '0.95rem', marginBottom: 32 }}>Lo pedimos por seguridad para enviarte notificaciones importantes y darte soporte directo. No enviamos spam.</p>
             <div style={{ display: 'flex', gap: 12, marginBottom: 32 }}>
               <div style={{ position: 'relative' }}>
@@ -236,7 +237,7 @@ export default function Onboarding() {
         if (isLoggedIn) return null;
         return (
           <div style={{ animation: 'fadeIn 0.3s ease' }}>
-            <h2 style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--lp-ink)', marginBottom: 12 }}>Creá tu acceso</h2>
+            <h2 style={{ fontFamily: 'var(--lp-font-display)', fontSize: '1.8rem', fontWeight: 800, color: 'var(--lp-ink)', marginBottom: 12, letterSpacing: '-0.03em' }}>Creá tu acceso</h2>
             <p style={{ color: 'var(--lp-text-muted)', fontSize: '0.95rem', marginBottom: 24 }}>Con estos datos vas a entrar a tu cuenta todos los días. Anotá la contraseña en un lugar seguro.</p>
             <input type="email" placeholder="kiosco@ejemplo.com" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} style={{ width: '100%', padding: '16px 20px', background: 'var(--lp-paper-sunken)', border: '1px solid var(--lp-line-strong)', borderRadius: 12, color: 'var(--lp-ink)', fontSize: '1.1rem', outline: 'none', transition: 'all 0.2s', marginBottom: 14 }} onFocus={e => e.target.style.borderColor = 'var(--lp-primary)'} onBlur={e => e.target.style.borderColor = 'var(--lp-line-strong)'} autoFocus />
             <div style={{ position: 'relative', marginBottom: 16 }}>
@@ -257,7 +258,7 @@ export default function Onboarding() {
         if (isLoggedIn) return null;
         return (
           <div style={{ animation: 'fadeIn 0.3s ease' }}>
-            <h2 style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--lp-ink)', marginBottom: 12 }}>¿Cómo te llamás?</h2>
+            <h2 style={{ fontFamily: 'var(--lp-font-display)', fontSize: '1.8rem', fontWeight: 800, color: 'var(--lp-ink)', marginBottom: 12, letterSpacing: '-0.03em' }}>¿Cómo te llamás?</h2>
             <p style={{ color: 'var(--lp-text-muted)', fontSize: '0.95rem', marginBottom: 32 }}>Queremos saber con quién hablamos para darte una atención más personalizada.</p>
             <input type="text" placeholder="Ej. Carlos Pérez" value={formData.nombre} onChange={e => setFormData({ ...formData, nombre: e.target.value })} style={{ width: '100%', padding: '16px 20px', background: 'var(--lp-paper-sunken)', border: '1px solid var(--lp-line-strong)', borderRadius: 12, color: 'var(--lp-ink)', fontSize: '1.1rem', outline: 'none', transition: 'all 0.2s', marginBottom: 32 }} onFocus={e => e.target.style.borderColor = 'var(--lp-primary)'} onBlur={e => e.target.style.borderColor = 'var(--lp-line-strong)'} autoFocus />
             <button onClick={handleNext} disabled={formData.nombre.length < 2} className="lp-btn lp-btn--primary" style={{ width: '100%', padding: '16px', fontSize: '1.1rem', opacity: formData.nombre.length < 2 ? 0.5 : 1 }}>Continuar</button>
@@ -266,7 +267,7 @@ export default function Onboarding() {
       case 4:
         return (
           <div style={{ animation: 'fadeIn 0.3s ease' }}>
-            <h2 style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--lp-ink)', marginBottom: 12 }}>Nombre de tu negocio</h2>
+            <h2 style={{ fontFamily: 'var(--lp-font-display)', fontSize: '1.8rem', fontWeight: 800, color: 'var(--lp-ink)', marginBottom: 12, letterSpacing: '-0.03em' }}>Nombre de tu negocio</h2>
             <p style={{ color: 'var(--lp-text-muted)', fontSize: '0.95rem', marginBottom: 32 }}>Este nombre aparecerá en los tickets de tus clientes y en el panel principal.</p>
             <input type="text" placeholder="Ej. Kiosco Don Carlos" value={formData.negocio} onChange={e => setFormData({ ...formData, negocio: e.target.value })} style={{ width: '100%', padding: '16px 20px', background: 'var(--lp-paper-sunken)', border: '1px solid var(--lp-line-strong)', borderRadius: 12, color: 'var(--lp-ink)', fontSize: '1.1rem', outline: 'none', transition: 'all 0.2s', marginBottom: 32 }} onFocus={e => e.target.style.borderColor = 'var(--lp-primary)'} onBlur={e => e.target.style.borderColor = 'var(--lp-line-strong)'} autoFocus />
             <button onClick={handleNext} disabled={formData.negocio.length < 2} className="lp-btn lp-btn--primary" style={{ width: '100%', padding: '16px', fontSize: '1.1rem', opacity: formData.negocio.length < 2 ? 0.5 : 1 }}>Continuar</button>
@@ -275,7 +276,7 @@ export default function Onboarding() {
       case 5:
         return (
           <div style={{ animation: 'fadeIn 0.3s ease' }}>
-            <h2 style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--lp-ink)', marginBottom: 12 }}>¿De qué trata tu negocio?</h2>
+            <h2 style={{ fontFamily: 'var(--lp-font-display)', fontSize: '1.8rem', fontWeight: 800, color: 'var(--lp-ink)', marginBottom: 12, letterSpacing: '-0.03em' }}>¿De qué trata tu negocio?</h2>
             <p style={{ color: 'var(--lp-text-muted)', fontSize: '0.95rem', marginBottom: 32 }}>Seleccioná la categoría que mejor te represente.</p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 32 }}>
               {tiposNegocio.map(tipo => (
@@ -310,11 +311,11 @@ export default function Onboarding() {
       case 6:
         return (
           <div style={{ animation: 'fadeIn 0.3s ease' }}>
-            <h2 style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--lp-ink)', marginBottom: 12 }}>¿Usaste un sistema de ventas antes?</h2>
+            <h2 style={{ fontFamily: 'var(--lp-font-display)', fontSize: '1.8rem', fontWeight: 800, color: 'var(--lp-ink)', marginBottom: 12, letterSpacing: '-0.03em' }}>¿Usaste un sistema de ventas antes?</h2>
             <p style={{ color: 'var(--lp-text-muted)', fontSize: '0.95rem', marginBottom: 32 }}>Contanos tu experiencia para adaptar el sistema a tu nivel.</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 32 }}>
               {['Si, actualmente uso uno', 'Lo use en el pasado', 'No, siempre use cuaderno / memoria'].map((opt, i) => (
-                 <button key={i} onClick={() => { setFormData({ ...formData, posPrevio: opt }); handleNext(); }} style={{ background: formData.posPrevio === opt ? 'rgba(20,187,166,0.15)' : 'var(--lp-paper-sunken)', border: formData.posPrevio === opt ? '1px solid var(--lp-primary)' : '1px solid var(--lp-line-strong)', padding: '16px 20px', borderRadius: 12, cursor: 'pointer', color: 'var(--lp-ink)', fontSize: '0.95rem', fontWeight: 600, textAlign: 'left', transition: 'all 0.2s' }}>
+                 <button key={i} onClick={() => { setFormData({ ...formData, posPrevio: opt }); handleNext(); }} style={{ background: formData.posPrevio === opt ? 'var(--lp-primary-wash)' : 'var(--lp-paper-sunken)', border: formData.posPrevio === opt ? '1px solid var(--lp-primary)' : '1px solid var(--lp-line-strong)', padding: '16px 20px', borderRadius: 12, cursor: 'pointer', color: 'var(--lp-ink)', fontSize: '0.95rem', fontWeight: 600, textAlign: 'left', transition: 'all 0.2s' }}>
                    {opt}
                  </button>
               ))}
@@ -324,11 +325,11 @@ export default function Onboarding() {
       case 7:
         return (
           <div style={{ animation: 'fadeIn 0.3s ease' }}>
-            <h2 style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--lp-ink)', marginBottom: 12 }}>¿Necesitás emitir facturas electrónicas?</h2>
+            <h2 style={{ fontFamily: 'var(--lp-font-display)', fontSize: '1.8rem', fontWeight: 800, color: 'var(--lp-ink)', marginBottom: 12, letterSpacing: '-0.03em' }}>¿Necesitás emitir facturas electrónicas?</h2>
             <p style={{ color: 'var(--lp-text-muted)', fontSize: '0.95rem', marginBottom: 32 }}>Así sabemos si tenés que conectar tu cuenta con ARCA (ex AFIP).</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 32 }}>
               {['Si, necesito emitir facturas electronicas', 'No, facturo por mi cuenta / no facturo', 'No lo se todavia'].map((opt, i) => (
-                 <button key={i} onClick={() => { setFormData({ ...formData, arca: opt }); handleNext(); }} style={{ background: formData.arca === opt ? 'rgba(20,187,166,0.15)' : 'var(--lp-paper-sunken)', border: formData.arca === opt ? '1px solid var(--lp-primary)' : '1px solid var(--lp-line-strong)', padding: '16px 20px', borderRadius: 12, cursor: 'pointer', color: 'var(--lp-ink)', fontSize: '0.95rem', fontWeight: 600, textAlign: 'left', transition: 'all 0.2s' }}>
+                 <button key={i} onClick={() => { setFormData({ ...formData, arca: opt }); handleNext(); }} style={{ background: formData.arca === opt ? 'var(--lp-primary-wash)' : 'var(--lp-paper-sunken)', border: formData.arca === opt ? '1px solid var(--lp-primary)' : '1px solid var(--lp-line-strong)', padding: '16px 20px', borderRadius: 12, cursor: 'pointer', color: 'var(--lp-ink)', fontSize: '0.95rem', fontWeight: 600, textAlign: 'left', transition: 'all 0.2s' }}>
                    {opt}
                  </button>
               ))}
@@ -338,11 +339,11 @@ export default function Onboarding() {
       case 8:
         return (
           <div style={{ animation: 'fadeIn 0.3s ease' }}>
-            <h2 style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--lp-ink)', marginBottom: 12 }}>¿Qué buscás resolver principalmente?</h2>
+            <h2 style={{ fontFamily: 'var(--lp-font-display)', fontSize: '1.8rem', fontWeight: 800, color: 'var(--lp-ink)', marginBottom: 12, letterSpacing: '-0.03em' }}>¿Qué buscás resolver principalmente?</h2>
             <p style={{ color: 'var(--lp-text-muted)', fontSize: '0.95rem', marginBottom: 32 }}>Seleccioná tu objetivo principal para que podamos ayudarte a lograrlo.</p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, marginBottom: 32 }}>
               {objetivos.map(obj => (
-                <button key={obj.id} onClick={() => { setFormData({ ...formData, objetivo: obj.label }); handleNext(); }} style={{ background: formData.objetivo === obj.label ? 'rgba(20,187,166,0.15)' : 'var(--lp-paper-sunken)', border: formData.objetivo === obj.label ? '1px solid var(--lp-primary)' : '1px solid var(--lp-line-strong)', padding: '16px 20px', borderRadius: 12, cursor: 'pointer', color: 'var(--lp-ink)', fontSize: '0.95rem', fontWeight: 600, textAlign: 'left', transition: 'all 0.2s' }}>
+                <button key={obj.id} onClick={() => { setFormData({ ...formData, objetivo: obj.label }); handleNext(); }} style={{ background: formData.objetivo === obj.label ? 'var(--lp-primary-wash)' : 'var(--lp-paper-sunken)', border: formData.objetivo === obj.label ? '1px solid var(--lp-primary)' : '1px solid var(--lp-line-strong)', padding: '16px 20px', borderRadius: 12, cursor: 'pointer', color: 'var(--lp-ink)', fontSize: '0.95rem', fontWeight: 600, textAlign: 'left', transition: 'all 0.2s' }}>
                   {obj.label}
                 </button>
               ))}
@@ -355,7 +356,7 @@ export default function Onboarding() {
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 24 }}>
                <Svg.CheckCircle />
             </div>
-            <h2 style={{ fontSize: '2.2rem', fontWeight: 800, color: 'var(--lp-ink)', marginBottom: 16, letterSpacing: '-0.5px' }}>¡Estas listo{formData.nombre ? `, ${formData.nombre.split(' ')[0]}` : ''}!</h2>
+            <h2 style={{ fontFamily: 'var(--lp-font-display)', fontSize: '2.2rem', fontWeight: 800, color: 'var(--lp-ink)', marginBottom: 16, letterSpacing: '-0.03em' }}>¡Estas listo{formData.nombre ? `, ${formData.nombre.split(' ')[0]}` : ''}!</h2>
             <p style={{ color: 'var(--lp-text-muted)', fontSize: '1.05rem', marginBottom: 40, maxWidth: 400, margin: '0 auto 40px' }}>Bienvenido a <strong>{formData.negocio || 'MiNegocio'}</strong>. La demo de 7 dias te permitira probar todo sin restricciones.</p>
             
             <div style={{ background: 'var(--lp-primary-wash)', border: '1px solid var(--lp-primary-glow)', borderRadius: 12, padding: '16px', marginBottom: 24, textAlign: 'left' }}>
@@ -399,7 +400,7 @@ export default function Onboarding() {
       {/* Header simple para poder volver */}
       <nav style={{ padding: 'clamp(16px, 4vw, 32px) clamp(16px, 4vw, 40px)', position: 'relative', zIndex: 10, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
          <a href="/" style={{ textDecoration: 'none' }}>
-            <img src={LogoPrincipal} alt="MiNegocio" style={{ height: 'clamp(96px, 22vw, 210px)', objectFit: 'contain', filter: 'drop-shadow(0 0 20px rgba(15,138,125, 0.3))' }} />
+            <img src={theme === 'dark' ? LogoPrincipal : LogoLight} alt="MiNegocio" style={{ height: 'clamp(40px, 8vw, 64px)', objectFit: 'contain' }} />
          </a>
         <button onClick={() => navigate('/')} style={{ position: 'absolute', left: 'clamp(16px, 4vw, 40px)', background: 'var(--lp-paper-sunken)', border: '1px solid var(--lp-line-strong)', color: 'var(--lp-ink)', padding: '10px 16px', borderRadius: 10, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.9rem', fontWeight: 600 }}>
           <Svg.ArrowLeft /> Salir
@@ -410,7 +411,7 @@ export default function Onboarding() {
          <div style={{ width: '100%', maxWidth: 640 }}>
             {/* Progress bar */}
             <div style={{ width: '100%', height: 4, background: 'var(--lp-paper-sunken)', borderRadius: 4, marginBottom: 40, overflow: 'hidden' }}>
-               <div style={{ height: '100%', background: 'linear-gradient(90deg, var(--lp-primary), var(--lp-secondary))', width: `${progress}%`, transition: 'width 0.4s ease' }} />
+               <div style={{ height: '100%', background: 'linear-gradient(90deg, var(--lp-primary), var(--lp-primary-ink))', width: `${progress}%`, transition: 'width 0.4s ease' }} />
             </div>
 
             <div className="lp-glass" style={{ padding: 'clamp(28px, 6vw, 60px) clamp(20px, 5vw, 48px)', borderRadius: 24, border: '1px solid var(--lp-line-strong)', background: 'var(--lp-paper-raised)', minHeight: 400, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>

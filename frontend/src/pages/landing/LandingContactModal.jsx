@@ -35,12 +35,12 @@ export default function LandingContactModal({ showContactModal, setShowContactMo
     <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(11,19,43,0.85)', backdropFilter: 'blur(20px)', padding: 20 }}
       onMouseDown={e => { if (e.target === e.currentTarget) setShowContactModal(false); }}>
       <div onMouseDown={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 460, background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line-strong)', borderRadius: 24, padding: '40px 38px 32px', position: 'relative', boxShadow: 'var(--lp-shadow-lg)' }}>
-        <button onClick={() => setShowContactModal(false)} style={{ position: 'absolute', top: 20, right: 20, background: 'var(--lp-paper-sunken)', border: 'none', color: 'var(--lp-ink-faint)', width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s' }}
+        <button onClick={() => setShowContactModal(false)} style={{ position: 'absolute', top: 20, right: 20, background: 'var(--lp-paper-sunken)', border: 'none', color: 'var(--lp-ink-faint)', width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'color 0.18s, transform 0.18s' }}
           onMouseEnter={e => { e.currentTarget.style.color = 'var(--lp-ink)'; e.currentTarget.style.background = 'var(--lp-primary-wash)'; }}
           onMouseLeave={e => { e.currentTarget.style.color = 'var(--lp-ink-faint)'; e.currentTarget.style.background = 'var(--lp-paper-sunken)'; }}>
           <Svg.X />
         </button>
-        <h2 style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--lp-ink)', marginBottom: 8, letterSpacing: '-0.5px' }}>Escribinos</h2>
+        <h2 style={{ fontFamily: 'var(--lp-font-display)', fontSize: '2rem', fontWeight: 800, color: 'var(--lp-ink)', marginBottom: 8, letterSpacing: '-0.03em' }}>Escribinos</h2>
         <p style={{ color: 'var(--lp-ink-faint)', fontSize: '0.9rem', marginBottom: 20 }}>
           <span style={{ color: 'var(--lp-ink-soft)', fontWeight: 600 }}>Email:</span> calderonsantiago2019@gmail.com <br/>
           <span style={{ color: 'var(--lp-ink-soft)', fontWeight: 600 }}>WhatsApp:</span> +54 9 11 4427-6384

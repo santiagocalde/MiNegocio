@@ -67,7 +67,7 @@ export default function ContactoPage() {
           
           {/* Info de contacto */}
           <div>
-            <h1 style={{ fontSize: '2.2rem', fontWeight: 800, letterSpacing: '-1px', marginBottom: 16, color: 'var(--lp-ink)' }}>Contacto</h1>
+            <h1 style={{ fontFamily: 'var(--lp-font-display)', fontSize: '2.2rem', fontWeight: 800, letterSpacing: '-0.03em', marginBottom: 16, color: 'var(--lp-ink)' }}>Contacto</h1>
             <p style={{ fontSize: '0.95rem', lineHeight: 1.5, color: 'rgba(230,255,251,0.7)', marginBottom: 32 }}>
               ¿Tenés dudas sobre nuestros planes personalizados o querés una demostración en vivo? Escribinos y un especialista se pondrá en contacto con vos a la brevedad.
             </p>

@@ -53,7 +53,7 @@ export default function SoportePublicoPage() {
         </button>
 
         <div style={{ textAlign: 'center', marginBottom: 40 }}>
-          <h1 style={{ fontSize: '2.2rem', fontWeight: 800, letterSpacing: '-1px', marginBottom: 12, color: 'var(--lp-ink)' }}>Centro de Ayuda</h1>
+          <h1 style={{ fontFamily: 'var(--lp-font-display)', fontSize: '2.2rem', fontWeight: 800, letterSpacing: '-0.03em', marginBottom: 12, color: 'var(--lp-ink)' }}>Centro de Ayuda</h1>
           <p style={{ fontSize: '0.95rem', color: 'var(--lp-ink-faint)', maxWidth: 600, margin: '0 auto 24px' }}>
             Encontrá respuestas rápidas, manuales de uso y contactá con nuestro equipo de soporte técnico.
           </p>

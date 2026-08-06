@@ -29,7 +29,7 @@ export default function NosotrosPage() {
         </button>
 
         <div className="lp-glass" style={{ padding: '40px 32px', borderRadius: 20, border: '1px solid var(--lp-line-strong)', background: 'var(--lp-paper-raised)' }}>
-          <h1 style={{ fontSize: '2.2rem', fontWeight: 800, letterSpacing: '-1px', marginBottom: 16, color: 'var(--lp-ink)' }}>Sobre Nosotros</h1>
+          <h1 style={{ fontFamily: 'var(--lp-font-display)', fontSize: '2.2rem', fontWeight: 800, letterSpacing: '-0.03em', marginBottom: 16, color: 'var(--lp-ink)' }}>Sobre Nosotros</h1>
           
           <div style={{ fontSize: '0.95rem', lineHeight: 1.7, color: 'var(--lp-ink-soft)', display: 'flex', flexDirection: 'column', gap: 20 }}>
             <p>
