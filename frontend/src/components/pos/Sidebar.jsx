@@ -115,30 +115,74 @@ export default function Sidebar({
 
   // Insertar items condicionales según rubro (dentro del componente, donde businessType existe)
   if (businessType === 'corralon') {
-    const logisticaItems = [
-      { label: 'Remitos', path: '/panel/remitos', icon: 'Truck' },
-      { label: 'Despacho del día', path: '/panel/remitos?filter=today', icon: 'Clock' },
+    // Reorganizar todo el sidebar para estructura de corralón
+    const newStructure = [
+      {
+        category: 'CAJA',
+        roles: ['admin', 'manager'],
+        items: [
+          { label: 'Caja', path: '/panel/inicio', icon: 'Lock' },
+          { label: 'Historial', path: '/panel/auditoria', icon: 'Clipboard', minPlan: 'pro', featureKey: 'auditoria' },
+        ],
+      },
+      {
+        category: 'VENTAS',
+        items: [
+          { label: 'Mostrador', path: '/panel/ventas', icon: 'ShoppingCart', roles: ['admin', 'manager', 'operator'] },
+          { label: 'Presupuestos', path: '/panel/presupuestos', icon: 'Clipboard', roles: ['admin', 'manager'] },
+          { label: 'Devoluciones', path: '/panel/devoluciones', icon: 'Edit', roles: ['admin', 'manager'] },
+          { label: 'Acopios', path: '/panel/acopios', icon: 'Box', roles: ['admin', 'manager'] },
+        ],
+      },
+      {
+        category: 'LOGÍSTICA',
+        roles: ['admin', 'manager'],
+        items: [
+          { label: 'Remitos', path: '/panel/remitos', icon: 'Truck' },
+          { label: 'Despacho del día', path: '/panel/remitos?filter=today', icon: 'Clock' },
+        ],
+      },
+      {
+        category: 'CLIENTES',
+        items: [
+          { label: 'Lista de clientes', path: '/panel/clientes', icon: 'Users', roles: ['admin', 'manager', 'operator'], featureKey: 'fiados' },
+          { label: 'Cuentas corrientes', path: '/panel/clientes', icon: 'Book', roles: ['admin', 'manager', 'operator'], featureKey: 'fiados' },
+          { label: 'Obras', path: '/panel/obras', icon: 'Edit', roles: ['admin', 'manager'] },
+        ],
+      },
+      {
+        category: 'STOCK',
+        roles: ['admin', 'manager'],
+        items: [
+          { label: 'Depósito', path: '/panel/inventario', icon: 'Box' },
+          { label: 'Compras', path: '/panel/compras', icon: 'Truck', minPlan: 'simple', featureKey: 'compras' },
+        ],
+      },
+      {
+        category: 'PROVEEDORES',
+        roles: ['admin', 'manager'],
+        items: [
+          { label: 'Lista de proveedores', path: '/panel/proveedores', icon: 'Truck', minPlan: 'simple', featureKey: 'proveedores' },
+          { label: 'Pedido a proveedor', path: '/panel/compras', icon: 'Edit' },
+        ],
+      },
+      {
+        category: 'SISTEMA',
+        roles: ['admin'],
+        items: [
+          { label: 'Configuración', path: '/panel/configuracion', icon: 'Settings' },
+          { label: 'Usuarios', path: '/panel/usuarios', icon: 'Users' },
+        ],
+      },
     ];
-    const corralonItems = [
-      { label: 'Presupuestos', path: '/panel/presupuestos', icon: 'Clipboard' },
-      { label: 'Obras', path: '/panel/obras', icon: 'Edit' },
-      { label: 'Acopios', path: '/panel/acopios', icon: 'Box' },
-      { label: 'Devoluciones', path: '/panel/devoluciones', icon: 'Edit' },
-    ];
-    // Insertar LOGÍSTICA antes de SISTEMA
-    const sistemaIdx = NAV_ITEMS.findIndex(s => s.category === 'SISTEMA');
-    if (sistemaIdx >= 0 && !NAV_ITEMS.some(s => s.category === 'LOGÍSTICA')) {
-      NAV_ITEMS.splice(sistemaIdx, 0, { category: 'LOGÍSTICA', items: logisticaItems });
-    }
-    // Extender SISTEMA con items de corralón
-    const sistemaSection = NAV_ITEMS.find(s => s.category === 'SISTEMA');
-    if (sistemaSection) {
-      for (const item of corralonItems) {
-        if (!sistemaSection.items.some(i => i.path === item.path)) {
-          sistemaSection.items.unshift(item);
-        }
-      }
-    }
+    // Reemplazar NAV_ITEMS completamente para corralón
+    NAV_ITEMS.length = 0;
+    NAV_ITEMS.push(...newStructure);
+    // También mantener los labels contextuales
+    corralonLabels['Punto de Venta'] = 'Mostrador';
+    corralonLabels['Inventario'] = 'Depósito';
+    corralonLabels['Fiados'] = 'Cuentas corrientes';
+    corralonLabels['Compras'] = 'Compras';
   }
 
   return (
