@@ -78,11 +78,16 @@ export default function LandingNav({
             <button className="lp-nav-link">
               Info <Svg.ChevronRight />
             </button>
-            <div id="info-dropdown" style={{ opacity: 0, pointerEvents: 'none', transform: 'translateX(-50%) translateY(-10px)', transition: 'all 0.2s', position: 'absolute', top: '100%', left: '50%', background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line)', borderRadius: 14, padding: 8, display: 'flex', flexDirection: 'column', minWidth: 180, boxShadow: 'var(--lp-shadow-md)' }}>
+            <div id="info-dropdown" style={{ opacity: 0, pointerEvents: 'none', transform: 'translateX(-50%) translateY(-10px)', transition: 'all 0.2s', position: 'absolute', top: '100%', left: '50%', background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line)', borderRadius: 14, padding: 8, display: 'flex', flexDirection: 'column', minWidth: 200, boxShadow: 'var(--lp-shadow-md)' }}>
+              <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--lp-ink-faint)', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '6px 12px 2px' }}>Empresa</div>
               <a onClick={(e) => { e.preventDefault(); navigate('/nosotros'); }} className="lp-dropdown-item">Sobre Nosotros</a>
-              <a href="/blog/" className="lp-dropdown-item">Blog</a>
-              <a onClick={(e) => { e.preventDefault(); document.getElementById('faq')?.scrollIntoView({ behavior: 'smooth' }); }} className="lp-dropdown-item">Preguntas Frecuentes</a>
               <a onClick={(e) => { e.preventDefault(); navigate('/soporte'); }} className="lp-dropdown-item">Soporte</a>
+              <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--lp-ink-faint)', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '10px 12px 2px' }}>Recursos</div>
+              <a href="/blog/" className="lp-dropdown-item">Blog</a>
+              <a href="/glosario/" className="lp-dropdown-item">Glosario</a>
+              <a href="/pos-sin-internet/" className="lp-dropdown-item">Sistema sin internet</a>
+              <a href="/sistema-fiados/" className="lp-dropdown-item">Control de fiados</a>
+              <a href="/comparar-sistemas-para-kioscos/" className="lp-dropdown-item">Comparar sistemas</a>
             </div>
           </div>
         </div>
