@@ -335,8 +335,9 @@ async def create_sale(request: Request, body: SaleCreate, idempotency_key: Optio
                             b_id, prod["parent_id"], real_qty, f"Venta #{sale_id} (Pack Virtual)", body.operator, f"sale-{sale_id}-{item.product_id}"
                         )
                     else:
-                        result = await conn.execute(
-                            "UPDATE products SET stock = stock - $1 WHERE id = $2 AND stock >= $1 AND business_id = $3",
+                        result = # Descontar stock (permite negativo, el frontend avisa)
+                        await conn.execute(
+                            "UPDATE products SET stock = stock - $1, updated_at = now() WHERE id = $2 AND business_id = $3",
                             item.quantity, item.product_id, b_id
                         )
                         if result == "UPDATE 0":
@@ -447,8 +448,8 @@ async def create_sale(request: Request, body: SaleCreate, idempotency_key: Optio
                     if p_is_virtual == 1 and p_parent_id:
                         real_qty = item.quantity * (p_pack_size or 1)
                         result = await db.execute(
-                            "UPDATE products SET stock = stock - ? WHERE id = ? AND stock >= ?",
-                            (real_qty, p_parent_id, real_qty)
+                            "UPDATE products SET stock = stock - ? WHERE id = ?",
+                            (real_qty, item.product_id)
                         )
                         if result.rowcount == 0:
                             raise HTTPException(400, detail=f"Stock insuficiente de {item.product_name} (Pack Virtual)")
@@ -458,8 +459,8 @@ async def create_sale(request: Request, body: SaleCreate, idempotency_key: Optio
                         )
                     else:
                         result = await db.execute(
-                            "UPDATE products SET stock = stock - ? WHERE id = ? AND stock >= ?",
-                            (item.quantity, item.product_id, item.quantity)
+                            "UPDATE products SET stock = stock - ? WHERE id = ?",
+                            (item.quantity, item.product_id)
                         )
                         if result.rowcount == 0:
                             raise HTTPException(400, detail=f"Stock insuficiente de {item.product_name}")
