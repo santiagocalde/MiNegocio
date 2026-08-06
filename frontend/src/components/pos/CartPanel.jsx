@@ -3,11 +3,12 @@ import { Icons } from '../ui/Icons';
 import ProductThumb from '../ui/ProductThumb';
 import { formatMoney } from '../../utils/format';
 
-// Color del badge de stock según nivel: agotado (rojo), bajo (ámbar), sano (verde)
+// Color del badge de stock según nivel: agotado (rojo), bajo (ámbar), sano (verde).
+// Usa tokens theme-aware (wash + accent) para leerse bien en claro y oscuro.
 const stockTone = (stock, min) => {
-  if (stock <= 0) return { bg: 'rgba(239,68,68,0.2)', bd: 'rgba(239,68,68,0.3)', fg: '#FCA5A5' };
-  if (stock <= (min || 5)) return { bg: 'rgba(245,158,11,0.18)', bd: 'rgba(245,158,11,0.3)', fg: '#FCD34D' };
-  return { bg: 'rgba(16,185,129,0.15)', bd: 'rgba(16,185,129,0.3)', fg: '#6EE7B7' };
+  if (stock <= 0) return { bg: 'var(--wash-danger)', bd: 'var(--border-color)', fg: 'var(--accent-danger)' };
+  if (stock <= (min || 5)) return { bg: 'var(--wash-warning)', bd: 'var(--border-color)', fg: 'var(--accent-warning)' };
+  return { bg: 'var(--wash-success)', bd: 'var(--border-color)', fg: 'var(--accent-success)' };
 };
 
 export default function CartPanel({ cart, total, adjustedTotal, updateQty, setItemQty, removeItem }) {
@@ -24,7 +25,7 @@ export default function CartPanel({ cart, total, adjustedTotal, updateQty, setIt
           <div style={{ textAlign: 'center', color: 'var(--text-secondary)', marginTop: '40px' }}>No hay productos en el carrito. Utilice el buscador superior.</div>
         ) : (
           cart.map(item => (
-            <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+            <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: 'var(--surface-veil)', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
               <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                 <ProductThumb name={item.name} size={36} />
 
@@ -52,7 +53,7 @@ export default function CartPanel({ cart, total, adjustedTotal, updateQty, setIt
                     <button
                       onClick={() => updateQty(item.id, -1)}
                       style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1.2rem', borderRadius: '4px', padding: '2px 6px', transition: 'background 0.15s' }}
-                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
+                      onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-hover)'}
                       onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                     >-</button>
                     <input
@@ -70,7 +71,7 @@ export default function CartPanel({ cart, total, adjustedTotal, updateQty, setIt
                     <button
                       onClick={() => updateQty(item.id, 1)}
                       style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1.2rem', borderRadius: '4px', padding: '2px 6px', transition: 'background 0.15s' }}
-                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
+                      onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-hover)'}
                       onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                     >+</button>
                   </div>

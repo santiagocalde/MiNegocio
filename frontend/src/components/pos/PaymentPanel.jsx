@@ -55,7 +55,7 @@ export default function PaymentPanel({
       <div style={{ background: 'var(--bg-card)', padding: isMobile ? '10px 12px' : '12px 16px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: rowMb }}>
           <h2 style={{ fontSize: isMobile ? '1.05rem' : '1.3rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)', letterSpacing: '-0.2px' }}>Resumen</h2>
-          <span style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '4px 12px', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 600 }}>{cart.length} items</span>
+          <span style={{ background: 'var(--surface-veil)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '4px 12px', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 600 }}>{cart.length} items</span>
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: rowMb, fontSize: rowFs, color: 'var(--text-secondary)' }}>
@@ -67,7 +67,7 @@ export default function PaymentPanel({
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             {iva > 0 && <span style={{ color: 'var(--text-primary)', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{formatMoney(iva)}</span>}
             <select value={ivaActual} onChange={e => cambiarIva(e.target.value)} title="Cambiar el IVA del negocio"
-              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border-color)', color: ivaActual === '0' ? 'var(--text-secondary)' : 'var(--accent-primary)', borderRadius: '6px', padding: '3px 6px', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer', outline: 'none' }}>
+              style={{ background: 'var(--surface-veil)', border: '1px solid var(--border-color)', color: ivaActual === '0' ? 'var(--text-secondary)' : 'var(--accent-primary)', borderRadius: '6px', padding: '3px 6px', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer', outline: 'none' }}>
               <option value="0">No discrimina</option>
               <option value="21">21%</option>
               <option value="10.5">10,5%</option>
@@ -99,11 +99,11 @@ export default function PaymentPanel({
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
           {cart.length === 0 && lastSale?.cart?.length > 0 && (
-            <button style={{ width: '100%', minHeight: '44px', background: 'rgba(20,187,166,0.08)', border: '1px solid rgba(20,187,166,0.25)', color: 'var(--accent-primary)', fontWeight: 700, fontSize: 'var(--fs-body)', cursor: 'pointer', padding: '12px', borderRadius: '12px', transition: 'all 0.2s' }} onMouseEnter={e=>e.target.style.background='rgba(20,187,166,0.14)'} onMouseLeave={e=>e.target.style.background='rgba(20,187,166,0.08)'} onClick={() => handleRepeatSale(lastSale.cart)}>
+            <button style={{ width: '100%', minHeight: '44px', background: 'var(--wash-primary)', border: '1px solid var(--border-color)', color: 'var(--accent-primary)', fontWeight: 700, fontSize: 'var(--fs-body)', cursor: 'pointer', padding: '12px', borderRadius: '12px', transition: 'all 0.2s' }} onMouseEnter={e=>e.target.style.borderColor='var(--accent-primary)'} onMouseLeave={e=>e.target.style.borderColor='var(--border-color)'} onClick={() => handleRepeatSale(lastSale.cart)}>
               ↻ Repetir última venta
             </button>
           )}
-          <button style={{ width: '100%', minHeight: '44px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)', color: 'var(--text-primary)', fontWeight: 700, fontSize: 'var(--fs-body)', cursor: 'pointer', padding: '12px', borderRadius: '12px', transition: 'all 0.2s' }} onMouseEnter={e=>e.target.style.background='rgba(255,255,255,0.05)'} onMouseLeave={e=>e.target.style.background='rgba(255,255,255,0.02)'} onClick={() => setIsFiadoOpen(true)}>
+          <button style={{ width: '100%', minHeight: '44px', background: 'var(--surface-veil)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', fontWeight: 700, fontSize: 'var(--fs-body)', cursor: 'pointer', padding: '12px', borderRadius: '12px', transition: 'all 0.2s' }} onMouseEnter={e=>e.target.style.background='var(--bg-hover)'} onMouseLeave={e=>e.target.style.background='var(--surface-veil)'} onClick={() => setIsFiadoOpen(true)}>
             Anotar Fiado
           </button>
           {lastSale && (
@@ -122,25 +122,25 @@ export default function PaymentPanel({
       <div style={{ marginTop: '0', background: 'var(--bg-card)', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
           <h3 style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-primary)', fontWeight: 700 }}>Accesos Rápidos</h3>
-          <button onClick={() => setIsEditingQuick(!isEditingQuick)} style={{ background: isEditingQuick ? 'var(--accent-primary)' : 'rgba(255,255,255,0.05)', color: isEditingQuick ? 'white' : 'var(--text-secondary)', border: 'none', borderRadius: '6px', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s' }}>
+          <button onClick={() => setIsEditingQuick(!isEditingQuick)} style={{ background: isEditingQuick ? 'var(--accent-primary)' : 'var(--surface-veil)', color: isEditingQuick ? 'var(--bg-card)' : 'var(--text-secondary)', border: 'none', borderRadius: '6px', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s' }}>
             <Icons.Edit style={{ width: '16px', height: '16px' }} />
           </button>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
           {quickButtons.map((btn, idx) => (
-            <div key={btn.id} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px', padding: '8px', minHeight: '44px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '4px', position: 'relative' }}>
+            <div key={btn.id} style={{ background: 'var(--surface-veil)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '8px', minHeight: '44px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '4px', position: 'relative' }}>
               {isEditingQuick ? (
                 <>
                   <input type="text" value={btn.name} onChange={e => {
                     const newBtns = [...quickButtons];
                     newBtns[idx].name = e.target.value;
                     saveQuickButtons(newBtns);
-                  }} style={{ width: '100%', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', color: 'white', fontSize: '0.75rem', padding: '4px', borderRadius: '4px', textAlign: 'center', boxSizing: 'border-box' }} />
+                  }} style={{ width: '100%', background: 'var(--bg-raised)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', fontSize: '0.75rem', padding: '4px', borderRadius: '4px', textAlign: 'center', boxSizing: 'border-box' }} />
                   <input type="number" value={btn.price} onChange={e => {
                     const newBtns = [...quickButtons];
                     newBtns[idx].price = Number(e.target.value);
                     saveQuickButtons(newBtns);
-                  }} style={{ width: '100%', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', color: 'var(--accent-success)', fontSize: '0.75rem', padding: '4px', borderRadius: '4px', textAlign: 'center', fontFamily: 'var(--font-mono)', boxSizing: 'border-box' }} />
+                  }} style={{ width: '100%', background: 'var(--bg-raised)', border: '1px solid var(--border-color)', color: 'var(--accent-success)', fontSize: '0.75rem', padding: '4px', borderRadius: '4px', textAlign: 'center', fontFamily: 'var(--font-mono)', boxSizing: 'border-box' }} />
                 </>
               ) : (
                 <div onClick={() => handleQuickAdd('BTN_' + btn.id, btn.name, btn.price, { is_virtual: true })} style={{ cursor: 'pointer', textAlign: 'center', transition: 'all 0.15s' }} onMouseEnter={e=>e.currentTarget.style.transform='scale(1.02)'} onMouseLeave={e=>e.currentTarget.style.transform='none'}>

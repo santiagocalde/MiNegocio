@@ -53,10 +53,10 @@ export default function SearchBar({
         )}
 
         <div style={{ display: 'flex', gap: '8px' }}>
-          <button onClick={() => setShowPriceCheck(true)} title="Consultar Precio" style={{ background: 'var(--bg-hover)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', padding: '8px 12px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '6px' }} onMouseEnter={e => e.currentTarget.style.background='rgba(255,255,255,0.1)'} onMouseLeave={e => e.currentTarget.style.background='var(--bg-hover)'}>
+          <button onClick={() => setShowPriceCheck(true)} title="Consultar Precio" style={{ background: 'var(--bg-hover)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', padding: '8px 12px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '6px' }} onMouseEnter={e => e.currentTarget.style.background='var(--surface-veil)'} onMouseLeave={e => e.currentTarget.style.background='var(--bg-hover)'}>
             <Icons.Search style={{ width: 15, height: 15 }} />{isMobile ? 'Precio' : 'Consultar Precio'}
           </button>
-          <button onClick={() => setShowAddAmountModal(true)} title="Agregar Monto" style={{ background: 'var(--bg-hover)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', padding: '8px 12px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '6px' }} onMouseEnter={e => e.currentTarget.style.background='rgba(255,255,255,0.1)'} onMouseLeave={e => e.currentTarget.style.background='var(--bg-hover)'}>
+          <button onClick={() => setShowAddAmountModal(true)} title="Agregar Monto" style={{ background: 'var(--bg-hover)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', padding: '8px 12px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '6px' }} onMouseEnter={e => e.currentTarget.style.background='var(--surface-veil)'} onMouseLeave={e => e.currentTarget.style.background='var(--bg-hover)'}>
             <Icons.DollarSign style={{ width: 15, height: 15 }} />{isMobile ? 'Monto' : 'Agregar Monto'}
           </button>
         </div>
@@ -64,7 +64,7 @@ export default function SearchBar({
 
       <div className={`search-bar ${flash ? 'flash' : ''}`} style={{ margin: 0, position: 'relative', borderColor: searchError ? 'var(--accent-danger)' : 'var(--border-color)', borderWidth: searchError ? '2px' : '1px' }}>
         <Icons.Search />
-        <button onClick={() => setShowScanner(true)} title="Escanear con cámara" style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '6px', transition: 'all 0.2s' }} onMouseEnter={e => { e.currentTarget.style.color = 'var(--accent-primary)'; e.currentTarget.style.background = 'rgba(20,187,166,0.1)'; }} onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.background = 'transparent'; }}>
+        <button onClick={() => setShowScanner(true)} title="Escanear con cámara" style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '6px', transition: 'all 0.2s' }} onMouseEnter={e => { e.currentTarget.style.color = 'var(--accent-primary)'; e.currentTarget.style.background = 'var(--wash-primary)'; }} onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.background = 'transparent'; }}>
           <Icons.Camera style={{ width: '18px', height: '18px' }} />
         </button>
         <input
@@ -124,7 +124,7 @@ export default function SearchBar({
           autoFocus
         />
         {search.trim().length > 0 && autocomplete.length > 0 && (
-          <div role="listbox" aria-label="Resultados de búsqueda" style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', zIndex: 100, marginTop: '4px', boxShadow: '0 4px 12px rgba(30,58,95,0.2)' }}>
+          <div role="listbox" aria-label="Resultados de búsqueda" style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', zIndex: 100, marginTop: '4px', boxShadow: 'var(--shadow-md)' }}>
             {autocomplete.map((p, i) => (
               <button
                 id={`autocomplete-${i}`}

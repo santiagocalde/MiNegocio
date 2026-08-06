@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Icons } from '../ui/Icons';
 import Tooltip from '../ui/Tooltip';
+import ThemeToggle from './ThemeToggle';
 import LogoPrincipal from '../../assets/images/MiNegocio_transparente_real.png';
 import { usePanelContext } from '../../context/PanelContext';
 import { getBusinessFeatures } from '../../config/businessDefaults';
@@ -233,6 +234,11 @@ export default function Sidebar({
               </button>
             </Tooltip>
           )}
+        </div>
+
+        {/* Toggle de tema claro/oscuro */}
+        <div style={{ marginTop: 8 }}>
+          <ThemeToggle collapsed={collapsed} />
         </div>
 
         {/* Legal footer */}
