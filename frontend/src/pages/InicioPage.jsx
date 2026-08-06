@@ -24,13 +24,16 @@ function ResumenIA() {
   React.useEffect(() => { cargar(); }, [cargar]);
 
   return (
-    <div style={{ background: 'linear-gradient(135deg, rgba(124,58,237,0.10), rgba(20,187,166,0.06))', border: '1px solid rgba(165,180,252,0.25)', borderRadius: 16, padding: '18px 22px', marginBottom: 16 }}>
+    <div style={{ background: 'var(--wash-primary)', border: '1px solid var(--border-color)', borderRadius: 16, padding: '18px 22px', marginBottom: 16 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#c4b5fd', fontWeight: 800, fontSize: '0.92rem' }}>
-          <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-          Tu resumen del día con IA
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--accent-primary)', fontWeight: 800, fontSize: '0.82rem', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'var(--accent-primary)', color: 'var(--bg-card)', padding: '3px 8px', borderRadius: 6, fontSize: '0.7rem', fontWeight: 800 }}>
+            <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            IA
+          </span>
+          Tu resumen del día
         </div>
-        <button onClick={cargar} disabled={loading} title="Actualizar" style={{ background: 'transparent', border: '1px solid rgba(165,180,252,0.3)', color: '#c4b5fd', borderRadius: 8, padding: '4px 10px', fontSize: '0.78rem', fontWeight: 700, cursor: loading ? 'default' : 'pointer' }}>
+        <button onClick={cargar} disabled={loading} title="Actualizar" style={{ background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--accent-primary)', borderRadius: 8, padding: '4px 10px', fontSize: '0.78rem', fontWeight: 700, cursor: loading ? 'default' : 'pointer' }}>
           {loading ? 'Pensando…' : '↻ Actualizar'}
         </button>
       </div>
@@ -47,13 +50,15 @@ function ResumenIA() {
 
 function StatCard({ label, value, sub, color, icon }) {
   return (
-    <div style={{ flex: 1, minWidth: 200, background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 16, padding: '20px 22px', position: 'relative', overflow: 'hidden' }}>
+    <div style={{ flex: 1, minWidth: 200, background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 16, padding: '18px 22px 20px', position: 'relative', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
+      {/* Hairline de acento — firma sobria, ecoa el renglón de la landing */}
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: color, opacity: 0.9 }} />
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 700, letterSpacing: '0.3px' }}>{label}</div>
+        <div style={{ color: 'var(--text-secondary)', fontSize: '0.78rem', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase' }}>{label}</div>
         <div style={{ color, opacity: 0.85 }}>{icon}</div>
       </div>
-      <div style={{ fontSize: '2rem', fontWeight: 800, color, fontFamily: 'var(--font-mono)', marginTop: 8, letterSpacing: '-0.5px' }}>{value}</div>
-      {sub && <div style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', marginTop: 2 }}>{sub}</div>}
+      <div style={{ fontSize: '2rem', fontWeight: 800, color, fontFamily: 'var(--font-mono)', fontVariantNumeric: 'tabular-nums', marginTop: 10, letterSpacing: '-0.5px' }}>{value}</div>
+      {sub && <div style={{ color: 'var(--text-faint)', fontSize: '0.82rem', marginTop: 3 }}>{sub}</div>}
     </div>
   );
 }
@@ -89,13 +94,13 @@ export default function InicioPage() {
   ].slice(0, 6);
 
   return (
-    <div style={{ padding: '20px 24px', width: '100%', height: '100%', overflowY: 'auto', boxSizing: 'border-box' }}>
+    <div style={{ padding: '24px 24px 32px', width: '100%', height: '100%', overflowY: 'auto', boxSizing: 'border-box' }}>
       {/* Saludo */}
-      <div style={{ marginBottom: 20 }}>
-        <h1 style={{ fontSize: '1.6rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)', letterSpacing: '-0.4px' }}>
+      <div style={{ marginBottom: 22 }}>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.75rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
           Hola {operador}, {saludoHora}
         </h1>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: '4px 0 0', textTransform: 'capitalize' }}>{hoy} · {negocio}</p>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: '5px 0 0', textTransform: 'capitalize' }}>{hoy} · {negocio}</p>
       </div>
 
       {/* Resumen del día con IA (solo Plan IA) */}
@@ -112,18 +117,20 @@ export default function InicioPage() {
       {/* CTA + Por agotarse */}
       <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'stretch' }}>
         {/* Ir a vender */}
-        <div data-tour="inicio-vender" style={{ flex: '1 1 280px', background: 'var(--gradient-card)', border: '1px solid var(--border-color)', borderRadius: 16, padding: 24, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 12 }}>
+        <div data-tour="inicio-vender" style={{ flex: '1 1 280px', background: 'var(--gradient-card)', border: '1px solid var(--border-color)', borderRadius: 16, padding: 24, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 14, boxShadow: 'var(--shadow-sm)' }}>
           <div>
             <h2 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)' }}>¿Arrancamos a vender?</h2>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', margin: '6px 0 0' }}>Escaneá un código o buscá un producto. El vuelto se calcula solo.</p>
           </div>
-          <button onClick={() => navigate('/panel/ventas')} style={{ background: 'var(--gradient-primary)', color: '#fff', border: 'none', padding: '16px', borderRadius: 12, fontSize: '1.05rem', fontWeight: 800, cursor: 'pointer', boxShadow: '0 8px 24px rgba(20,187,166,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+          <button onClick={() => navigate('/panel/ventas')} style={{ background: 'var(--gradient-primary)', color: '#fff', border: 'none', padding: '16px', borderRadius: 12, fontSize: '1.05rem', fontWeight: 800, cursor: 'pointer', boxShadow: 'var(--shadow-glow)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, transition: 'transform 0.15s' }}
+            onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+            onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}>
             <Icons.ShoppingCart /> Ir a vender
           </button>
         </div>
 
         {/* Productos por agotarse */}
-        <div data-tour="inicio-stock" style={{ flex: '1 1 320px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 16, padding: 20 }}>
+        <div data-tour="inicio-stock" style={{ flex: '1 1 320px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 16, padding: 20, boxShadow: 'var(--shadow-sm)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <h2 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)' }}>Por agotarse</h2>
             <button
@@ -140,9 +147,9 @@ export default function InicioPage() {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {porAgotarse.map(p => (
-                <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: 'rgba(255,255,255,0.02)', borderRadius: 8, border: '1px solid var(--border-color)' }}>
+                <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 12px', background: 'var(--surface-veil)', borderRadius: 8, border: '1px solid var(--border-color)' }}>
                   <span style={{ color: 'var(--text-primary)', fontSize: '0.88rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '60%' }}>{p.name}</span>
-                  <span style={{ color: p.danger ? 'var(--accent-danger)' : 'var(--accent-warning)', fontSize: '0.78rem', fontWeight: 700 }}>{p.estado}</span>
+                  <span style={{ color: p.danger ? 'var(--accent-danger)' : 'var(--accent-warning)', fontSize: '0.76rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.03em' }}>{p.estado}</span>
                 </div>
               ))}
             </div>

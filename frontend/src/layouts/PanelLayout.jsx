@@ -14,6 +14,7 @@ import BackupRestoreModal from '../components/pos/BackupRestoreModal';
 import ExpiryAlertsModal from '../components/pos/ExpiryAlertsModal';
 import ToastContainer from '../components/pos/ToastContainer';
 import GuidedTour from '../components/pos/GuidedTour';
+import { applyPanelTheme, getInitialPanelTheme } from '../components/pos/ThemeToggle';
 
 export default function PanelLayout() {
   const { auth, backend, closeTurn, addToast, toasts, trialDaysRemaining, currentPlan, isTrialExpired, isPaid, planLoaded } = usePanelContext();
@@ -27,6 +28,10 @@ export default function PanelLayout() {
   const [newPassword, setNewPassword] = React.useState('');
   const [confirmPassword, setConfirmPassword] = React.useState('');
   const navigate = useNavigate();
+
+  // Aplicar el tema del panel apenas monta el shell (evita flash antes de que
+  // el toggle del sidebar se renderice). La fuente de verdad vive en ThemeToggle.
+  useEffect(() => { applyPanelTheme(getInitialPanelTheme()); }, []);
 
   useEffect(() => {
     // Esperar confirmación del servidor antes de redirigir — evita flash
@@ -172,7 +177,7 @@ export default function PanelLayout() {
             <span style={{ background: 'rgba(239,68,68,0.1)', color: 'var(--accent-danger)', border: '1px solid rgba(239,68,68,0.2)', padding: '6px 14px', borderRadius: 8, fontSize: '0.85rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
               <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent-danger)' }}></span>Sin conexion</span>
           )}
-          <button onClick={() => { localStorage.removeItem('saas_token'); window.location.href = '/'; }} style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.15)', color: 'var(--text-secondary)', padding: '8px 14px', borderRadius: 8, fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer' }}>Cerrar Sesion</button>
+          <button onClick={() => { localStorage.removeItem('saas_token'); window.location.href = '/'; }} style={{ background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', padding: '8px 14px', borderRadius: 8, fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer' }}>Cerrar Sesion</button>
         </div>
         )}
 

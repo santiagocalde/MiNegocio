@@ -1,40 +1,114 @@
-/* Premium Dark Theme Core - Ocean Dark */
+/* ══════════════════════════════════════════════════════════════
+   Sistema interno — "Ocean, dos climas"
+   Un solo producto, dos ambientes. El turquesa de marca es constante;
+   cambia el clima (papel frío ↔ océano profundo). El tema se aplica en
+   <html data-panel-theme="light|dark">; :root = OSCURO (default histórico).
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── Tema OSCURO (default) — el océano clásico ── */
 :root {
-  --bg-main: #0B132B; 
-  --bg-card: #121E36; /* Solid for better contrast */
-  --bg-hover: rgba(255, 255, 255, 0.05); 
-  
-  --border-color: rgba(255, 255, 255, 0.06);
-  --border-focus: #14BBA6;
+  --bg-main: #0B132B;
+  --bg-card: #131F38;          /* card sólida, mejor contraste */
+  --bg-raised: #1B2A47;        /* superficie elevada — reemplaza los rgba(255,255,255,0.02) sueltos */
+  --bg-hover: rgba(255, 255, 255, 0.05);
+  --surface-veil: rgba(255, 255, 255, 0.04);  /* "film" sutil sobre superficies (filas, chips) */
+  --sidebar-bg: #0E1A30;
+  --scrollbar-thumb: rgba(255, 255, 255, 0.15);
+  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.3);
 
-  --text-primary: #FFFFFF;
-  --text-secondary: rgba(230, 255, 251, 0.82); /* Muted, subido de 0.7 para legibilidad en pantallas de kiosco */
+  --border-color: rgba(255, 255, 255, 0.08);
+  --border-focus: #2BD4BE;
 
-  /* Escala tipográfica para contenido operativo (nombres, montos, botones de acción).
-     Pisos subidos desde los 0.85rem/0.8rem que se usaban antes en texto real de venta. */
+  --text-primary: #F1F6F5;
+  --text-secondary: rgba(230, 255, 251, 0.72);
+  --text-faint: rgba(230, 255, 251, 0.48);
+
+  /* Escala tipográfica para contenido operativo (nombres, montos, botones). */
   --fs-sm: 0.9rem;
   --fs-body: 0.95rem;
 
-  /* Accents */
-  --accent-primary: #14BBA6; 
-  --accent-secondary: #0F8A7D;
+  /* Accents — turquesa más brillante en oscuro (matchea landing dark) */
+  --accent-primary: #2BD4BE;
+  --accent-secondary: #14BBA6;
   --accent-highlight: #00E5FF;
-  --accent-success: #10b981; 
-  --accent-danger: #ef4444; 
-  --accent-warning: #f59e0b; 
+  --accent-success: #34D399;
+  --accent-danger: #F87171;
+  --accent-warning: #FBBF24;
   --accent-muted: #E2E8F0;
 
-  /* Gradients for Premium Look */
-  --gradient-primary: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+  /* Washes de estado — fondos tenues tintados (theme-aware) */
+  --wash-primary: rgba(43, 212, 190, 0.12);
+  --wash-success: rgba(52, 211, 153, 0.12);
+  --wash-danger: rgba(248, 113, 113, 0.12);
+  --wash-warning: rgba(251, 191, 36, 0.12);
+
+  /* Gradients */
+  --gradient-primary: linear-gradient(135deg, #2BD4BE 0%, #0F8A7D 100%);
   --gradient-success: linear-gradient(135deg, #10b981 0%, #059669 100%);
   --gradient-danger: linear-gradient(135deg, #f43f5e 0%, #be123c 100%);
   --gradient-card: linear-gradient(145deg, rgba(30, 58, 95, 0.6) 0%, rgba(18, 30, 54, 0.8) 100%);
 
-  --shadow-glow: 0 0 24px rgba(20, 187, 166, 0.25);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 8px 28px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.55);
+  --shadow-glow: 0 0 24px rgba(43, 212, 190, 0.25);
   --shadow-success: 0 10px 30px -10px rgba(16, 185, 129, 0.4);
 
+  /* Fondo ambiental del body (theme-aware) — océano calmo, sin la trama recargada */
+  --app-bg-image:
+    radial-gradient(circle at 15% -5%, rgba(20, 187, 166, 0.10) 0%, transparent 45%),
+    radial-gradient(circle at 85% 105%, rgba(15, 138, 125, 0.08) 0%, transparent 45%);
+
   --font-main: 'Inter', system-ui, -apple-system, sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
+  --font-display: 'Bricolage Grotesque', 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+/* ── Tema CLARO — "Ocean Papel", consistente con la landing ── */
+:root[data-panel-theme="light"] {
+  --bg-main: #EAEFEE;          /* papel frío, NO crema */
+  --bg-card: #FFFFFF;
+  --bg-raised: #F4F7F6;
+  --bg-hover: rgba(11, 19, 43, 0.05);
+  --surface-veil: rgba(11, 19, 43, 0.04);
+  --sidebar-bg: #FFFFFF;
+  --scrollbar-thumb: rgba(11, 19, 43, 0.18);
+  --scrollbar-thumb-hover: rgba(11, 19, 43, 0.32);
+
+  --border-color: rgba(11, 19, 43, 0.10);
+  --border-focus: #0E9C8A;
+
+  --text-primary: #0B132B;
+  --text-secondary: #33415C;
+  --text-faint: #64748B;
+
+  --accent-primary: #0E9C8A;   /* AA sobre papel */
+  --accent-secondary: #0A6E62;
+  --accent-highlight: #0A6E62;
+  --accent-success: #0F9D6B;
+  --accent-danger: #DC2626;
+  --accent-warning: #D97706;
+  --accent-muted: #33415C;
+
+  --wash-primary: rgba(14, 156, 138, 0.10);
+  --wash-success: rgba(15, 157, 107, 0.10);
+  --wash-danger: rgba(220, 38, 38, 0.08);
+  --wash-warning: rgba(217, 119, 6, 0.10);
+
+  --gradient-primary: linear-gradient(135deg, #0E9C8A 0%, #0F8A7D 100%);
+  --gradient-success: linear-gradient(135deg, #0F9D6B 0%, #059669 100%);
+  --gradient-danger: linear-gradient(135deg, #f43f5e 0%, #be123c 100%);
+  --gradient-card: linear-gradient(145deg, #FFFFFF 0%, #F4F7F6 100%);
+
+  --shadow-sm: 0 1px 2px rgba(11, 19, 43, 0.06), 0 2px 8px rgba(11, 19, 43, 0.04);
+  --shadow-md: 0 4px 16px rgba(11, 19, 43, 0.08), 0 12px 32px rgba(11, 19, 43, 0.06);
+  --shadow-lg: 0 12px 40px rgba(11, 19, 43, 0.12);
+  --shadow-glow: 0 0 24px rgba(14, 156, 138, 0.18);
+  --shadow-success: 0 10px 30px -10px rgba(15, 157, 107, 0.3);
+
+  --app-bg-image:
+    radial-gradient(circle at 15% -5%, rgba(14, 156, 138, 0.06) 0%, transparent 45%),
+    radial-gradient(circle at 85% 105%, rgba(15, 138, 125, 0.05) 0%, transparent 45%);
 }
 
 * {
@@ -51,12 +125,9 @@ html {
 body {
   font-family: var(--font-main);
   background-color: var(--bg-main);
-  /* Subtle ambient light gradient in the background */
-      background-image: 
-    radial-gradient(circle at 20% 0%, rgba(20, 187, 166, 0.15) 0%, transparent 50%), 
-    radial-gradient(circle at 80% 100%, rgba(15, 138, 125, 0.12) 0%, transparent 50%),
-    radial-gradient(circle at 50% 50%, rgba(30, 58, 95, 0.3) 0%, transparent 80%);
+  background-image: var(--app-bg-image);
   color: var(--text-primary);
+  transition: background-color 0.35s ease, color 0.35s ease;
   height: 100vh;
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
@@ -92,18 +163,17 @@ svg {
   flex-shrink: 0;
 }
 
-/* Sidebar - Pop-Out Glassmorphic */
+/* Sidebar */
 .sidebar {
   width: 190px;
-  background: rgba(18, 30, 54, 0.95);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-right: 1px solid rgba(255,255,255,0.05);
-  box-shadow: 10px 0 30px rgba(0,0,0,0.5);
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--border-color);
+  box-shadow: var(--shadow-md);
   display: flex;
   flex-direction: column;
   z-index: 50;
   position: relative;
+  transition: background-color 0.35s ease, border-color 0.35s ease;
 }
 
 .brand {
@@ -111,8 +181,7 @@ svg {
   display: flex;
   align-items: center;
   gap: 12px;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
-  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  border-bottom: 1px solid var(--border-color);
 }
 .brand-icon svg {
   width: 56px;
@@ -140,7 +209,7 @@ svg {
 .nav-section-label {
   font-size: 0.7rem;
   font-weight: 800;
-  color: #71717a;
+  color: var(--text-faint);
   letter-spacing: 1px;
   padding: 10px 16px 4px;
   text-transform: uppercase;
@@ -160,12 +229,12 @@ svg {
     transition: background-color 0.2s, color 0.2s;
   }
 .nav-item:hover {
-  background-color: rgba(255, 255, 255, 0.04);
+  background-color: var(--surface-veil);
   color: var(--text-primary);
 }
 .nav-item.active {
-  background: linear-gradient(90deg, rgba(20,187,166, 0.15) 0%, rgba(20,187,166, 0) 100%);
-  color: var(--accent-highlight);
+  background: var(--wash-primary);
+  color: var(--accent-primary);
 }
 .nav-item.active::before {
   content: '';
@@ -312,7 +381,7 @@ svg {
   letter-spacing: -0.2px;
 }
 .search-bar input::placeholder {
-  color: #71717a;
+  color: var(--text-faint);
   font-weight: 400;
 }
 
@@ -513,12 +582,12 @@ html {
   background: var(--bg-main);
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--scrollbar-thumb);
   border-radius: 6px;
   border: 1px solid var(--bg-main);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: var(--scrollbar-thumb-hover);
 }
 
 .virtuoso-stock-table table {
