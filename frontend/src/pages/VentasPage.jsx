@@ -79,13 +79,11 @@ export default function VentasPage() {
             searchError={cart.searchError} flash={cart.flash}
             productsDB={backend.productsDB} handleQuickAdd={cart.handleQuickAdd}
             setShowPriceCheck={backend.setShowPriceCheck} addToast={addToast}
-            listType={cart.listType}
             handleEmptyEnter={() => { if (cart.cart.length > 0) sales.setIsCharging(true); }} />
           </div>
           <div data-tour="cart-panel" style={{ flex: '1 1 auto', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
           <CartPanel cart={cart.cart} total={cart.total} adjustedTotal={cart.adjustedTotal}
-            updateQty={cart.updateQty} setItemQty={cart.setItemQty} removeItem={cart.removeItem}
-            listType={cart.listType} setListType={cart.setListType} />
+            updateQty={cart.updateQty} setItemQty={cart.setItemQty} removeItem={cart.removeItem} />
           </div>
         </div>
         <div data-tour="payment-panel" style={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
