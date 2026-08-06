@@ -464,6 +464,17 @@ async def init_pg() -> None:
             );
             CREATE INDEX IF NOT EXISTS idx_remito_items_remito_id ON remito_items(remito_id);
 
+            CREATE TABLE IF NOT EXISTS obras (
+                id              SERIAL PRIMARY KEY,
+                business_id     TEXT NOT NULL REFERENCES businesses(id),
+                name            TEXT NOT NULL,
+                customer_id     INTEGER REFERENCES customers(id),
+                address         TEXT,
+                status          TEXT DEFAULT 'activa',
+                created_at      TIMESTAMPTZ DEFAULT now()
+            );
+            CREATE INDEX IF NOT EXISTS idx_obras_business_id ON obras(business_id);
+
             CREATE TABLE IF NOT EXISTS sucursales (
                 id              SERIAL PRIMARY KEY,
                 business_id     TEXT NOT NULL REFERENCES businesses(id),

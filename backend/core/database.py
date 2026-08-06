@@ -225,6 +225,16 @@ async def init_db(DB_PATH: str, logger) -> None:
                 unit_price      REAL NOT NULL DEFAULT 0
             );
 
+            CREATE TABLE IF NOT EXISTS obras (
+                id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                business_id     TEXT DEFAULT 'kiosco_default',
+                name            TEXT NOT NULL,
+                customer_id     INTEGER,
+                address         TEXT,
+                status          TEXT DEFAULT 'activa',
+                created_at      TEXT DEFAULT (datetime('now','localtime'))
+            );
+
             CREATE TABLE IF NOT EXISTS sucursales (
                 id          INTEGER PRIMARY KEY AUTOINCREMENT,
                 business_id TEXT DEFAULT 'kiosco_default', 
