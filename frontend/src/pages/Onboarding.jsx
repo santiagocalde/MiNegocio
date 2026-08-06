@@ -287,8 +287,8 @@ export default function Onboarding() {
                   transition: 'transform 0.18s, box-shadow 0.18s, border-color 0.18s, background 0.18s',
                   boxShadow: formData.tipo === tipo.id ? 'var(--lp-shadow-sm)' : 'none',
                 }}
-                  onMouseEnter={e => { if (formData.tipo !== tipo.id) e.currentTarget.style.borderColor = 'var(--lp-line-strong)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-                  onMouseLeave={e => { if (formData.tipo !== tipo.id) e.currentTarget.style.borderColor = 'var(--lp-line-strong)'; e.currentTarget.style.transform = 'translateY(0)'; }}
+                  onMouseEnter={e => { e.currentTarget.style.background = formData.tipo === tipo.id ? 'var(--lp-primary-wash)' : 'var(--lp-paper-raised)'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = 'var(--lp-shadow-sm)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = formData.tipo === tipo.id ? 'var(--lp-primary-wash)' : 'var(--lp-paper-sunken)'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
                 >
                   <div style={{
                     width: 48, height: 48, borderRadius: 14,
