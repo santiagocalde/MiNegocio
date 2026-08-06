@@ -1,5 +1,6 @@
 """Hojas de Ruta — extiende remitos con zona y orden (Corralón V2)."""
 from fastapi import APIRouter, HTTPException, Query, Body, Request
+from datetime import date
 from typing import Optional
 from core.ratelimit import limiter
 
@@ -41,7 +42,7 @@ async def hoja_de_ruta(request: Request, fecha: str = Query(None), driver: str =
         pool = await get_pg_pool()
         async with pool.acquire() as conn:
             w = ["r.business_id = $1"]; p = [b_id]; n = 2
-            if fecha: w.append(f"r.scheduled_date::date = ${n}::date"); p.append(fecha); n += 1
+            if fecha: w.append(f"r.scheduled_date = ${n}::date"); p.append(date.fromisoformat(fecha)); n += 1
             if driver: w.append(f"r.driver = ${n}"); p.append(driver); n += 1
             whe = " AND ".join(w)
             rows = await conn.fetch(f"SELECT r.*, c.name as customer_name FROM remitos r LEFT JOIN customers c ON c.id = r.customer_id WHERE {whe} ORDER BY COALESCE(r.zone, 'ZZZ'), COALESCE(r.sort_order, 999), r.id", *p)
