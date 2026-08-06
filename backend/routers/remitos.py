@@ -4,7 +4,7 @@ El remito viaja en el camión. Stock se descuenta al confirmar entrega, no al cr
 """
 
 from fastapi import APIRouter, HTTPException, Query, Body, Request
-from datetime import datetime, timezone
+from datetime import datetime, timezone, date
 from typing import Optional
 from core.ratelimit import limiter
 
@@ -77,7 +77,7 @@ async def create_remito(request: Request, body: dict = Body(...)) -> dict:
                     VALUES ($1,$2,$3,$4,$5,$6,'pending',$7) RETURNING id
                 """, b_id, body.get("quote_id"), body.get("customer_id"),
                     body.get("address", ""), body.get("driver", ""),
-                    body.get("scheduled_date", str(_now().date())), _now())
+                    date.fromisoformat(body.get("scheduled_date", str(_now().date())[:10])), _now())
                 rid = row["id"]
                 for it in body.get("items", []):
                     await conn.execute("""
