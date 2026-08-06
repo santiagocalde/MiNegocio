@@ -133,22 +133,25 @@ export default function ReportsModule() {
   const renderReports = () => (
     <div style={{ padding: '12px 20px', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflowY: 'auto' }}>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '12px', flexShrink: 0 }}>
-        <h2 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>Reportes de Ventas</h2>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: '12px', flexWrap: 'wrap', marginBottom: '18px', flexShrink: 0 }}>
+        <div>
+          <div className="ledger-label">Libro de ventas</div>
+          <h1 className="ledger-title" style={{ fontSize: '1.6rem', marginTop: 4 }}>Cómo venís</h1>
+        </div>
 
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600, paddingLeft: '4px' }}>Fecha desde</label>
-            <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '0 16px', borderRadius: '8px', outline: 'none', fontFamily: 'var(--font-mono)', fontSize: '0.85rem', height: '42px', fontWeight: 600 }} />
-          </div>
-          
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600, paddingLeft: '4px' }}>Fecha hasta</label>
-            <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '0 16px', borderRadius: '8px', outline: 'none', fontFamily: 'var(--font-mono)', fontSize: '0.85rem', height: '42px', fontWeight: 600 }} />
+            <label className="ledger-label">Fecha desde</label>
+            <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} style={{ background: 'var(--sheet)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '0 16px', borderRadius: 'var(--radius-sm)', outline: 'none', fontFamily: 'var(--font-mono)', fontSize: '0.85rem', height: '42px', fontWeight: 600 }} />
           </div>
 
-          <button onClick={() => fetchReports()} disabled={loading} title="Actualizar" style={{ height: '42px', padding: '0 14px', background: 'var(--accent-primary)', border: 'none', borderRadius: '8px', color: 'white', cursor: loading ? 'wait' : 'pointer', fontSize: '1.1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            🔄
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <label className="ledger-label">Fecha hasta</label>
+            <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} style={{ background: 'var(--sheet)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '0 16px', borderRadius: 'var(--radius-sm)', outline: 'none', fontFamily: 'var(--font-mono)', fontSize: '0.85rem', height: '42px', fontWeight: 600 }} />
+          </div>
+
+          <button onClick={() => fetchReports()} disabled={loading} title="Actualizar" style={{ height: '42px', padding: '0 16px', background: 'var(--accent-primary)', border: 'none', borderRadius: 'var(--radius-sm)', color: 'var(--sheet)', cursor: loading ? 'wait' : 'pointer', fontSize: '0.9rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            Actualizar
           </button>
         </div>
       </div>
@@ -160,29 +163,29 @@ export default function ReportsModule() {
       )}
 
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: isMobile ? '10px' : '16px', marginBottom: '24px', flexShrink: 0 }}>
-        <div style={{ background: 'var(--bg-card)', borderRadius: '12px', padding: isMobile ? '12px' : '20px', border: '1px solid var(--border-color)', position: 'relative' }}>
-          <div style={{ color: 'var(--text-primary)', fontSize: '0.9rem', fontWeight: 700, marginBottom: '12px' }}>Total de Ventas</div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '4px', letterSpacing: '-0.5px' }}>{summary.totalVentas}</div>
+        <div className="ledger-sheet" style={{ padding: isMobile ? '12px' : '20px', position: 'relative' }}>
+          <div className="ledger-label" style={{ marginBottom: '12px' }}>Total de Ventas</div>
+          <div className="ledger-num" style={{ fontSize: '1.7rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '4px' }}>{summary.totalVentas}</div>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Total de ventas registradas del negocio.</div>
           <svg style={{ position: 'absolute', top: '20px', right: '20px', color: 'var(--text-secondary)', opacity: 0.5 }} width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
         </div>
 
-        <div style={{ background: 'var(--bg-card)', borderRadius: '12px', padding: isMobile ? '12px' : '20px', border: '1px solid var(--border-color)', position: 'relative' }}>
-          <div style={{ color: 'var(--text-primary)', fontSize: '0.9rem', fontWeight: 700, marginBottom: '12px' }}>Ingresos Totales</div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '4px', letterSpacing: '-0.5px' }}>{formatPesos(summary.ingresos)}</div>
+        <div className="ledger-sheet" style={{ padding: isMobile ? '12px' : '20px', position: 'relative' }}>
+          <div className="ledger-label" style={{ marginBottom: '12px' }}>Ingresos Totales</div>
+          <div className="ledger-num" style={{ fontSize: '1.7rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '4px' }}>{formatPesos(summary.ingresos)}</div>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Ingresos totales registrados del negocio.</div>
           <svg style={{ position: 'absolute', top: '20px', right: '20px', color: 'var(--text-secondary)', opacity: 0.5 }} width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
         </div>
 
-        <div style={{ background: 'var(--bg-card)', borderRadius: '12px', padding: isMobile ? '12px' : '20px', border: '1px solid var(--border-color)', position: 'relative' }}>
-          <div style={{ color: 'var(--text-primary)', fontSize: '0.9rem', fontWeight: 700, marginBottom: '12px' }}>Método de Pago Más Usado</div>
+        <div className="ledger-sheet" style={{ padding: isMobile ? '12px' : '20px', position: 'relative' }}>
+          <div className="ledger-label" style={{ marginBottom: '12px' }}>Método de Pago Más Usado</div>
           <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '4px', letterSpacing: '-0.5px' }}>{summary.metodoUsado}</div>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{summary.pctEfectivo}% de las ventas</div>
           <svg style={{ position: 'absolute', top: '20px', right: '20px', color: 'var(--text-secondary)', opacity: 0.5 }} width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
         </div>
 
-        <div style={{ background: 'var(--bg-card)', borderRadius: '12px', padding: isMobile ? '12px' : '20px', border: '1px solid var(--border-color)', position: 'relative' }}>
-          <div style={{ color: 'var(--text-primary)', fontSize: '0.9rem', fontWeight: 700, marginBottom: '12px' }}>Producto Más Popular</div>
+        <div className="ledger-sheet" style={{ padding: isMobile ? '12px' : '20px', position: 'relative' }}>
+          <div className="ledger-label" style={{ marginBottom: '12px' }}>Producto Más Popular</div>
           <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '4px', letterSpacing: '-0.5px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{summary.productoPopular}</div>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{summary.pctProducto} ventas</div>
           <svg style={{ position: 'absolute', top: '20px', right: '20px', color: 'var(--text-secondary)', opacity: 0.5 }} width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
@@ -190,7 +193,7 @@ export default function ReportsModule() {
       </div>
 
       {ganancias.mensual.length > 0 && (
-        <div style={{ marginBottom: '20px', background: 'var(--bg-card)', borderRadius: '12px', border: '1px solid var(--border-color)', overflow: 'hidden', flexShrink: 0 }}>
+        <div className="ledger-sheet" style={{ marginBottom: '20px', overflow: 'hidden', flexShrink: 0 }}>
           <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
             <div>
               <h3 style={{ fontSize: '1.1rem', fontWeight: 700, margin: '0 0 4px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -217,7 +220,7 @@ export default function ReportsModule() {
               </thead>
               <tbody>
                 {ganancias.mensual.map((m) => (
-                  <tr key={m.mes} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background='rgba(255,255,255,0.02)'} onMouseLeave={e => e.currentTarget.style.background='transparent'}>
+                  <tr key={m.mes} style={{ borderBottom: '1px solid var(--rule)', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background='var(--surface-veil)'} onMouseLeave={e => e.currentTarget.style.background='transparent'}>
                     <td style={{ padding: '12px 16px', fontWeight: 700 }}>{m.mes}</td>
                     <td style={{ padding: '12px 16px', fontFamily: 'var(--font-mono)' }}>{formatPesos(m.ingresos)}</td>
                     <td style={{ padding: '12px 16px', fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>{formatPesos(m.costo)}</td>
@@ -255,7 +258,7 @@ export default function ReportsModule() {
               ? 'Actualizá a plan IA para exportar a Excel y acceder a reportes avanzados.'
               : 'Exportación a Excel disponible en plan IA.'}
           </span>
-          <a href="/panel/plan" style={{ background: 'var(--gradient-primary)', color: 'white', textDecoration: 'none', padding: '6px 16px', borderRadius: 6, fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.15s' }}>Ver Planes</a>
+          <a href="/panel/plan" style={{ background: 'var(--accent-primary)', color: 'var(--sheet)', textDecoration: 'none', padding: '6px 16px', borderRadius: 6, fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.15s' }}>Ver Planes</a>
         </div>
       )}
 
@@ -296,7 +299,7 @@ export default function ReportsModule() {
                     </thead>
                     <tbody>
                       {sortedSales.map((sale) => (
-                        <tr key={sale.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background='rgba(255,255,255,0.02)'} onMouseLeave={e => e.currentTarget.style.background='transparent'}>
+                        <tr key={sale.id} style={{ borderBottom: '1px solid var(--rule)', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background='var(--surface-veil)'} onMouseLeave={e => e.currentTarget.style.background='transparent'}>
                           <td style={{ padding: '16px', fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>{(sale.id ?? '').toString().padStart(8, '0') || '---'}</td>
                           <td style={{ padding: '16px', fontSize: '0.85rem' }}>{sale.created_at ? new Date(sale.created_at).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' }) : '---'}</td>
                           <td style={{ padding: '16px', fontSize: '0.85rem' }}>{sale.operator}</td>
@@ -304,7 +307,7 @@ export default function ReportsModule() {
                             {sale.items?.map(i => `${i.product_name} x${i.quantity}`).join(', ') || 'Varios'}
                           </td>
                           <td style={{ padding: '16px' }}>
-                            <span style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--text-secondary)', padding: '4px 10px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600 }}>
+                            <span style={{ background: 'var(--surface-veil)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', padding: '3px 9px', borderRadius: '3px', fontSize: '0.75rem', fontWeight: 600 }}>
                               {sale.payment_method === 'efectivo' ? 'Efectivo' : sale.payment_method === 'transferencia' ? 'Transferencia' : sale.payment_method === 'tarjeta' ? 'Tarjeta' : sale.payment_method?.toUpperCase()}
                             </span>
                           </td>
@@ -351,7 +354,7 @@ export default function ReportsModule() {
           </div>
         )}
         <a href="/panel/plan"
-          style={{ display: 'inline-block', background: 'var(--gradient-primary)', color: 'white', border: 'none', padding: '14px 32px', borderRadius: 12, fontSize: '1rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s', textDecoration: 'none', marginTop: 8 }}>
+          style={{ display: 'inline-block', background: 'var(--accent-primary)', color: 'var(--sheet)', border: 'none', padding: '14px 32px', borderRadius: 12, fontSize: '1rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s', textDecoration: 'none', marginTop: 8 }}>
           Ver Planes
         </a>
       </div>

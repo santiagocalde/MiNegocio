@@ -421,17 +421,24 @@ export default function StockModule() {
     <div style={{ padding: '12px 20px', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflowY: 'auto' }}>
 
       {/* HEADER */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '12px', flexShrink: 0 }}>
-        <h2 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>Inventario</h2>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: '10px', flexWrap: 'wrap', marginBottom: '16px', flexShrink: 0 }}>
+        <div>
+          <div className="ledger-label">Libro de inventario</div>
+          <h1 className="ledger-title" style={{ fontSize: '1.6rem', marginTop: 4 }}>Lo que tenés</h1>
+        </div>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-           <button onClick={() => setShowNuevoProducto(true)} style={{ background: 'var(--gradient-primary)', color: 'white', border: 'none', borderRadius: '8px', padding: '10px 20px', fontSize: '0.95rem', fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 16px rgba(20,187,166,0.35)', whiteSpace: 'nowrap' }}>
-              + Nuevo Producto
+           <button onClick={() => setShowNuevoProducto(true)} style={{ background: 'var(--accent-primary)', color: 'var(--sheet)', border: 'none', borderRadius: 'var(--radius-sm)', padding: '10px 18px', fontSize: '0.92rem', fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap', transition: 'filter 0.15s' }}
+              onMouseEnter={e => e.currentTarget.style.filter = 'brightness(1.08)'}
+              onMouseLeave={e => e.currentTarget.style.filter = 'brightness(1)'}>
+              + Nuevo producto
             </button>
-            <button onClick={() => setShowAumentoMasivo(true)} style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', color: 'var(--accent-danger)', padding: '10px 16px', borderRadius: '8px', fontSize: '0.95rem', fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}>
-              <Icons.Chart /> Aumento Masivo
+            <button onClick={() => setShowAumentoMasivo(true)} style={{ background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--accent-danger)', padding: '10px 15px', borderRadius: 'var(--radius-sm)', fontSize: '0.92rem', fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap', transition: 'border-color 0.15s' }}
+              onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--accent-danger)'}
+              onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border-color)'}>
+              <Icons.Chart /> Aumento masivo
             </button>
             <input type="file" ref={fileInputRef} accept=".csv" style={{ display: 'none' }} onChange={handleImportCsv} />
-            <button onClick={() => fileInputRef.current?.click()} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '10px 16px', borderRadius: '8px', fontSize: '0.95rem', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}>
+            <button onClick={() => fileInputRef.current?.click()} style={{ background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '10px 15px', borderRadius: 'var(--radius-sm)', fontSize: '0.92rem', fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}>
               <Icons.Download /> Importar CSV
             </button>
         </div>
@@ -460,13 +467,13 @@ export default function StockModule() {
             value={query}
             onChange={e => { setQuery(e.target.value); if(e.target.value==='') fetchProducts(''); }}
             onKeyDown={handleSearch}
-            style={{ width: '100%', background: 'var(--bg-main)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '12px 16px 12px 48px', borderRadius: '8px', fontSize: '0.95rem', outline: 'none' }} 
+            style={{ width: '100%', background: 'var(--sheet)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '12px 16px 12px 48px', borderRadius: 'var(--radius-sm)', fontSize: '0.95rem', outline: 'none' }}
           />
         </div>
-        <button onClick={() => setShowFilters(!showFilters)} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '0 16px', borderRadius: '8px', fontSize: '0.95rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <button onClick={() => setShowFilters(!showFilters)} style={{ background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '0 16px', borderRadius: 'var(--radius-sm)', fontSize: '0.92rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Icons.Filter /> Filtros
         </button>
-        <button onClick={() => { setSelectMode(!selectMode); if (selectMode) setSelectedIds(new Set()); }} style={{ background: selectMode ? 'rgba(239,68,68,0.12)' : 'var(--bg-card)', border: selectMode ? '1px solid rgba(239,68,68,0.3)' : '1px solid var(--border-color)', color: selectMode ? 'var(--accent-danger)' : 'var(--text-primary)', padding: '0 16px', borderRadius: '8px', fontSize: '0.95rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <button onClick={() => { setSelectMode(!selectMode); if (selectMode) setSelectedIds(new Set()); }} style={{ background: selectMode ? 'var(--wash-danger)' : 'transparent', border: selectMode ? '1px solid var(--accent-danger)' : '1px solid var(--border-color)', color: selectMode ? 'var(--accent-danger)' : 'var(--text-primary)', padding: '0 16px', borderRadius: 'var(--radius-sm)', fontSize: '0.92rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Icons.Trash /> {selectMode ? 'Cancelar' : 'Seleccionar'}
         </button>
       </div>
@@ -515,14 +522,13 @@ export default function StockModule() {
       )}
 
       {/* MAIN TABLE */}
-      <div style={{ flex: 1, background: 'var(--bg-card)', borderRadius: '16px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        <div style={{ padding: '10px 20px', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Productos</span>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>·</span>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{filteredProducts.length} resultados</span>
+      <div className="ledger-sheet" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <div style={{ padding: '11px 20px', borderBottom: '1px solid var(--rule-strong)', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <span className="ledger-label">Productos</span>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-faint)' }}>· {filteredProducts.length} resultados</span>
           <span style={{ flex: 1 }} />
-          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Stock valorizado</span>
-          <span style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--accent-primary)', fontFamily: 'var(--font-mono)' }}>{formatMoney(totalValorizado)}</span>
+          <span className="ledger-label">Stock valorizado</span>
+          <span className="ledger-num" style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--accent-primary)' }}>{formatMoney(totalValorizado)}</span>
         </div>
 
         <div style={{ flex: 1 }}>
@@ -560,16 +566,16 @@ export default function StockModule() {
                     <div style={{ color: 'var(--text-secondary)', fontSize: '0.72rem', fontFamily: 'var(--font-mono)' }}>{p.code}</div>
                   </td>
                   <td style={{ padding: '8px 16px' }}>
-                    <span style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--text-secondary)', borderRadius: '10px', padding: '3px 8px', fontSize: '0.72rem', fontWeight: 600 }}>
+                    <span style={{ background: 'var(--surface-veil)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', borderRadius: '3px', padding: '3px 8px', fontSize: '0.72rem', fontWeight: 600 }}>
                       {p.category_name || 'Sin categoría'}
                     </span>
                   </td>
-                  <td style={{ padding: '8px 16px', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.9rem' }}>
+                  <td className="ledger-num" style={{ padding: '8px 16px', fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)' }}>
                     ${(p.price ?? 0).toLocaleString('es-AR')}
                   </td>
                   <td style={{ padding: '8px 16px' }}>
-                    <span style={{ background: p.stock > 0 ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)', color: p.stock > 0 ? 'var(--accent-success)' : 'var(--accent-danger)', padding: '3px 8px', borderRadius: '10px', fontSize: '0.72rem', fontWeight: 700, whiteSpace: 'nowrap' }}>
-                      {p.stock > 0 ? 'Con Stock' : 'Sin Stock'}
+                    <span className="ledger-label" style={{ background: p.stock > 0 ? 'var(--wash-success)' : 'var(--wash-danger)', border: '1px solid var(--border-color)', color: p.stock > 0 ? 'var(--accent-success)' : 'var(--accent-danger)', padding: '3px 8px', borderRadius: '3px', whiteSpace: 'nowrap' }}>
+                      {p.stock > 0 ? 'Con stock' : 'Sin stock'}
                     </span>
                   </td>
                   <td style={{ padding: '8px 16px' }}>
@@ -610,7 +616,7 @@ export default function StockModule() {
                             }
                           }
                         });
-                      }} style={{ background: 'rgba(20, 187, 166, 0.15)', color: '#14BBA6', border: '1px solid rgba(20, 187, 166, 0.45)', padding: '6px 12px', borderRadius: '6px', fontSize: '0.82rem', cursor: 'pointer', fontWeight: 700, whiteSpace: 'nowrap' }}>$ Precio</button>
+                      }} className="stock-act" style={{ background: 'transparent', color: 'var(--text-primary)', border: '1px solid var(--border-color)', padding: '6px 12px', borderRadius: 'var(--radius-sm)', fontSize: '0.82rem', cursor: 'pointer', fontWeight: 700, whiteSpace: 'nowrap' }}>$ Precio</button>
                       <button onClick={() => {
                         setPromptState({
                           isOpen: true,
@@ -634,7 +640,7 @@ export default function StockModule() {
                             }
                           }
                         });
-                      }} style={{ background: 'rgba(59, 130, 246, 0.15)', color: '#60A5FA', border: '1px solid rgba(59, 130, 246, 0.45)', padding: '6px 12px', borderRadius: '6px', fontSize: '0.82rem', cursor: 'pointer', fontWeight: 700, whiteSpace: 'nowrap' }}>Stock</button>
+                      }} className="stock-act" style={{ background: 'transparent', color: 'var(--text-primary)', border: '1px solid var(--border-color)', padding: '6px 12px', borderRadius: 'var(--radius-sm)', fontSize: '0.82rem', cursor: 'pointer', fontWeight: 700, whiteSpace: 'nowrap' }}>Stock</button>
                       <button onClick={() => {
                         setPromptState({
                           isOpen: true,
@@ -658,7 +664,7 @@ export default function StockModule() {
                             }
                           }
                         });
-                      }} style={{ background: 'rgba(168, 85, 247, 0.15)', color: '#C084FC', border: '1px solid rgba(168, 85, 247, 0.45)', padding: '6px 12px', borderRadius: '6px', fontSize: '0.82rem', cursor: 'pointer', fontWeight: 700, whiteSpace: 'nowrap' }}>Nombre</button>
+                      }} className="stock-act" style={{ background: 'transparent', color: 'var(--text-primary)', border: '1px solid var(--border-color)', padding: '6px 12px', borderRadius: 'var(--radius-sm)', fontSize: '0.82rem', cursor: 'pointer', fontWeight: 700, whiteSpace: 'nowrap' }}>Nombre</button>
                       <button onClick={() => {
                         setPromptState({
                           isOpen: true,
@@ -682,7 +688,7 @@ export default function StockModule() {
                             }
                           }
                         });
-                      }} style={{ background: 'rgba(245, 158, 11, 0.15)', color: '#FBBF24', border: '1px solid rgba(245, 158, 11, 0.45)', padding: '6px 12px', borderRadius: '6px', fontSize: '0.82rem', cursor: 'pointer', fontWeight: 700, whiteSpace: 'nowrap' }}>Costo</button>
+                      }} className="stock-act" style={{ background: 'transparent', color: 'var(--text-primary)', border: '1px solid var(--border-color)', padding: '6px 12px', borderRadius: 'var(--radius-sm)', fontSize: '0.82rem', cursor: 'pointer', fontWeight: 700, whiteSpace: 'nowrap' }}>Costo</button>
                       <button onClick={() => {
                         setPromptState({
                           isOpen: true,
@@ -706,7 +712,7 @@ export default function StockModule() {
                             }
                           }
                         });
-                      }} style={{ background: 'rgba(251, 146, 60, 0.15)', color: '#FBBF24', border: '1px solid rgba(251, 146, 60, 0.45)', padding: '6px 12px', borderRadius: '6px', fontSize: '0.82rem', cursor: 'pointer', fontWeight: 700, whiteSpace: 'nowrap' }}>Códigos</button>
+                      }} className="stock-act" style={{ background: 'transparent', color: 'var(--text-primary)', border: '1px solid var(--border-color)', padding: '6px 12px', borderRadius: 'var(--radius-sm)', fontSize: '0.82rem', cursor: 'pointer', fontWeight: 700, whiteSpace: 'nowrap' }}>Códigos</button>
                       <button onClick={() => { setConfirmState({ isOpen: true, title: 'Eliminar Producto', message: 'Estas por eliminar ' + p.name + '. Esta accion no se puede deshacer.', confirmLabel: 'Eliminar', variant: 'danger', onConfirm: () => { setConfirmState(prev => ({...prev, isOpen: false})); apiDelete('/products/' + p.id).then(r => { if (r.ok) { addToast(p.name + ' eliminado.', 'success'); fetchProducts(); if (onProductsUpdated) onProductsUpdated(); } else addToast('No se pudo eliminar. Reintenta.', 'error'); }).catch(() => addToast('Sin internet.', 'error')); } }); }} style={{ background: 'rgba(239, 68, 68, 0.08)', color: 'var(--accent-danger)', border: '1px solid rgba(239, 68, 68, 0.2)', padding: '4px 8px', borderRadius: '6px', fontSize: '0.75rem', cursor: 'pointer', fontWeight: 600, whiteSpace: 'nowrap', marginLeft: 'auto' }}><Icons.Trash /></button>
                       {p.is_virtual === 1 && p.stock > 0 && (
                         <button onClick={() => handleUnpack(p.id)} style={{ background: 'rgba(59, 130, 246, 0.1)', color: 'var(--accent-primary)', border: '1px solid rgba(59, 130, 246, 0.2)', padding: '6px 12px', borderRadius: '6px', fontSize: '0.8rem', cursor: 'pointer', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Icons.Package style={{ width: '14px', height: '14px' }} /> Desarmar</button>

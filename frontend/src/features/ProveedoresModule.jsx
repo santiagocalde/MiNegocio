@@ -79,10 +79,15 @@ export default function ProveedoresModule() {
   return (
     <FeatureGate isLocked={isLocked} requiredPlan="Simple">
     <div style={{ padding: '12px 20px', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', marginBottom: '12px', flexShrink: 0, flexWrap: 'wrap' }}>
-        <h2 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>Gestión de Proveedores</h2>
-        <button onClick={() => setShowModal(true)} style={{ background: 'var(--gradient-primary)', border: 'none', color: 'white', padding: '12px 24px', borderRadius: '8px', fontSize: '0.9rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', transition: 'all 0.15s' }}>
-           <Icons.Plus /> Nuevo Proveedor
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: '10px', marginBottom: '16px', flexShrink: 0, flexWrap: 'wrap' }}>
+        <div>
+          <div className="ledger-label">Libro de proveedores</div>
+          <h1 className="ledger-title" style={{ fontSize: '1.6rem', marginTop: 4 }}>A quién le comprás</h1>
+        </div>
+        <button onClick={() => setShowModal(true)} style={{ background: 'var(--accent-primary)', border: 'none', color: 'var(--sheet)', padding: '11px 20px', borderRadius: 'var(--radius-sm)', fontSize: '0.9rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', transition: 'filter 0.15s' }}
+          onMouseEnter={e => e.currentTarget.style.filter = 'brightness(1.08)'}
+          onMouseLeave={e => e.currentTarget.style.filter = 'brightness(1)'}>
+           <Icons.Plus /> Nuevo proveedor
         </button>
       </div>
 
@@ -94,25 +99,25 @@ export default function ProveedoresModule() {
             description={error ? 'No se pudieron cargar los proveedores. Verificá la conexión.' : 'Agregá tu primer proveedor para empezar a registrar compras.'}
             actionLabel={error ? 'Reintentar' : undefined} actionOnClick={error ? fetchProveedores : undefined} />
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', paddingRight: '8px' }}>
+          <div className="ledger-sheet" style={{ overflow: 'hidden' }}>
              {proveedores.map(p => (
-               <div key={p.id} style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'stretch' : 'center', gap: isMobile ? '12px' : 0, justifyContent: 'space-between', background: 'var(--bg-card)', padding: isMobile ? '14px 16px' : '16px 24px', borderRadius: '12px', border: '1px solid var(--border-color)', transition: 'all 0.15s, transform 0.2s', cursor: 'pointer' }} onMouseEnter={e=>{ if(!isMobile) e.currentTarget.style.transform='translateX(4px)'; }} onMouseLeave={e=>e.currentTarget.style.transform='none'}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '12px' : '24px', flex: 1, flexWrap: 'wrap' }}>
-                     <div style={{ width: '48px', height: '48px', background: 'rgba(20,187,166, 0.1)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-primary)' }}>
+               <div key={p.id} style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'stretch' : 'center', gap: isMobile ? '12px' : 0, justifyContent: 'space-between', padding: isMobile ? '14px 16px' : '14px 20px', borderBottom: '1px solid var(--rule)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '12px' : '20px', flex: 1, flexWrap: 'wrap' }}>
+                     <div style={{ width: '44px', height: '44px', background: 'var(--wash-primary)', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-primary)', flexShrink: 0 }}>
                        <Icons.Truck />
                      </div>
                      <div style={{ flex: 1 }}>
-                       <h3 style={{ margin: '0 0 4px 0', fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-primary)' }}>{p.name}</h3>
-                       <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Contacto: {p.contact} • {p.phone}</p>
+                       <h3 style={{ margin: '0 0 3px 0', fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)' }}>{p.name}</h3>
+                       <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-faint)' }}>Contacto: {p.contact} · {p.phone}</p>
                      </div>
-                     <div style={{ width: isMobile ? '100%' : '200px', display: 'flex', alignItems: 'center', gap: '16px' }}>
-                        <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Deuda:</span>
-                        <span style={{ fontSize: '1.2rem', fontWeight: 800, color: (p.debt ?? 0) > 0 ? 'var(--accent-danger)' : 'var(--accent-success)', fontFamily: 'var(--font-mono)' }}>${(p.debt ?? 0).toLocaleString('es-AR')}</span>
+                     <div style={{ width: isMobile ? '100%' : '200px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <span className="ledger-label">Deuda</span>
+                        <span className="ledger-num" style={{ fontSize: '1.2rem', fontWeight: 800, color: (p.debt ?? 0) > 0 ? 'var(--accent-danger)' : 'var(--accent-success)' }}>${(p.debt ?? 0).toLocaleString('es-AR')}</span>
                      </div>
                   </div>
-                   <div style={{ display: 'flex', gap: '12px', width: isMobile ? '100%' : undefined }}>
-                      <button onClick={(e) => { e.stopPropagation(); navigate(`/panel/compras?supplier_id=${p.id}`); }} style={{ padding: '8px 16px', background: 'transparent', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '8px', fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s', flex: isMobile ? 1 : undefined }}>Historial</button>
-                       {p.debt > 0 && <button onClick={(e) => { e.stopPropagation(); setShowAbonar(p); setAbonarMonto(''); setAbonarMotivo(''); }} style={{ padding: '8px 16px', background: 'rgba(239, 68, 68, 0.1)', color: 'var(--accent-danger)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '8px', fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s', flex: isMobile ? 1 : undefined }}>Abonar</button>}
+                   <div style={{ display: 'flex', gap: '10px', width: isMobile ? '100%' : undefined }}>
+                      <button onClick={(e) => { e.stopPropagation(); navigate(`/panel/compras?supplier_id=${p.id}`); }} style={{ padding: '8px 16px', background: 'transparent', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', fontWeight: 700, cursor: 'pointer', transition: 'border-color 0.15s', flex: isMobile ? 1 : undefined }} onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--accent-primary)'} onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border-color)'}>Historial</button>
+                       {p.debt > 0 && <button onClick={(e) => { e.stopPropagation(); setShowAbonar(p); setAbonarMonto(''); setAbonarMotivo(''); }} style={{ padding: '8px 16px', background: 'var(--wash-danger)', color: 'var(--accent-danger)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', fontWeight: 700, cursor: 'pointer', flex: isMobile ? 1 : undefined }}>Abonar</button>}
                    </div>
                </div>
              ))}
@@ -122,27 +127,27 @@ export default function ProveedoresModule() {
 
       {showModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(30,58,95,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: isMobile ? '24px' : '32px', width: '400px', maxWidth: '92vw', boxSizing: 'border-box', boxShadow: '0 10px 25px rgba(30,58,95,0.5)' }}>
+          <div className="ledger-sheet" style={{ padding: isMobile ? '24px' : '32px', width: '400px', maxWidth: '92vw', boxSizing: 'border-box', boxShadow: 'var(--shadow-lg)' }}>
             <h2 style={{ fontSize: '1.5rem', fontWeight: 800, margin: '0 0 24px 0', color: 'var(--text-primary)' }}>Nuevo Proveedor</h2>
             <div style={{ marginBottom: '16px' }}>
               <label style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '6px', fontWeight: 600 }}>Nombre</label>
               <input type="text" value={newProv.name} onChange={e => setNewProv({ ...newProv, name: e.target.value })}
-                style={{ width: '100%', padding: '10px 12px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '8px', outline: 'none', fontSize: '0.95rem', boxSizing: 'border-box' }} />
+                style={{ width: '100%', padding: '10px 12px', background: 'var(--bg-main)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: 'var(--radius-sm)', outline: 'none', fontSize: '0.95rem', boxSizing: 'border-box' }} />
             </div>
             <div style={{ marginBottom: '16px' }}>
               <label style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '6px', fontWeight: 600 }}>Contacto</label>
               <input type="text" value={newProv.contact} onChange={e => setNewProv({ ...newProv, contact: e.target.value })}
-                style={{ width: '100%', padding: '10px 12px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '8px', outline: 'none', fontSize: '0.95rem', boxSizing: 'border-box' }} />
+                style={{ width: '100%', padding: '10px 12px', background: 'var(--bg-main)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: 'var(--radius-sm)', outline: 'none', fontSize: '0.95rem', boxSizing: 'border-box' }} />
             </div>
             <div style={{ marginBottom: '24px' }}>
               <label style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '6px', fontWeight: 600 }}>Tel&eacute;fono</label>
               <input type="text" value={newProv.phone} onChange={e => setNewProv({ ...newProv, phone: e.target.value })} placeholder="+54 9 11 1234-5678"
-                style={{ width: '100%', padding: '10px 12px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '8px', outline: 'none', fontSize: '0.95rem', boxSizing: 'border-box' }} />
+                style={{ width: '100%', padding: '10px 12px', background: 'var(--bg-main)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: 'var(--radius-sm)', outline: 'none', fontSize: '0.95rem', boxSizing: 'border-box' }} />
             </div>
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
               <button onClick={() => { setShowModal(false); setNewProv({ name: '', contact: '', phone: '' }); }} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', padding: '10px 16px', borderRadius: '8px', cursor: 'pointer', transition: 'all 0.15s', fontWeight: 600 }}>Cancelar</button>
-              <button onClick={handleCreate} style={{ background: 'var(--gradient-primary)', border: 'none', color: 'white', padding: '10px 24px', borderRadius: '8px', cursor: 'pointer', transition: 'all 0.15s', fontWeight: 700 }}>
-                Crear Proveedor
+              <button onClick={handleCreate} style={{ background: 'var(--accent-primary)', border: 'none', color: 'var(--sheet)', padding: '10px 24px', borderRadius: 'var(--radius-sm)', cursor: 'pointer', transition: 'filter 0.15s', fontWeight: 800 }}>
+                Crear proveedor
               </button>
             </div>
           </div>
@@ -151,18 +156,18 @@ export default function ProveedoresModule() {
 
       {showAbonar && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(30,58,95,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: isMobile ? '24px' : '32px', width: '400px', maxWidth: '92vw', boxSizing: 'border-box', boxShadow: '0 10px 25px rgba(30,58,95,0.5)' }}>
+          <div className="ledger-sheet" style={{ padding: isMobile ? '24px' : '32px', width: '400px', maxWidth: '92vw', boxSizing: 'border-box', boxShadow: 'var(--shadow-lg)' }}>
             <h2 style={{ fontSize: '1.5rem', fontWeight: 800, margin: '0 0 8px 0', color: 'var(--text-primary)' }}>Abonar a {showAbonar.name}</h2>
             <p style={{ color: 'var(--text-secondary)', marginBottom: '24px', fontSize: '0.9rem' }}>Deuda actual: ${(showAbonar.debt ?? 0).toLocaleString('es-AR')}</p>
             <div style={{ marginBottom: '16px' }}>
               <label style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '6px', fontWeight: 600 }}>Monto ($)</label>
               <input type="number" value={abonarMonto} onChange={e => setAbonarMonto(e.target.value)} autoFocus
-                style={{ width: '100%', padding: '10px 12px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '8px', outline: 'none', fontSize: '1.1rem', boxSizing: 'border-box' }} />
+                style={{ width: '100%', padding: '10px 12px', background: 'var(--bg-main)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: 'var(--radius-sm)', outline: 'none', fontSize: '1.1rem', boxSizing: 'border-box' }} />
             </div>
             <div style={{ marginBottom: '24px' }}>
               <label style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '6px', fontWeight: 600 }}>Motivo</label>
               <input type="text" value={abonarMotivo} onChange={e => setAbonarMotivo(e.target.value)} placeholder="Ej: Pago factura 001"
-                style={{ width: '100%', padding: '10px 12px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '8px', outline: 'none', fontSize: '0.95rem', boxSizing: 'border-box' }} />
+                style={{ width: '100%', padding: '10px 12px', background: 'var(--bg-main)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: 'var(--radius-sm)', outline: 'none', fontSize: '0.95rem', boxSizing: 'border-box' }} />
             </div>
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
               <button onClick={() => setShowAbonar(null)} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', padding: '10px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Cancelar</button>
@@ -187,7 +192,7 @@ export default function ProveedoresModule() {
                     addToast(data.detail || 'No se pudo registrar el pago.', 'error');
                   }
                 } catch { addToast('Sin internet. Revisá tu conexión.', 'error'); }
-              }} style={{ background: 'var(--accent-danger)', border: 'none', color: 'white', padding: '10px 24px', borderRadius: '8px', cursor: 'pointer', fontWeight: 700 }}
+              }} style={{ background: 'var(--accent-primary)', border: 'none', color: 'var(--sheet)', padding: '10px 24px', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontWeight: 800 }}
                 disabled={!abonarMonto || parseFloat(abonarMonto) <= 0}>
                 Pagar
               </button>

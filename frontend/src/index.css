@@ -178,6 +178,10 @@
 /* Regla vertical divisoria entre bloques de la hoja */
 .ledger-vrule { width: 1px; align-self: stretch; background: var(--rule); }
 
+/* Botón de acción de la columna de tabla (inventario): ghost, acento al hover */
+.stock-act { transition: border-color 0.15s ease, color 0.15s ease; }
+.stock-act:hover { border-color: var(--accent-primary); color: var(--accent-primary); }
+
 * {
   box-sizing: border-box;
   margin: 0;
