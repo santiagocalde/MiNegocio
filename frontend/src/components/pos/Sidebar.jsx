@@ -42,7 +42,6 @@ const NAV_ITEMS = [
     category: 'SISTEMA',
     roles: ['admin'],
     items: [
-      ...(businessType === 'corralon' ? [{ label: 'Presupuestos', path: '/panel/presupuestos', icon: 'Clipboard' }] : []),
       { label: 'Historial', path: '/panel/auditoria', icon: 'Clipboard', minPlan: 'pro', featureKey: 'auditoria' },
       { label: 'Configuración', path: '/panel/configuracion', icon: 'Settings' },
       { label: 'Usuarios', path: '/panel/usuarios', icon: 'Users' },
