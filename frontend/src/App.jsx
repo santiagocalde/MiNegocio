@@ -33,6 +33,7 @@ const RecomendacionesModule = lazy(() => import('./features/RecomendacionesModul
 const UsuariosModule = lazy(() => import('./features/UsuariosModule'));
 const AuditModule = lazy(() => import('./features/AuditModule'));
 const QuotesModule = lazy(() => import('./features/QuotesModule'));
+const RemitosModule = lazy(() => import('./features/RemitosModule'));
 const PreviewPage = lazy(() => import('./pages/PreviewPage'));
 const PublicCatalog = lazy(() => import('./pages/PublicCatalog'));
 const TermsPage = lazy(() => import('./pages/TermsPage'));
@@ -83,6 +84,7 @@ function App() {
           <Route path="usuarios" element={<PanelSuspense><UsuariosModule /></PanelSuspense>} />
           <Route path="auditoria" element={<PanelSuspense><AuditModule /></PanelSuspense>} />
           <Route path="presupuestos" element={<PanelSuspense><QuotesModule /></PanelSuspense>} />
+          <Route path="remitos" element={<PanelSuspense><RemitosModule /></PanelSuspense>} />
           <Route path="configuracion" element={<PanelSuspense><ConfigPage /></PanelSuspense>} />
           <Route path="soporte" element={<PanelSuspense><SoportePage /></PanelSuspense>} />
           <Route path="plan" element={<PanelSuspense><PlanPage /></PanelSuspense>} />

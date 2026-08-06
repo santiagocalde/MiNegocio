@@ -117,6 +117,7 @@ export default function Sidebar({
   if (businessType === 'corralon') {
     const sistemaSection = NAV_ITEMS.find(s => s.category === 'SISTEMA');
     if (sistemaSection && !sistemaSection.items.some(i => i.path === '/panel/presupuestos')) {
+      sistemaSection.items.unshift({ label: 'Remitos', path: '/panel/remitos', icon: 'Truck' });
       sistemaSection.items.unshift({ label: 'Presupuestos', path: '/panel/presupuestos', icon: 'Clipboard' });
     }
   }
