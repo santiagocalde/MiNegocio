@@ -379,6 +379,7 @@ from core.plan_limits import (
 
 # ── Routers ───────────────────────────────────────────────────
 from routers.operators import router as operators_router
+from routers.quotes import router as quotes_router
 from routers.products import router as products_router
 from routers.sales import router as sales_router
 from routers.inventory import router as inventory_router
@@ -405,6 +406,7 @@ app.include_router(reports_router)
 app.include_router(auth_router)
 app.include_router(billing_router, prefix="/api/billing")
 app.include_router(admin_router)
+app.include_router(quotes_router)
 
 if __name__ == "__main__":
     import uvicorn

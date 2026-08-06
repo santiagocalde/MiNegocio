@@ -420,6 +420,28 @@ async def init_pg() -> None:
             );
             CREATE INDEX IF NOT EXISTS idx_promotion_conditions_promo ON promotion_conditions(promotion_id);
 
+            CREATE TABLE IF NOT EXISTS quotes (
+                id              SERIAL PRIMARY KEY,
+                business_id     TEXT NOT NULL REFERENCES businesses(id),
+                customer_id     INTEGER REFERENCES customers(id),
+                status          TEXT DEFAULT 'draft',
+                list_type       TEXT DEFAULT 'a',
+                note            TEXT,
+                valid_days      INTEGER DEFAULT 15,
+                created_at      TIMESTAMPTZ DEFAULT now(),
+                expires_at      TIMESTAMPTZ
+            );
+            CREATE INDEX IF NOT EXISTS idx_quotes_business_id ON quotes(business_id);
+
+            CREATE TABLE IF NOT EXISTS quote_items (
+                id              SERIAL PRIMARY KEY,
+                quote_id        INTEGER NOT NULL REFERENCES quotes(id) ON DELETE CASCADE,
+                product_id      INTEGER NOT NULL,
+                quantity        NUMERIC(12,3) NOT NULL DEFAULT 1,
+                unit_price      NUMERIC(12,2) NOT NULL DEFAULT 0
+            );
+            CREATE INDEX IF NOT EXISTS idx_quote_items_quote_id ON quote_items(quote_id);
+
             CREATE TABLE IF NOT EXISTS sucursales (
                 id              SERIAL PRIMARY KEY,
                 business_id     TEXT NOT NULL REFERENCES businesses(id),
