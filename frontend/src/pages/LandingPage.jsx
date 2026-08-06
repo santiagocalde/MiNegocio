@@ -43,7 +43,7 @@ export default function LandingPage() {
   // Tema de la landing: claro por default (mejor conversión en mobile a la luz),
   // oscuro opcional. Persiste la elección del visitante.
   const [theme, setTheme] = useState(() => {
-    try { return localStorage.getItem('lp_theme') || 'dark'; } catch { return 'dark'; }
+    try { return localStorage.getItem('lp_theme') || 'light'; } catch { return 'light'; }
   });
   const toggleTheme = useCallback(() => {
     setTheme(t => {
