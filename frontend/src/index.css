@@ -59,8 +59,15 @@
     radial-gradient(circle at 15% -5%, rgba(20, 187, 166, 0.10) 0%, transparent 45%),
     radial-gradient(circle at 85% 105%, rgba(15, 138, 125, 0.08) 0%, transparent 45%);
 
-  --font-main: 'Inter', system-ui, -apple-system, sans-serif;
-  --font-display: 'Bricolage Grotesque', 'Inter', system-ui, sans-serif;
+  /* Ledger — "El Libro Mayor": renglones, hoja, radios sobrios */
+  --sheet: #131F38;
+  --rule: rgba(255, 255, 255, 0.11);
+  --rule-strong: rgba(255, 255, 255, 0.22);
+  --radius: 6px;
+  --radius-sm: 4px;
+
+  --font-main: 'Hanken Grotesk', 'Inter', system-ui, -apple-system, sans-serif;
+  --font-display: 'Bricolage Grotesque', 'Hanken Grotesk', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 }
 
@@ -109,7 +116,67 @@
   --app-bg-image:
     radial-gradient(circle at 15% -5%, rgba(14, 156, 138, 0.06) 0%, transparent 45%),
     radial-gradient(circle at 85% 105%, rgba(15, 138, 125, 0.05) 0%, transparent 45%);
+
+  /* Ledger — hoja de papel + renglón de tinta */
+  --sheet: #FFFFFF;
+  --rule: rgba(11, 19, 43, 0.13);
+  --rule-strong: rgba(11, 19, 43, 0.22);
 }
+
+/* ══════════════════════════════════════════════════════════════
+   "El Libro Mayor" — lenguaje ledger para el sistema interno.
+   La estructura viene del RENGLÓN (hairline), no de cajas redondeadas.
+   Los números viven a la derecha, en mono tabular. Cero gradientes de chrome.
+   ══════════════════════════════════════════════════════════════ */
+
+/* La hoja: superficie plana, marco fino, radio sobrio. Sin sombra de "card flotante". */
+.ledger-sheet {
+  background: var(--sheet);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+}
+
+/* Encabezado de sección de la hoja — editorial, a la izquierda */
+.ledger-title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+/* Micro-label estilo columna de libro contable */
+.ledger-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+/* Cifra tabular — el protagonista */
+.ledger-num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  letter-spacing: -0.02em;
+}
+
+/* Fila reglada: la línea vive abajo (border-bottom = el renglón) */
+.ledger-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 13px 18px;
+  border-bottom: 1px solid var(--rule);
+}
+.ledger-row:last-child { border-bottom: none; }
+.ledger-row--hover { transition: background 0.12s ease; cursor: pointer; }
+.ledger-row--hover:hover { background: var(--surface-veil); }
+
+/* Regla vertical divisoria entre bloques de la hoja */
+.ledger-vrule { width: 1px; align-self: stretch; background: var(--rule); }
 
 * {
   box-sizing: border-box;
@@ -340,30 +407,28 @@ svg {
 }
 
 
-/* Search Bar (Top) */
+/* Search Bar (Top) — hoja plana, sin glass ni glow */
 .search-bar {
   display: flex;
   align-items: center;
   gap: 12px;
-  background: var(--gradient-card);
-  backdrop-filter: blur(12px);
+  background: var(--sheet);
   padding: 0 20px;
   height: 56px;
-  border-radius: 12px;
+  border-radius: var(--radius);
   border: 1px solid var(--border-color);
-  box-shadow: 0 4px 12px -2px rgba(30,58,95, 0.2);
-  transition: all 0.3s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 .search-bar.flash {
   animation: flash-green 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 @keyframes flash-green {
-  0% { background: rgba(16, 185, 129, 0.15); border-color: var(--accent-success); box-shadow: var(--shadow-success); }
-  100% { background: var(--gradient-card); border-color: var(--border-color); }
+  0% { background: var(--wash-success); border-color: var(--accent-success); }
+  100% { background: var(--sheet); border-color: var(--border-color); }
 }
 .search-bar:focus-within {
   border-color: var(--border-focus);
-  box-shadow: 0 0 0 3px rgba(20,187,166, 0.2), 0 4px 12px -2px rgba(30,58,95, 0.2);
+  box-shadow: 0 0 0 3px var(--wash-primary);
 }
 .search-bar svg {
   color: var(--accent-primary);

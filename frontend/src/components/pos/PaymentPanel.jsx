@@ -52,10 +52,10 @@ export default function PaymentPanel({
   };
   return (
     <div style={{ position: 'relative', flex: 1, display: 'flex', flexDirection: 'column', gap: '12px', minHeight: 0, overflowY: 'auto' }}>
-      <div style={{ background: 'var(--bg-card)', padding: isMobile ? '10px 12px' : '12px 16px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+      <div className="ledger-sheet" style={{ padding: isMobile ? '10px 12px' : '14px 18px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: rowMb }}>
-          <h2 style={{ fontSize: isMobile ? '1.05rem' : '1.3rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)', letterSpacing: '-0.2px' }}>Resumen</h2>
-          <span style={{ background: 'var(--surface-veil)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '4px 12px', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 600 }}>{cart.length} items</span>
+          <h2 className="ledger-title" style={{ fontSize: isMobile ? '1.05rem' : '1.25rem' }}>Resumen</h2>
+          <span style={{ background: 'var(--surface-veil)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '3px 10px', borderRadius: '3px', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.04em' }}>{cart.length} items</span>
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: rowMb, fontSize: rowFs, color: 'var(--text-secondary)' }}>
@@ -92,7 +92,7 @@ export default function PaymentPanel({
         <button
           onClick={() => setIsCharging(true)}
           disabled={cart.length === 0 || isProcessing}
-          style={{ width: '100%', background: 'var(--gradient-primary)', color: 'white', border: 'none', padding: isMobile ? '13px 16px' : '18px 16px', borderRadius: '12px', fontSize: isMobile ? '1rem' : '1.1rem', fontWeight: 800, cursor: cart.length === 0 ? 'not-allowed' : 'pointer', opacity: cart.length === 0 ? 0.5 : 1, transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: cart.length === 0 ? 'none' : '0 8px 24px rgba(20,187,166,0.3)' }}
+          style={{ width: '100%', background: 'var(--accent-primary)', color: 'var(--sheet)', border: 'none', padding: isMobile ? '13px 16px' : '18px 16px', borderRadius: 'var(--radius-sm)', fontSize: isMobile ? '1rem' : '1.1rem', fontWeight: 800, cursor: cart.length === 0 ? 'not-allowed' : 'pointer', opacity: cart.length === 0 ? 0.5 : 1, transition: 'filter 0.15s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
         >
           <Icons.Check /> {isProcessing ? 'Procesando...' : 'Procesar Venta'}
         </button>
@@ -119,9 +119,9 @@ export default function PaymentPanel({
         </div>
       </div>
 
-      <div style={{ marginTop: '0', background: 'var(--bg-card)', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+      <div className="ledger-sheet" style={{ marginTop: '0', padding: '14px 18px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-          <h3 style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-primary)', fontWeight: 700 }}>Accesos Rápidos</h3>
+          <h3 className="ledger-label" style={{ fontSize: '0.72rem' }}>Accesos rápidos</h3>
           <button onClick={() => setIsEditingQuick(!isEditingQuick)} style={{ background: isEditingQuick ? 'var(--accent-primary)' : 'var(--surface-veil)', color: isEditingQuick ? 'var(--bg-card)' : 'var(--text-secondary)', border: 'none', borderRadius: '6px', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s' }}>
             <Icons.Edit style={{ width: '16px', height: '16px' }} />
           </button>

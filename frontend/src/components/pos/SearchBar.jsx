@@ -42,13 +42,13 @@ export default function SearchBar({
   }, [search, productsDB]);
 
   return (
-    <div style={{ background: 'var(--bg-card)', padding: isMobile ? '10px 12px' : '12px 16px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
-      <div style={{ display: 'flex', justifyContent: isMobile ? 'flex-end' : 'space-between', alignItems: 'flex-start', marginBottom: isMobile ? '10px' : '16px' }}>
+    <div className="ledger-sheet" style={{ padding: isMobile ? '10px 12px' : '14px 18px' }}>
+      <div style={{ display: 'flex', justifyContent: isMobile ? 'flex-end' : 'space-between', alignItems: 'flex-start', marginBottom: isMobile ? '10px' : '14px' }}>
         {/* En mobile el título y la ayuda son redundantes: el propio campo ya lo dice */}
         {!isMobile && (
           <div>
-            <h2 style={{ fontSize: '1.3rem', fontWeight: 800, margin: '0 0 2px 0', letterSpacing: '-0.2px' }}>Buscar Producto</h2>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0 }}>Escanee código de barras o escriba el nombre del producto</p>
+            <h2 className="ledger-title" style={{ fontSize: '1.25rem', marginBottom: 2 }}>Buscar producto</h2>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0 }}>Escaneá el código de barras o escribí el nombre</p>
           </div>
         )}
 

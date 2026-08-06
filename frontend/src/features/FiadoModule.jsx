@@ -147,20 +147,22 @@ export default function FiadoModule() {
   return (
     <div style={{ padding: '12px 20px', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflowY: 'auto' }}>
 
-      {/* HEADER */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexShrink: 0 }}>
-        <h2 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>Fiados</h2>
+      {/* HEADER editorial */}
+      <div style={{ marginBottom: '16px', flexShrink: 0 }}>
+        <div className="ledger-label">Cuaderno de fiados</div>
+        <h1 className="ledger-title" style={{ fontSize: '1.6rem', marginTop: 4 }}>Quién te debe</h1>
       </div>
 
-      {/* METRICAS */}
-      <div style={{ display: 'flex', gap: '16px', marginBottom: '12px', flexShrink: 0 }}>
-        <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '16px', flex: 1, position: 'relative', overflow: 'hidden' }}>
-           <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase', marginBottom: '4px' }}>Deuda Total en la Calle</div>
-           <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--accent-warning)', fontFamily: 'var(--font-mono)' }}>${totalDeuda.toLocaleString('es-AR')}</div>
+      {/* METRICAS — hoja reglada de dos columnas (deuda | clientes) */}
+      <div className="ledger-sheet" style={{ display: 'flex', marginBottom: '18px', flexShrink: 0 }}>
+        <div style={{ flex: 1, padding: '16px 20px' }}>
+          <div className="ledger-label">Deuda total en la calle</div>
+          <div className="ledger-num" style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--accent-warning)', marginTop: 4 }}>${totalDeuda.toLocaleString('es-AR')}</div>
         </div>
-        <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '16px', flex: 1, position: 'relative', overflow: 'hidden' }}>
-           <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase', marginBottom: '4px' }}>Clientes Fiados</div>
-           <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-primary)' }}>{customers.length}</div>
+        <div className="ledger-vrule" />
+        <div style={{ flex: 1, padding: '16px 20px' }}>
+          <div className="ledger-label">Clientes con cuenta</div>
+          <div className="ledger-num" style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: 4 }}>{customers.length}</div>
         </div>
       </div>
 
@@ -168,28 +170,30 @@ export default function FiadoModule() {
       <div style={{ display: 'flex', gap: '16px', marginBottom: '24px', flexShrink: 0, flexWrap: 'wrap' }}>
         <div style={{ position: 'relative', flex: 1, minWidth: isMobile ? '100%' : 220 }}>
           <span style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }}><Icons.Search /></span>
-          <input 
-            type="text" 
-            placeholder="Buscar cliente por nombre..." 
+          <input
+            type="text"
+            placeholder="Buscar cliente por nombre..."
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
-            style={{ width: '100%', background: 'var(--bg-main)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '16px 16px 16px 48px', borderRadius: '12px', fontSize: '1rem', outline: 'none' }} 
+            style={{ width: '100%', background: 'var(--sheet)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '14px 16px 14px 46px', borderRadius: 'var(--radius-sm)', fontSize: '1rem', outline: 'none' }}
           />
         </div>
-        <button 
+        <button
           onClick={() => setNewClientModal(true)}
-          style={{ padding: isMobile ? '14px 24px' : '0 24px', width: isMobile ? '100%' : undefined, justifyContent: 'center', background: 'var(--gradient-primary)', color: 'white', border: 'none', borderRadius: '12px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 8px 16px -4px rgba(20,187,166,0.3)' }}
+          style={{ padding: isMobile ? '14px 24px' : '0 24px', width: isMobile ? '100%' : undefined, justifyContent: 'center', background: 'var(--accent-primary)', color: 'var(--sheet)', border: 'none', borderRadius: 'var(--radius-sm)', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', transition: 'filter 0.15s' }}
+          onMouseEnter={e => e.currentTarget.style.filter = 'brightness(1.08)'}
+          onMouseLeave={e => e.currentTarget.style.filter = 'brightness(1)'}
         >
           <span style={{ fontSize: '1.2rem' }}>+</span> Nuevo Cliente
         </button>
       </div>
 
-      {/* LISTA DE CLIENTES */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto' }}>
-        {loading && Array.from({ length: 3 }).map((_, i) => <SkeletonCard key={i} lines={2} />)}
-        
+      {/* CUADERNO — hoja continua con renglones por cliente */}
+      <div className="ledger-sheet" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+        {loading && <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>{Array.from({ length: 3 }).map((_, i) => <SkeletonCard key={i} lines={2} />)}</div>}
+
         {!loading && filteredCustomers.length === 0 && (
-          <div style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '48px', background: 'var(--bg-card)', borderRadius: '16px', border: '1px solid var(--border-color)' }}>
+          <div style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '48px' }}>
             No hay clientes con deuda activa o que coincidan con la búsqueda.
           </div>
         )}
@@ -199,13 +203,13 @@ export default function FiadoModule() {
           const transactions = transactionsMap[c.id] || [];
 
           return (
-            <div key={c.id} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '16px', overflow: 'hidden', transition: 'all 0.2s' }}>
-              <div 
+            <div key={c.id} style={{ borderBottom: '1px solid var(--rule)', transition: 'background 0.15s', background: isExpanded ? 'var(--surface-veil)' : 'transparent' }}>
+              <div
                 onClick={() => handleExpand(c)}
-                style={{ padding: '16px', display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'stretch' : 'center', gap: isMobile ? '12px' : 0, justifyContent: 'space-between', cursor: 'pointer', transition: 'all 0.15s', background: isExpanded ? 'rgba(255,255,255,0.02)' : 'transparent' }}
+                style={{ padding: '14px 18px', display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'stretch' : 'center', gap: isMobile ? '12px' : 0, justifyContent: 'space-between', cursor: 'pointer' }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1 }}>
-                  <div style={{ width: '40px', height: '40px', background: 'rgba(255,255,255,0.05)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: 1 }}>
+                  <div style={{ width: '38px', height: '38px', background: 'var(--surface-veil)', border: '1px solid var(--border-color)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)', flexShrink: 0 }}>
                     <Icons.User />
                   </div>
                   <div>
@@ -216,12 +220,12 @@ export default function FiadoModule() {
                       {c.created_at && (() => {
                         const days = Math.floor((Date.now() - new Date(c.created_at)) / 86400000);
                         const tone = days < 7
-                          ? { bg: 'rgba(16,185,129,0.15)', bd: 'rgba(16,185,129,0.3)', fg: '#6EE7B7' }
+                          ? { bg: 'var(--wash-success)', fg: 'var(--accent-success)' }
                           : days < 30
-                            ? { bg: 'rgba(245,158,11,0.15)', bd: 'rgba(245,158,11,0.3)', fg: '#FCD34D' }
-                            : { bg: 'rgba(239,68,68,0.15)', bd: 'rgba(239,68,68,0.3)', fg: '#FCA5A5' };
+                            ? { bg: 'var(--wash-warning)', fg: 'var(--accent-warning)' }
+                            : { bg: 'var(--wash-danger)', fg: 'var(--accent-danger)' };
                         return (
-                          <span title="Antigüedad de la cuenta (desde que se creó el cliente, no necesariamente desde la última venta fiada)" style={{ background: tone.bg, border: `1px solid ${tone.bd}`, color: tone.fg, padding: '2px 8px', borderRadius: '99px', fontSize: '0.7rem', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                          <span title="Antigüedad de la cuenta (desde que se creó el cliente, no necesariamente desde la última venta fiada)" style={{ background: tone.bg, border: '1px solid var(--border-color)', color: tone.fg, padding: '2px 8px', borderRadius: '3px', fontSize: '0.68rem', fontWeight: 800, letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>
                             {days === 0 ? 'Hoy' : days === 1 ? '1 día' : `${days} días`}
                           </span>
                         );
@@ -232,21 +236,25 @@ export default function FiadoModule() {
                 
                 <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '10px' : '20px', flexWrap: 'wrap', justifyContent: isMobile ? 'space-between' : 'flex-end' }}>
                   <div style={{ textAlign: isMobile ? 'left' : 'right' }}>
-                    <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', textTransform: 'uppercase', marginBottom: '2px' }}>Saldo Deudor</div>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '1.2rem', fontWeight: 800, color: 'var(--accent-warning)' }}>${(c.balance ?? 0).toLocaleString('es-AR')}</div>
+                    <div className="ledger-label">Saldo deudor</div>
+                    <div className="ledger-num" style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--accent-warning)', marginTop: 2 }}>${(c.balance ?? 0).toLocaleString('es-AR')}</div>
                   </div>
                   {currentPlan === 'ia' && (
                     <button
                       onClick={(e) => { e.stopPropagation(); handleCobranzaIA(c); }}
                       title="Generar mensaje de cobranza con IA"
-                      style={{ background: 'linear-gradient(135deg, #7c3aed, var(--accent-primary))', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 14px', fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s', display: 'flex', alignItems: 'center', gap: '6px' }}
+                      style={{ background: 'transparent', color: 'var(--accent-primary)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', padding: '8px 13px', fontSize: '0.86rem', fontWeight: 700, cursor: 'pointer', transition: 'border-color 0.15s', display: 'flex', alignItems: 'center', gap: '6px' }}
+                      onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--accent-primary)'}
+                      onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border-color)'}
                     >
-                      💬 Cobrar con IA
+                      Cobrar con IA
                     </button>
                   )}
                   <button
                     onClick={(e) => { e.stopPropagation(); setAbonoModal(c); }}
-                    style={{ background: 'var(--gradient-success)', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 16px', fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s', display: 'flex', alignItems: 'center', gap: '6px' }}
+                    style={{ background: 'var(--accent-primary)', color: 'var(--sheet)', border: 'none', borderRadius: 'var(--radius-sm)', padding: '8px 15px', fontSize: '0.86rem', fontWeight: 800, cursor: 'pointer', transition: 'filter 0.15s', display: 'flex', alignItems: 'center', gap: '6px' }}
+                    onMouseEnter={e => e.currentTarget.style.filter = 'brightness(1.08)'}
+                    onMouseLeave={e => e.currentTarget.style.filter = 'brightness(1)'}
                   >
                     <Icons.DollarSign /> Recibir pago
                   </button>
@@ -257,13 +265,13 @@ export default function FiadoModule() {
               </div>
 
               {isExpanded && (
-                <div style={{ borderTop: '1px solid var(--border-color)', background: 'var(--bg-main)', overflowX: 'auto' }}>
+                <div style={{ borderTop: '1px solid var(--rule-strong)', background: 'var(--bg-main)', overflowX: 'auto' }}>
                   <table style={{ width: '100%', minWidth: 380, borderCollapse: 'collapse', textAlign: 'left' }}>
                     <thead>
-                      <tr style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: 600, borderBottom: '1px solid var(--border-color)' }}>
-                        <th style={{ padding: '16px 24px' }}>Fecha</th>
-                        <th style={{ padding: '16px 24px' }}>Descripción</th>
-                        <th style={{ padding: '16px 24px', textAlign: 'right' }}>Monto</th>
+                      <tr style={{ borderBottom: '1px solid var(--rule)' }}>
+                        <th className="ledger-label" style={{ padding: '12px 24px', textAlign: 'left' }}>Fecha</th>
+                        <th className="ledger-label" style={{ padding: '12px 24px', textAlign: 'left' }}>Descripción</th>
+                        <th className="ledger-label" style={{ padding: '12px 24px', textAlign: 'right' }}>Monto</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -271,13 +279,13 @@ export default function FiadoModule() {
                         <tr><td colSpan="3" style={{ padding: '16px 24px', textAlign: 'center', color: 'var(--text-secondary)' }}>Cargando movimientos...</td></tr>
                       ) : (
                         transactions.map(t => (
-                          <tr key={t.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                            <td style={{ padding: '16px 24px', color: 'var(--text-primary)', fontSize: '0.9rem' }}>
+                          <tr key={t.id} style={{ borderBottom: '1px solid var(--rule)' }}>
+                            <td className="ledger-num" style={{ padding: '13px 24px', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
                               {t.timestamp ? `${new Date(t.timestamp).toLocaleDateString('es-AR')} ${new Date(t.timestamp).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}` : '---'}
                             </td>
-                            <td style={{ padding: '16px 24px', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{t.description}</td>
-                            <td style={{ padding: '16px 24px', fontFamily: 'var(--font-mono)', fontWeight: 700, color: t.type === 'payment' ? 'var(--accent-success)' : 'var(--accent-danger)', textAlign: 'right' }}>
-                              {t.type === 'payment' ? '-' : '+'}${t.amount.toLocaleString('es-AR')}
+                            <td style={{ padding: '13px 24px', color: 'var(--text-primary)', fontSize: '0.9rem' }}>{t.description}</td>
+                            <td className="ledger-num" style={{ padding: '13px 24px', fontWeight: 700, color: t.type === 'payment' ? 'var(--accent-success)' : 'var(--accent-danger)', textAlign: 'right' }}>
+                              {t.type === 'payment' ? '−' : '+'}${t.amount.toLocaleString('es-AR')}
                             </td>
                           </tr>
                         ))
@@ -294,10 +302,11 @@ export default function FiadoModule() {
       {/* MODAL COBRANZA IA */}
       {cobranza && (
         <div className="modal-overlay" onClick={() => setCobranza(null)}>
-          <div onClick={e => e.stopPropagation()} style={{ background: 'var(--bg-card)', padding: '32px', borderRadius: '24px', width: '460px', maxWidth: '92vw', border: '1px solid rgba(165,180,252,0.3)' }}>
-            <h3 style={{ margin: '0 0 4px 0', fontSize: '1.4rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '10px' }}>
-              💬 Mensaje de cobranza
-            </h3>
+          <div onClick={e => e.stopPropagation()} className="ledger-sheet" style={{ padding: '28px', width: '460px', maxWidth: '92vw', boxShadow: 'var(--shadow-lg)' }}>
+            <div className="ledger-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ background: 'var(--accent-primary)', color: 'var(--sheet)', padding: '1px 6px', borderRadius: 3, fontSize: '0.62rem', fontWeight: 800 }}>IA</span> Cobranza
+            </div>
+            <h3 className="ledger-title" style={{ margin: '6px 0 4px', fontSize: '1.4rem' }}>Mensaje de cobranza</h3>
             <p style={{ color: 'var(--text-secondary)', marginBottom: '20px', fontSize: '0.9rem' }}>
               Para <strong>{cobranza.nombre}</strong>. Escrito por IA, podés editarlo antes de enviar.
             </p>
@@ -331,8 +340,8 @@ export default function FiadoModule() {
       {/* MODAL ABONO */}
       {abonoModal && (
         <div className="modal-overlay" onClick={() => setAbonoModal(null)}>
-          <div onClick={e => e.stopPropagation()} style={{ background: 'var(--bg-card)', padding: '32px', borderRadius: '24px', width: '400px', maxWidth: '90vw', border: '1px solid var(--border-color)' }}>
-            <h3 style={{ margin: '0 0 8px 0', fontSize: '1.5rem', color: 'var(--text-primary)' }}>Recibir Pago</h3>
+          <div onClick={e => e.stopPropagation()} className="ledger-sheet" style={{ padding: '28px', width: '400px', maxWidth: '90vw', boxShadow: 'var(--shadow-lg)' }}>
+            <h3 className="ledger-title" style={{ margin: '0 0 8px 0', fontSize: '1.5rem' }}>Recibir pago</h3>
             <p style={{ color: 'var(--text-secondary)', marginBottom: '24px' }}>Cliente: <strong>{abonoModal.name}</strong><br/>Deuda Total: <strong style={{color: 'var(--accent-warning)'}}>${(abonoModal.balance ?? 0).toLocaleString('es-AR')}</strong></p>
             
             <div style={{ marginBottom: '24px' }}>
@@ -346,13 +355,13 @@ export default function FiadoModule() {
                 style={{ width: '100%', background: 'var(--bg-main)', border: '2px solid var(--accent-primary)', color: 'var(--text-primary)', padding: '16px', borderRadius: '12px', fontSize: '1.5rem', fontFamily: 'var(--font-mono)', textAlign: 'center', outline: 'none' }}
               />
               <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
-                <button onClick={() => setAbonoAmount(String(abonoModal.balance))} style={{ flex: 1, padding: '8px', background: 'rgba(255,255,255,0.05)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '6px', cursor: 'pointer', transition: 'all 0.15s' }}>Saldar Todo</button>
+                <button onClick={() => setAbonoAmount(String(abonoModal.balance))} style={{ flex: 1, padding: '9px', background: 'var(--surface-veil)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontWeight: 700, transition: 'all 0.15s' }}>Saldar todo</button>
               </div>
             </div>
 
             <div style={{ display: 'flex', gap: '12px' }}>
-              <button onClick={() => setAbonoModal(null)} style={{ flex: 1, padding: '16px', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', borderRadius: '12px', fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s' }}>Cancelar</button>
-              <button onClick={handleAbonar} disabled={!abonoAmount} style={{ flex: 1, padding: '16px', background: 'var(--gradient-success)', border: 'none', color: 'white', borderRadius: '12px', fontWeight: 800, cursor: abonoAmount ? 'pointer' : 'not-allowed', transition: 'all 0.15s', opacity: abonoAmount ? 1 : 0.5 }}>Confirmar Pago</button>
+              <button onClick={() => setAbonoModal(null)} style={{ flex: 1, padding: '15px', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', borderRadius: 'var(--radius-sm)', fontWeight: 700, cursor: 'pointer' }}>Cancelar</button>
+              <button onClick={handleAbonar} disabled={!abonoAmount} style={{ flex: 1, padding: '15px', background: 'var(--accent-primary)', border: 'none', color: 'var(--sheet)', borderRadius: 'var(--radius-sm)', fontWeight: 800, cursor: abonoAmount ? 'pointer' : 'not-allowed', opacity: abonoAmount ? 1 : 0.5 }}>Confirmar pago</button>
             </div>
           </div>
         </div>
@@ -360,8 +369,8 @@ export default function FiadoModule() {
       {/* MODAL NUEVO CLIENTE */}
       {newClientModal && (
         <div className="modal-overlay" onClick={() => setNewClientModal(false)}>
-          <div onClick={e => e.stopPropagation()} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '24px', width: '400px', maxWidth: '90vw', padding: '32px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}>
-            <h3 style={{ margin: '0 0 8px 0', fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)' }}>Nuevo Cliente</h3>
+          <div onClick={e => e.stopPropagation()} className="ledger-sheet" style={{ width: '400px', maxWidth: '90vw', padding: '28px', boxShadow: 'var(--shadow-lg)' }}>
+            <h3 className="ledger-title" style={{ margin: '0 0 8px 0', fontSize: '1.5rem' }}>Nuevo cliente</h3>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '24px' }}>Registre un nuevo cliente en el sistema.</p>
             
             <div style={{ marginBottom: '16px' }}>
@@ -381,8 +390,8 @@ export default function FiadoModule() {
             </div>
 
             <div style={{ display: 'flex', gap: '12px' }}>
-              <button onClick={() => setNewClientModal(false)} style={{ flex: 1, padding: '14px', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', borderRadius: '12px', fontWeight: 700, cursor: 'pointer' }}>Cancelar</button>
-              <button onClick={handleCreateClient} disabled={!newClientName.trim()} style={{ flex: 1, padding: '14px', background: newClientName.trim() ? 'var(--gradient-primary)' : 'var(--bg-hover)', color: newClientName.trim() ? 'white' : 'var(--text-secondary)', border: 'none', borderRadius: '12px', fontWeight: 800, cursor: newClientName.trim() ? 'pointer' : 'not-allowed' }}>Crear Cliente</button>
+              <button onClick={() => setNewClientModal(false)} style={{ flex: 1, padding: '14px', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', borderRadius: 'var(--radius-sm)', fontWeight: 700, cursor: 'pointer' }}>Cancelar</button>
+              <button onClick={handleCreateClient} disabled={!newClientName.trim()} style={{ flex: 1, padding: '14px', background: newClientName.trim() ? 'var(--accent-primary)' : 'var(--bg-hover)', color: newClientName.trim() ? 'var(--sheet)' : 'var(--text-secondary)', border: 'none', borderRadius: 'var(--radius-sm)', fontWeight: 800, cursor: newClientName.trim() ? 'pointer' : 'not-allowed' }}>Crear cliente</button>
             </div>
           </div>
         </div>

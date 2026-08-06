@@ -165,24 +165,31 @@ export default function PurchasesModule() {
       <div style={{ padding: '12px 20px', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
 
       {/* HEADER COMPARTIDO */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '12px', flexShrink: 0 }}>
-        <h2 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>Gestión de Compras</h2>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: '12px', flexWrap: 'wrap', marginBottom: '16px', flexShrink: 0 }}>
+        <div>
+          <div className="ledger-label">Libro de compras</div>
+          <h1 className="ledger-title" style={{ fontSize: '1.6rem', marginTop: 4 }}>Lo que entró</h1>
+        </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           {activeTab === 'history' ? (
             <>
-              <button onClick={() => setActiveTab('new_invoice')} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '10px 16px', borderRadius: '8px', fontSize: '0.95rem', fontWeight: 600, cursor: 'pointer', height: '46px', transition: 'all 0.2s' }}>
-                + Carga Manual
+              <button onClick={() => setActiveTab('new_invoice')} style={{ background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '10px 16px', borderRadius: 'var(--radius-sm)', fontSize: '0.92rem', fontWeight: 700, cursor: 'pointer', height: '44px', transition: 'border-color 0.15s' }}
+                onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--accent-primary)'}
+                onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border-color)'}>
+                + Carga manual
               </button>
               <button
                 onClick={() => canUseIA ? setShowAIScanner(true) : addToast('Esta función requiere el Plan IA.', 'info')}
-                style={{ background: canUseIA ? 'var(--gradient-primary)' : 'rgba(255,255,255,0.05)', border: canUseIA ? 'none' : '1px solid rgba(255,255,255,0.1)', color: canUseIA ? 'white' : 'var(--text-secondary)', padding: '10px 20px', borderRadius: '8px', fontSize: '0.95rem', fontWeight: 700, cursor: canUseIA ? 'pointer' : 'not-allowed', height: '46px', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: canUseIA ? '0 4px 12px rgba(20, 187, 166, 0.3)' : 'none' }}>
-                {canUseIA ? <Icons.Sparkles /> : <Icons.Lock style={{width: 16, height: 16}} />} Escanear Factura
+                style={{ background: canUseIA ? 'var(--accent-primary)' : 'var(--surface-veil)', border: canUseIA ? 'none' : '1px solid var(--border-color)', color: canUseIA ? 'var(--sheet)' : 'var(--text-secondary)', padding: '10px 18px', borderRadius: 'var(--radius-sm)', fontSize: '0.92rem', fontWeight: 800, cursor: canUseIA ? 'pointer' : 'not-allowed', height: '44px', display: 'flex', alignItems: 'center', gap: '8px', transition: 'filter 0.15s' }}
+                onMouseEnter={e => { if (canUseIA) e.currentTarget.style.filter = 'brightness(1.08)'; }}
+                onMouseLeave={e => { if (canUseIA) e.currentTarget.style.filter = 'brightness(1)'; }}>
+                {canUseIA ? <Icons.Sparkles /> : <Icons.Lock style={{width: 16, height: 16}} />} Escanear factura
               </button>
             </>
           ) : (
-            <button onClick={() => setActiveTab('history')} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '10px 16px', borderRadius: '8px', fontSize: '0.95rem', fontWeight: 600, cursor: 'pointer', height: '46px' }}>
-              Volver al Historial
+            <button onClick={() => setActiveTab('history')} style={{ background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '10px 16px', borderRadius: 'var(--radius-sm)', fontSize: '0.92rem', fontWeight: 700, cursor: 'pointer', height: '44px' }}>
+              ← Volver al historial
             </button>
           )}
         </div>

@@ -14,10 +14,10 @@ const stockTone = (stock, min) => {
 export default function CartPanel({ cart, total, adjustedTotal, updateQty, setItemQty, removeItem }) {
   const displayTotal = adjustedTotal ?? total;
   return (
-    <div style={{ flex: 1, background: 'var(--bg-card)', borderRadius: '16px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      <div style={{ padding: '12px 20px', borderBottom: '1px solid var(--border-color)' }}>
-        <h2 style={{ fontSize: '1.2rem', fontWeight: 800, margin: '0 0 4px 0', color: 'var(--text-primary)', letterSpacing: '-0.2px' }}>Carrito</h2>
-        <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>Total: {formatMoney(displayTotal)}</p>
+    <div className="ledger-sheet" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div style={{ padding: '13px 20px', borderBottom: '1px solid var(--rule-strong)', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+        <h2 className="ledger-title" style={{ fontSize: '1.15rem' }}>Carrito</h2>
+        <p className="ledger-num" style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', margin: 0 }}>{formatMoney(displayTotal)}</p>
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '12px 20px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
