@@ -386,6 +386,20 @@ async def admin_delete_business(
             await conn.execute("DELETE FROM audit_log WHERE business_id = $1", business_id)
             await conn.execute("DELETE FROM business_config WHERE business_id = $1", business_id)
             await conn.execute("DELETE FROM auth_tokens WHERE business_id = $1", business_id)
+
+            # Corralón V2: eliminar datos de nuevos módulos
+            await conn.execute("DELETE FROM acopio_withdrawal_items WHERE acopio_item_id IN (SELECT id FROM acopio_items WHERE acopio_id IN (SELECT id FROM acopios WHERE business_id = $1))", business_id)
+            await conn.execute("DELETE FROM acopio_withdrawals WHERE acopio_id IN (SELECT id FROM acopios WHERE business_id = $1)", business_id)
+            await conn.execute("DELETE FROM acopio_items WHERE acopio_id IN (SELECT id FROM acopios WHERE business_id = $1)", business_id)
+            await conn.execute("DELETE FROM acopios WHERE business_id = $1", business_id)
+            await conn.execute("DELETE FROM credit_note_items WHERE credit_note_id IN (SELECT id FROM credit_notes WHERE business_id = $1)", business_id)
+            await conn.execute("DELETE FROM credit_notes WHERE business_id = $1", business_id)
+            await conn.execute("DELETE FROM remito_items WHERE remito_id IN (SELECT id FROM remitos WHERE business_id = $1)", business_id)
+            await conn.execute("DELETE FROM remitos WHERE business_id = $1", business_id)
+            await conn.execute("DELETE FROM quote_items WHERE quote_id IN (SELECT id FROM quotes WHERE business_id = $1)", business_id)
+            await conn.execute("DELETE FROM quotes WHERE business_id = $1", business_id)
+            await conn.execute("DELETE FROM obras WHERE business_id = $1", business_id)
+
             await conn.execute("DELETE FROM businesses WHERE id = $1", business_id)
     
     logger.warning(f"SuperAdmin {admin['email']} ELIMINÓ negocio {biz['email']} ({biz['business_name']}, plan={biz['plan']})")
