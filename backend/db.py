@@ -442,6 +442,28 @@ async def init_pg() -> None:
             );
             CREATE INDEX IF NOT EXISTS idx_quote_items_quote_id ON quote_items(quote_id);
 
+            CREATE TABLE IF NOT EXISTS remitos (
+                id              SERIAL PRIMARY KEY,
+                business_id     TEXT NOT NULL REFERENCES businesses(id),
+                quote_id        INTEGER REFERENCES quotes(id),
+                customer_id     INTEGER REFERENCES customers(id),
+                address         TEXT,
+                driver          TEXT,
+                scheduled_date  DATE,
+                status          TEXT DEFAULT 'pending',
+                created_at      TIMESTAMPTZ DEFAULT now()
+            );
+            CREATE INDEX IF NOT EXISTS idx_remitos_business_id ON remitos(business_id);
+
+            CREATE TABLE IF NOT EXISTS remito_items (
+                id              SERIAL PRIMARY KEY,
+                remito_id       INTEGER NOT NULL REFERENCES remitos(id) ON DELETE CASCADE,
+                product_id      INTEGER NOT NULL,
+                quantity        NUMERIC(12,3) NOT NULL DEFAULT 1,
+                unit_price      NUMERIC(12,2) NOT NULL DEFAULT 0
+            );
+            CREATE INDEX IF NOT EXISTS idx_remito_items_remito_id ON remito_items(remito_id);
+
             CREATE TABLE IF NOT EXISTS sucursales (
                 id              SERIAL PRIMARY KEY,
                 business_id     TEXT NOT NULL REFERENCES businesses(id),
