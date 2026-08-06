@@ -94,11 +94,13 @@ const handleStatus = async (id, status) => {
     if (!detail) return;
     const d = detail;
     const bizName = JSON.parse(localStorage.getItem('saas_business') || '{}')?.business_name || 'Corralón';
+    const logoUrl = JSON.parse(localStorage.getItem('minegocio_config') || '{}')?.logo_url || '';
+    const logoBlock = logoUrl ? `<img src="${logoUrl}" style="max-height:50px;max-width:180px;object-fit:contain;margin-bottom:3mm" alt="logo" />` : '';
     const items = d.items.map(it =>
       `<tr><td style="padding:4px 0">${it.product_name}</td><td style="text-align:center">${it.quantity}</td><td style="text-align:right;font-family:monospace">$${formatPesos(it.unit_price)}</td><td style="text-align:right;font-family:monospace">$${formatPesos(it.unit_price * it.quantity)}</td></tr>`
     ).join('');
     const total = d.items.reduce((s, i) => s + i.unit_price * i.quantity, 0);
-    const header = `<div style="text-align:center;margin-bottom:6mm"><div style="font-size:22px;font-weight:900;letter-spacing:1px">${bizName}</div><div style="font-size:11px;color:#666;margin-top:1mm">Presupuesto · MiNegocio</div></div>`;
+    const header = `<div style="text-align:center;margin-bottom:6mm">${logoBlock}<div style="font-size:22px;font-weight:900;letter-spacing:1px">${bizName}</div><div style="font-size:11px;color:#666;margin-top:1mm">Presupuesto · MiNegocio</div></div>`;
     const block = (label) => `
       <div style="border:1px solid #ccc;padding:12mm;margin-bottom:5mm">
         ${header}

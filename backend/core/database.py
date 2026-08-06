@@ -424,6 +424,9 @@ async def init_db(DB_PATH: str, logger) -> None:
         # Corralón V2: Hojas de Ruta
         await add_column_if_not_exists(db, "remitos", "zone", "TEXT")
         await add_column_if_not_exists(db, "remitos", "sort_order", "INTEGER")
+
+        # Logo del negocio
+        await add_column_if_not_exists(db, "business_config", "logo_url", "TEXT")
         # suppliers.phone: el frontend y el INSERT usan 'phone', pero el esquema SQLite
         # solo tenía 'cuit' -> crear proveedor en modo local fallaba con 500.
         await add_column_if_not_exists(db, "suppliers", "debt", "REAL", default="0")

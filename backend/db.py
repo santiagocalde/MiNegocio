@@ -536,6 +536,9 @@ async def init_pg() -> None:
             ALTER TABLE remitos ADD COLUMN IF NOT EXISTS zone VARCHAR(100);
             ALTER TABLE remitos ADD COLUMN IF NOT EXISTS sort_order INTEGER;
 
+            -- Logo del negocio
+            ALTER TABLE business_config ADD COLUMN IF NOT EXISTS logo_url TEXT;
+
             CREATE TABLE IF NOT EXISTS sucursales (
                 id              SERIAL PRIMARY KEY,
                 business_id     TEXT NOT NULL REFERENCES businesses(id),

@@ -13,6 +13,7 @@ const FIELDS = [
   { key: 'cuit',           label: 'CUIT / CUIL',           placeholder: '20-12345678-9' },
   { key: 'condicion_iva',  label: 'Condición IVA',         placeholder: 'Monotributista', options: ['Monotributista', 'Responsable Inscripto', 'Exento', 'Consumidor Final'] },
   { key: 'numero_caja',    label: 'Nombre de la caja',     placeholder: 'CAJA 1' },
+  { key: 'logo_url',       label: 'URL del logo (imagen)', placeholder: 'https://ejemplo.com/logo.png' },
   { key: 'mensaje_ticket', label: 'Mensaje final del ticket', placeholder: '¡Gracias por su compra!' },
   { key: 'iva_rate',       label: 'IVA % por defecto',     placeholder: '21', options: ['21', '10.5', '27', '0'] },
   { key: 'mp_access_token',label: 'Access Token de Mercado Pago', placeholder: 'APP_USR-...', type: 'password' },

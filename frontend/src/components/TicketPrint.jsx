@@ -47,6 +47,7 @@ export default function TicketPrint({ cart, total, payment, change, operator, ti
   const condicion = config?.condicion_iva || 'Monotributista';
   const mensaje = config?.mensaje_ticket || '¡Gracias por su compra!';
   const numeroCaja = config?.numero_caja || 'CAJA 1';
+  const logoUrl = config?.logo_url || '';
   
   const isFacturaA = tipoFactura === 'A';
 
@@ -65,6 +66,7 @@ export default function TicketPrint({ cart, total, payment, change, operator, ti
 
   return (
     <div className="ticket-print-area">
+      {logoUrl && <div style={{ textAlign: 'center', padding: '4px 0' }}><img src={logoUrl} style={{ maxHeight: '48px', maxWidth: '150px', objectFit: 'contain' }} alt="logo" /></div>}
       {!isClosingShift ? (
         /* ═══════════════════════════════ TICKET DE VENTA ═══════════════════════════════ */
         <pre className="ticket-body">
