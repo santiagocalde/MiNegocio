@@ -313,6 +313,10 @@ async def init_db(DB_PATH: str, logger) -> None:
         await add_column_if_not_exists(db, "sale_items", "unit_cost", "REAL", default="0")
         await add_column_if_not_exists(db, "products", "sucursal_id", "INTEGER", "sucursales(id)", "1")
         await add_column_if_not_exists(db, "sales", "sucursal_id", "INTEGER", "sucursales(id)", "1")
+
+        # Rubro Corralón: precio mayorista y unidad de medida
+        await add_column_if_not_exists(db, "products", "price_b", "REAL")
+        await add_column_if_not_exists(db, "products", "unit_label", "TEXT", default="'unidad'")
         # suppliers.phone: el frontend y el INSERT usan 'phone', pero el esquema SQLite
         # solo tenía 'cuit' -> crear proveedor en modo local fallaba con 500.
         await add_column_if_not_exists(db, "suppliers", "debt", "REAL", default="0")
