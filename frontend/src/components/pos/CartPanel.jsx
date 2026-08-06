@@ -11,14 +11,14 @@ const stockTone = (stock, min) => {
   return { bg: 'var(--wash-success)', bd: 'var(--border-color)', fg: 'var(--accent-success)' };
 };
 
-export default function CartPanel({ cart, total, adjustedTotal, updateQty, setItemQty, removeItem, listType, setListType }) {
+export default function CartPanel({ cart, total, adjustedTotal, updateQty, setItemQty, removeItem, listType, setListType, businessType }) {
   const displayTotal = adjustedTotal ?? total;
   return (
     <div className="ledger-sheet" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <div style={{ padding: '13px 20px', borderBottom: '1px solid var(--rule-strong)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <h2 className="ledger-title" style={{ fontSize: '1.15rem' }}>Carrito</h2>
-          {setListType && (
+          {businessType === 'corralon' && setListType && (
             <div style={{ display: 'flex', borderRadius: 5, overflow: 'hidden', border: '1px solid var(--rule-strong)', fontSize: '0.70rem', fontWeight: 600 }}>
               <button onClick={() => setListType('a')} style={{ padding: '3px 9px', border: 'none', cursor: 'pointer',
                 background: listType === 'a' ? 'var(--lp-primary)' : 'transparent',

@@ -19,7 +19,7 @@ import TicketPrint from '../components/TicketPrint';
 
 export default function VentasPage() {
   const isMobile = useIsMobile();
-  const { auth, backend, addToast, playBeep, currentSucursalId, setCurrentSucursalId } = usePanelContext();
+  const { auth, backend, addToast, playBeep, currentSucursalId, setCurrentSucursalId, businessType } = usePanelContext();
   const ivaRate = backend.businessConfig?.iva_rate ?? 0;
   const cart = useCart(backend.productsDB, ivaRate, playBeep);
   const promos = usePromotions(cart.cart);
@@ -85,7 +85,7 @@ export default function VentasPage() {
           <div data-tour="cart-panel" style={{ flex: '1 1 auto', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
           <CartPanel cart={cart.cart} total={cart.total} adjustedTotal={cart.adjustedTotal}
             updateQty={cart.updateQty} setItemQty={cart.setItemQty} removeItem={cart.removeItem}
-            listType={cart.listType} setListType={cart.setListType} />
+            listType={cart.listType} setListType={cart.setListType} businessType={businessType} />
           </div>
         </div>
         <div data-tour="payment-panel" style={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
