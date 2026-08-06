@@ -115,13 +115,29 @@ export default function Sidebar({
 
   // Insertar items condicionales según rubro (dentro del componente, donde businessType existe)
   if (businessType === 'corralon') {
+    const logisticaItems = [
+      { label: 'Remitos', path: '/panel/remitos', icon: 'Truck' },
+      { label: 'Despacho del día', path: '/panel/remitos?filter=today', icon: 'Clock' },
+    ];
+    const corralonItems = [
+      { label: 'Presupuestos', path: '/panel/presupuestos', icon: 'Clipboard' },
+      { label: 'Obras', path: '/panel/obras', icon: 'Edit' },
+      { label: 'Acopios', path: '/panel/acopios', icon: 'Box' },
+      { label: 'Devoluciones', path: '/panel/devoluciones', icon: 'Edit' },
+    ];
+    // Insertar LOGÍSTICA antes de SISTEMA
+    const sistemaIdx = NAV_ITEMS.findIndex(s => s.category === 'SISTEMA');
+    if (sistemaIdx >= 0 && !NAV_ITEMS.some(s => s.category === 'LOGÍSTICA')) {
+      NAV_ITEMS.splice(sistemaIdx, 0, { category: 'LOGÍSTICA', items: logisticaItems });
+    }
+    // Extender SISTEMA con items de corralón
     const sistemaSection = NAV_ITEMS.find(s => s.category === 'SISTEMA');
-    if (sistemaSection && !sistemaSection.items.some(i => i.path === '/panel/presupuestos')) {
-      sistemaSection.items.unshift({ label: 'Devoluciones', path: '/panel/devoluciones', icon: 'Edit' });
-      sistemaSection.items.unshift({ label: 'Acopios', path: '/panel/acopios', icon: 'Box' });
-      sistemaSection.items.unshift({ label: 'Obras', path: '/panel/obras', icon: 'Edit' });
-      sistemaSection.items.unshift({ label: 'Remitos', path: '/panel/remitos', icon: 'Truck' });
-      sistemaSection.items.unshift({ label: 'Presupuestos', path: '/panel/presupuestos', icon: 'Clipboard' });
+    if (sistemaSection) {
+      for (const item of corralonItems) {
+        if (!sistemaSection.items.some(i => i.path === item.path)) {
+          sistemaSection.items.unshift(item);
+        }
+      }
     }
   }
 

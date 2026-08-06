@@ -90,6 +90,16 @@ const handleStatus = async (id, status) => {
     else { addToast?.('Error al cambiar estado.', 'error'); }
   };
 
+  const handleShareWhatsApp = () => {
+    if (!detail) return;
+    const d = detail;
+    const bizName = JSON.parse(localStorage.getItem('saas_business') || '{}')?.business_name || 'Corralón';
+    const total = d.items.reduce((s, i) => s + i.unit_price * i.quantity, 0);
+    const lines = d.items.map(it => `${it.product_name} x${it.quantity}: $${formatPesos(it.unit_price * it.quantity)}`).join('\n');
+    const msg = `*${bizName}* - Presupuesto N° ${d.quote.id}\n\n${lines}\n\n*TOTAL: $${formatPesos(total)}*\n${d.quote.list_type === 'b' ? '(Lista Contratista)' : '(Lista Público)'}\nVálido hasta: ${fmtDate(d.quote.expires_at)}\n${d.quote.note ? 'Obra: ' + d.quote.note : ''}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+  };
+
   const handlePrint = () => {
     if (!detail) return;
     const d = detail;
@@ -312,6 +322,7 @@ const handleStatus = async (id, status) => {
               {['draft', 'sent'].includes(detail.quote.status) && (
                 <button onClick={() => handleStatus(detail.quote.id, 'rejected')} className="lp-btn lp-btn--ghost" style={{ flex: 1, fontSize: '0.85rem', color: 'var(--lp-red)' }}>Rechazar</button>
               )}
+              <button onClick={handleShareWhatsApp} className="lp-btn lp-btn--ghost" style={{ fontSize: '0.85rem', color: '#25D366' }}>📱 WhatsApp</button>
               <button onClick={handlePrint} className="lp-btn lp-btn--ghost" style={{ fontSize: '0.85rem' }}>🖨️ Imprimir</button>
               <button onClick={() => { handleDelete(detail.quote.id); setDetail(null); }} className="lp-btn lp-btn--ghost" style={{ fontSize: '0.85rem', color: 'var(--lp-red)' }}>Eliminar</button>
             </div>

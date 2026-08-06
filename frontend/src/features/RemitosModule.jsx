@@ -73,6 +73,12 @@ export default function RemitosModule() {
     } else { addToast?.('Error.', 'error'); }
   };
 
+  const handleShareWhatsApp = (r) => {
+    const bizName = JSON.parse(localStorage.getItem('saas_business') || '{}')?.business_name || 'Corralón';
+    const msg = `*${bizName}* - Remito N° ${r.id}\nDirección: ${r.address || '—'}\nChofer: ${r.driver || '—'}\nFecha: ${fmtDate(r.scheduled_date)}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+  };
+
   const handleStatus = async (id, status) => {
     const res = await apiPost(`/remitos/${id}/status`, { status });
     if (res.ok) { addToast?.(`Remito ${STATUS_MAP[status]?.label}.`, 'success'); fetchRemitos(); }
@@ -125,6 +131,7 @@ export default function RemitosModule() {
               <span style={{ fontSize: '0.72rem', fontWeight: 700, color: STATUS_MAP[r.status]?.color, background: (STATUS_MAP[r.status]?.color || '#666') + '15', padding: '3px 8px', borderRadius: 4, fontFamily: 'var(--lp-font-mono)' }}>
                 {STATUS_MAP[r.status]?.label || r.status}
               </span>
+              <button onClick={e => { e.stopPropagation(); handleShareWhatsApp(r); }} style={{ background: 'rgba(37,211,102,0.08)', border: '1px solid rgba(37,211,102,0.2)', color: '#25D366', padding: '3px 8px', borderRadius: 4, cursor: 'pointer', fontSize: '0.7rem', fontWeight: 700 }}>📱</button>
             </div>
           ))
         )}
@@ -232,6 +239,9 @@ export default function RemitosModule() {
               )}
               {['pending', 'en_camino'].includes(detail.remito.status) && (
                 <button onClick={() => handleStatus(detail.remito.id, 'failed')} className="lp-btn lp-btn--ghost" style={{ flex: 1, fontSize: '0.85rem', color: 'var(--lp-red)' }}>Fallido</button>
+              )}
+              {detail.remito.status === 'delivered' && (
+                <button onClick={() => { addToast?.('Redirigiendo a Punto de Venta para cobrar...', 'info'); window.location.href = '/panel/ventas'; }} className="lp-btn lp-btn--primary" style={{ flex: 1, fontSize: '0.85rem', background: 'var(--lp-green)', border: 'none' }}>💵 Facturar y cobrar</button>
               )}
             </div>
           </div>
