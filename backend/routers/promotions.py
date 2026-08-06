@@ -181,7 +181,9 @@ async def delete_promotion(promotion_id: int) -> dict:
         from db_helpers import get_pg_pool
         pool = await get_pg_pool()
         async with pool.acquire() as conn:
-            await conn.execute("DELETE FROM promotions WHERE id = $1 AND business_id = $2", promotion_id, _biz_id())
+            async with conn.transaction():
+                await conn.execute("DELETE FROM promotion_conditions WHERE promotion_id = $1", promotion_id)
+                await conn.execute("DELETE FROM promotions WHERE id = $1 AND business_id = $2", promotion_id, _biz_id())
             return {"success": True}
     else:
         import aiosqlite
