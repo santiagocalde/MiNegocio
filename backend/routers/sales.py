@@ -121,7 +121,7 @@ async def get_active_turn() -> dict:
             return {"id": None}
 
 
-@router.patch("/api/turns/{turn_id}/close", summary="Cerrar turno con balance")
+@router.post("/api/turns/{turn_id}/close", summary="Cerrar turno con balance")
 async def close_turn(turn_id: int, body: TurnClose) -> dict:
     import bcrypt
     b_id = _biz_id()

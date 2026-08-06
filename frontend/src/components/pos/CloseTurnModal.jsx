@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { apiPatch } from '../../services/apiClient';
+import { apiPost } from '../../services/apiClient';
 
 export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, currentOperator, todaySalesTotal, resumenData, countedCash, setCountedCash, closeCajaPin, setCloseCajaPin, calculateCajaDiff, cashRef, addToast, currentTurnId, onTurnClosed }) {
   const [closing, setClosing] = useState(false);
@@ -30,7 +30,7 @@ export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, curren
     }
     setClosing(true);
     try {
-      const res = await apiPatch(`/turns/${currentTurnId}/close`, {
+      const res = await apiPost(`/turns/${currentTurnId}/close`, {
         sales_total: todaySalesTotal || 0,
         counted_cash: parseFloat(countedCash) || 0,
         operator_id: isAdmin ? null : (currentOperator?.id || null),
