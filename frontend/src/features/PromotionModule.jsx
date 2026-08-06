@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePanelContext } from '../context/PanelContext';
 import { apiGet, apiPost, apiPut, apiDelete } from '../services/apiClient';
+import FeatureGate from '../components/ui/FeatureGate';
 
 const Icons = {
   Plus: () => <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>,
@@ -15,7 +16,9 @@ const Icons = {
 
 export default function PromotionModule() {
   const navigate = useNavigate();
-  const { addToast } = usePanelContext();
+  const { addToast, currentPlan } = usePanelContext();
+  const PLAN_WEIGHT = { trial: 1, simple: 1, pro: 2, ia: 3 };
+  const isLocked = PLAN_WEIGHT[currentPlan] < PLAN_WEIGHT['simple'];
   const [promotions, setPromotions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -182,6 +185,7 @@ export default function PromotionModule() {
   };
 
   return (
+    <FeatureGate isLocked={isLocked} requiredPlan="Simple">
     <div style={{ padding: '12px 20px', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflowY: 'auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexShrink: 0 }}>
         <h2 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>Promociones</h2>
@@ -337,5 +341,6 @@ export default function PromotionModule() {
         </div>
       )}
     </div>
+    </FeatureGate>
   );
 }

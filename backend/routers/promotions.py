@@ -52,9 +52,15 @@ def _calculate_savings(promo, cart_items):
     if promo["type"] == "combo" and promo.get("combo_price", 0) > 0:
         cond_product_ids = {c["product_id"] for c in promo.get("conditions", [])}
         affected = [i for i in cart_items if i.get("product_id") in cond_product_ids]
-        if len(affected) >= len(cond_product_ids):
-            original = sum(_item_price(i) * i.get("quantity", 1) for i in cart_items if i.get("product_id") in cond_product_ids)
-            return max(0, original - promo["combo_price"])
+        if len(affected) < len(cond_product_ids):
+            return 0
+        # Cuántas veces se puede armar el combo (el mínimo de unidades entre los productos requeridos)
+        times = min(i.get("quantity", 1) for i in affected)
+        if times == 0:
+            return 0
+        # Precio original del combo (suma de precios unitarios de los productos que lo componen)
+        original_per_combo = sum(_item_price(i) for i in affected)
+        return max(0, (original_per_combo - promo["combo_price"]) * times)
     if promo["type"] == "discount" and promo.get("discount_percent", 0) > 0:
         cond_map = {c["product_id"]: (c.get("min_qty") or 1) for c in promo.get("conditions", [])}
         affected_total = 0
@@ -90,6 +96,23 @@ async def list_all_promotions_legacy() -> list:
 
 @router.post("/api/promotions", summary="Crear promocion")
 async def create_promotion(body: dict) -> dict:
+    # Validación server-side
+    name = (body.get("name") or "").strip()
+    promo_type = body.get("type", "combo")
+    conditions = body.get("conditions", [])
+    if not name:
+        raise HTTPException(400, detail="El nombre es obligatorio")
+    if not conditions:
+        raise HTTPException(400, detail="Agregá al menos un producto")
+    if promo_type == "combo":
+        cp = body.get("combo_price", 0) or 0
+        if not cp or cp <= 0:
+            raise HTTPException(400, detail="El precio del combo debe ser mayor a $0")
+    if promo_type == "discount":
+        dp = body.get("discount_percent", 0) or 0
+        if dp <= 0 or dp > 100:
+            raise HTTPException(400, detail="El descuento debe ser entre 1% y 100%")
+
     if USE_PG:
         from db_helpers import get_pg_pool
         pool = await get_pg_pool()

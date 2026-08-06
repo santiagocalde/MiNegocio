@@ -182,6 +182,9 @@ export default function ProveedoresModule() {
                     addToast('Pago registrado correctamente.', 'success');
                     setShowAbonar(null);
                     fetchProveedores();
+                  } else {
+                    const data = await res.json().catch(() => ({}));
+                    addToast(data.detail || 'No se pudo registrar el pago.', 'error');
                   }
                 } catch { addToast('Sin internet. Revisá tu conexión.', 'error'); }
               }} style={{ background: 'var(--accent-danger)', border: 'none', color: 'white', padding: '10px 24px', borderRadius: '8px', cursor: 'pointer', fontWeight: 700 }}
