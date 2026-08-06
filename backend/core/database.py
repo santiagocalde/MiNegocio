@@ -185,6 +185,26 @@ async def init_db(DB_PATH: str, logger) -> None:
                 FOREIGN KEY (purchase_id) REFERENCES purchases(id)
             );
 
+            CREATE TABLE IF NOT EXISTS quotes (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                business_id TEXT DEFAULT 'kiosco_default',
+                customer_id INTEGER,
+                status      TEXT DEFAULT 'draft',
+                list_type   TEXT DEFAULT 'a',
+                note        TEXT,
+                valid_days  INTEGER DEFAULT 15,
+                created_at  TEXT DEFAULT (datetime('now','localtime')),
+                expires_at  TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS quote_items (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                quote_id    INTEGER NOT NULL REFERENCES quotes(id) ON DELETE CASCADE,
+                product_id  INTEGER NOT NULL,
+                quantity    REAL NOT NULL DEFAULT 1,
+                unit_price  REAL NOT NULL DEFAULT 0
+            );
+
             CREATE TABLE IF NOT EXISTS sucursales (
                 id          INTEGER PRIMARY KEY AUTOINCREMENT,
                 business_id TEXT DEFAULT 'kiosco_default', 
