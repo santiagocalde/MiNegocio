@@ -93,12 +93,15 @@ const handleStatus = async (id, status) => {
   const handlePrint = () => {
     if (!detail) return;
     const d = detail;
+    const bizName = JSON.parse(localStorage.getItem('saas_business') || '{}')?.business_name || 'Corralón';
     const items = d.items.map(it =>
       `<tr><td style="padding:4px 0">${it.product_name}</td><td style="text-align:center">${it.quantity}</td><td style="text-align:right;font-family:monospace">$${formatPesos(it.unit_price)}</td><td style="text-align:right;font-family:monospace">$${formatPesos(it.unit_price * it.quantity)}</td></tr>`
     ).join('');
     const total = d.items.reduce((s, i) => s + i.unit_price * i.quantity, 0);
+    const header = `<div style="text-align:center;margin-bottom:6mm"><div style="font-size:22px;font-weight:900;letter-spacing:1px">${bizName}</div><div style="font-size:11px;color:#666;margin-top:1mm">Presupuesto · MiNegocio</div></div>`;
     const block = (label) => `
       <div style="border:1px solid #ccc;padding:12mm;margin-bottom:5mm">
+        ${header}
         <div style="text-align:center;font-weight:900;font-size:14px;margin-bottom:6mm;letter-spacing:2px">${label}</div>
         <div style="font-size:13px;margin-bottom:4mm"><strong>Presupuesto N° ${d.quote.id}</strong></div>
         <div style="font-size:12px;margin-bottom:2mm">Cliente: ${d.quote.customer_name || '—'}</div>
