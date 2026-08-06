@@ -24,10 +24,9 @@ function TypewriterRubro() {
   }, [txt, del, i]);
 
   return (
-    // Sin whiteSpace:nowrap ni <style> interno — el @keyframes va en el bloque global de abajo
     <span className="lp-gradient-text" style={{ fontStyle: 'italic' }}>
       {txt}
-      <span style={{ borderRight: '3px solid currentColor', marginLeft: 1, animation: 'lp-caret 0.9s step-end infinite' }}>&nbsp;</span>
+      <span style={{ borderRight: '3px solid currentColor', marginLeft: 2, animation: 'lp-caret 0.9s step-end infinite' }} />
     </span>
   );
 }
@@ -73,13 +72,13 @@ export default function LandingHero({ isLoggedIn, goPanel, goOnboard }) {
           {/* H1 — display:block en cada línea → text-align:center centra independientemente del ancho */}
           <h1 style={{
             fontFamily: '"Inter", "SF Pro Display", -apple-system, BlinkMacSystemFont, var(--lp-font-display), sans-serif',
-            fontSize: 'clamp(2.5rem, 8.5vw, 6.5rem)',
-            lineHeight: 1.15, letterSpacing: '-2px', fontWeight: 800,
-            marginBottom: 24, paddingTop: '0.05em', paddingLeft: '0.1em', paddingRight: '0.1em',
+            fontSize: 'clamp(2rem, 6.8vw, 5.2rem)',
+            lineHeight: 1.2, letterSpacing: '-1.5px', fontWeight: 800,
+            marginBottom: 24, paddingTop: '0.05em',
             color: '#ffffff', textAlign: 'center',
           }}>
             <span className="lp-gradient-text" style={{ fontStyle: 'italic', display: 'block' }}>Dejá el cuaderno.</span>
-            <span style={{ display: 'block' }}>Tu <TypewriterRubro /> merece algo mejor.</span>
+            <span style={{ display: 'block', whiteSpace: 'nowrap' }}>Tu <TypewriterRubro /> merece algo mejor.</span>
           </h1>
         </Reveal>
 
