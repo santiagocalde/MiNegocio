@@ -21,6 +21,7 @@ export default function useCart(productsDB, ivaRate, playBeep) {
   const [flash, setFlash] = useState(false);
   const [itemDiscounts, setItemDiscounts] = useState({});
   const [discountInputActive, setDiscountInputActive] = useState(null);
+  const [listType, setListType] = useState('a'); // a = público, b = mayorista/contratista
   const [adjustedTotal, setAdjustedTotal] = useState(null);
   const [editingTotal, setEditingTotal] = useState(false);
   const [payment, setPayment] = useState('');
@@ -172,6 +173,7 @@ export default function useCart(productsDB, ivaRate, playBeep) {
     autoPrint, setAutoPrint,
     isCancelConfirm, setIsCancelConfirm,
     promotionSavings, setPromotionSavings,
+    listType, setListType,
     handleQuickAdd,
     handleRepeatSale,
     updateQty,
