@@ -325,7 +325,7 @@ async def create_sale(request: Request, body: SaleCreate, idempotency_key: Optio
                     if prod["is_virtual"] == 1 and prod["parent_id"]:
                         real_qty = item.quantity * (prod["pack_size"] or 1)
                         result = await conn.execute(
-                            "UPDATE products SET stock = stock - $1 WHERE id = $2 AND stock >= $1 AND business_id = $3",
+                            "UPDATE products SET stock = stock - $1 WHERE id = $2 AND business_id = $3",
                             real_qty, prod["parent_id"], b_id
                         )
                         if result == "UPDATE 0":
@@ -335,13 +335,10 @@ async def create_sale(request: Request, body: SaleCreate, idempotency_key: Optio
                             b_id, prod["parent_id"], real_qty, f"Venta #{sale_id} (Pack Virtual)", body.operator, f"sale-{sale_id}-{item.product_id}"
                         )
                     else:
-                        result = # Descontar stock (permite negativo, el frontend avisa)
                         await conn.execute(
                             "UPDATE products SET stock = stock - $1, updated_at = now() WHERE id = $2 AND business_id = $3",
                             item.quantity, item.product_id, b_id
                         )
-                        if result == "UPDATE 0":
-                            raise HTTPException(400, detail=f"Stock insuficiente de {item.product_name}")
                         await conn.execute(
                             "INSERT INTO stock_movements (business_id, product_id, movement_type, quantity, reason, operator, source_id) VALUES ($1,$2,'salida',$3,$4,$5,$6)",
                             b_id, item.product_id, item.quantity, f"Venta #{sale_id}", body.operator, f"sale-{sale_id}-{item.product_id}"
