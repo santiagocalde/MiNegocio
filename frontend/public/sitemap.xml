@@ -2,33 +2,31 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:xhtml="http://www.w3.org/1999/xhtml">
 
-  <url>
-    <loc>https://mi-negocio.app/</loc>
-    <lastmod>2026-06-20</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>1.0</priority>
-    <xhtml:link rel="alternate" hreflang="es-AR" href="https://mi-negocio.app/"/>
-  </url>
+  <url><loc>https://mi-negocio.app/</loc><lastmod>2026-08-06</lastmod><changefreq>weekly</changefreq><priority>1.0</priority></url>
+  <url><loc>https://mi-negocio.app/funcionalidades/</loc><lastmod>2026-08-06</lastmod><changefreq>monthly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://mi-negocio.app/precios/</loc><lastmod>2026-08-06</lastmod><changefreq>monthly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://mi-negocio.app/blog/</loc><lastmod>2026-08-06</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://mi-negocio.app/soporte/</loc><lastmod>2026-08-06</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://mi-negocio.app/nosotros/</loc><lastmod>2026-08-06</lastmod><changefreq>monthly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://mi-negocio.app/contacto/</loc><lastmod>2026-08-06</lastmod><changefreq>monthly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://mi-negocio.app/privacidad/</loc><lastmod>2026-08-06</lastmod><changefreq>monthly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://mi-negocio.app/terminos/</loc><lastmod>2026-08-06</lastmod><changefreq>monthly</changefreq><priority>0.3</priority></url>
 
-  <url>
-    <loc>https://mi-negocio.app/#funciones</loc>
-    <lastmod>2026-06-20</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
+  <!-- ETAPA 1: Ciudades -->
+  <url><loc>https://mi-negocio.app/pos-buenos-aires/</loc><lastmod>2026-08-06</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://mi-negocio.app/pos-rosario/</loc><lastmod>2026-08-06</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://mi-negocio.app/pos-cordoba/</loc><lastmod>2026-08-06</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://mi-negocio.app/pos-mar-del-plata/</loc><lastmod>2026-08-06</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://mi-negocio.app/pos-mendoza/</loc><lastmod>2026-08-06</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
 
-  <url>
-    <loc>https://mi-negocio.app/#planes</loc>
-    <lastmod>2026-06-20</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-  </url>
+  <!-- ETAPA 2: Rubros -->
+  <url><loc>https://mi-negocio.app/software-kiosco/</loc><lastmod>2026-08-06</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://mi-negocio.app/software-almacen/</loc><lastmod>2026-08-06</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://mi-negocio.app/software-vineria/</loc><lastmod>2026-08-06</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://mi-negocio.app/software-dietetica/</loc><lastmod>2026-08-06</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://mi-negocio.app/software-ferreteria/</loc><lastmod>2026-08-06</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
 
-  <url>
-    <loc>https://mi-negocio.app/#faq</loc>
-    <lastmod>2026-06-20</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
+  <!-- ETAPA 3: Comparativa -->
+  <url><loc>https://mi-negocio.app/comparar-sistemas-para-kioscos/</loc><lastmod>2026-08-06</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
 
 </urlset>

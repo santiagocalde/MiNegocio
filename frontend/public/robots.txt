@@ -5,4 +5,8 @@ Disallow: /register/
 Disallow: /api/
 Disallow: /og-template.html
 
+# Permitimos GPTBot para aparecer en ChatGPT Search
+User-agent: GPTBot
+Allow: /
+
 Sitemap: https://mi-negocio.app/sitemap.xml
