@@ -113,6 +113,14 @@ export default function Sidebar({
     'Compras': 'Proveedores',
   } : {};
 
+  // Insertar items condicionales según rubro (dentro del componente, donde businessType existe)
+  if (businessType === 'corralon') {
+    const sistemaSection = NAV_ITEMS.find(s => s.category === 'SISTEMA');
+    if (sistemaSection && !sistemaSection.items.some(i => i.path === '/panel/presupuestos')) {
+      sistemaSection.items.unshift({ label: 'Presupuestos', path: '/panel/presupuestos', icon: 'Clipboard' });
+    }
+  }
+
   return (
     <>
     {isMobile && !collapsed && <div className="sidebar-backdrop" onClick={() => setCollapsed(true)} />}
