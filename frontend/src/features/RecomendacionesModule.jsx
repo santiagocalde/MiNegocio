@@ -14,8 +14,8 @@ const Icons = {
 
 function IaCard({ titulo, subtitulo, icon, loading, texto, vacio }) {
   return (
-    <div style={{ background: 'linear-gradient(135deg, rgba(124,58,237,0.10), rgba(20,187,166,0.05))', border: '1px solid rgba(165,180,252,0.25)', borderRadius: '16px', padding: '20px 22px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#c4b5fd', fontWeight: 800, fontSize: '1.05rem', marginBottom: '4px' }}>
+    <div className="ledger-sheet" style={{ background: 'var(--wash-primary)', padding: '20px 22px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--accent-primary)', fontWeight: 800, fontSize: '1.05rem', marginBottom: '4px' }}>
         {icon} {titulo}
       </div>
       <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: '0 0 14px' }}>{subtitulo}</p>
@@ -43,8 +43,8 @@ function PreciosIaCard({ loading, texto, sugerencias, onApply, addToast }) {
   };
 
   return (
-    <div style={{ background: 'linear-gradient(135deg, rgba(124,58,237,0.10), rgba(20,187,166,0.05))', border: '1px solid rgba(165,180,252,0.25)', borderRadius: '16px', padding: '20px 22px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#c4b5fd', fontWeight: 800, fontSize: '1.05rem', marginBottom: '4px' }}>
+    <div className="ledger-sheet" style={{ background: 'var(--wash-primary)', padding: '20px 22px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--accent-primary)', fontWeight: 800, fontSize: '1.05rem', marginBottom: '4px' }}>
         <Icons.Brain /> Asesor de precios
       </div>
       <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: '0 0 14px' }}>Qué subir y cuánto exactamente, según costo y rotación. Aplicás con un click.</p>
@@ -78,7 +78,7 @@ function PreciosIaCard({ loading, texto, sugerencias, onApply, addToast }) {
                     <button
                       onClick={() => aplicar(s)}
                       disabled={estado === 'ok' || estado === 'loading'}
-                      style={{ flexShrink: 0, padding: '8px 16px', borderRadius: 8, border: 'none', fontWeight: 700, fontSize: '0.85rem', cursor: estado ? 'default' : 'pointer', background: estado === 'ok' ? 'rgba(20,187,166,0.15)' : 'var(--gradient-primary)', color: estado === 'ok' ? 'var(--accent-success)' : 'white' }}
+                      style={{ flexShrink: 0, padding: '8px 16px', borderRadius: 'var(--radius-sm)', border: 'none', fontWeight: 800, fontSize: '0.85rem', cursor: estado ? 'default' : 'pointer', background: estado === 'ok' ? 'var(--wash-success)' : 'var(--accent-primary)', color: estado === 'ok' ? 'var(--accent-success)' : 'var(--sheet)' }}
                     >
                       {estado === 'ok' ? '✓ Aplicado' : estado === 'loading' ? '…' : 'Aplicar'}
                     </button>
@@ -218,8 +218,11 @@ export default function RecomendacionesModule() {
     <FeatureGate isLocked={isLocked} requiredPlan="IA">
       <div style={{ padding: '12px 20px', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflowY: 'auto' }}>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexShrink: 0 }}>
-        <h2 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>Recomendaciones IA</h2>
+      <div style={{ marginBottom: '16px', flexShrink: 0 }}>
+        <div className="ledger-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ background: 'var(--accent-primary)', color: 'var(--sheet)', padding: '1px 6px', borderRadius: 3, fontSize: '0.62rem', fontWeight: 800 }}>IA</span> El contador que no dormís
+        </div>
+        <h1 className="ledger-title" style={{ fontSize: '1.6rem', marginTop: 4 }}>Sugerencias</h1>
       </div>
 
       {/* ANÁLISIS EN LENGUAJE NATURAL (IA) */}
@@ -251,7 +254,7 @@ export default function RecomendacionesModule() {
         <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '32px' }}>
           
           {/* PANEL IZQUIERDO: AJUSTE DE PRECIOS */}
-          <div style={{ background: 'var(--bg-card)', borderRadius: '16px', padding: '32px', border: '1px solid var(--border-focus)', position: 'relative', overflow: 'hidden' }}>
+          <div className="ledger-sheet" style={{ padding: '32px', border: '1px solid var(--accent-primary)', position: 'relative', overflow: 'hidden' }}>
             <div style={{ position: 'absolute', top: '-50%', left: '-50%', width: '200%', height: '200%', background: 'radial-gradient(circle, rgba(20,187,166, 0.05) 0%, transparent 60%)', zIndex: 0 }}></div>
             
             <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -288,7 +291,7 @@ export default function RecomendacionesModule() {
                 ))}
               </div>
               
-              <button onClick={handleApplyPrices} style={{ width: '100%', padding: '20px', borderRadius: '12px', background: 'var(--gradient-primary)', color: 'white', fontWeight: 800, fontSize: '1.1rem', border: 'none', cursor: 'pointer', marginTop: '24px', boxShadow: '0 4px 15px rgba(20,187,166, 0.4)', transition: 'all 0.15s' }} onMouseEnter={e=>e.target.style.transform='translateY(-2px)'} onMouseLeave={e=>e.target.style.transform='none'}>
+              <button onClick={handleApplyPrices} style={{ width: '100%', padding: '18px', borderRadius: 'var(--radius-sm)', background: 'var(--accent-primary)', color: 'var(--sheet)', fontWeight: 800, fontSize: '1.05rem', border: 'none', cursor: 'pointer', marginTop: '24px', transition: 'filter 0.15s' }} onMouseEnter={e=>e.target.style.filter='brightness(1.08)'} onMouseLeave={e=>e.target.style.filter='brightness(1)'}>
                 Aplicar Nuevos Precios Automáticamente
               </button>
             </div>
@@ -297,7 +300,7 @@ export default function RecomendacionesModule() {
           {/* PANEL DERECHO */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
             
-            <div style={{ background: 'var(--bg-card)', borderRadius: '16px', padding: '32px', border: '1px solid var(--border-color)', position: 'relative', overflow: 'hidden', flex: 1 }}>
+            <div className="ledger-sheet" style={{ padding: '32px', position: 'relative', overflow: 'hidden', flex: 1 }}>
               <div style={{ position: 'absolute', top: 0, left: 0, width: '4px', height: '100%', background: 'var(--accent-warning)' }}></div>
               
               <h3 style={{ fontSize: '1.3rem', fontWeight: 800, margin: '0 0 12px 0', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '12px' }}>

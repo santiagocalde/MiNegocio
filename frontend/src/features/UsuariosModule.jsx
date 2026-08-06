@@ -102,14 +102,19 @@ export default function UsuariosModule() {
 
   return (
     <div style={{ padding: '12px 20px', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexShrink: 0 }}>
-        <h2 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>Gesti&oacute;n de Usuarios</h2>
-        <button onClick={openNew} style={{ background: 'var(--gradient-primary)', border: 'none', color: 'white', padding: '12px 24px', borderRadius: '8px', fontSize: '0.9rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', transition: 'all 0.15s' }}>
-           <Icons.Plus /> Nuevo Usuario
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '16px', flexShrink: 0 }}>
+        <div>
+          <div className="ledger-label">Quién atiende</div>
+          <h1 className="ledger-title" style={{ fontSize: '1.6rem', marginTop: 4 }}>Usuarios</h1>
+        </div>
+        <button onClick={openNew} style={{ background: 'var(--accent-primary)', border: 'none', color: 'var(--sheet)', padding: '11px 20px', borderRadius: 'var(--radius-sm)', fontSize: '0.9rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', transition: 'filter 0.15s' }}
+          onMouseEnter={e => e.currentTarget.style.filter = 'brightness(1.08)'}
+          onMouseLeave={e => e.currentTarget.style.filter = 'brightness(1)'}>
+           <Icons.Plus /> Nuevo usuario
         </button>
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto' }}>
+      <div className="ledger-sheet" style={{ flex: 1, overflowY: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
           <thead style={{ position: 'sticky', top: 0, background: 'var(--bg-main)', zIndex: 1 }}>
             <tr style={{ color: 'var(--text-primary)', fontSize: '0.85rem', fontWeight: 700, borderBottom: '1px solid var(--border-color)' }}>
@@ -126,18 +131,18 @@ export default function UsuariosModule() {
                 description="No hay operadores configurados. Creá el primer usuario para abrir turno." /></td></tr>
             ) : (
               sortedUsuarios.map((u, idx) => (
-              <tr key={u.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', color: 'var(--text-secondary)' }}>
-                <td style={{ padding: '16px', color: 'var(--text-primary)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '12px' }}>
-                   <div style={{ width: '32px', height: '32px', background: 'rgba(20,187,166, 0.1)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-primary)' }}>
+              <tr key={u.id} style={{ borderBottom: '1px solid var(--rule)', color: 'var(--text-secondary)' }}>
+                <td style={{ padding: '14px 16px', color: 'var(--text-primary)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '12px' }}>
+                   <div style={{ width: '32px', height: '32px', background: 'var(--wash-primary)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-primary)' }}>
                      <Icons.User />
                    </div>
                    {u.name}
                 </td>
-                <td style={{ padding: '16px' }}>
+                <td style={{ padding: '14px 16px' }}>
                     {u.role === 'admin' ? (
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(20,187,166, 0.15)', color: 'var(--accent-primary)', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 700, width: 'fit-content' }}><Icons.Shield /> Admin</span>
+                      <span className="ledger-label" style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'var(--wash-primary)', border: '1px solid var(--border-color)', color: 'var(--accent-primary)', padding: '3px 8px', borderRadius: '3px', width: 'fit-content' }}><Icons.Shield /> Admin</span>
                     ) : (
-                      <span style={{ background: 'rgba(255, 255, 255, 0.1)', color: 'var(--text-primary)', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 700, width: 'fit-content' }}>Cajero</span>
+                      <span className="ledger-label" style={{ background: 'var(--surface-veil)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '3px 8px', borderRadius: '3px', width: 'fit-content' }}>Cajero</span>
                     )}
                 </td>
                 <td style={{ padding: '16px', fontFamily: 'var(--font-mono)' }}>****</td>
@@ -154,7 +159,7 @@ export default function UsuariosModule() {
 
       {deleteConfirm && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(30,58,95,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100 }}>
-          <div style={{ background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '32px', width: '380px', maxWidth: '92vw', boxSizing: 'border-box' }}>
+          <div className="ledger-sheet" style={{ padding: '32px', width: '380px', maxWidth: '92vw', boxSizing: 'border-box', boxShadow: 'var(--shadow-lg)' }}>
             <div style={{ fontSize: '2.5rem', textAlign: 'center', marginBottom: '16px' }}>⚠️</div>
             <h2 style={{ fontSize: '1.3rem', fontWeight: 800, margin: '0 0 12px 0', color: 'var(--text-primary)', textAlign: 'center' }}>Eliminar usuario</h2>
             <p style={{ color: 'var(--text-secondary)', textAlign: 'center', margin: '0 0 24px 0' }}>
@@ -170,7 +175,7 @@ export default function UsuariosModule() {
 
       {showModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(30,58,95,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '32px', width: '400px', maxWidth: '92vw', boxSizing: 'border-box', boxShadow: '0 10px 25px rgba(30,58,95,0.5)' }}>
+          <div className="ledger-sheet" style={{ padding: '32px', width: '400px', maxWidth: '92vw', boxSizing: 'border-box', boxShadow: 'var(--shadow-lg)' }}>
             <h2 style={{ fontSize: '1.5rem', fontWeight: 800, margin: '0 0 24px 0', color: 'var(--text-primary)' }}>
               {editIndex !== null ? 'Editar Usuario' : 'Nuevo Usuario'}
             </h2>
@@ -206,7 +211,7 @@ export default function UsuariosModule() {
             </div>
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
               <button onClick={() => setShowModal(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', padding: '10px 16px', borderRadius: '8px', cursor: 'pointer', transition: 'all 0.15s', fontWeight: 600 }}>Cancelar</button>
-              <button onClick={handleSave} style={{ background: 'var(--gradient-primary)', border: 'none', color: 'white', padding: '10px 24px', borderRadius: '8px', cursor: 'pointer', transition: 'all 0.15s', fontWeight: 700 }}>
+              <button onClick={handleSave} style={{ background: 'var(--accent-primary)', border: 'none', color: 'var(--sheet)', padding: '10px 24px', borderRadius: 'var(--radius-sm)', cursor: 'pointer', transition: 'filter 0.15s', fontWeight: 800 }}>
                 {editIndex !== null ? 'Guardar Cambios' : 'Crear Usuario'}
               </button>
             </div>

@@ -18,15 +18,15 @@ function PlanCard({ plan, isYearly, currentPlan, onSubscribe }) {
   return (
       <div className="lp-glass" style={{
       padding: '32px 24px', display: 'flex', flexDirection: 'column', position: 'relative',
-      background: plan.popular ? 'rgba(20, 187, 166, 0.05)' : 'var(--bg-card)',
-      border: plan.popular ? '1px solid rgba(20,187,166,0.3)' : '1px solid var(--border-color)',
+      background: plan.popular ? 'var(--wash-primary)' : 'var(--sheet)',
+      border: plan.popular ? '1px solid var(--accent-primary)' : '1px solid var(--border-color)',
       transform: plan.popular ? 'scale(1.02)' : 'none',
-      boxShadow: plan.popular ? '0 20px 40px rgba(0,0,0,0.3), inset 0 0 20px rgba(20,187,166,0.05)' : 'none',
-      borderRadius: '16px',
+      boxShadow: plan.popular ? 'var(--shadow-lg)' : 'var(--shadow-sm)',
+      borderRadius: 'var(--radius)',
       zIndex: plan.popular ? 2 : 1
     }}>
       {plan.popular && (
-        <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', background: 'var(--gradient-primary)', color: '#fff', fontSize: '0.7rem', fontWeight: 800, padding: '4px 12px', borderRadius: 20, letterSpacing: 1, boxShadow: '0 4px 12px rgba(20,187,166,0.4)' }}>
+        <div className="ledger-label" style={{ position: 'absolute', top: -11, left: '50%', transform: 'translateX(-50%)', background: 'var(--accent-primary)', color: 'var(--sheet)', padding: '3px 12px', borderRadius: 3, letterSpacing: '0.1em' }}>
           MÁS ELEGIDO
         </div>
       )}
@@ -81,9 +81,9 @@ function PlanCard({ plan, isYearly, currentPlan, onSubscribe }) {
         </button>
       ) : (
         <button onClick={() => onSubscribe(plan.id, isYearly)} style={{
-          display: 'block', width: '100%', padding: '12px 0', borderRadius: 10, fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer', transition: 'all 0.2s', textAlign: 'center', textDecoration: 'none',
-          background: plan.popular ? 'var(--gradient-primary)' : 'var(--bg-card)',
-          color: '#fff',
+          display: 'block', width: '100%', padding: '12px 0', borderRadius: 'var(--radius-sm)', fontWeight: 800, fontSize: '0.95rem', cursor: 'pointer', transition: 'filter 0.2s', textAlign: 'center', textDecoration: 'none',
+          background: plan.popular ? 'var(--accent-primary)' : 'transparent',
+          color: plan.popular ? 'var(--sheet)' : 'var(--text-primary)',
           border: plan.popular ? 'none' : '1px solid var(--border-color)'
         }}>
           {plan.id === 'simple' && currentPlan === 'trial' ? 'Adquirir' : plan.cta || 'Adquirir'}
@@ -190,19 +190,19 @@ export default function PlanPage() {
       )}
 
       <div style={{ textAlign: 'center', marginBottom: 40 }}>
-        <h2 style={{ fontSize: '2.2rem', fontWeight: 800, marginBottom: 12, letterSpacing: '-0.5px' }}>Planes simples, sin letra chica</h2>
-        <p style={{ fontSize: '1.05rem', color: 'rgba(230,255,251, 0.65)' }}>Empezás con lo justo. Escalás cuando quieras.</p>
+        <h1 className="ledger-title" style={{ fontSize: '2.2rem', marginBottom: 12 }}>Planes simples, sin letra chica</h1>
+        <p style={{ fontSize: '1.05rem', color: 'var(--text-secondary)' }}>Empezás con lo justo. Escalás cuando quieras.</p>
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 40 }}>
-        <div style={{ display: 'inline-flex', padding: 4, background: 'rgba(255,255,255,0.03)', borderRadius: 8, border: '1px solid rgba(255,255,255,0.06)' }}>
+        <div style={{ display: 'inline-flex', padding: 4, background: 'var(--surface-veil)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)' }}>
           <button onClick={() => setIsYearly(false)} style={{
-            padding: '8px 24px', borderRadius: 6, border: 'none', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.15s',
-            background: !isYearly ? 'var(--gradient-primary)' : 'transparent', color: !isYearly ? '#fff' : 'rgba(255,255,255,0.5)',
+            padding: '8px 24px', borderRadius: 3, border: 'none', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.15s',
+            background: !isYearly ? 'var(--accent-primary)' : 'transparent', color: !isYearly ? 'var(--sheet)' : 'var(--text-faint)',
           }}>Mensual</button>
           <button onClick={() => setIsYearly(true)} style={{
-            padding: '8px 24px', borderRadius: 6, border: 'none', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.15s',
-            background: isYearly ? 'var(--gradient-primary)' : 'transparent', color: isYearly ? '#fff' : 'rgba(255,255,255,0.5)',
+            padding: '8px 24px', borderRadius: 3, border: 'none', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.15s',
+            background: isYearly ? 'var(--accent-primary)' : 'transparent', color: isYearly ? 'var(--sheet)' : 'var(--text-faint)',
           }}>Anual <span style={{ fontSize: '0.7rem', opacity: 0.8 }}>(ahorrá 20%)</span></button>
         </div>
       </div>
@@ -241,7 +241,7 @@ export default function PlanPage() {
                   No se harán más cobros. Podés seguir usando tu plan hasta que termine el período que ya pagaste. Gracias por probar MiNegocio.
                 </p>
                 <button onClick={() => setShowCancel(false)}
-                  style={{ padding: '10px 28px', borderRadius: 8, border: 'none', background: 'var(--gradient-primary)', color: '#fff', fontWeight: 600, cursor: 'pointer' }}>
+                  style={{ padding: '10px 28px', borderRadius: 8, border: 'none', background: 'var(--accent-primary)', color: '#fff', fontWeight: 600, cursor: 'pointer' }}>
                   Entendido
                 </button>
               </div>

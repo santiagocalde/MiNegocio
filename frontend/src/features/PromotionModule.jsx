@@ -187,11 +187,16 @@ export default function PromotionModule() {
   return (
     <FeatureGate isLocked={isLocked} requiredPlan="Simple">
     <div style={{ padding: '12px 20px', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflowY: 'auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexShrink: 0 }}>
-        <h2 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>Promociones</h2>
-        <div style={{ display: 'flex', gap: '12px' }}>
-          <button onClick={handleOpenModal} style={{ background: 'var(--gradient-primary)', border: 'none', color: 'white', padding: '12px 24px', borderRadius: '8px', fontSize: '0.9rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-            <Icons.Plus /> Nueva Promoción
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '16px', flexShrink: 0 }}>
+        <div>
+          <div className="ledger-label">Combos y descuentos</div>
+          <h1 className="ledger-title" style={{ fontSize: '1.6rem', marginTop: 4 }}>Promociones</h1>
+        </div>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button onClick={handleOpenModal} style={{ background: 'var(--accent-primary)', border: 'none', color: 'var(--sheet)', padding: '11px 20px', borderRadius: 'var(--radius-sm)', fontSize: '0.9rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', transition: 'filter 0.15s' }}
+            onMouseEnter={e => e.currentTarget.style.filter = 'brightness(1.08)'}
+            onMouseLeave={e => e.currentTarget.style.filter = 'brightness(1)'}>
+            <Icons.Plus /> Nueva promoción
           </button>
           <button onClick={() => navigate('/panel/ventas')} style={{ background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', padding: '12px 24px', borderRadius: '8px', fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Icons.Close /> Cerrar
@@ -199,7 +204,7 @@ export default function PromotionModule() {
         </div>
       </div>
 
-      <div style={{ flex: 1, background: 'var(--bg-card)', borderRadius: '16px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div className="ledger-sheet" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         <div style={{ flex: 1, overflowY: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
             <thead style={{ position: 'sticky', top: 0, background: 'var(--bg-main)', zIndex: 1 }}>
@@ -223,7 +228,7 @@ export default function PromotionModule() {
                 <tr key={p.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                   <td style={{ padding: '16px 24px', fontWeight: 600, color: 'var(--text-primary)' }}>{p.name}</td>
                   <td style={{ padding: '16px 24px' }}>
-                    <span style={{ background: p.type === 'combo' ? 'rgba(20,187,166,0.1)' : 'rgba(234,179,8,0.1)', color: p.type === 'combo' ? 'var(--accent-primary)' : 'var(--accent-warning)', borderRadius: '12px', padding: '4px 12px', fontSize: '0.75rem', fontWeight: 700 }}>
+                    <span className="ledger-label" style={{ background: p.type === 'combo' ? 'var(--wash-primary)' : 'var(--wash-warning)', border: '1px solid var(--border-color)', color: p.type === 'combo' ? 'var(--accent-primary)' : 'var(--accent-warning)', borderRadius: '3px', padding: '3px 9px' }}>
                       {getTypeLabel(p.type)}
                     </span>
                   </td>
@@ -234,7 +239,7 @@ export default function PromotionModule() {
                     {p.combo_price ? `$${p.combo_price.toLocaleString('es-AR')}` : '-'}
                   </td>
                   <td style={{ padding: '16px 24px' }}>
-                    <span style={{ background: p.is_active ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)', color: p.is_active ? 'var(--accent-success)' : 'var(--accent-danger)', borderRadius: '12px', padding: '4px 12px', fontSize: '0.75rem', fontWeight: 700 }}>
+                    <span className="ledger-label" style={{ background: p.is_active ? 'var(--wash-success)' : 'var(--wash-danger)', border: '1px solid var(--border-color)', color: p.is_active ? 'var(--accent-success)' : 'var(--accent-danger)', borderRadius: '3px', padding: '3px 9px' }}>
                       {p.is_active ? 'Activa' : 'Inactiva'}
                     </span>
                   </td>
@@ -258,7 +263,7 @@ export default function PromotionModule() {
 
       {showModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(30,58,95,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '32px', width: '600px', maxWidth: '90vw', maxHeight: '85vh', overflowY: 'auto', boxShadow: '0 10px 25px rgba(30,58,95,0.5)' }}>
+          <div className="ledger-sheet" style={{ padding: '32px', width: '600px', maxWidth: '90vw', maxHeight: '85vh', overflowY: 'auto', boxShadow: 'var(--shadow-lg)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
               <h2 style={{ fontSize: '1.5rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>Nueva Promoción</h2>
               <button onClick={() => setShowModal(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '4px' }}><Icons.X /></button>
@@ -335,7 +340,7 @@ export default function PromotionModule() {
 
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '24px', borderTop: '1px solid var(--border-color)', paddingTop: '20px' }}>
               <button onClick={() => setShowModal(false)} style={{ background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', padding: '12px 24px', borderRadius: '8px', fontWeight: 700, cursor: 'pointer', fontSize: '0.9rem' }}>Cancelar</button>
-              <button onClick={handleSave} disabled={!form.name.trim()} style={{ background: 'var(--gradient-primary)', border: 'none', color: 'white', padding: '12px 32px', borderRadius: '8px', fontWeight: 800, cursor: !form.name.trim() ? 'not-allowed' : 'pointer', opacity: !form.name.trim() ? 0.5 : 1, fontSize: '0.9rem' }}>Guardar Promoción</button>
+              <button onClick={handleSave} disabled={!form.name.trim()} style={{ background: 'var(--accent-primary)', border: 'none', color: 'var(--sheet)', padding: '12px 32px', borderRadius: 'var(--radius-sm)', fontWeight: 800, cursor: !form.name.trim() ? 'not-allowed' : 'pointer', opacity: !form.name.trim() ? 0.5 : 1, fontSize: '0.9rem' }}>Guardar promoción</button>
             </div>
           </div>
         </div>

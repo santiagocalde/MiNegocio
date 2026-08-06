@@ -31,7 +31,7 @@ export default function NewInvoiceForm({
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '24px', overflowY: 'auto' }}>
 
       {/* Metadata Factura */}
-      <div style={{ display: 'flex', gap: '24px', background: 'var(--bg-card)', padding: '24px', borderRadius: '16px', border: '1px solid var(--border-color)', flexShrink: 0 }}>
+      <div className="ledger-sheet" style={{ display: 'flex', gap: '24px', padding: '24px', flexShrink: 0 }}>
         <div style={{ flex: 1 }}>
           <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: 600 }}>PROVEEDOR</label>
           <select value={selectedSupplier} onChange={e => setSelectedSupplier(e.target.value)} style={{ width: '100%', background: 'var(--bg-main)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '12px 16px', borderRadius: '8px', outline: 'none', fontSize: '0.9rem' }}>
@@ -46,7 +46,7 @@ export default function NewInvoiceForm({
       </div>
 
       {/* Buscador & Tabla */}
-      <div style={{ flex: 1, background: 'var(--bg-card)', borderRadius: '16px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div className="ledger-sheet" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border-color)' }}>
           <form onSubmit={handleProductSearch} style={{ display: 'flex', gap: '12px', position: 'relative' }}>
             <div style={{ position: 'relative', flex: 1 }}>
@@ -63,7 +63,7 @@ export default function NewInvoiceForm({
                   {showQuickAdd && (
                     <div style={{ padding: '16px' }}>
                       <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '12px' }}>No se encontró "{searchQuery}". ¿Crear nuevo producto?</div>
-                      <button type="button" onClick={handleQuickAddNew} style={{ width: '100%', padding: '12px', background: 'var(--gradient-primary)', color: 'white', border: 'none', borderRadius: '8px', fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                      <button type="button" onClick={handleQuickAddNew} style={{ width: '100%', padding: '12px', background: 'var(--accent-primary)', color: 'var(--sheet)', border: 'none', borderRadius: 'var(--radius-sm)', fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
                         <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"/></svg>
                         Agregar "{searchQuery}"
                       </button>
@@ -72,7 +72,7 @@ export default function NewInvoiceForm({
                 </div>
               ) : null}
             </div>
-            <button type="submit" style={{ background: 'var(--gradient-primary)', color: 'white', border: 'none', borderRadius: '8px', padding: '0 24px', fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer' }}>Agregar</button>
+            <button type="submit" style={{ background: 'var(--accent-primary)', color: 'var(--sheet)', border: 'none', borderRadius: 'var(--radius-sm)', padding: '0 24px', fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer' }}>Agregar</button>
           </form>
         </div>
 
@@ -132,7 +132,7 @@ export default function NewInvoiceForm({
                   Restar de caja registradora (Generar Egreso)
                 </label>
               )}
-              <button onClick={handleConfirmPurchase} style={{ background: 'var(--gradient-primary)', color: 'white', border: 'none', borderRadius: '8px', padding: '16px 32px', fontSize: '1rem', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <button onClick={handleConfirmPurchase} style={{ background: 'var(--accent-primary)', color: 'var(--sheet)', border: 'none', borderRadius: 'var(--radius-sm)', padding: '16px 32px', fontSize: '1rem', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 Registrar Compra y Actualizar Stock
               </button>
             </div>

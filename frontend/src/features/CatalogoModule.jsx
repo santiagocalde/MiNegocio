@@ -207,14 +207,15 @@ export default function CatalogoModule() {
   return (
     <FeatureGate isLocked={isLocked} requiredPlan="Pro">
     <div style={{ padding: '12px 20px', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexShrink: 0 }}>
-        <h2 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>Catálogo Online</h2>
+      <div style={{ marginBottom: '16px', flexShrink: 0 }}>
+        <div className="ledger-label">Tu tienda online</div>
+        <h1 className="ledger-title" style={{ fontSize: '1.6rem', marginTop: 4 }}>Catálogo web</h1>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 350px', gap: '32px', flex: 1 }}>
-        <div style={{ background: 'var(--bg-card)', borderRadius: '16px', padding: '32px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: isActive ? 'rgba(16, 185, 129, 0.1)' : 'rgba(255,255,255,0.02)', padding: '24px', borderRadius: '12px', border: `1px solid ${isActive ? 'var(--accent-success)' : 'var(--border-color)'}` }}>
+        <div className="ledger-sheet" style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: isActive ? 'var(--wash-success)' : 'var(--surface-veil)', padding: '24px', borderRadius: 'var(--radius-sm)', border: `1px solid ${isActive ? 'var(--accent-success)' : 'var(--border-color)'}` }}>
              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                <div style={{ color: isActive ? 'var(--accent-success)' : 'var(--text-secondary)' }}><Icons.Globe /></div>
                <div>
@@ -294,14 +295,13 @@ export default function CatalogoModule() {
              </div>
              
              <div style={{ display: 'flex', gap: '16px', marginTop: '8px' }}>
-                <button onClick={handleSave} style={{ background: 'var(--gradient-primary)', color: 'white', border: 'none', padding: '16px', borderRadius: '8px', fontWeight: 800, fontSize: '1rem', cursor: 'pointer', transition: 'all 0.15s', flex: 1 }}>Guardar Cambios</button>
+                <button onClick={handleSave} style={{ background: 'var(--accent-primary)', color: 'var(--sheet)', border: 'none', padding: '16px', borderRadius: 'var(--radius-sm)', fontWeight: 800, fontSize: '1rem', cursor: 'pointer', transition: 'filter 0.15s', flex: 1 }}>Guardar cambios</button>
              </div>
           </div>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-           <div style={{ background: 'var(--bg-main)', borderRadius: '16px', padding: '24px', border: '1px solid var(--accent-primary)', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
-              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: 'var(--gradient-primary)' }}></div>
+           <div className="ledger-sheet" style={{ padding: '24px', border: '1px solid var(--accent-primary)', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
               <div style={{ color: 'var(--accent-primary)', marginBottom: '16px', display: 'flex', justifyContent: 'center' }}><Icons.Store /></div>
               <h3 style={{ margin: '0 0 8px 0', fontSize: '1.2rem', color: 'var(--text-primary)' }}>Tu Enlace Único</h3>
               <p style={{ margin: '0 0 24px 0', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Compartí este link en Instagram, WhatsApp o Facebook.</p>
@@ -314,7 +314,7 @@ export default function CatalogoModule() {
                  <button disabled={!slug} onClick={() => { navigator.clipboard?.writeText(`${window.location.origin}/t/${slug}`); if (addToast) addToast('Enlace copiado al portapapeles.', 'success'); }} style={{ flex: 1, background: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', padding: '12px', borderRadius: '8px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: slug ? 'pointer' : 'not-allowed', opacity: slug ? 1 : 0.5, transition: 'all 0.15s' }}>
                      <Icons.Share /> Copiar
                   </button>
-                  <button disabled={!slug} onClick={() => window.open(`/t/${slug}`, '_blank')} style={{ flex: 1, background: 'var(--gradient-primary)', color: 'white', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: slug ? 'pointer' : 'not-allowed', opacity: slug ? 1 : 0.5, transition: 'all 0.15s' }}>
+                  <button disabled={!slug} onClick={() => window.open(`/t/${slug}`, '_blank')} style={{ flex: 1, background: 'var(--accent-primary)', color: 'var(--sheet)', border: 'none', padding: '12px', borderRadius: 'var(--radius-sm)', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: slug ? 'pointer' : 'not-allowed', opacity: slug ? 1 : 0.5, transition: 'filter 0.15s' }}>
                      Visitar Tienda
                   </button>
                </div>

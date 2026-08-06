@@ -116,8 +116,11 @@ export default function AuditModule() {
       <div style={{ padding: '12px 20px', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflowY: 'auto' }}>
 
       {/* HEADER COMPARTIDO */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexShrink: 0 }}>
-        <h2 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>Historial</h2>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '16px', flexShrink: 0 }}>
+        <div>
+          <div className="ledger-label">Todo lo que pasó</div>
+          <h1 className="ledger-title" style={{ fontSize: '1.6rem', marginTop: 4 }}>Historial</h1>
+        </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <button onClick={fetchMovements} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '10px 16px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', transition: 'all 0.15s' }}>
@@ -155,7 +158,7 @@ export default function AuditModule() {
       </div>
 
       {/* MAIN TABLE */}
-      <div style={{ flex: 1, background: 'var(--bg-card)', borderRadius: '16px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div className="ledger-sheet" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         <div style={{ padding: '24px', borderBottom: '1px solid var(--border-color)' }}>
           <h3 style={{ fontSize: '1.2rem', fontWeight: 700, margin: '0 0 4px 0', color: 'var(--text-primary)' }}>Registro de Actividad</h3>
           <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>Listado cronológico de acciones en el sistema</p>

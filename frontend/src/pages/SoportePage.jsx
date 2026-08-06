@@ -40,7 +40,8 @@ export default function SoportePage() {
     <div style={{ padding: isMobile ? '16px 14px' : '32px 40px', width: '100%', height: '100%', overflowY: 'auto', boxSizing: 'border-box' }}>
       <div style={{ maxWidth: 720, margin: '0 auto' }}>
         <div style={{ marginBottom: 32 }}>
-          <h2 style={{ fontSize: '1.8rem', fontWeight: 800, margin: '0 0 4px 0', color: 'var(--text-primary)' }}><Icons.HelpCircle /> Soporte</h2>
+          <div className="ledger-label">Estamos del otro lado</div>
+          <h1 className="ledger-title" style={{ fontSize: '1.8rem', margin: '4px 0 4px', display: 'flex', alignItems: 'center', gap: 8 }}><Icons.HelpCircle /> Soporte</h1>
           <p style={{ color: 'var(--text-secondary)', margin: 0, fontSize: '0.95rem' }}>Centro de ayuda y contacto</p>
         </div>
 
@@ -56,7 +57,7 @@ export default function SoportePage() {
               display: 'inline-flex',
               alignItems: 'center',
               gap: 10,
-              background: 'var(--gradient-primary)',
+              background: 'var(--accent-primary)',
               color: 'white',
               padding: '14px 32px',
               borderRadius: 12,
@@ -92,7 +93,7 @@ export default function SoportePage() {
               </div>
             </div>
             <a href="/panel/plan"
-              style={{ background: 'var(--gradient-primary)', color: 'white', textDecoration: 'none', padding: '8px 20px', borderRadius: 8, fontWeight: 600, fontSize: '0.85rem' }}>
+              style={{ background: 'var(--accent-primary)', color: 'white', textDecoration: 'none', padding: '8px 20px', borderRadius: 8, fontWeight: 600, fontSize: '0.85rem' }}>
               {currentPlan === 'trial' ? 'Ver Planes' : 'Gestionar'}
             </a>
             {currentPlan !== 'trial' && currentPlan !== 'simple' && (

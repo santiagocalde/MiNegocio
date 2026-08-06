@@ -154,7 +154,10 @@ export default function EtiquetasModule() {
       <iframe ref={printFrameRef} title="print-frame" style={{ display: 'none' }} />
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px', flexShrink: 0 }}>
-        <h2 style={{ fontSize: '1.05rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>Etiquetas para Góndola</h2>
+        <div>
+          <div className="ledger-label">Para la góndola</div>
+          <h1 className="ledger-title" style={{ fontSize: '1.5rem', marginTop: 2 }}>Etiquetas</h1>
+        </div>
         <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
           <span style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase', marginRight: 4 }}>Papel</span>
           {['a4', 'thermal'].map(f => (
@@ -199,7 +202,7 @@ export default function EtiquetasModule() {
         <button disabled={selected.size === 0} onClick={handlePrint} style={{
           marginLeft: 'auto', padding: '7px 18px', borderRadius: '6px', border: 'none', fontWeight: 800, fontSize: '0.85rem',
           cursor: selected.size === 0 ? 'not-allowed' : 'pointer',
-          background: selected.size === 0 ? 'var(--bg-hover)' : 'var(--gradient-primary)',
+          background: selected.size === 0 ? 'var(--bg-hover)' : 'var(--accent-primary)',
           color: selected.size === 0 ? 'var(--text-secondary)' : 'white', opacity: selected.size === 0 ? 0.5 : 1,
         }}>
           Imprimir {isA4 ? `${totalPages} ${totalPages === 1 ? 'página' : 'páginas'}` : `${selected.size} etiquetas`}
