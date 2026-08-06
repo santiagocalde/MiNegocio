@@ -15,15 +15,15 @@ const tiposNegocio = [
   { id: 'kiosco', label: 'Kiosco', icon: <Icons.Package /> },
   { id: 'almacen', label: 'Almacén', icon: <Icons.Box /> },
   { id: 'minimercado', label: 'Mini Mercado', icon: <Icons.ShoppingCart /> },
-  { id: 'autoservicio', label: 'Autoservicio', icon: <Icons.ShoppingCart /> },
+  { id: 'autoservicio', label: 'Autoservicio', icon: <Icons.Clock /> },
   { id: 'dietetica', label: 'Dietética', icon: <Icons.Sparkles /> },
   { id: 'panaderia', label: 'Panadería', icon: <Icons.Tag /> },
   { id: 'ferreteria', label: 'Ferretería', icon: <Icons.Settings /> },
-  { id: 'electrodomesticos', label: 'Repuestos y Electrodomésticos', icon: <Icons.Settings /> },
+  { id: 'electrodomesticos', label: 'Electrodomésticos', icon: <Icons.Truck /> },
   { id: 'libreria', label: 'Librería', icon: <Icons.Book /> },
   { id: 'petshop', label: 'Pet Shop', icon: <Icons.Users /> },
-  { id: 'vineria', label: 'Vinería', icon: <Icons.Sparkles /> },
-  { id: 'otro', label: 'Otro', icon: <Icons.Crown /> },
+  { id: 'vineria', label: 'Vinería', icon: <Icons.Crown /> },
+  { id: 'otro', label: 'Otro', icon: <Icons.Help /> },
 ];
 
 const objetivos = [
@@ -277,11 +277,31 @@ export default function Onboarding() {
           <div style={{ animation: 'fadeIn 0.3s ease' }}>
             <h2 style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--lp-ink)', marginBottom: 12 }}>¿De qué trata tu negocio?</h2>
             <p style={{ color: 'var(--lp-text-muted)', fontSize: '0.95rem', marginBottom: 32 }}>Seleccioná la categoría que mejor te represente.</p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 32 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 32 }}>
               {tiposNegocio.map(tipo => (
-                <button key={tipo.id} onClick={() => { setFormData({ ...formData, tipo: tipo.id }); handleNext(); }} style={{ background: formData.tipo === tipo.id ? 'rgba(20,187,166,0.15)' : 'var(--lp-paper-sunken)', border: formData.tipo === tipo.id ? '1px solid var(--lp-primary)' : '1px solid var(--lp-line-strong)', padding: '20px 12px', borderRadius: 12, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, transition: 'all 0.2s' }}>
-                  <span style={{ display: 'inline-flex', width: 40, height: 40, color: 'var(--lp-primary)' }}>{tipo.icon}</span>
-                  <span style={{ color: 'var(--lp-ink)', fontSize: '0.85rem', fontWeight: 600 }}>{tipo.label}</span>
+                <button key={tipo.id} onClick={() => { setFormData({ ...formData, tipo: tipo.id }); handleNext(); }} style={{
+                  background: formData.tipo === tipo.id ? 'var(--lp-primary-wash)' : 'var(--lp-paper-sunken)',
+                  border: formData.tipo === tipo.id ? '1px solid var(--lp-primary)' : '1px solid var(--lp-line-strong)',
+                  padding: '28px 14px 20px', borderRadius: 16, cursor: 'pointer',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
+                  transition: 'transform 0.18s, box-shadow 0.18s, border-color 0.18s, background 0.18s',
+                  boxShadow: formData.tipo === tipo.id ? 'var(--lp-shadow-sm)' : 'none',
+                }}
+                  onMouseEnter={e => { if (formData.tipo !== tipo.id) e.currentTarget.style.borderColor = 'var(--lp-line-strong)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                  onMouseLeave={e => { if (formData.tipo !== tipo.id) e.currentTarget.style.borderColor = 'var(--lp-line-strong)'; e.currentTarget.style.transform = 'translateY(0)'; }}
+                >
+                  <div style={{
+                    width: 48, height: 48, borderRadius: 14,
+                    background: formData.tipo === tipo.id ? 'var(--lp-primary)' : 'var(--lp-primary-wash)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: formData.tipo === tipo.id ? '#fff' : 'var(--lp-primary)',
+                    transition: 'all 0.18s',
+                  }}>
+                    {tipo.icon}
+                  </div>
+                  <span style={{ color: 'var(--lp-ink)', fontSize: '0.82rem', fontWeight: 600, textAlign: 'center', lineHeight: 1.2 }}>
+                    {tipo.label}
+                  </span>
                 </button>
               ))}
             </div>
