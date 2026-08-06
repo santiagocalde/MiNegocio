@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { usePanelContext } from '../context/PanelContext';
-import { apiGet, apiPost, apiPatch, apiDelete } from '../services/apiClient';
+import { apiGet, apiPost, apiDelete } from '../services/apiClient';
 
 const STATUS_MAP = {
   draft:     { label: 'Borrador',  color: 'var(--lp-ink-faint)' },
@@ -85,7 +85,7 @@ export default function QuotesModule() {
   };
 
   const handleStatus = async (id, status) => {
-    const res = await apiPatch(`/quotes/${id}/status`, { status });
+    const res = await apiPost(`/quotes/${id}/status`, { status });
     if (res.ok) { addToast?.(`Estado: ${STATUS_MAP[status]?.label || status}.`, 'success'); fetchQuotes(); }
     else { addToast?.('Error al cambiar estado.', 'error'); }
   };

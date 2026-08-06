@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { usePanelContext } from '../context/PanelContext';
-import { apiGet, apiPost, apiPatch } from '../services/apiClient';
+import { apiGet, apiPost } from '../services/apiClient';
 
 export default function ObrasModule() {
   const { addToast } = usePanelContext();
@@ -26,7 +26,7 @@ export default function ObrasModule() {
   };
 
   const handleStatus = async (id, status) => {
-    const res = await apiPatch(`/obras/${id}`, { status });
+    const res = await apiPost(`/obras/${id}/update`, { status });
     if (res.ok) { addToast?.('Actualizado.', 'success'); fetchObras(); }
   };
 

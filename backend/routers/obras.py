@@ -76,7 +76,7 @@ async def create_obra(request: Request, body: dict = Body(...)) -> dict:
             return {"id": cur.lastrowid, "success": True}
 
 
-@router.patch("/api/obras/{obra_id}", summary="Actualizar obra")
+@router.post("/api/obras/{obra_id}/update", summary="Actualizar obra")
 @limiter.limit("30/minute")
 async def update_obra(request: Request, obra_id: int, body: dict = Body(...)) -> dict:
     from main import USE_PG

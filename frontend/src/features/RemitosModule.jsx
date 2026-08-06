@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { usePanelContext } from '../context/PanelContext';
-import { apiGet, apiPost, apiPatch } from '../services/apiClient';
+import { apiGet, apiPost } from '../services/apiClient';
 
 const STATUS_MAP = {
   pending:    { label: 'Pendiente',  color: 'var(--lp-amber)' },
@@ -74,7 +74,7 @@ export default function RemitosModule() {
   };
 
   const handleStatus = async (id, status) => {
-    const res = await apiPatch(`/remitos/${id}/status`, { status });
+    const res = await apiPost(`/remitos/${id}/status`, { status });
     if (res.ok) { addToast?.(`Remito ${STATUS_MAP[status]?.label}.`, 'success'); fetchRemitos(); }
     else { addToast?.('Error.', 'error'); }
   };

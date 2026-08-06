@@ -151,7 +151,7 @@ async def create_quote(body: dict = Body(...)) -> dict:
 
 # ── UPDATE STATUS ─────────────────────────────────────────────
 
-@router.patch("/api/quotes/{quote_id}/status", summary="Cambiar estado de presupuesto")
+@router.post("/api/quotes/{quote_id}/status", summary="Cambiar estado de presupuesto")
 async def update_quote_status(quote_id: int, body: dict = Body(...)) -> dict:
     from main import USE_PG
     import main

@@ -104,7 +104,7 @@ async def create_remito(request: Request, body: dict = Body(...)) -> dict:
 
 # ── UPDATE STATUS / DELIVER ───────────────────────────────────
 
-@router.patch("/api/remitos/{remito_id}/status", summary="Cambiar estado de remito")
+@router.post("/api/remitos/{remito_id}/status", summary="Cambiar estado de remito")
 @limiter.limit("30/minute")
 async def update_remito_status(request: Request, remito_id: int, body: dict = Body(...)) -> dict:
     from main import USE_PG

@@ -9,7 +9,7 @@ def _biz_id():
     import main
     return main.business_id_ctx.get() if hasattr(main, 'business_id_ctx') else None
 
-@router.patch("/api/remitos/reorder", summary="Reordenar remitos por zona")
+@router.post("/api/remitos/reorder", summary="Reordenar remitos por zona")
 @limiter.limit("30/minute")
 async def reorder_remitos(request: Request, body: list = Body(...)) -> dict:
     """Recibe [{id, zone, sort_order}] y aplica en lote."""
