@@ -284,7 +284,7 @@ async def auth_login(request: Request, body: BusinessLogin) -> dict:
     pool = await get_pool()
     async with pool.acquire() as conn:
         row = await conn.fetchrow(
-            "SELECT id, email, business_name, plan, status, password_hash FROM businesses WHERE email = $1",
+            "SELECT id, email, business_name, plan, status, password_hash, business_type FROM businesses WHERE email = $1",
             body.email.lower().strip(),
         )
         # Protección anti-timing / anti-enumeración: siempre se corre un checkpw,
@@ -294,7 +294,7 @@ async def auth_login(request: Request, body: BusinessLogin) -> dict:
         stored_hash = row["password_hash"] if valid else bcrypt.hashpw(b"dummy", bcrypt.gensalt()).decode()
         if not bcrypt.checkpw(body.password.encode(), stored_hash.encode()) or not valid:
             raise HTTPException(status_code=401, detail="Email o contrasena incorrectos")
-        biz_id, biz_email, biz_name, biz_plan, biz_status, pw_hash = row
+        biz_id, biz_email, biz_name, biz_plan, biz_status, pw_hash, biz_type = row
         if biz_status == "suspended":
             raise HTTPException(status_code=403, detail="Cuenta suspendida. Contacta a soporte.")
         if biz_status == "expired":
@@ -336,7 +336,7 @@ async def auth_login(request: Request, body: BusinessLogin) -> dict:
         "business": {
             "id": biz_id, "email": biz_email,
             "business_name": biz_name, "plan": biz_plan, "status": biz_status,
-            "is_superadmin": is_superadmin,
+            "business_type": biz_type or "", "is_superadmin": is_superadmin,
         },
     }
 
