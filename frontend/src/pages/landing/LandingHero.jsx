@@ -1,8 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Reveal } from './hooks/useReveal';
+import imgPos from '../../assets/landing/punto-de-venta.webp';
 
-const Svg = { ArrowRight: () => <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg> };
+const Svg = {
+  ArrowRight: () => <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>,
+  Check: () => <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>,
+};
 
+/* El typewriter de rubros — mantiene el gesto pero sin gradient-text.
+   La palabra va en tinta turquesa sobre un resaltado tipo marcador. */
 function TypewriterRubro() {
   const words = ['kiosco', 'almacén', 'fiambrería', 'verdulería', 'despensa', 'maxikiosco', 'vinería'];
   const [i, setI] = useState(0);
@@ -12,7 +18,7 @@ function TypewriterRubro() {
   useEffect(() => {
     const full = words[i];
     let delay = del ? 55 : 110;
-    if (!del && txt === full) delay = 1400;
+    if (!del && txt === full) delay = 1500;
     if (del && txt === '') delay = 250;
     const t = setTimeout(() => {
       if (!del && txt === full) { setDel(true); return; }
@@ -24,114 +30,156 @@ function TypewriterRubro() {
   }, [txt, del, i]);
 
   return (
-    <span className="lp-gradient-text" style={{ fontStyle: 'italic' }}>
+    <span className="hero-rubro">
       {txt}
-      <span style={{ borderRight: '3px solid currentColor', marginLeft: 2, animation: 'lp-caret 0.9s step-end infinite' }} />
+      <span className="hero-caret" aria-hidden="true">&nbsp;</span>
     </span>
   );
 }
 
 export default function LandingHero({ isLoggedIn, goPanel, goOnboard }) {
   return (
-    <section
-      aria-label="Sistema de punto de venta para kioscos en Argentina"
-      style={{
-        minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-        padding: '120px 16px 24px', textAlign: 'center', position: 'relative', overflow: 'hidden'
-      }}>
+    <section aria-label="Sistema de punto de venta para kioscos en Argentina" className="hero">
       <style>{`
         @keyframes lp-caret { 50% { opacity: 0 } }
-        @keyframes shine-sweep {
-          0% { left: -100%; }
-          20% { left: 200%; }
-          100% { left: 200%; }
+
+        .hero {
+          position: relative; z-index: 1;
+          padding: 132px 24px 56px;
+          max-width: 1080px; margin: 0 auto;
+          text-align: center;
         }
-        .btn-nuevo {
-          position: relative; overflow: hidden;
-          background: linear-gradient(90deg, var(--lp-primary), var(--lp-secondary));
-          transition: all 0.3s ease; border-radius: 100px;
-          box-shadow: 0 0 20px rgba(20,187,166, 0.4);
+        .hero-eyebrow-wrap { display: flex; justify-content: center; }
+
+        .hero-h1 {
+          font-family: var(--lp-font-display);
+          font-weight: 700;
+          font-size: clamp(2.7rem, 6vw, 4.7rem);
+          line-height: 1.01;
+          letter-spacing: -0.035em;
+          color: var(--lp-ink);
+          margin: 20px auto 0;
+          max-width: 15ch;
         }
-        .btn-nuevo:hover { transform: translateY(-2px); box-shadow: 0 0 40px rgba(20,187,166, 0.8); }
-        .btn-nuevo::after {
-          content: ""; position: absolute; top: 0; left: -100%; width: 60%; height: 100%;
-          background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.85) 50%, rgba(255,255,255,0) 100%);
-          transform: skewX(-25deg); animation: shine-sweep 3.5s infinite;
+        .hero-h1 .l1 { display: block; }
+        .hero-h1 .l2 { display: block; }
+
+        .hero-rubro {
+          color: var(--lp-primary-ink);
+          font-style: italic;
+          box-shadow: inset 0 -0.16em 0 var(--lp-primary-wash);
+          padding: 0 0.04em;
+          white-space: nowrap;
         }
-        @media (max-width: 640px) { .hero-badge { display: none !important; } }
+        .hero-caret {
+          border-right: 3px solid var(--lp-primary);
+          margin-left: 1px;
+          animation: lp-caret 0.9s step-end infinite;
+        }
+
+        .hero-sub {
+          font-family: var(--lp-font-body);
+          font-size: clamp(1.06rem, 1.5vw, 1.24rem);
+          line-height: 1.5; color: var(--lp-ink-soft);
+          margin: 20px auto 0; max-width: 600px;
+        }
+        .hero-sub strong { color: var(--lp-ink); font-weight: 700; }
+
+        .hero-proof {
+          display: inline-flex; align-items: center; gap: 9px;
+          margin-top: 18px; font-size: 0.92rem; font-weight: 600;
+          color: var(--lp-primary-ink);
+        }
+        .hero-proof .tick {
+          display: inline-flex; align-items: center; justify-content: center;
+          width: 20px; height: 20px; border-radius: 999px;
+          background: var(--lp-primary); color: #fff; flex-shrink: 0;
+        }
+
+        .hero-cta-row {
+          display: flex; flex-wrap: wrap; gap: 13px; align-items: center; justify-content: center;
+          margin-top: 30px;
+        }
+        .hero-btn-primary { padding: 15px 30px; font-size: 1.05rem; font-weight: 700; border: none; }
+        .hero-btn-ghost { padding: 15px 26px; font-size: 1.01rem; font-weight: 700; }
+        .hero-micro {
+          margin-top: 15px; font-family: var(--lp-font-mono);
+          font-size: 0.8rem; color: var(--lp-ink-faint); letter-spacing: 0.01em;
+        }
+
+        /* ── Captura real del producto, enmarcada ── */
+        .hero-shot {
+          margin: 52px auto 0; max-width: 940px; width: 100%;
+          border: 1px solid var(--lp-line);
+          border-radius: 16px; overflow: hidden;
+          background: var(--lp-paper-raised);
+          box-shadow: var(--lp-shadow-lg);
+        }
+        .hero-shot-chrome {
+          display: flex; align-items: center; gap: 7px;
+          padding: 11px 15px; border-bottom: 1px solid var(--lp-line);
+          background: var(--lp-paper-sunken);
+        }
+        .hero-shot-dot { width: 11px; height: 11px; border-radius: 999px; }
+        .hero-shot-url {
+          margin-left: 10px; font-family: var(--lp-font-mono);
+          font-size: 0.72rem; color: var(--lp-ink-faint);
+          background: var(--lp-paper); border: 1px solid var(--lp-line);
+          padding: 3px 12px; border-radius: 6px;
+        }
+        .hero-shot img { display: block; width: 100%; height: auto; }
+
+        @media (max-width: 720px) {
+          .hero { padding: 104px 20px 40px; }
+          .hero-h1 { font-size: clamp(2.3rem, 11vw, 3.3rem); }
+          .hero-rubro { white-space: normal; }
+          .hero-shot { margin-top: 40px; }
+        }
+        @media (prefers-reduced-motion: reduce) { .hero-caret { animation: none; } }
       `}</style>
 
-      <div style={{ maxWidth: 1200, margin: '0 auto', position: 'relative', zIndex: 1 }}>
-        <Reveal delay={1}>
-          {/* Badge — oculto en mobile para ganar espacio vertical */}
-          <div className="hero-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 16px', background: 'rgba(20,187,166, 0.1)', border: '1px solid rgba(20,187,166, 0.2)', borderRadius: 100, marginBottom: 32, fontSize: '0.75rem', fontWeight: 600, color: 'var(--lp-primary)', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
-            <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: 'var(--lp-primary)', boxShadow: '0 0 10px var(--lp-primary)' }}></span>
-            Sistema POS para kioscos · Argentina 🇦🇷
+      <Reveal delay={1}>
+        <div className="hero-eyebrow-wrap"><span className="lp-eyebrow">Sistema para tu mostrador</span></div>
+        <h1 className="hero-h1">
+          <span className="l1">Dejá el cuaderno.</span>
+          <span className="l2">Tu <TypewriterRubro /> merece algo mejor.</span>
+        </h1>
+      </Reveal>
+
+      <Reveal delay={2}>
+        <p className="hero-sub">
+          <strong>Vendé sin internet, controlá los fiados y sabé cuánta plata tenés en caja.</strong>{' '}
+          Más fácil que WhatsApp. Sin cuentas mal hechas ni horas perdidas cerrando el día.
+        </p>
+        <div><span className="hero-proof">
+          <span className="tick"><Svg.Check /></span>
+          Más de 52 kioscos ya digitalizaron su negocio en Argentina
+        </span></div>
+      </Reveal>
+
+      <Reveal delay={3}>
+        <div className="hero-cta-row">
+          <button onClick={isLoggedIn ? goPanel : goOnboard} className="lp-btn lp-btn--primary hero-btn-primary">
+            {isLoggedIn ? 'Ir a mi Panel' : 'Empezar mi prueba gratis'} <Svg.ArrowRight />
+          </button>
+          <a href="#planes" className="lp-btn lp-btn--ghost hero-btn-ghost">Ver los planes</a>
+        </div>
+        <div className="hero-micro">
+          {isLoggedIn ? 'Tu negocio te espera' : '7 días gratis · En 3 minutos ya estás vendiendo'}
+        </div>
+      </Reveal>
+
+      <Reveal delay={4}>
+        <div className="hero-shot">
+          <div className="hero-shot-chrome">
+            <span className="hero-shot-dot" style={{ background: '#ff5f57' }} />
+            <span className="hero-shot-dot" style={{ background: '#febc2e' }} />
+            <span className="hero-shot-dot" style={{ background: '#28c840' }} />
+            <span className="hero-shot-url">mi-negocio.app/panel</span>
           </div>
-
-          {/* H1 — display:block en cada línea → text-align:center centra independientemente del ancho */}
-          <h1 style={{
-            fontFamily: '"Inter", "SF Pro Display", -apple-system, BlinkMacSystemFont, var(--lp-font-display), sans-serif',
-            fontSize: 'clamp(2rem, 6.8vw, 5.2rem)',
-            lineHeight: 1.2, letterSpacing: '-1.5px', fontWeight: 800,
-            marginBottom: 24, paddingTop: '0.05em',
-            color: '#ffffff', textAlign: 'center',
-          }}>
-            <span className="lp-gradient-text" style={{ fontStyle: 'italic', display: 'block' }}>Dejá el cuaderno.</span>
-            <span style={{ display: 'block', whiteSpace: 'nowrap' }}>Tu <TypewriterRubro /> merece algo mejor.</span>
-          </h1>
-        </Reveal>
-
-        <Reveal delay={2}>
-          <p style={{
-            fontFamily: '"Inter", "SF Pro Display", -apple-system, BlinkMacSystemFont, var(--lp-font-display), sans-serif',
-            fontSize: 'clamp(1.2rem, 5vw, 2.2rem)',
-            color: 'var(--lp-text)', letterSpacing: '-1px', marginBottom: 20, fontWeight: 600,
-          }}>
-            Más fácil que WhatsApp. Funciona sin internet.
-          </p>
-        </Reveal>
-
-        <Reveal delay={3}>
-          <p style={{ fontSize: '1.15rem', color: 'rgba(230,255,251, 0.7)', lineHeight: 1.7, maxWidth: 620, margin: '0 auto 12px', fontWeight: 500 }}>
-            <strong style={{ color: '#fff', fontWeight: 700 }}>Vendé sin internet, controlá los fiados y sabé cuánta plata tenés en caja.</strong>{' '}
-            Dejá de perder plata por cuentas mal hechas y recuperá las horas que perdés cerrando caja.
-          </p>
-          {/* Social proof antes del CTA — reduce fricción */}
-          <p style={{ fontSize: '0.9rem', color: 'rgba(20,187,166,0.9)', fontWeight: 700, letterSpacing: '0.3px', marginBottom: 36 }}>
-            ✓ Más de 50 kioscos ya digitalizaron su negocio en Argentina
-          </p>
-        </Reveal>
-
-        <Reveal delay={4}>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
-            <button onClick={isLoggedIn ? goPanel : goOnboard} className="lp-btn lp-btn--primary btn-nuevo" style={{ padding: '18px 48px', fontSize: '1.15rem', fontWeight: 700, border: 'none' }}>
-              {isLoggedIn ? 'Ir a mi Panel' : 'Empezar mi prueba gratis'} <Svg.ArrowRight />
-            </button>
-            <div style={{ fontSize: '0.83rem', color: 'rgba(230,255,251,0.5)', fontWeight: 500 }}>
-              {isLoggedIn ? 'Tu negocio te espera' : 'Probalo 7 días gratis · En 3 minutos ya estás vendiendo'}
-            </div>
-            <a href="#planes" style={{ fontSize: '0.95rem', color: 'rgba(230,255,251,0.7)', textDecoration: 'none', fontWeight: 600, borderBottom: '1px solid rgba(230,255,251,0.2)', paddingBottom: 2, marginTop: 4 }}>
-              o mirá los planes →
-            </a>
-          </div>
-        </Reveal>
-
-        <Reveal delay={5}>
-          <div style={{ display: 'flex', gap: 32, justifyContent: 'center', alignItems: 'center', marginTop: 40, flexWrap: 'wrap', maxWidth: '800px', margin: '40px auto 0' }}>
-            {[
-              { label: 'Funciona sin internet', desc: 'Seguís cobrando igual' },
-              { label: 'Listo en 3 minutos', desc: 'Te ayudamos a arrancar' },
-              { label: 'Cancelás cuando querés', desc: 'Sin ataduras' },
-            ].map(s => (
-              <div key={s.label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
-                <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#fff' }}>{s.label}</div>
-                <div style={{ color: 'var(--lp-text-muted)', fontSize: '0.78rem', marginTop: 4 }}>{s.desc}</div>
-              </div>
-            ))}
-          </div>
-        </Reveal>
-      </div>
+          <img src={imgPos} alt="Punto de venta de MiNegocio con productos en el carrito y total a cobrar" width="1366" height="768" fetchPriority="high" decoding="async" />
+        </div>
+      </Reveal>
     </section>
   );
 }

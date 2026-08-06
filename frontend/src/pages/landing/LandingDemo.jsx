@@ -39,14 +39,14 @@ export default function LandingDemo() {
   const done = step === 5;
 
   return (
-    <section className="lp-section" style={{ padding: '100px 24px' }}>
+    <section className="lp-section" style={{ padding: '72px 24px' }}>
       <div className="lp-container" style={{ maxWidth: 820, margin: '0 auto' }}>
         <Reveal>
-          <div style={{ textAlign: 'center', marginBottom: 40 }}>
-            <h2 className="lp-section-title" style={{ fontSize: '2.5rem', marginBottom: 12 }}>
-              Así de <span style={{ color: 'var(--lp-primary)', fontWeight: 900 }}>simple</span> es vender
+          <div style={{ textAlign: 'center', marginBottom: 32 }}>
+            <h2 className="lp-section-title">
+              Así de <span style={{ color: 'var(--lp-primary-ink)' }}>simple</span> es vender
             </h2>
-            <p className="lp-section-sub" style={{ fontSize: '1.1rem', color: 'rgba(230,255,251, 0.65)' }}>
+            <p className="lp-section-sub">
               Pistoleás el producto, cobrás y listo. En segundos.
             </p>
           </div>
@@ -63,57 +63,57 @@ export default function LandingDemo() {
           `}</style>
 
           <div style={{
-            position: 'relative', background: 'rgba(30,58,95,0.5)', border: '1px solid rgba(255,255,255,0.08)',
-            borderRadius: 24, padding: 0, overflow: 'hidden', backdropFilter: 'blur(12px)',
-            boxShadow: '0 24px 60px rgba(11,19,43,0.6)', maxWidth: 480, margin: '0 auto'
+            position: 'relative', background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line)',
+            borderRadius: 22, padding: 0, overflow: 'hidden',
+            boxShadow: 'var(--lp-shadow-lg)', maxWidth: 460, margin: '0 auto'
           }}>
             {/* barra superior estilo caja */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '14px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.015)' }}>
-              <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--lp-primary)', boxShadow: '0 0 8px var(--lp-primary)' }} />
-              <span style={{ fontWeight: 800, fontSize: '0.85rem', color: '#fff', letterSpacing: 0.5 }}>Caja — MiNegocio</span>
-              <span style={{ marginLeft: 'auto', fontSize: '0.7rem', color: 'rgba(230,255,251,0.4)', fontFamily: 'var(--lp-font-mono)' }}>● EN VIVO</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '13px 18px', borderBottom: '1px solid var(--lp-line)', background: 'var(--lp-paper-sunken)' }}>
+              <span style={{ width: 9, height: 9, borderRadius: '50%', background: 'var(--lp-primary)', boxShadow: '0 0 0 4px var(--lp-primary-wash)' }} />
+              <span style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--lp-ink)', letterSpacing: 0.2 }}>Caja — MiNegocio</span>
+              <span style={{ marginLeft: 'auto', fontSize: '0.68rem', color: 'var(--lp-ink-faint)', fontFamily: 'var(--lp-font-mono)', letterSpacing: '0.06em' }}>● EN VIVO</span>
             </div>
 
             {/* zona del scanner */}
-            <div style={{ position: 'relative', height: 56, display: 'flex', alignItems: 'center', justifyContent: 'center', borderBottom: '1px solid rgba(255,255,255,0.05)', overflow: 'hidden', background: 'rgba(0,0,0,0.15)' }}>
-              <span style={{ fontSize: '0.8rem', color: 'rgba(230,255,251,0.45)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ position: 'relative', height: 52, display: 'flex', alignItems: 'center', justifyContent: 'center', borderBottom: '1px solid var(--lp-line)', overflow: 'hidden', background: 'var(--lp-paper)' }}>
+              <span style={{ fontSize: '0.8rem', color: 'var(--lp-ink-faint)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
                 {done ? '✓ Próxima venta lista' : charging ? 'Cobrando…' : 'Pistoleá un producto…'}
               </span>
               {!done && !charging && (
-                <div style={{ position: 'absolute', left: 0, right: 0, top: 0, height: 2, background: 'linear-gradient(90deg, transparent, var(--lp-primary), transparent)', animation: 'demo-scan 1.4s linear infinite', opacity: 0.7 }} />
+                <div style={{ position: 'absolute', left: 0, right: 0, top: 0, height: 2, background: 'linear-gradient(90deg, transparent, var(--lp-primary), transparent)', animation: 'demo-scan 1.4s linear infinite', opacity: 0.8 }} />
               )}
             </div>
 
             {/* lista de items */}
             <div style={{ minHeight: 168, padding: '8px 0' }}>
               {visibleItems.length === 0 && (
-                <div style={{ padding: '52px 20px', textAlign: 'center', color: 'rgba(230,255,251,0.3)', fontSize: '0.9rem' }}>
+                <div style={{ padding: '52px 20px', textAlign: 'center', color: 'var(--lp-ink-faint)', fontSize: '0.9rem' }}>
                   Carrito vacío
                 </div>
               )}
               {visibleItems.map((it) => (
                 <div key={it.name} className="demo-row" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 20px' }}>
-                  <span style={{ fontSize: '1.3rem', width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.05)', borderRadius: 10 }}>{it.emoji}</span>
-                  <span style={{ flex: 1, fontSize: '0.95rem', color: '#fff', fontWeight: 600 }}>{it.name}</span>
-                  <span style={{ fontFamily: 'var(--lp-font-mono)', fontWeight: 700, color: 'rgba(230,255,251,0.85)', fontSize: '0.95rem' }}>{peso(it.price)}</span>
+                  <span style={{ fontSize: '1.3rem', width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--lp-paper-sunken)', borderRadius: 10 }}>{it.emoji}</span>
+                  <span style={{ flex: 1, fontSize: '0.95rem', color: 'var(--lp-ink)', fontWeight: 600 }}>{it.name}</span>
+                  <span className="lp-money" style={{ fontWeight: 700, color: 'var(--lp-ink-soft)', fontSize: '0.95rem' }}>{peso(it.price)}</span>
                 </div>
               ))}
             </div>
 
             {/* total + cobrar */}
-            <div style={{ padding: '16px 20px', borderTop: '1px solid rgba(255,255,255,0.06)', background: 'rgba(0,0,0,0.15)' }}>
+            <div style={{ padding: '16px 20px', borderTop: '1px solid var(--lp-line)', background: 'var(--lp-paper-sunken)' }}>
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 12 }}>
-                <span style={{ fontSize: '0.85rem', color: 'rgba(230,255,251,0.55)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1 }}>Total</span>
-                <span style={{ fontFamily: 'var(--lp-font-mono)', fontWeight: 800, fontSize: '1.8rem', color: '#fff', letterSpacing: '-1px' }}>
+                <span style={{ fontSize: '0.72rem', color: 'var(--lp-ink-faint)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', fontFamily: 'var(--lp-font-mono)' }}>Total</span>
+                <span className="lp-money" style={{ fontWeight: 700, fontSize: '1.7rem', color: 'var(--lp-ink)', letterSpacing: '-0.02em' }}>
                   {peso(done ? TOTAL : runningTotal)}
                 </span>
               </div>
               <button
                 className={charging ? 'demo-pulse' : ''}
                 style={{
-                  width: '100%', padding: '14px 0', borderRadius: 12, border: 'none', cursor: 'default',
-                  fontWeight: 800, fontSize: '1rem', color: '#fff',
-                  background: done ? '#10b981' : 'linear-gradient(90deg, var(--lp-primary), var(--lp-secondary))',
+                  width: '100%', padding: '13px 0', borderRadius: 11, border: 'none', cursor: 'default',
+                  fontWeight: 700, fontSize: '1rem', color: '#fff',
+                  background: done ? 'var(--lp-green)' : 'var(--lp-primary)',
                   transition: 'background 0.3s ease'
                 }}>
                 {done ? '✓ Venta completada' : charging ? 'Procesando pago…' : `Cobrar ${peso(runningTotal || TOTAL)}`}
@@ -122,17 +122,17 @@ export default function LandingDemo() {
 
             {/* overlay de éxito */}
             {done && (
-              <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, background: 'rgba(11,19,43,0.82)', backdropFilter: 'blur(2px)' }}>
-                <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'rgba(16,185,129,0.15)', border: '2px solid #10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', animation: reduced ? 'none' : 'demo-pop 0.4s cubic-bezier(0.16,1,0.3,1) both' }}>
-                  <svg width="36" height="36" fill="none" stroke="#10b981" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, background: 'color-mix(in srgb, var(--lp-paper-raised) 90%, transparent)', backdropFilter: 'blur(2px)' }}>
+                <div style={{ width: 68, height: 68, borderRadius: '50%', background: 'var(--lp-primary-wash)', border: '2px solid var(--lp-green)', display: 'flex', alignItems: 'center', justifyContent: 'center', animation: reduced ? 'none' : 'demo-pop 0.4s cubic-bezier(0.16,1,0.3,1) both' }}>
+                  <svg width="34" height="34" fill="none" stroke="var(--lp-green)" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
                 </div>
-                <div style={{ fontWeight: 800, fontSize: '1.2rem', color: '#fff' }}>¡Venta registrada!</div>
-                <div style={{ fontSize: '0.85rem', color: 'rgba(230,255,251,0.6)' }}>Stock y caja actualizados solos</div>
+                <div style={{ fontWeight: 700, fontSize: '1.15rem', color: 'var(--lp-ink)' }}>¡Venta registrada!</div>
+                <div style={{ fontSize: '0.85rem', color: 'var(--lp-ink-soft)' }}>Stock y caja actualizados solos</div>
               </div>
             )}
           </div>
 
-          <p style={{ textAlign: 'center', marginTop: 28, fontSize: '0.9rem', color: 'rgba(230,255,251,0.5)' }}>
+          <p style={{ textAlign: 'center', marginTop: 24, fontSize: '0.9rem', color: 'var(--lp-ink-faint)' }}>
             Funciona igual aunque se te corte internet. Lo que vendiste no se pierde.
           </p>
         </Reveal>

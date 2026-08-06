@@ -89,7 +89,7 @@ export default function TermsPage() {
               <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#fff', marginBottom: 12 }}>10. Contacto</h2>
               <p>Para cualquier consulta sobre estos Términos, podés contactarnos a través de:</p>
               <ul style={{ paddingLeft: 20, marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <li>Email: upcodednow@gmail.com</li>
+                <li>Email: calderonsantiago2019@gmail.com</li>
                 <li>WhatsApp: +54 9 11 4427-6384</li>
               </ul>
             </section>

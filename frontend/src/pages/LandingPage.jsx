@@ -5,6 +5,7 @@ import { track } from '../utils/track';
 import useIsMobile from '../hooks/useIsMobile';
 
 import LogoPrincipal from '../assets/images/MiNegocio_transparente_real.png';
+import LogoLight from '../assets/images/MiNegocio_light.png';
 import FotoMascota from '../assets/images/mascota_oficial.jpg';
 import LogoWhatsApp from '../assets/images/whatsapp_logo.png';
 
@@ -38,6 +39,19 @@ export default function LandingPage() {
   const [isYearly, setIsYearly] = useState(true); // anual por default: resalta el ahorro del 20%
   const [mobileMenu, setMobileMenu] = useState(false);
   const [checkoutPlan, setCheckoutPlan] = useState(null);
+
+  // Tema de la landing: claro por default (mejor conversión en mobile a la luz),
+  // oscuro opcional. Persiste la elección del visitante.
+  const [theme, setTheme] = useState(() => {
+    try { return localStorage.getItem('lp_theme') || 'light'; } catch { return 'light'; }
+  });
+  const toggleTheme = useCallback(() => {
+    setTheme(t => {
+      const next = t === 'dark' ? 'light' : 'dark';
+      try { localStorage.setItem('lp_theme', next); } catch { /* noop */ }
+      return next;
+    });
+  }, []);
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userName, setUserName] = useState('');
@@ -204,6 +218,12 @@ export default function LandingPage() {
     setShowLoginModal('login');
   };
 
+  // Aplica el tema al body (los tokens --lp-* cambian según data-lp-theme).
+  useEffect(() => {
+    document.body.setAttribute('data-lp-theme', theme);
+    return () => document.body.removeAttribute('data-lp-theme');
+  }, [theme]);
+
   useEffect(() => {
     document.body.classList.add('landing-open');
     const handleScroll = () => setIsScrolled(window.scrollY > 50);
@@ -260,8 +280,9 @@ export default function LandingPage() {
         mobileMenu={mobileMenu} setMobileMenu={setMobileMenu}
         setIsLoggedIn={setIsLoggedIn} setShowLoginModal={setShowLoginModal}
         goPanel={goPanel} goOnboard={goOnboard} navigate={navigate}
-        setShowContactModal={setShowContactModal} logoImg={LogoPrincipal}
+        setShowContactModal={setShowContactModal} logoImg={theme === 'dark' ? LogoPrincipal : LogoLight}
         activeSection={activeSection}
+        theme={theme} toggleTheme={toggleTheme}
       />
 
       <LandingHero isLoggedIn={isLoggedIn} goPanel={goPanel} goOnboard={goOnboard} />
@@ -316,7 +337,7 @@ export default function LandingPage() {
 
       <LandingFooter
         navigate={navigate} setShowContactModal={setShowContactModal}
-        handleDogClick={handleDogClick} logoImg={LogoPrincipal} mascotaImg={FotoMascota}
+        handleDogClick={handleDogClick} logoImg={theme === 'dark' ? LogoPrincipal : LogoLight} mascotaImg={FotoMascota}
       />
 
       <LandingLoginModal

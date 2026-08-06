@@ -41,8 +41,8 @@ export default function LandingFeaturesCompact() {
                   {it.icon}
                 </svg>
               </span>
-              <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--lp-text)', lineHeight: 1.2 }}>{it.title}</div>
-              <div style={{ fontSize: '0.75rem', color: 'rgba(230,255,251,0.6)', lineHeight: 1.35 }}>{it.desc}</div>
+              <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--lp-ink)', lineHeight: 1.2 }}>{it.title}</div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--lp-ink-soft)', lineHeight: 1.35 }}>{it.desc}</div>
             </div>
           ))}
         </div>

@@ -20,62 +20,57 @@ function PlanCard({ plan, isYearly, onCta, isLoggedIn }) {
 
   return (
     <div className={`lp-plan-card${plan.popular ? ' lp-plan-popular' : ''}`} style={{
-      position: 'relative', padding: '32px 24px', borderRadius: 24,
-      background: plan.popular ? 'rgba(20,187,166,0.05)' : 'rgba(30,58,95,0.6)',
-      border: plan.popular ? '1px solid rgba(20,187,166,0.4)' : '1px solid rgba(255,255,255,0.08)',
-      boxShadow: plan.popular ? '0 24px 60px rgba(20,187,166,0.15)' : '0 10px 30px rgba(30,58,95,0.2)',
-      backdropFilter: 'blur(12px)', display: 'flex', flexDirection: 'column', height: '100%',
-      transform: plan.popular ? 'scale(1.05)' : 'scale(1)',
+      position: 'relative', padding: '30px 24px', borderRadius: 20,
+      background: plan.popular ? 'var(--lp-primary-wash)' : 'var(--lp-paper-raised)',
+      border: plan.popular ? '2px solid var(--lp-primary)' : '1px solid var(--lp-line)',
+      boxShadow: plan.popular ? '0 24px 56px var(--lp-primary-glow)' : 'var(--lp-shadow-sm)',
+      display: 'flex', flexDirection: 'column', height: '100%',
+      transform: plan.popular ? 'scale(1.04)' : 'scale(1)',
       zIndex: plan.popular ? 2 : 1,
       transition: 'transform 0.3s ease, box-shadow 0.3s ease'
     }}
-      onMouseEnter={e => { e.currentTarget.style.transform = plan.popular ? 'scale(1.07)' : 'scale(1.02) translateY(-4px)'; e.currentTarget.style.boxShadow = plan.popular ? '0 28px 64px rgba(20,187,166,0.22)' : '0 14px 40px rgba(30,58,95,0.35)'; }}
-      onMouseLeave={e => { e.currentTarget.style.transform = plan.popular ? 'scale(1.05)' : 'scale(1)'; e.currentTarget.style.boxShadow = plan.popular ? '0 24px 60px rgba(20,187,166,0.15)' : '0 10px 30px rgba(30,58,95,0.2)'; }}
+      onMouseEnter={e => { e.currentTarget.style.transform = plan.popular ? 'scale(1.06)' : 'scale(1.02) translateY(-4px)'; e.currentTarget.style.boxShadow = plan.popular ? '0 28px 60px var(--lp-primary-glow)' : 'var(--lp-shadow-md)'; }}
+      onMouseLeave={e => { e.currentTarget.style.transform = plan.popular ? 'scale(1.04)' : 'scale(1)'; e.currentTarget.style.boxShadow = plan.popular ? '0 24px 56px var(--lp-primary-glow)' : 'var(--lp-shadow-sm)'; }}
     >
       {plan.popular && (
-        <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translate(-50%, -50%)', background: 'linear-gradient(90deg, var(--lp-primary), var(--lp-secondary))', color: '#fff', fontSize: '0.75rem', fontWeight: 800, padding: '6px 16px', borderRadius: 20, letterSpacing: 1 }}>
+        <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translate(-50%, -50%)', background: 'var(--lp-primary)', color: '#fff', fontSize: '0.68rem', fontWeight: 800, padding: '5px 15px', borderRadius: 20, letterSpacing: '0.1em', fontFamily: 'var(--lp-font-mono)' }}>
           MÁS ELEGIDO
         </div>
       )}
-      <div style={{ marginBottom: 24 }}>
-        <h3 style={{ fontSize: '1.4rem', fontWeight: 700, marginBottom: 8, color: '#fff' }}>{plan.name}</h3>
-        <p style={{ color: 'rgba(230,255,251,0.6)', fontSize: '0.85rem', lineHeight: 1.5, minHeight: 40 }}>{plan.desc}</p>
+      <div style={{ marginBottom: 14 }}>
+        <h3 style={{ fontFamily: 'var(--lp-font-display)', fontSize: '1.4rem', fontWeight: 700, marginBottom: 6, color: 'var(--lp-ink)' }}>{plan.name}</h3>
+        <p style={{ color: 'var(--lp-ink-soft)', fontSize: '0.85rem', lineHeight: 1.45 }}>{plan.desc}</p>
       </div>
-      <div style={{ marginBottom: 24, minHeight: 90 }}>
+      <div style={{ marginBottom: 22 }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-          <span style={{ fontSize: '1.4rem', fontWeight: 600, color: 'rgba(230,255,251,0.8)' }}>$</span>
-          <span style={{ fontSize: '2.5rem', fontWeight: 800, color: '#fff', letterSpacing: '-1px' }}>{mainPrice.toLocaleString('es-AR')}</span>
-          <span style={{ fontSize: '0.9rem', color: 'rgba(230,255,251,0.5)' }}>/mes</span>
+          <span className="lp-money" style={{ fontSize: '1.3rem', fontWeight: 600, color: 'var(--lp-ink-soft)' }}>$</span>
+          <span className="lp-money" style={{ fontSize: '2.6rem', fontWeight: 700, color: 'var(--lp-ink)', letterSpacing: '-0.02em' }}>{mainPrice.toLocaleString('es-AR')}</span>
+          <span style={{ fontSize: '0.9rem', color: 'var(--lp-ink-faint)' }}>/mes</span>
         </div>
         {isYearly ? (
-          <div style={{ marginTop: 6, fontSize: '0.8rem', color: 'rgba(230,255,251,0.5)' }}>
+          <div style={{ marginTop: 6, fontSize: '0.8rem', color: 'var(--lp-ink-faint)' }}>
             Facturado ${totalYearly.toLocaleString('es-AR')} por año.
-            {savings > 0 && <span style={{ display: 'block', color: '#10b981', marginTop: 4, fontWeight: 600 }}>Ahorrás ${savings.toLocaleString('es-AR')} anuales</span>}
+            {savings > 0 && <span style={{ display: 'block', color: 'var(--lp-green)', marginTop: 4, fontWeight: 600 }}>Ahorrás ${savings.toLocaleString('es-AR')} anuales</span>}
           </div>
         ) : (
-          <div style={{ marginTop: 6, fontSize: '0.8rem', color: 'rgba(230,255,251,0.5)' }}>
+          <div style={{ marginTop: 6, fontSize: '0.8rem', color: 'var(--lp-ink-faint)' }}>
             Facturado mensualmente. Cancelás cuando quieras.
           </div>
         )}
       </div>
-      <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 32px 0', display: 'flex', flexDirection: 'column', gap: 14, flex: 1 }}>
+      <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 28px 0', display: 'flex', flexDirection: 'column', gap: 12, flex: 1 }}>
         {plan.features.map((f, i) => (
-          <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, fontSize: '0.9rem', color: 'rgba(230,255,251,0.8)' }}>
-            <div style={{ color: plan.popular ? 'var(--lp-primary)' : '#10b981', marginTop: 2 }}>
+          <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 11, fontSize: '0.9rem', color: 'var(--lp-ink-soft)' }}>
+            <div style={{ color: plan.popular ? 'var(--lp-primary-ink)' : 'var(--lp-green)', marginTop: 2, flexShrink: 0 }}>
               <Svg.Check width={14} />
             </div>
             {f}
           </li>
         ))}
       </ul>
-      <button onClick={onCta} style={{
-        width: '100%', padding: '12px 0', borderRadius: 10, fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer', transition: 'all 0.2s',
-        background: plan.popular ? 'linear-gradient(90deg, var(--lp-primary), var(--lp-secondary))' : 'rgba(20,187,166,0.12)',
-        color: '#fff',
-        border: plan.popular ? 'none' : '1px solid rgba(20,187,166,0.3)'
-      }}
-        onMouseEnter={e => { if (!plan.popular) e.target.style.background = 'rgba(20,187,166,0.2)' }}
-        onMouseLeave={e => { if (!plan.popular) e.target.style.background = 'rgba(20,187,166,0.12)' }}>
+      <button onClick={onCta} className={plan.popular ? 'lp-btn lp-btn--primary' : 'lp-btn lp-btn--ghost'} style={{
+        width: '100%', justifyContent: 'center', padding: '13px 0', fontSize: '0.95rem',
+      }}>
         {isLoggedIn ? `Activar plan ${plan.name}` : plan.cta}
       </button>
     </div>
@@ -107,19 +102,19 @@ export default function LandingPricing({ isYearly, setIsYearly, isLoggedIn, setC
   }, []);
 
   return (
-    <section id="planes" className="lp-section" style={{ padding: '100px 24px' }}>
+    <section id="planes" className="lp-section" style={{ padding: '64px 24px' }}>
       <div className="lp-container">
         <Reveal>
-          <div style={{ textAlign: 'center', marginBottom: 40 }}>
-            <h2 className="lp-section-title" style={{ fontSize: '2.5rem', marginBottom: 12 }}>Planes simples, sin letra chica</h2>
-            <p className="lp-section-sub" style={{ fontSize: '1.1rem', color: 'rgba(230,255,251, 0.65)' }}>Empezás con lo justo. Escalás cuando quieras.</p>
+          <div style={{ textAlign: 'center', marginBottom: 28 }}>
+            <h2 className="lp-section-title">Planes simples, sin letra chica</h2>
+            <p className="lp-section-sub">Empezás con lo justo. Escalás cuando quieras.</p>
           </div>
         </Reveal>
         <Reveal delay={1}>
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 60 }}>
-            <div style={{ display: 'inline-flex', padding: 4, background: 'rgba(255,255,255,0.03)', borderRadius: 8, border: '1px solid rgba(255,255,255,0.06)' }}>
-              <button onClick={() => setIsYearly(false)} style={{ padding: '8px 24px', borderRadius: 6, border: 'none', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.15s', background: !isYearly ? 'var(--lp-gradient-main)' : 'transparent', color: !isYearly ? '#fff' : 'var(--lp-text-muted)' }}>Mensual</button>
-              <button onClick={() => setIsYearly(true)} style={{ padding: '8px 24px', borderRadius: 6, border: 'none', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.15s', background: isYearly ? 'var(--lp-gradient-main)' : 'transparent', color: isYearly ? '#fff' : 'var(--lp-text-muted)' }}>Anual <span style={{ fontSize: '0.7rem', opacity: 0.8 }}>(ahorrá 20%)</span></button>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 44 }}>
+            <div style={{ display: 'inline-flex', padding: 4, background: 'var(--lp-paper-sunken)', borderRadius: 11, border: '1px solid var(--lp-line)' }}>
+              <button onClick={() => setIsYearly(false)} style={{ padding: '8px 22px', borderRadius: 8, border: 'none', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.15s', background: !isYearly ? 'var(--lp-primary)' : 'transparent', color: !isYearly ? '#fff' : 'var(--lp-ink-soft)' }}>Mensual</button>
+              <button onClick={() => setIsYearly(true)} style={{ padding: '8px 22px', borderRadius: 8, border: 'none', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.15s', background: isYearly ? 'var(--lp-primary)' : 'transparent', color: isYearly ? '#fff' : 'var(--lp-ink-soft)' }}>Anual <span style={{ fontSize: '0.7rem', opacity: 0.85 }}>(ahorrá 20%)</span></button>
             </div>
           </div>
         </Reveal>
@@ -131,12 +126,10 @@ export default function LandingPricing({ isYearly, setIsYearly, isLoggedIn, setC
           ))}
         </div>
         <Reveal delay={4}>
-          <div className="lp-plan-custom" style={{ textAlign: 'center', marginTop: 120, padding: '32px', borderRadius: 16, border: '1px solid rgba(20,187,166,0.15)', background: 'rgba(20,187,166,0.03)' }}>
-            <p style={{ fontWeight: 600, marginBottom: 6 }}>¿Necesitás un plan a medida?</p>
-            <p style={{ color: 'var(--lp-text-muted)', fontSize: '0.85rem', marginBottom: 12 }}>Ideal para cadenas de kioscos con múltiples sucursales.</p>
-            <button onClick={() => setShowContactModal(true)} className="lp-btn lp-btn--ghost" style={{ padding: '10px 28px', fontSize: '0.85rem', borderColor: 'rgba(20,187,166,0.3)', color: 'var(--lp-primary)' }}
-              onMouseEnter={e => e.target.style.background = 'rgba(20,187,166,0.08)'}
-              onMouseLeave={e => e.target.style.background = 'transparent'}>
+          <div className="lp-plan-custom" style={{ textAlign: 'center', marginTop: 44, padding: '28px', borderRadius: 16, border: '1px solid var(--lp-line)', background: 'var(--lp-paper-raised)' }}>
+            <p style={{ fontWeight: 700, marginBottom: 6, color: 'var(--lp-ink)' }}>¿Necesitás un plan a medida?</p>
+            <p style={{ color: 'var(--lp-ink-soft)', fontSize: '0.85rem', marginBottom: 14 }}>Ideal para cadenas de kioscos con múltiples sucursales.</p>
+            <button onClick={() => setShowContactModal(true)} className="lp-btn lp-btn--ghost" style={{ padding: '10px 28px', fontSize: '0.85rem' }}>
               Contactar <Svg.ChevronRight />
             </button>
           </div>

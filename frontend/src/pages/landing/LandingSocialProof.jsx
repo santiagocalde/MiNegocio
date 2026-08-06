@@ -11,17 +11,17 @@ function AnimatedStat({ value, label, suffix = '', isLast }) {
 
   return (
     <div ref={ref} style={{
-      textAlign: 'center', flex: 1, padding: '0 16px',
-      borderRight: isLast ? 'none' : '1px solid rgba(255,255,255,0.06)',
+      textAlign: 'center', flex: 1, padding: '0 24px',
+      borderRight: isLast ? 'none' : '1px solid var(--lp-line)',
     }}>
-      <div className="lp-gradient-text" style={{
-        fontFamily: 'var(--lp-font-display)',
-        fontSize: 'clamp(1.8rem, 3.2vw, 2.6rem)',
-        letterSpacing: '-1px',
-        fontWeight: 800,
+      <div className="lp-money" style={{
+        fontSize: 'clamp(1.9rem, 3.2vw, 2.7rem)',
+        letterSpacing: '-0.02em',
+        fontWeight: 700,
         lineHeight: 1,
+        color: 'var(--lp-ink)',
       }}>{display}</div>
-      <div style={{ color: 'var(--lp-text-muted)', fontSize: '0.82rem', fontWeight: 500, marginTop: 6, letterSpacing: '0.5px' }}>{label}</div>
+      <div style={{ color: 'var(--lp-ink-faint)', fontSize: '0.78rem', fontWeight: 600, marginTop: 8, letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: 'var(--lp-font-mono)' }}>{label}</div>
     </div>
   );
 }
@@ -49,7 +49,7 @@ export default function LandingSocialProof() {
   }, []);
   return (
     <section className="lp-section" style={{ padding: '32px 0' }}>
-      <hr style={{ border: 'none', borderTop: '1px solid rgba(255,255,255,0.08)', margin: '0 0 24px' }} />
+      <hr style={{ border: 'none', borderTop: '1px solid var(--lp-line)', margin: '0 0 28px' }} />
       <div className="lp-container" style={{ padding: '0 24px' }}>
         <Reveal>
           <div style={{ display: 'flex', justifyContent: 'center', gap: 0, flexWrap: 'wrap', maxWidth: 700, margin: '0 auto' }}>
@@ -59,7 +59,7 @@ export default function LandingSocialProof() {
           </div>
         </Reveal>
       </div>
-      <hr style={{ border: 'none', borderTop: '1px solid rgba(255,255,255,0.08)', margin: '24px 0 0' }} />
+      <hr style={{ border: 'none', borderTop: '1px solid var(--lp-line)', margin: '28px 0 0' }} />
     </section>
   );
 }

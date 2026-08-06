@@ -4,7 +4,7 @@ import { Reveal } from './hooks/useReveal';
 const Svg = {
   Check: () => <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>,
   XIcon: () => <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12" /></svg>,
-  Zap: () => <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>,
+  Zap: () => <svg width="17" height="17" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>,
 };
 
 const rows = [
@@ -23,7 +23,6 @@ function RowIcon({ i }) {
   return <span style={{ fontWeight: 800 }}>-</span>;
 }
 
-// Hook ligero: elige el layout (mobile vs desktop) sin renderizar ambos.
 function useIsMobile(breakpoint = 768) {
   const [isMobile, setIsMobile] = useState(
     typeof window !== 'undefined' ? window.matchMedia(`(max-width: ${breakpoint}px)`).matches : false
@@ -38,44 +37,43 @@ function useIsMobile(breakpoint = 768) {
 }
 
 const iconColors = (i) => ({
-  bg: i === 'X' ? 'rgba(239,68,68,0.1)' : i === 'C' ? 'rgba(16,185,129,0.1)' : 'rgba(255,255,255,0.03)',
-  border: i === 'X' ? '1px solid rgba(239,68,68,0.2)' : i === 'C' ? '1px solid rgba(16,185,129,0.2)' : '1px solid rgba(255,255,255,0.05)',
-  color: i === 'X' ? '#ef4444' : i === 'C' ? '#10b981' : 'rgba(255,255,255,0.5)',
+  bg: i === 'X' ? 'rgba(220,38,38,0.10)' : i === 'C' ? 'rgba(15,157,107,0.12)' : 'var(--lp-paper-sunken)',
+  border: i === 'X' ? '1px solid rgba(220,38,38,0.22)' : i === 'C' ? '1px solid rgba(15,157,107,0.24)' : '1px solid var(--lp-line)',
+  color: i === 'X' ? 'var(--lp-red)' : i === 'C' ? 'var(--lp-green)' : 'var(--lp-ink-faint)',
 });
 
-// ── Mobile: tarjetas apiladas, con MiNegocio destacado al final de cada una ──
+// ── Mobile: tarjetas apiladas ──
 function ComparativaMobile() {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14, maxWidth: 480, margin: '0 auto' }}>
       {rows.map((row, i) => {
         const opciones = [
           { label: 'El Cuaderno', ...row.cuaderno },
           { label: 'Otros POS', ...row.otros },
         ];
         return (
-          <div key={i} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 16, overflow: 'hidden' }}>
-            <div style={{ padding: '14px 16px', fontWeight: 700, fontSize: '1rem', color: '#fff', borderBottom: '1px solid rgba(255,255,255,0.05)', background: 'rgba(255,255,255,0.015)' }}>
+          <div key={i} style={{ background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line)', borderRadius: 14, overflow: 'hidden', boxShadow: 'var(--lp-shadow-sm)' }}>
+            <div style={{ padding: '12px 15px', fontWeight: 700, fontSize: '0.95rem', color: 'var(--lp-ink)', borderBottom: '1px solid var(--lp-line)', background: 'var(--lp-paper-sunken)' }}>
               {row.feature}
             </div>
             {opciones.map((op, j) => {
               const c = iconColors(op.i);
               return (
-                <div key={j} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                  <div style={{ width: 26, height: 26, flexShrink: 0, borderRadius: '50%', background: c.bg, border: c.border, display: 'flex', alignItems: 'center', justifyContent: 'center', color: c.color }}>
+                <div key={j} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '9px 15px', borderBottom: '1px solid var(--lp-line)' }}>
+                  <div style={{ width: 24, height: 24, flexShrink: 0, borderRadius: '50%', background: c.bg, border: c.border, display: 'flex', alignItems: 'center', justifyContent: 'center', color: c.color }}>
                     <RowIcon i={op.i} />
                   </div>
-                  <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.45)', fontWeight: 600, width: 90, flexShrink: 0 }}>{op.label}</span>
-                  <span style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>{op.t}</span>
+                  <span style={{ fontSize: '0.78rem', color: 'var(--lp-ink-faint)', fontWeight: 600, width: 86, flexShrink: 0 }}>{op.label}</span>
+                  <span style={{ fontSize: '0.84rem', color: 'var(--lp-ink-soft)' }}>{op.t}</span>
                 </div>
               );
             })}
-            {/* MiNegocio — el remate, destacado */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', background: 'rgba(20,187,166,0.08)' }}>
-              <div style={{ width: 26, height: 26, flexShrink: 0, borderRadius: '50%', background: 'rgba(20,187,166,0.15)', border: '1px solid rgba(20,187,166,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#00E5FF' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 15px', background: 'var(--lp-primary-wash)' }}>
+              <div style={{ width: 24, height: 24, flexShrink: 0, borderRadius: '50%', background: 'var(--lp-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
                 <Svg.Check />
               </div>
-              <span style={{ fontSize: '0.8rem', color: 'var(--lp-primary)', fontWeight: 800, width: 90, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4 }}>MiNegocio</span>
-              <span style={{ fontSize: '0.9rem', color: '#fff', fontWeight: 700 }}>{row.minegocio.t}</span>
+              <span style={{ fontSize: '0.78rem', color: 'var(--lp-primary-ink)', fontWeight: 800, width: 86, flexShrink: 0 }}>MiNegocio</span>
+              <span style={{ fontSize: '0.88rem', color: 'var(--lp-ink)', fontWeight: 700 }}>{row.minegocio.t}</span>
             </div>
           </div>
         );
@@ -84,68 +82,53 @@ function ComparativaMobile() {
   );
 }
 
-// ── Desktop: tabla original con columna MiNegocio flotante ──
+// ── Desktop: tabla compacta con columna MiNegocio destacada ──
 function ComparativaDesktop() {
+  const GRID = '1.6fr 1fr 1fr 1.2fr';
   return (
-    <div style={{ position: 'relative', width: '100%', overflowX: 'auto', paddingBottom: 40, paddingTop: 20 }}>
-      <div style={{ position: 'relative', minWidth: 768, maxWidth: 1000, margin: '0 auto' }}>
-        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '100%', height: '80%', background: 'radial-gradient(ellipse at center, rgba(20,187,166,0.15) 0%, transparent 60%)', pointerEvents: 'none', filter: 'blur(60px)', zIndex: 0 }} />
-        <div
-          onMouseMove={(e) => {
-            const rect = e.currentTarget.getBoundingClientRect();
-            e.currentTarget.style.setProperty('--mouse-x', `${e.clientX - rect.left}px`);
-            e.currentTarget.style.setProperty('--mouse-y', `${e.clientY - rect.top}px`);
-          }}
-          onMouseEnter={(e) => {
-            const glow = e.currentTarget.querySelector('.table-glow');
-            if (glow) glow.style.opacity = '1';
-          }}
-          onMouseLeave={(e) => {
-            const glow = e.currentTarget.querySelector('.table-glow');
-            if (glow) glow.style.opacity = '0';
-          }}
-          style={{ background: 'rgba(255,255,255,0.015)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 24, position: 'relative', overflow: 'hidden', zIndex: 1, '--mouse-x': '-1000px', '--mouse-y': '-1000px' }}>
-          <div className="table-glow" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', background: 'radial-gradient(600px circle at var(--mouse-x) var(--mouse-y), rgba(20,187,166,0.08), transparent 40%)', opacity: 0, transition: 'opacity 0.5s ease', zIndex: 0 }} />
-          <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 1.2fr', borderBottom: '1px solid rgba(255,255,255,0.04)', position: 'relative', zIndex: 1 }}>
-            <div style={{ padding: '32px 32px 24px', display: 'flex', alignItems: 'flex-end', fontWeight: 800, fontSize: '0.9rem', color: 'rgba(255,255,255,0.55)', letterSpacing: '0.5px' }}>Comparativa</div>
-            <div style={{ textAlign: 'center', padding: '32px 16px 24px', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', fontWeight: 800, fontSize: '0.9rem', color: 'rgba(255,255,255,0.6)', letterSpacing: '0.5px' }}>El Cuaderno</div>
-            <div style={{ textAlign: 'center', padding: '32px 16px 24px', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', fontWeight: 800, fontSize: '0.9rem', color: 'rgba(255,255,255,0.6)', letterSpacing: '0.5px' }}>Otros POS</div>
-            <div style={{ padding: '32px 16px 24px' }} />
+    <div style={{ position: 'relative', width: '100%', overflowX: 'auto', paddingBottom: 26, paddingTop: 14 }}>
+      <div style={{ position: 'relative', minWidth: 720, maxWidth: 900, margin: '0 auto' }}>
+        <div style={{ background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line)', borderRadius: 20, position: 'relative', overflow: 'hidden', zIndex: 1, boxShadow: 'var(--lp-shadow-md)' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: GRID, borderBottom: '1px solid var(--lp-line)', position: 'relative', zIndex: 1 }}>
+            <div style={{ padding: '20px 22px 14px', display: 'flex', alignItems: 'flex-end', fontWeight: 700, fontSize: '0.78rem', color: 'var(--lp-ink-faint)', letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: 'var(--lp-font-mono)' }}>Comparativa</div>
+            <div style={{ textAlign: 'center', padding: '20px 14px 14px', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', fontWeight: 700, fontSize: '0.85rem', color: 'var(--lp-ink-soft)' }}>El Cuaderno</div>
+            <div style={{ textAlign: 'center', padding: '20px 14px 14px', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', fontWeight: 700, fontSize: '0.85rem', color: 'var(--lp-ink-soft)' }}>Otros POS</div>
+            <div style={{ padding: '20px 14px 14px' }} />
           </div>
           {rows.map((row, i, arr) => (
-            <div key={i} style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 1.2fr', borderBottom: i === arr.length - 1 ? 'none' : '1px solid rgba(255,255,255,0.03)', transition: 'background 0.3s', position: 'relative', zIndex: 1 }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-              <div style={{ fontWeight: 600, fontSize: '1.05rem', padding: '24px 32px', display: 'flex', alignItems: 'center', color: '#fff' }}>{row.feature}</div>
-              <div style={{ textAlign: 'center', padding: '24px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
-                <div style={{ width: 32, height: 32, borderRadius: '50%', background: row.cuaderno.i === 'X' ? 'rgba(239,68,68,0.1)' : 'rgba(16,185,129,0.1)', border: row.cuaderno.i === 'X' ? '1px solid rgba(239,68,68,0.2)' : '1px solid rgba(16,185,129,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: row.cuaderno.i === 'X' ? '#ef4444' : '#10b981' }}>
+            <div key={i} style={{ display: 'grid', gridTemplateColumns: GRID, borderBottom: i === arr.length - 1 ? 'none' : '1px solid var(--lp-line)', transition: 'background 0.25s', position: 'relative', zIndex: 1 }} onMouseEnter={e => e.currentTarget.style.background = 'var(--lp-paper-sunken)'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+              <div style={{ fontWeight: 600, fontSize: '0.98rem', padding: '15px 22px', display: 'flex', alignItems: 'center', color: 'var(--lp-ink)' }}>{row.feature}</div>
+              <div style={{ textAlign: 'center', padding: '15px 14px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                <div style={{ width: 28, height: 28, borderRadius: '50%', background: row.cuaderno.i === 'X' ? 'rgba(220,38,38,0.10)' : 'rgba(15,157,107,0.12)', border: row.cuaderno.i === 'X' ? '1px solid rgba(220,38,38,0.22)' : '1px solid rgba(15,157,107,0.24)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: row.cuaderno.i === 'X' ? 'var(--lp-red)' : 'var(--lp-green)' }}>
                   <RowIcon i={row.cuaderno.i} />
                 </div>
-                <span style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.4)', fontWeight: 500 }}>{row.cuaderno.t}</span>
+                <span style={{ fontSize: '0.82rem', color: 'var(--lp-ink-faint)', fontWeight: 500 }}>{row.cuaderno.t}</span>
               </div>
-              <div style={{ textAlign: 'center', padding: '24px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
-                <div style={{ width: 32, height: 32, borderRadius: '50%', background: row.otros.i === 'X' ? 'rgba(239,68,68,0.1)' : row.otros.i === 'C' ? 'rgba(16,185,129,0.1)' : 'rgba(255,255,255,0.03)', border: row.otros.i === 'X' ? '1px solid rgba(239,68,68,0.2)' : row.otros.i === 'C' ? '1px solid rgba(16,185,129,0.2)' : '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: row.otros.i === 'X' ? '#ef4444' : row.otros.i === 'C' ? '#10b981' : 'rgba(255,255,255,0.5)' }}>
+              <div style={{ textAlign: 'center', padding: '15px 14px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                <div style={{ width: 28, height: 28, borderRadius: '50%', background: row.otros.i === 'X' ? 'rgba(220,38,38,0.10)' : row.otros.i === 'C' ? 'rgba(15,157,107,0.12)' : 'var(--lp-paper-sunken)', border: row.otros.i === 'X' ? '1px solid rgba(220,38,38,0.22)' : row.otros.i === 'C' ? '1px solid rgba(15,157,107,0.24)' : '1px solid var(--lp-line)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: row.otros.i === 'X' ? 'var(--lp-red)' : row.otros.i === 'C' ? 'var(--lp-green)' : 'var(--lp-ink-faint)' }}>
                   <RowIcon i={row.otros.i} />
                 </div>
-                <span style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.4)', fontWeight: 500 }}>{row.otros.t}</span>
+                <span style={{ fontSize: '0.82rem', color: 'var(--lp-ink-faint)', fontWeight: 500 }}>{row.otros.t}</span>
               </div>
-              <div style={{ padding: '24px 16px' }} />
+              <div style={{ padding: '15px 14px' }} />
             </div>
           ))}
         </div>
-        <div style={{ position: 'absolute', top: -16, right: 0, bottom: -16, width: '25.53%', background: 'linear-gradient(145deg, #12223b, #0B132B)', border: '1px solid rgba(20,187,166, 0.4)', borderRadius: 24, boxShadow: '0 20px 50px rgba(11,19,43,0.8), 0 0 30px rgba(20,187,166,0.15)', zIndex: 10, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          <div style={{ position: 'absolute', top: 0, left: '-100%', width: '50%', height: '100%', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent)', transform: 'skewX(-20deg)', animation: 'lp-shimmer 4s infinite' }} />
-          <div style={{ flex: '0 0 auto', padding: '24px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, borderBottom: '1px solid rgba(20,187,166,0.15)', background: 'rgba(20,187,166,0.03)' }}>
-            <span style={{ fontSize: '0.7rem', background: 'rgba(20,187,166,0.15)', color: '#00E5FF', padding: '4px 12px', borderRadius: 100, letterSpacing: '1.5px', fontWeight: 800 }}>TU SOLUCIÓN</span>
-            <span style={{ fontSize: '1.5rem', fontFamily: 'var(--lp-font-display)', color: '#fff', display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
-              MiNegocio <span style={{ color: '#00E5FF' }}><Svg.Zap /></span>
+        {/* Columna MiNegocio — destacada, funciona en claro y oscuro */}
+        <div style={{ position: 'absolute', top: -12, right: 0, bottom: -12, width: '25.53%', background: 'var(--lp-paper-raised)', border: '2px solid var(--lp-primary)', borderRadius: 20, boxShadow: '0 18px 44px var(--lp-primary-glow)', zIndex: 10, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <div style={{ flex: '0 0 auto', padding: '18px 14px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, borderBottom: '1px solid var(--lp-line)', background: 'var(--lp-primary-wash)' }}>
+            <span style={{ fontSize: '0.64rem', background: 'var(--lp-primary)', color: '#fff', padding: '3px 11px', borderRadius: 100, letterSpacing: '0.12em', fontWeight: 800, fontFamily: 'var(--lp-font-mono)' }}>TU SOLUCIÓN</span>
+            <span style={{ fontSize: '1.35rem', fontFamily: 'var(--lp-font-display)', fontWeight: 700, color: 'var(--lp-ink)', display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+              MiNegocio <span style={{ color: 'var(--lp-primary-ink)' }}><Svg.Zap /></span>
             </span>
           </div>
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', paddingTop: 12, paddingBottom: 12 }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', paddingTop: 8, paddingBottom: 8 }}>
             {minegocioRows.map((t, i, arr) => (
-              <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, borderBottom: i === arr.length - 1 ? 'none' : '1px solid rgba(20,187,166,0.05)' }}>
-                <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(20,187,166,0.15)', border: '1px solid rgba(20,187,166,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#00E5FF', boxShadow: '0 0 15px rgba(20,187,166,0.2)' }}>
+              <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, borderBottom: i === arr.length - 1 ? 'none' : '1px solid var(--lp-line)' }}>
+                <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--lp-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
                   <Svg.Check />
                 </div>
-                <span style={{ fontSize: '0.95rem', color: '#fff', fontWeight: 700 }}>{t}</span>
+                <span style={{ fontSize: '0.9rem', color: 'var(--lp-ink)', fontWeight: 700 }}>{t}</span>
               </div>
             ))}
           </div>
@@ -158,12 +141,12 @@ function ComparativaDesktop() {
 export default function LandingComparativa() {
   const isMobile = useIsMobile();
   return (
-    <section className="lp-section" style={{ padding: '100px 24px' }}>
+    <section className="lp-section" style={{ padding: '64px 24px' }}>
       <div className="lp-container">
         <Reveal>
-          <div style={{ textAlign: 'center', marginBottom: 40 }}>
-            <h2 className="lp-section-title" style={{ fontSize: '2.5rem', marginBottom: 12 }}>Vendé <span style={{ color: 'var(--lp-primary)', fontWeight: 900 }}>más rápido</span> que nunca</h2>
-            <p className="lp-section-sub" style={{ fontSize: '1.1rem', color: 'rgba(230,255,251, 0.65)' }}>Optimizamos cada paso para que tu atención al cliente sea impecable y ágil.</p>
+          <div style={{ textAlign: 'center', marginBottom: 28 }}>
+            <h2 className="lp-section-title">Vendé <span style={{ color: 'var(--lp-primary-ink)' }}>más rápido</span> que nunca</h2>
+            <p className="lp-section-sub">Optimizamos cada paso para que tu atención al cliente sea impecable y ágil.</p>
           </div>
         </Reveal>
         <Reveal delay={1}>

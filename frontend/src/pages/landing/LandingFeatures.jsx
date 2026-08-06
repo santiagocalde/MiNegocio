@@ -20,12 +20,12 @@ const items = [
 
 export default function LandingFeatures() {
   return (
-    <section id="funciones" className="lp-section" style={{ padding: '100px 24px' }}>
+    <section id="funciones" className="lp-section" style={{ padding: '64px 24px' }}>
       <div className="lp-container">
         <Reveal>
-          <div style={{ textAlign: 'center', marginBottom: 56 }}>
-            <h2 className="lp-section-title" style={{ fontSize: '2.5rem', marginBottom: 12 }}>Pensado para los problemas reales de tu kiosco</h2>
-            <p className="lp-section-sub" style={{ fontSize: '1.1rem', color: 'rgba(230,255,251, 0.65)' }}>
+          <div style={{ textAlign: 'center', marginBottom: 36 }}>
+            <h2 className="lp-section-title">Pensado para los problemas reales de tu kiosco</h2>
+            <p className="lp-section-sub">
               Cada función resuelve algo que te pasa todos los días. Sin vueltas.
             </p>
           </div>
@@ -44,10 +44,10 @@ export default function LandingFeatures() {
                 <div style={{ width: 44, height: 44, borderRadius: 12, background: item.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: item.color, flexShrink: 0 }}>
                   <item.icon />
                 </div>
-                <p style={{ fontSize: '0.95rem', fontStyle: 'italic', color: 'rgba(255,255,255,0.5)', lineHeight: 1.5, margin: 0 }}>
+                <p style={{ fontSize: '0.95rem', fontStyle: 'italic', color: 'var(--lp-ink-faint)', lineHeight: 1.5, margin: 0 }}>
                   {item.pain}
                 </p>
-                <p style={{ fontSize: '0.95rem', color: 'var(--lp-text)', lineHeight: 1.6, margin: 0, fontWeight: 500 }}>
+                <p style={{ fontSize: '0.95rem', color: 'var(--lp-ink)', lineHeight: 1.6, margin: 0, fontWeight: 500 }}>
                   {item.solution}
                 </p>
               </div>

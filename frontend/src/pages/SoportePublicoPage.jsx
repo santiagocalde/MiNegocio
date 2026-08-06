@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const Svg = {
@@ -31,27 +31,30 @@ const cards = [
 
 export default function SoportePublicoPage() {
   const navigate = useNavigate();
+  const [theme] = useState(() => { try { return localStorage.getItem('lp_theme') || 'light'; } catch { return 'light'; } });
 
   useEffect(() => {
     document.body.classList.add('landing-open');
+    document.body.setAttribute('data-lp-theme', theme);
     window.scrollTo(0, 0);
-    return () => document.body.classList.remove('landing-open');
-  }, []);
+    return () => {
+      document.body.classList.remove('landing-open');
+      document.body.removeAttribute('data-lp-theme');
+    };
+  }, [theme]);
 
   return (
     <div className="lp-noise" style={{ fontFamily: 'var(--lp-font-body)', color: 'var(--lp-text)', minHeight: '100vh', position: 'relative', padding: '40px 24px' }}>
       <div className="lp-canvas" />
-      <div className="lp-orb lp-orb--1" />
-      <div className="lp-orb lp-orb--2" />
 
       <div style={{ maxWidth: 800, margin: '0 auto', position: 'relative', zIndex: 10 }}>
-        <button onClick={() => navigate('/')} style={{ background: 'transparent', border: 'none', color: 'var(--lp-text-muted)', fontSize: '0.9rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8, marginBottom: 32, transition: 'color 0.2s' }} onMouseEnter={e => e.target.style.color = '#fff'} onMouseLeave={e => e.target.style.color = 'var(--lp-text-muted)'}>
+        <button onClick={() => navigate('/')} style={{ background: 'transparent', border: 'none', color: 'var(--lp-text-muted)', fontSize: '0.9rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8, marginBottom: 32, transition: 'color 0.2s' }} onMouseEnter={e => e.target.style.color = 'var(--lp-ink)'} onMouseLeave={e => e.target.style.color = 'var(--lp-text-muted)'}>
           <Svg.ArrowLeft /> Volver a Inicio
         </button>
 
         <div style={{ textAlign: 'center', marginBottom: 40 }}>
-          <h1 style={{ fontSize: '2.2rem', fontWeight: 800, letterSpacing: '-1px', marginBottom: 12, color: '#fff' }}>Centro de Ayuda</h1>
-          <p style={{ fontSize: '0.95rem', color: 'rgba(230,255,251,0.7)', maxWidth: 600, margin: '0 auto 24px' }}>
+          <h1 style={{ fontFamily: 'var(--lp-font-display)', fontSize: '2.2rem', fontWeight: 800, letterSpacing: '-0.03em', marginBottom: 12, color: 'var(--lp-ink)' }}>Centro de Ayuda</h1>
+          <p style={{ fontSize: '0.95rem', color: 'var(--lp-ink-faint)', maxWidth: 600, margin: '0 auto 24px' }}>
             Encontrá respuestas rápidas, manuales de uso y contactá con nuestro equipo de soporte técnico.
           </p>
           
@@ -59,28 +62,28 @@ export default function SoportePublicoPage() {
             <div style={{ position: 'absolute', top: '50%', left: 16, transform: 'translateY(-50%)', color: 'var(--lp-text-muted)' }}>
               <Svg.Search />
             </div>
-            <input type="text" placeholder="Buscar manuales, errores, configuraciones..." style={{ width: '100%', padding: '12px 16px 12px 48px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, color: '#fff', outline: 'none', fontSize: '0.95rem', transition: 'all 0.2s', boxShadow: '0 8px 30px rgba(30,58,95,0.2)' }} onFocus={e => e.target.style.borderColor = 'var(--lp-primary)'} onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'} />
+            <input type="text" placeholder="Buscar manuales, errores, configuraciones..." style={{ width: '100%', padding: '12px 16px 12px 48px', background: 'var(--lp-paper-sunken)', border: '1px solid var(--lp-line-strong)', borderRadius: 12, color: 'var(--lp-ink)', outline: 'none', fontSize: '0.95rem', transition: 'all 0.2s' }} onFocus={e => e.target.style.borderColor = 'var(--lp-primary)'} onBlur={e => e.target.style.borderColor = 'var(--lp-line-strong)'} />
           </div>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 20, marginBottom: 40 }}>
           {cards.map((card, i) => (
-            <div key={i} className="lp-glass" onClick={() => window.open(`${whatsappBase}?text=${card.msg}`, '_blank')} style={{ padding: 24, borderRadius: 16, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(35,65,105,0.6)', transition: 'transform 0.2s, box-shadow 0.2s', cursor: 'pointer' }} onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 8px 30px rgba(20,187,166,0.1)' }} onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none' }}>
+            <div key={i} className="lp-glass" onClick={() => window.open(`${whatsappBase}?text=${card.msg}`, '_blank')} style={{ padding: 24, borderRadius: 16, border: '1px solid var(--lp-line-strong)', background: 'var(--lp-paper-raised)', transition: 'transform 0.2s, box-shadow 0.2s', cursor: 'pointer' }} onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 8px 30px rgba(20,187,166,0.1)' }} onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none' }}>
               <div style={{ width: 40, height: 40, background: 'rgba(20,187,166,0.1)', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
                 <card.icon />
               </div>
-              <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#fff', marginBottom: 6 }}>{card.title}</h3>
-              <p style={{ color: 'var(--lp-text-muted)', fontSize: '0.85rem', lineHeight: 1.5 }}>{card.desc}</p>
+              <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--lp-ink)', marginBottom: 6 }}>{card.title}</h3>
+              <p style={{ color: 'var(--lp-ink-faint)', fontSize: '0.85rem', lineHeight: 1.5 }}>{card.desc}</p>
             </div>
           ))}
         </div>
 
-        <div className="lp-glass" style={{ padding: '32px', borderRadius: 20, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(35,65,105,0.85)', textAlign: 'center' }}>
-          <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#fff', marginBottom: 12 }}>¿No encontraste lo que buscabas?</h2>
-          <p style={{ color: 'var(--lp-text-muted)', fontSize: '0.9rem', marginBottom: 24, maxWidth: 500, margin: '0 auto 24px' }}>
+        <div className="lp-glass" style={{ padding: '32px', borderRadius: 20, border: '1px solid var(--lp-line-strong)', background: 'var(--lp-paper-raised)', textAlign: 'center' }}>
+          <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--lp-ink)', marginBottom: 12 }}>¿No encontraste lo que buscabas?</h2>
+          <p style={{ color: 'var(--lp-ink-faint)', fontSize: '0.9rem', marginBottom: 24, maxWidth: 500, margin: '0 auto 24px' }}>
             Nuestros operadores técnicos están disponibles por WhatsApp de Lunes a Sábados de 08:00 a 20:00.
           </p>
-          <a href="https://wa.me/5491144276384" target="_blank" rel="noopener noreferrer" style={{ padding: '12px 24px', borderRadius: 10, border: 'none', background: '#10b981', color: '#fff', fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', boxShadow: '0 8px 24px rgba(16, 185, 129, 0.3)', transition: 'all 0.2s', textDecoration: 'none', display: 'inline-block' }} onMouseEnter={e => e.target.style.transform = 'translateY(-2px)'} onMouseLeave={e => e.target.style.transform = 'translateY(0)'}>
+          <a href="https://wa.me/5491144276384" target="_blank" rel="noopener noreferrer" className="lp-btn lp-btn--primary" style={{ padding: '12px 24px', borderRadius: 10, fontSize: '0.9rem', textDecoration: 'none', display: 'inline-block', fontWeight: 700 }}>
             Contactar por WhatsApp
           </a>
         </div>
