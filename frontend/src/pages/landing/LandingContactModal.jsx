@@ -42,7 +42,7 @@ export default function LandingContactModal({ showContactModal, setShowContactMo
         </button>
         <h2 style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--lp-ink)', marginBottom: 8, letterSpacing: '-0.5px' }}>Escribinos</h2>
         <p style={{ color: 'var(--lp-ink-faint)', fontSize: '0.9rem', marginBottom: 20 }}>
-          <span style={{ color: 'var(--lp-ink-soft)', fontWeight: 600 }}>Email:</span> upcodednow@gmail.com <br/>
+          <span style={{ color: 'var(--lp-ink-soft)', fontWeight: 600 }}>Email:</span> calderonsantiago2019@gmail.com <br/>
           <span style={{ color: 'var(--lp-ink-soft)', fontWeight: 600 }}>WhatsApp:</span> +54 9 11 4427-6384
         </p>
 

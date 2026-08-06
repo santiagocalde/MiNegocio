@@ -17,18 +17,16 @@ export default function NosotrosPage() {
   return (
     <div className="lp-noise" style={{ fontFamily: 'var(--lp-font-body)', color: 'var(--lp-text)', minHeight: '100vh', position: 'relative', padding: '40px 24px' }}>
       <div className="lp-canvas" />
-      <div className="lp-orb lp-orb--1" />
-      <div className="lp-orb lp-orb--2" />
 
       <div style={{ maxWidth: 700, margin: '0 auto', position: 'relative', zIndex: 10 }}>
-        <button onClick={() => navigate('/')} style={{ background: 'transparent', border: 'none', color: 'var(--lp-text-muted)', fontSize: '0.9rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8, marginBottom: 32, transition: 'color 0.2s' }} onMouseEnter={e => e.target.style.color = '#fff'} onMouseLeave={e => e.target.style.color = 'var(--lp-text-muted)'}>
+        <button onClick={() => navigate('/')} style={{ background: 'transparent', border: 'none', color: 'var(--lp-text-muted)', fontSize: '0.9rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8, marginBottom: 32, transition: 'color 0.2s' }} onMouseEnter={e => e.target.style.color = 'var(--lp-ink)'} onMouseLeave={e => e.target.style.color = 'var(--lp-text-muted)'}>
           <Svg.ArrowLeft /> Volver a Inicio
         </button>
 
-        <div className="lp-glass" style={{ padding: '40px 32px', borderRadius: 20, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(35,65,105,0.85)' }}>
-          <h1 style={{ fontSize: '2.2rem', fontWeight: 800, letterSpacing: '-1px', marginBottom: 16, color: '#fff' }}>Sobre Nosotros</h1>
+        <div className="lp-glass" style={{ padding: '40px 32px', borderRadius: 20, border: '1px solid var(--lp-line-strong)', background: 'var(--lp-paper-raised)' }}>
+          <h1 style={{ fontSize: '2.2rem', fontWeight: 800, letterSpacing: '-1px', marginBottom: 16, color: 'var(--lp-ink)' }}>Sobre Nosotros</h1>
           
-          <div style={{ fontSize: '0.95rem', lineHeight: 1.7, color: 'rgba(230,255,251,0.8)', display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <div style={{ fontSize: '0.95rem', lineHeight: 1.7, color: 'var(--lp-ink-soft)', display: 'flex', flexDirection: 'column', gap: 20 }}>
             <p>
               En <strong>MiNegocio</strong> nacimos con una misión clara: devolverle el tiempo a los dueños de kioscos, almacenes y comercios minoristas de toda Argentina. Sabemos que el trabajo detrás del mostrador no termina cuando se baja la persiana; hacer números, controlar faltantes y pelear con los proveedores consume horas valiosas.
             </p>

@@ -106,7 +106,7 @@ export default function PrivacyPage() {
                 <li>Solicitar la supresión de tus datos cuando ya no sean necesarios.</li>
                 <li>Retirar tu consentimiento para el tratamiento de datos en cualquier momento.</li>
               </ul>
-              <p style={{ marginTop: 8 }}>Para ejercer estos derechos, contactanos a upcodednow@gmail.com.</p>
+              <p style={{ marginTop: 8 }}>Para ejercer estos derechos, contactanos a calderonsantiago2019@gmail.com.</p>
             </section>
 
             <section>
@@ -118,7 +118,7 @@ export default function PrivacyPage() {
               <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#fff', marginBottom: 12 }}>11. Contacto</h2>
               <p>Para cualquier consulta sobre esta Política de Privacidad o sobre el tratamiento de tus datos:</p>
               <ul style={{ paddingLeft: 20, marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <li>Email: upcodednow@gmail.com</li>
+                <li>Email: calderonsantiago2019@gmail.com</li>
                 <li>WhatsApp: +54 9 11 4427-6384</li>
               </ul>
             </section>
