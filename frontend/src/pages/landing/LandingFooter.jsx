@@ -22,7 +22,10 @@ export default function LandingFooter({ navigate, setShowContactModal, handleDog
       title: 'Recursos',
       links: [
         { label: 'Blog', href: '/blog/' },
-        { label: 'Preguntas frecuentes', onClick: goFaq },
+        { label: 'Glosario', href: '/glosario/' },
+        { label: 'Sistema sin internet', href: '/pos-sin-internet/' },
+        { label: 'Control de fiados', href: '/sistema-fiados/' },
+        { label: 'Comparar sistemas', href: '/comparar-sistemas-para-kioscos/' },
         { label: 'Centro de soporte', onClick: () => navigate('/soporte') },
       ],
     },
