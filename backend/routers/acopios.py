@@ -73,6 +73,8 @@ async def create_acopio(request: Request, body: dict = Body(...)) -> dict:
                 for it in items:
                     await conn.execute("INSERT INTO acopio_items (acopio_id, product_id, quantity_total, quantity_retirada, unit_price) VALUES ($1,$2,$3,0,$4)", aid, it["product_id"], it["quantity"], it.get("unit_price", 0))
                     await conn.execute("UPDATE products SET stock = GREATEST(0, stock - $1) WHERE id = $2 AND business_id = $3", it["quantity"], it["product_id"], b_id)
+                await conn.execute("INSERT INTO audit_log (business_id, action, operator, details) VALUES ($1,$2,$3,$4)",
+                    b_id, "acopio_created", body.get("operator", "Sistema"), f"Acopio #{aid} creado")
             return {"id": aid, "success": True}
     else:
         import aiosqlite
@@ -106,6 +108,8 @@ async def create_withdrawal(request: Request, acopio_id: int, body: dict = Body(
                 remaining = await conn.fetchval("SELECT COUNT(*) FROM acopio_items WHERE acopio_id = $1 AND quantity_retirada < quantity_total", acopio_id)
                 if remaining == 0:
                     await conn.execute("UPDATE acopios SET status = 'completed', completed_at = $1 WHERE id = $2", _now(), acopio_id)
+                await conn.execute("INSERT INTO audit_log (business_id, action, operator, details) VALUES ($1,$2,$3,$4)",
+                    b_id, "acopio_withdrawal", body.get("operator", "Sistema"), f"Retiro parcial acopio #{acopio_id}")
             return {"id": wid, "success": True}
     else:
         import aiosqlite

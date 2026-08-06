@@ -52,6 +52,8 @@ async def create_credit_note(request: Request, body: dict = Body(...)) -> dict:
                 # Acreditar a cuenta del cliente
                 if customer_id:
                     await conn.execute("UPDATE customers SET balance = balance - $1 WHERE id = $2 AND business_id = $3", round(total, 2), customer_id, b_id)
+                await conn.execute("INSERT INTO audit_log (business_id, action, operator, details) VALUES ($1,$2,$3,$4)",
+                    b_id, "credit_note_created", operator, f"Nota de Crédito #{nid} por ${round(total,2)}")
             return {"id": nid, "success": True}
     else:
         import aiosqlite

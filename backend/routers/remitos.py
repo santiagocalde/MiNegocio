@@ -84,6 +84,8 @@ async def create_remito(request: Request, body: dict = Body(...)) -> dict:
                         INSERT INTO remito_items (remito_id, product_id, quantity, unit_price)
                         VALUES ($1,$2,$3,$4)
                     """, rid, it.get("product_id"), it.get("quantity", 1), it.get("unit_price", 0))
+                await conn.execute("INSERT INTO audit_log (business_id, action, operator, details) VALUES ($1,$2,$3,$4)",
+                    b_id, "remito_created", body.get("operator", "Sistema"), f"Remito #{rid} creado")
             return {"id": rid, "success": True}
     else:
         import aiosqlite
@@ -123,6 +125,8 @@ async def update_remito_status(request: Request, remito_id: int, body: dict = Bo
                     "UPDATE remitos SET status = $1 WHERE id = $2 AND business_id = $3",
                     new_status, remito_id, b_id
                 )
+                await conn.execute("INSERT INTO audit_log (business_id, action, operator, details) VALUES ($1,$2,$3,$4)",
+                    b_id, "remito_status", body.get("operator", "Sistema"), f"Remito #{remito_id} → {new_status}")
                 # Descontar stock al confirmar entrega
                 if new_status == "delivered":
                     items = await conn.fetch("SELECT * FROM remito_items WHERE remito_id = $1", remito_id)

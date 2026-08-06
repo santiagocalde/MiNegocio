@@ -64,6 +64,8 @@ async def create_obra(request: Request, body: dict = Body(...)) -> dict:
                 INSERT INTO obras (business_id, name, customer_id, address, status, created_at)
                 VALUES ($1,$2,$3,$4,'activa',$5) RETURNING id
             """, b_id, name, body.get("customer_id"), body.get("address", ""), _now())
+            await conn.execute("INSERT INTO audit_log (business_id, action, operator, details) VALUES ($1,$2,$3,$4)",
+                b_id, "obra_created", body.get("operator", "Sistema"), f"Obra '{name}' creada")
             return {"id": row["id"], "success": True}
     else:
         import aiosqlite

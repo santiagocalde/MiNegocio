@@ -129,6 +129,8 @@ async def create_quote(body: dict = Body(...)) -> dict:
                         INSERT INTO quote_items (quote_id, product_id, quantity, unit_price)
                         VALUES ($1,$2,$3,$4)
                     """, qid, it.get("product_id"), it.get("quantity", 1), it.get("unit_price", 0))
+                await conn.execute("INSERT INTO audit_log (business_id, action, operator, details) VALUES ($1,$2,$3,$4)",
+                    b_id, "quote_created", body.get("operator", "Sistema"), f"Presupuesto #{qid} creado")
             return {"id": qid, "success": True}
     else:
         import aiosqlite
@@ -166,6 +168,8 @@ async def update_quote_status(quote_id: int, body: dict = Body(...)) -> dict:
                 "UPDATE quotes SET status = $1 WHERE id = $2 AND business_id = $3",
                 new_status, quote_id, _biz_id()
             )
+            await conn.execute("INSERT INTO audit_log (business_id, action, operator, details) VALUES ($1,$2,$3,$4)",
+                _biz_id(), "quote_status", body.get("operator", "Sistema"), f"Presupuesto #{quote_id} → {new_status}")
             return {"success": True}
     else:
         import aiosqlite
