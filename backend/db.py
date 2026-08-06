@@ -492,6 +492,10 @@ async def init_pg() -> None:
             ALTER TABLE sale_items ADD COLUMN IF NOT EXISTS unit_cost NUMERIC(12,2) DEFAULT 0;
             ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS debt NUMERIC(12,2) DEFAULT 0;
 
+            -- Rubro Corralón: precio mayorista/contratista (Lista B) y unidad de medida
+            ALTER TABLE products ADD COLUMN IF NOT EXISTS price_b NUMERIC(12,2);
+            ALTER TABLE products ADD COLUMN IF NOT EXISTS unit_label VARCHAR(20) DEFAULT 'unidad';
+
             CREATE TABLE IF NOT EXISTS audit_log (
                 id              SERIAL PRIMARY KEY,
                 business_id     TEXT NOT NULL REFERENCES businesses(id),
