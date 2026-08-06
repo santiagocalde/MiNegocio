@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema POS sin internet para kioscos — vendé aunque se corte | MiNegocio</title>
+<meta name="description" content="El único sistema para kioscos de Argentina que funciona 100% sin internet. Vendé aunque se corte la conexión. Stock, fiados y caja. 7 días gratis.">
+<meta name="keywords" content="sistema para kiosco sin internet, pos offline argentina, vender sin conexion, software kiosco sin wifi, punto de venta offline, sistema ventas sin internet">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<link rel="canonical" href="https://mi-negocio.app/pos-sin-internet/">
+<meta property="og:title" content="Sistema POS sin internet — vendé aunque se corte | MiNegocio">
+<meta property="og:description" content="El único sistema para kioscos de Argentina que funciona 100% sin internet. Probá 7 días gratis.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://mi-negocio.app/pos-sin-internet/">
+<meta property="og:image" content="https://mi-negocio.app/og-image.png">
+<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta property="og:locale" content="es_AR">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Sistema POS sin internet — vendé aunque se corte | MiNegocio">
+<meta name="twitter:description" content="El único sistema para kioscos de Argentina que funciona 100% sin internet.">
+<meta name="twitter:image" content="https://mi-negocio.app/og-image.png">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,700;12..96,800&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --paper:#F4F7F6;--paper-raised:#FFF;--paper-sunken:#E9EEED;
+  --ink:#0B132B;--ink-soft:#33415C;--ink-faint:#64748B;
+  --line:rgba(11,19,43,.10);--line-strong:rgba(11,19,43,.18);
+  --primary:#0E9C8A;--primary-ink:#0A6E62;--primary-wash:rgba(14,156,138,.10);
+  --green:#0F9D6B;--red:#DC2626;--amber:#f59e0b;
+  --font-display:'Bricolage Grotesque',system-ui,sans-serif;
+  --font-body:'Hanken Grotesk',system-ui,sans-serif;
+  --font-mono:'JetBrains Mono',monospace;
+}
+body{font-family:var(--font-body);color:var(--ink);background:var(--paper);line-height:1.7;-webkit-font-smoothing:antialiased}
+nav{position:sticky;top:0;z-index:100;padding:14px 32px;background:rgba(244,247,246,.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--line-strong)}
+nav .nav-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:20px}
+nav a{text-decoration:none;color:var(--ink-soft);font-weight:500;font-size:15px;transition:color .15s}
+nav a:hover{color:var(--primary)}
+nav .nav-links{display:flex;align-items:center;gap:22px}
+nav .cta{background:var(--primary);color:#fff;padding:9px 20px;border-radius:8px;font-weight:700;font-size:14px;transition:transform .15s,box-shadow .15s}
+nav .cta:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(14,156,138,.3);color:#fff}
+nav .logo-img{height:38px;width:auto}
+.hero{padding:70px 24px 40px;text-align:center;max-width:800px;margin:0 auto}
+.hero h1{font-family:var(--font-display);font-size:clamp(1.8rem,4.5vw,2.6rem);font-weight:800;line-height:1.15;color:var(--ink);margin-bottom:12px;letter-spacing:-.03em}
+.hero p{font-size:1.05rem;color:var(--ink-soft);max-width:600px;margin:0 auto 32px}
+.hero .cta-hero{display:inline-block;background:var(--primary);color:#fff;padding:16px 40px;border-radius:10px;font-weight:800;font-size:1.1rem;text-decoration:none;transition:transform .15s,box-shadow .15s}
+.hero .cta-hero:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(14,156,138,.3)}
+.content{max-width:800px;margin:0 auto;padding:0 24px 60px}
+.content h2{font-family:var(--font-display);font-size:1.5rem;font-weight:700;color:var(--ink);margin:48px 0 16px;letter-spacing:-.02em}
+.content h3{font-size:1.1rem;font-weight:600;color:var(--ink);margin:32px 0 10px}
+.content p{font-size:1rem;color:var(--ink-soft);margin-bottom:18px}
+.content strong{color:var(--ink)}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px;margin:32px 0}
+.step{background:var(--paper-raised);border:1px solid var(--line);border-radius:8px;padding:28px 24px;position:relative}
+.step .num{font-family:var(--font-display);font-size:2.5rem;font-weight:800;color:var(--primary-wash);position:absolute;top:12px;right:16px}
+.step h3{font-size:1.05rem;margin:0 0 8px;padding-right:40px}
+.step p{font-size:.9rem;color:var(--ink-faint);margin:0}
+.compare-box{background:var(--paper-raised);border:2px solid var(--primary);border-radius:10px;padding:32px;margin:32px 0}
+.compare-box h3{font-family:var(--font-display);color:var(--primary);margin:0 0 12px}
+.compare-box ul{margin:0;padding-left:20px}
+.compare-box li{color:var(--ink-soft);margin-bottom:8px;font-size:.95rem}
+.compare-box li strong{color:var(--ink)}
+.real-talk{background:var(--paper-sunken);border-left:4px solid var(--primary);padding:24px;margin:32px 0;border-radius:0 8px 8px 0}
+.real-talk h3{font-family:var(--font-display);color:var(--primary-ink);margin:0 0 8px}
+.real-talk p{color:var(--ink-soft);margin:0;font-size:.95rem;font-style:italic}
+.cta-block{text-align:center;margin:40px 0}
+.cta-block a{display:inline-block;background:var(--primary);color:#fff;padding:16px 40px;border-radius:10px;font-weight:800;font-size:1.1rem;text-decoration:none;transition:transform .15s,box-shadow .15s}
+.cta-block a:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(14,156,138,.3)}
+.faq{margin:40px 0}
+.faq-item{border-bottom:1px solid var(--line);padding:20px 0}
+.faq-item h3{font-size:1rem;font-weight:700;color:var(--ink);margin:0 0 8px}
+.faq-item p{font-size:.9rem;color:var(--ink-soft);margin:0}
+footer{text-align:center;padding:48px 24px;border-top:1px solid var(--line);color:var(--ink-faint);font-size:14px}
+footer a{color:var(--ink-soft);text-decoration:none}
+footer a:hover{color:var(--primary)}
+footer .footer-links{display:flex;justify-content:center;gap:20px;flex-wrap:wrap;margin-bottom:16px}
+footer .footer-sub{font-size:12px}
+@media(max-width:640px){nav{padding:12px 16px}nav .nav-links{display:none}.hero{padding:50px 16px 30px}.content{padding:0 16px 40px}}
+</style>
+<script type="application/ld+json">
+{
+  "@context":"https://schema.org",
+  "@type":"SoftwareApplication",
+  "name":"MiNegocio POS",
+  "applicationCategory":"BusinessApplication",
+  "operatingSystem":"Web, Android, iOS",
+  "description":"El único sistema POS para kioscos de Argentina que funciona 100% sin internet. Vendé aunque se corte la conexión, las ventas se sincronizan solas al reconectar.",
+  "offers":{"@type":"Offer","price":"0","priceCurrency":"ARS"},
+  "author":{"@type":"Organization","name":"MiNegocio","url":"https://mi-negocio.app"}
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context":"https://schema.org",
+  "@type":"FAQPage",
+  "mainEntity":[
+    {"@type":"Question","name":"¿Puedo vender si se corta internet?","acceptedAnswer":{"@type":"Answer","text":"Sí. MiNegocio guarda todas las ventas en tu dispositivo (celular, tablet o PC) y las sincroniza automáticamente cuando vuelve la conexión. La caja no se bloquea nunca."}},
+    {"@type":"Question","name":"¿Qué pasa con el stock cuando vendo sin internet?","acceptedAnswer":{"@type":"Answer","text":"El stock se descuenta automáticamente en cada venta, incluso sin conexión. Cuando vuelve internet, todo se actualiza en la nube sin que tengas que hacer nada."}},
+    {"@type":"Question","name":"¿Los otros sistemas también funcionan sin internet?","acceptedAnswer":{"@type":"Answer","text":"La mayoría de los sistemas POS dependen de internet para funcionar. Si se corta la conexión, la caja se bloquea y no podés vender. MiNegocio es uno de los pocos —si no el único— del mercado argentino que funciona 100% offline."}},
+    {"@type":"Question","name":"¿Necesito instalar algo para usar MiNegocio sin internet?","acceptedAnswer":{"@type":"Answer","text":"No. MiNegocio funciona desde el navegador de tu celular, tablet o compu. No necesitás instalar programas ni configurar nada. Abrís, vendés, y cuando vuelve internet todo se sincroniza solo."}}
+  ]
+}
+</script>
+</head>
+<body>
+<nav>
+  <div class="nav-inner">
+    <a href="/" aria-label="MiNegocio - Inicio"><img src="/seo-assets/logo.png" alt="MiNegocio" class="logo-img"></a>
+    <div class="nav-links">
+      <a href="/funcionalidades/">Funcionalidades</a>
+      <a href="/precios/">Precios</a>
+      <a href="/glosario/">Glosario</a>
+      <a href="/blog/">Blog</a>
+      <a href="/" class="cta">Probar gratis</a>
+    </div>
+  </div>
+</nav>
+
+<section class="hero">
+  <h1>Vendé sin internet.<br>En serio.</h1>
+  <p>El único sistema para kioscos en Argentina que no se cae cuando se corta la conexión. La caja sigue funcionando, el stock se descuenta, y cuando vuelve internet todo se sincroniza solo.</p>
+  <a href="/" class="cta-hero">Probar 7 días gratis →</a>
+</section>
+
+<div class="content">
+
+  <div class="real-talk">
+    <h3>La realidad argentina</h3>
+    <p>Se corta Fibertel un martes a las 18:00, hora pico. Con cualquier otro sistema, cerrás la persiana. Con MiNegocio, la caja sigue andando como si nada. El cliente no se entera. Vos no perdés plata.</p>
+  </div>
+
+  <h2>¿Cómo funciona?</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="num">1</div>
+      <h3>Se corta internet</h3>
+      <p>Un microcorte de Personal, una tormenta que tumba la antena, o simplemente un día de mala señal. El sistema lo detecta automáticamente.</p>
+    </div>
+    <div class="step">
+      <div class="num">2</div>
+      <h3>Seguís vendiendo</h3>
+      <p>La caja no se bloquea. Las ventas se guardan cifradas en tu dispositivo. El stock se descuenta. Los fiados se registran. Todo normal.</p>
+    </div>
+    <div class="step">
+      <div class="num">3</div>
+      <h3>Vuelve la conexión</h3>
+      <p>Internet vuelve. Las ventas se sincronizan solas a la nube. Sin tocar nada. Sin subir archivos. Sin reconciliar nada a mano. Como si el corte nunca hubiera pasado.</p>
+    </div>
+  </div>
+
+  <h2>¿Por qué los otros sistemas no lo hacen?</h2>
+  <p>Porque es difícil. La mayoría de los sistemas POS argentinos dependen de un servidor para funcionar. Si el servidor no responde, la caja se bloquea. Desarrollar un sistema que funcione 100% offline requiere <strong>sincronización de datos en tiempo real cuando la conexión es intermitente</strong> — algo técnicamente complejo que casi nadie invierte en hacer.</p>
+  <p>MiNegocio lo resolvió desde el día uno. Es parte de nuestra arquitectura, no un parche.</p>
+
+  <div class="compare-box">
+    <h3>Sin internet: MiNegocio vs los demás</h3>
+    <ul>
+      <li><strong>MiNegocio</strong>: la caja sigue abierta. Vendés normal. El sistema guarda todo localmente y sincroniza cuando vuelve.</li>
+      <li><strong>La mayoría de los POS</strong>: se bloquea la caja. No podés cobrar. El cliente se va. Perdiste la venta.</li>
+      <li><strong>El cuaderno</strong>: funciona, sí. Pero después tenés que pasar todo a mano. Horas de tu vida que no vuelven.</li>
+    </ul>
+  </div>
+
+  <h2>¿Qué más podés hacer sin internet?</h2>
+  <p>Todo. MiNegocio no es un sistema que "tolera" el offline — fue diseñado para eso.</p>
+  <p><strong>Con internet o sin él, podés:</strong></p>
+  <p> Registrar ventas · Escanear códigos de barra · Descontar stock · Registrar fiados · Ver el historial de un cliente · Cerrar caja · Ver reportes del día</p>
+  <p>Cuando vuelve la conexión: <strong>todo se sincroniza automáticamente</strong>. Vos no movés un dedo.</p>
+
+  <h2>¿Probamos?</h2>
+  <p>No te pedimos tarjeta de crédito. Creás tu cuenta en 3 minutos y tenés 7 días para probar todo. Si se corta internet durante la prueba, mejor — vas a ver cómo MiNegocio sigue funcionando como si nada.</p>
+
+  <div class="cta-block">
+    <a href="/">Empezar prueba gratis de 7 días →</a>
+  </div>
+
+  <h2>Preguntas frecuentes</h2>
+  <div class="faq">
+    <div class="faq-item"><h3>¿Puedo vender si se corta internet?</h3><p>Sí. MiNegocio guarda todas las ventas en tu dispositivo y las sincroniza automáticamente cuando vuelve la conexión. La caja no se bloquea nunca.</p></div>
+    <div class="faq-item"><h3>¿Qué pasa con el stock cuando vendo sin internet?</h3><p>El stock se descuenta automáticamente en cada venta, incluso sin conexión. Cuando vuelve internet, todo se actualiza en la nube.</p></div>
+    <div class="faq-item"><h3>¿Los otros sistemas también funcionan sin internet?</h3><p>La mayoría no. Si se corta la conexión, la caja se bloquea. MiNegocio es uno de los pocos del mercado argentino que funciona 100% offline.</p></div>
+    <div class="faq-item"><h3>¿Necesito instalar algo?</h3><p>No. Funciona desde el navegador de tu celular, tablet o PC. Sin descargas, sin configuraciones.</p></div>
+  </div>
+
+</div>
+
+<footer>
+  <div class="footer-links">
+    <a href="/">Inicio</a><a href="/funcionalidades/">Funcionalidades</a><a href="/precios/">Precios</a>
+    <a href="/blog/">Blog</a><a href="/glosario/">Glosario</a><a href="/soporte/">Soporte</a>
+  </div>
+  <p class="footer-sub">© 2026 MiNegocio · Sistema de ventas para kioscos y comercios de Argentina</p>
+</footer>
+</body>
+</html>

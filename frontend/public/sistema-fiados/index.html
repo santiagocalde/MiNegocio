@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema para llevar fiados en kiosco — controlá quién te debe | MiNegocio</title>
+<meta name="description" content="Dejá el cuaderno de fiados. Sistema digital para registrar, controlar y cobrar fiados desde el celular. Sabé al instante quién te debe y cuánto. 7 días gratis.">
+<meta name="keywords" content="sistema fiados, control fiados kiosco, como llevar cuenta fiados, software fiados almacen, app para anotar fiados, gestion fiados digital">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<link rel="canonical" href="https://mi-negocio.app/sistema-fiados/">
+<meta property="og:title" content="Sistema para llevar fiados — controlá quién te debe | MiNegocio">
+<meta property="og:description" content="Dejá el cuaderno de fiados. Sabé al instante quién te debe y cuánto. Probá 7 días gratis.">
+<meta property="og:type" content="website"><meta property="og:url" content="https://mi-negocio.app/sistema-fiados/">
+<meta property="og:image" content="https://mi-negocio.app/og-image.png">
+<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta property="og:locale" content="es_AR">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Sistema para llevar fiados — controlá quién te debe | MiNegocio">
+<meta name="twitter:description" content="Dejá el cuaderno de fiados. Sabé al instante quién te debe y cuánto.">
+<meta name="twitter:image" content="https://mi-negocio.app/og-image.png">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,700;12..96,800&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --paper:#F4F7F6;--paper-raised:#FFF;--paper-sunken:#E9EEED;
+  --ink:#0B132B;--ink-soft:#33415C;--ink-faint:#64748B;
+  --line:rgba(11,19,43,.10);--line-strong:rgba(11,19,43,.18);
+  --primary:#0E9C8A;--primary-ink:#0A6E62;--primary-wash:rgba(14,156,138,.10);
+  --green:#0F9D6B;--red:#DC2626;--amber:#f59e0b;
+  --font-display:'Bricolage Grotesque',system-ui,sans-serif;
+  --font-body:'Hanken Grotesk',system-ui,sans-serif;
+  --font-mono:'JetBrains Mono',monospace;
+}
+body{font-family:var(--font-body);color:var(--ink);background:var(--paper);line-height:1.7;-webkit-font-smoothing:antialiased}
+nav{position:sticky;top:0;z-index:100;padding:14px 32px;background:rgba(244,247,246,.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--line-strong)}
+nav .nav-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:20px}
+nav a{text-decoration:none;color:var(--ink-soft);font-weight:500;font-size:15px;transition:color .15s}
+nav a:hover{color:var(--primary)}
+nav .nav-links{display:flex;align-items:center;gap:22px}
+nav .cta{background:var(--primary);color:#fff;padding:9px 20px;border-radius:8px;font-weight:700;font-size:14px;transition:transform .15s,box-shadow .15s}
+nav .cta:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(14,156,138,.3);color:#fff}
+nav .logo-img{height:38px;width:auto}
+.hero{padding:70px 24px 40px;text-align:center;max-width:800px;margin:0 auto}
+.hero h1{font-family:var(--font-display);font-size:clamp(1.8rem,4.5vw,2.6rem);font-weight:800;line-height:1.15;color:var(--ink);margin-bottom:12px;letter-spacing:-.03em}
+.hero p{font-size:1.05rem;color:var(--ink-soft);max-width:600px;margin:0 auto 32px}
+.hero .cta-hero{display:inline-block;background:var(--primary);color:#fff;padding:16px 40px;border-radius:10px;font-weight:800;font-size:1.1rem;text-decoration:none;transition:transform .15s,box-shadow .15s}
+.hero .cta-hero:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(14,156,138,.3)}
+.content{max-width:800px;margin:0 auto;padding:0 24px 60px}
+.content h2{font-family:var(--font-display);font-size:1.5rem;font-weight:700;color:var(--ink);margin:48px 0 16px;letter-spacing:-.02em}
+.content h3{font-size:1.1rem;font-weight:600;color:var(--ink);margin:32px 0 10px}
+.content p{font-size:1rem;color:var(--ink-soft);margin-bottom:18px}
+.content strong{color:var(--ink)}
+.pain-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:32px 0}
+.pain-card{background:var(--paper-raised);border:1px solid var(--line);border-radius:8px;padding:24px}
+.pain-card.old{border-left:3px solid var(--red)}
+.pain-card.new{border-left:3px solid var(--green)}
+.pain-card h3{font-size:1rem;margin:0 0 8px}
+.pain-card p{font-size:.9rem;color:var(--ink-faint);margin:0}
+.story{background:var(--paper-sunken);border-left:4px solid var(--primary);padding:28px;margin:32px 0;border-radius:0 8px 8px 0}
+.story p{color:var(--ink-soft);font-size:.95rem;font-style:italic;margin:0}
+.story p strong{font-style:normal}
+.features{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin:32px 0}
+.f-card{background:var(--paper-raised);border:1px solid var(--line);border-radius:8px;padding:24px}
+.f-card h3{font-size:1rem;margin:0 0 8px}
+.f-card p{font-size:.9rem;color:var(--ink-faint);margin:0}
+.cta-block{text-align:center;margin:40px 0}
+.cta-block a{display:inline-block;background:var(--primary);color:#fff;padding:16px 40px;border-radius:10px;font-weight:800;font-size:1.1rem;text-decoration:none;transition:transform .15s,box-shadow .15s}
+.cta-block a:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(14,156,138,.3)}
+.faq{margin:40px 0}
+.faq-item{border-bottom:1px solid var(--line);padding:20px 0}
+.faq-item h3{font-size:1rem;font-weight:700;color:var(--ink);margin:0 0 8px}
+.faq-item p{font-size:.9rem;color:var(--ink-soft);margin:0}
+footer{text-align:center;padding:48px 24px;border-top:1px solid var(--line);color:var(--ink-faint);font-size:14px}
+footer a{color:var(--ink-soft);text-decoration:none}
+footer a:hover{color:var(--primary)}
+footer .footer-links{display:flex;justify-content:center;gap:20px;flex-wrap:wrap;margin-bottom:16px}
+footer .footer-sub{font-size:12px}
+@media(max-width:640px){nav{padding:12px 16px}nav .nav-links{display:none}.hero{padding:50px 16px 30px}.pain-grid{grid-template-columns:1fr}.content{padding:0 16px 40px}}
+</style>
+<script type="application/ld+json">
+{
+  "@context":"https://schema.org",
+  "@type":"SoftwareApplication",
+  "name":"MiNegocio POS",
+  "applicationCategory":"BusinessApplication",
+  "operatingSystem":"Web, Android, iOS",
+  "description":"Sistema digital para llevar fiados en kioscos y almacenes. Registrá, controlá y cobrá fiados desde el celular sin cuaderno.",
+  "offers":{"@type":"Offer","price":"0","priceCurrency":"ARS"},
+  "author":{"@type":"Organization","name":"MiNegocio","url":"https://mi-negocio.app"}
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context":"https://schema.org",
+  "@type":"FAQPage",
+  "mainEntity":[
+    {"@type":"Question","name":"¿Cómo funciona el sistema de fiados de MiNegocio?","acceptedAnswer":{"@type":"Answer","text":"Cuando un cliente te pide fiado, lo registrás en el sistema con un clic. MiNegocio guarda el nombre, el monto y la fecha. Podés ver al instante quién te debe, cuánto, y desde cuándo. Cuando el cliente paga, lo marcás como cobrado y la deuda se actualiza automáticamente."}},
+    {"@type":"Question","name":"¿Puedo mandar mensajes de WhatsApp a los que me deben?","acceptedAnswer":{"@type":"Answer","text":"Sí. Con el plan IA, MiNegocio genera automáticamente un mensaje de WhatsApp personalizado para cada cliente con el detalle de su deuda. Lo revisás, lo enviás, y el cliente recibe un recordatorio amable sin que tengas que escribir nada."}},
+    {"@type":"Question","name":"¿Qué pasa si un cliente paga solo una parte de la deuda?","acceptedAnswer":{"@type":"Answer","text":"Podés registrar abonos parciales. El sistema actualiza la deuda restante y guarda el historial de cada pago. Sabés exactamente cuánto pagó, cuándo, y cuánto queda debiendo."}},
+    {"@type":"Question","name":"¿Necesito internet para registrar fiados?","acceptedAnswer":{"@type":"Answer","text":"No. Podés registrar fiados sin conexión. Cuando vuelve internet, todo se sincroniza. No perdés ningún registro."}}
+  ]
+}
+</script>
+</head>
+<body>
+<nav>
+  <div class="nav-inner">
+    <a href="/" aria-label="MiNegocio - Inicio"><img src="/seo-assets/logo.png" alt="MiNegocio" class="logo-img"></a>
+    <div class="nav-links">
+      <a href="/funcionalidades/">Funcionalidades</a><a href="/precios/">Precios</a>
+      <a href="/glosario/">Glosario</a><a href="/blog/">Blog</a>
+      <a href="/" class="cta">Probar gratis</a>
+    </div>
+  </div>
+</nav>
+
+<section class="hero">
+  <h1>Dejá el cuaderno de fiados.<br>Para siempre.</h1>
+  <p>Registrá fiados en segundos. Sabé al instante quién te debe, cuánto y desde cuándo. Mandale un WhatsApp automático al que se atrasó. Sin cuaderno, sin olvidos, sin plata perdida.</p>
+  <a href="/" class="cta-hero">Probar 7 días gratis →</a>
+</section>
+
+<div class="content">
+
+  <div class="story">
+    <p>"El cuaderno de fiados era mi dolor de cabeza. Todos los días tenía que revisar quién me debía. A veces me olvidaba de anotar. Otras veces <strong>el que me debía decía que ya me había pagado</strong> y yo no tenía forma de comprobarlo. Desde que uso MiNegocio, sé exactamente quién debe y cuánto. Y si se atrasan, les mando un WhatsApp automático. No perdí un peso más."</p>
+  </div>
+
+  <h2>El cuaderno vs MiNegocio</h2>
+  <div class="pain-grid">
+    <div class="pain-card old"><h3>📓 El cuaderno</h3><p>Te olvidás de anotar. Se moja, se pierde, se rompe. Si tenés empleados, cada uno anota distinto. Cuando querés cobrar, no sabés si ya pagaron. <strong>Perdés plata todos los meses</strong>.</p></div>
+    <div class="pain-card new"><h3>✅ MiNegocio</h3><p>Registrás un fiado en 2 segundos. El sistema te muestra quién debe, cuánto y desde cuándo. Historial completo de pagos. Recordatorios automáticos por WhatsApp. <strong>Cero plata perdida</strong>.</p></div>
+  </div>
+
+  <h2>¿Cómo funciona?</h2>
+  <div class="features">
+    <div class="f-card"><h3>Registrá en segundos</h3><p>El cliente te pide fiado. Tocás su nombre, ponés el monto, listo. El sistema guarda todo automáticamente.</p></div>
+    <div class="f-card"><h3>Vista de deudores</h3><p>Una pantalla te muestra todos los clientes con deuda activa. Ordenados por monto, por antigüedad, por nombre.</p></div>
+    <div class="f-card"><h3>Historial de pagos</h3><p>Cada cliente tiene su propio historial. Sabés cuánto debía, cuándo pagó, cuánto pagó, y si hizo abonos parciales.</p></div>
+    <div class="f-card"><h3>Cobranza por WhatsApp</h3><p>Con un clic, el sistema arma un mensaje de WhatsApp con el detalle de la deuda. Lo revisás, lo enviás. Sin escribir nada.</p></div>
+    <div class="f-card"><h3>Abonos parciales</h3><p>¿Pagó solo una parte? Lo registrás como abono. La deuda restante se actualiza automáticamente.</p></div>
+    <div class="f-card"><h3>Sin internet, sin problema</h3><p>Registrá fiados aunque no tengas conexión. Cuando vuelve internet, todo se sincroniza solo.</p></div>
+  </div>
+
+  <h2>El fiado es argentino</h2>
+  <p>En Argentina, el fiado es parte del negocio. El vecino que cobra el viernes, la señora que se olvidó la billetera, el pibe que pasa todos los días. <strong>No podés decir que no</strong> — pero tampoco podés perder plata por no llevar la cuenta.</p>
+  <p>MiNegocio entiende eso. Por eso el sistema de fiados no es un "feature extra" — es una parte central del producto, pensada para como se maneja un kiosco de verdad.</p>
+
+  <h2>¿Y si tengo varios empleados?</h2>
+  <p>Cada operador tiene su propio usuario. El sistema registra <strong>quién hizo cada fiado</strong>. Si algo no cierra, sabés exactamente quién fue. Sin discusiones, sin "yo no fui".</p>
+
+  <div class="cta-block">
+    <a href="/">Empezar a controlar los fiados →</a>
+  </div>
+
+  <h2>Preguntas frecuentes</h2>
+  <div class="faq">
+    <div class="faq-item"><h3>¿Cómo registro un fiado?</h3><p>Cuando cobrás una venta, elegís "Fiado" como método de pago. Ponés el nombre del cliente y listo. La deuda queda registrada automáticamente.</p></div>
+    <div class="faq-item"><h3>¿Puedo mandar mensajes por WhatsApp a los deudores?</h3><p>Sí, con el plan IA el sistema genera un mensaje personalizado con el detalle de la deuda. Lo revisás y lo enviás en un clic.</p></div>
+    <div class="faq-item"><h3>¿Qué pasa si alguien paga solo una parte?</h3><p>Registrás un abono parcial. El sistema actualiza la deuda restante y guarda todo en el historial.</p></div>
+    <div class="faq-item"><h3>¿Funciona sin internet?</h3><p>Sí. Podés registrar fiados offline. Cuando vuelve la conexión, todo se sincroniza automáticamente.</p></div>
+  </div>
+
+</div>
+
+<footer>
+  <div class="footer-links">
+    <a href="/">Inicio</a><a href="/funcionalidades/">Funcionalidades</a><a href="/precios/">Precios</a>
+    <a href="/blog/">Blog</a><a href="/glosario/">Glosario</a><a href="/soporte/">Soporte</a>
+  </div>
+  <p class="footer-sub">© 2026 MiNegocio · Sistema de ventas para kioscos y comercios de Argentina</p>
+</footer>
+</body>
+</html>

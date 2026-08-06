@@ -29,4 +29,8 @@
   <!-- ETAPA 3: Comparativa -->
   <url><loc>https://mi-negocio.app/comparar-sistemas-para-kioscos/</loc><lastmod>2026-08-06</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
 
+  <!-- Feature pages -->
+  <url><loc>https://mi-negocio.app/pos-sin-internet/</loc><lastmod>2026-08-06</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://mi-negocio.app/sistema-fiados/</loc><lastmod>2026-08-06</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+
 </urlset>
