@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema punto de venta para kioscos en Rosario | MiNegocio</title>
+<meta name="description" content="Sistema POS para kioscos y almacenes en Rosario. Funciona sin internet, controlá stock y fiados desde el celular. Probá 7 días gratis.">
+<meta name="keywords" content="sistema punto de venta rosario, pos rosario, software kiosco caba, sistema ventas capital federal, control stock rosario">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<link rel="canonical" href="https://mi-negocio.app/pos-buenos-aires/">
+<meta property="og:title" content="Sistema punto de venta para kioscos en Rosario | MiNegocio">
+<meta property="og:description" content="Sistema POS para kioscos y almacenes en Rosario. Funciona sin internet, controlá stock y fiados desde el celular.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://mi-negocio.app/pos-buenos-aires/">
+<meta property="og:image" content="https://mi-negocio.app/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="es_AR">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Sistema punto de venta para kioscos en Rosario | MiNegocio">
+<meta name="twitter:description" content="Sistema POS para kioscos y almacenes en Rosario. Funciona sin internet.">
+<meta name="twitter:image" content="https://mi-negocio.app/og-image.png">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,700;12..96,800&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --paper:#F4F7F6;--paper-raised:#FFF;--paper-sunken:#E9EEED;
+  --ink:#0B132B;--ink-soft:#33415C;--ink-faint:#64748B;
+  --line:rgba(11,19,43,.10);--line-strong:rgba(11,19,43,.18);
+  --primary:#0E9C8A;--primary-ink:#0A6E62;--primary-wash:rgba(14,156,138,.10);
+  --font-display:'Bricolage Grotesque',system-ui,sans-serif;
+  --font-body:'Hanken Grotesk',system-ui,sans-serif;
+  --font-mono:'JetBrains Mono',monospace;
+}
+html:has([data-lp-theme="dark"]){background:#0B132B}
+body{font-family:var(--font-body);color:var(--ink);background:var(--paper);line-height:1.7;-webkit-font-smoothing:antialiased}
+nav{position:sticky;top:0;z-index:100;padding:14px 32px;background:rgba(244,247,246,.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--line-strong)}
+[data-lp-theme="dark"] nav{background:rgba(11,19,43,.92)}
+nav .nav-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:20px}
+nav a{text-decoration:none;color:var(--ink-soft);font-weight:500;font-size:15px;transition:color .15s}
+nav a:hover{color:var(--primary)}
+nav .nav-links{display:flex;align-items:center;gap:22px}
+nav .cta{background:var(--primary);color:#fff;padding:9px 20px;border-radius:8px;font-weight:700;font-size:14px;transition:transform .15s,box-shadow .15s}
+nav .cta:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(14,156,138,.3);color:#fff}
+nav .logo-img{height:38px;width:auto}
+.hero{padding:80px 24px 60px;text-align:center;max-width:800px;margin:0 auto}
+.hero h1{font-family:var(--font-display);font-size:clamp(2rem,5vw,3rem);font-weight:800;line-height:1.15;color:var(--ink);margin-bottom:16px;letter-spacing:-.03em}
+.hero p{font-size:1.1rem;color:var(--ink-soft);max-width:600px;margin:0 auto 32px}
+.hero .cta-hero{display:inline-block;background:var(--primary);color:#fff;padding:16px 40px;border-radius:10px;font-weight:800;font-size:1.1rem;text-decoration:none;transition:transform .15s,box-shadow .15s}
+.hero .cta-hero:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(14,156,138,.3)}
+.content{max-width:800px;margin:0 auto;padding:0 24px 60px}
+.content h2{font-family:var(--font-display);font-size:1.6rem;font-weight:700;color:var(--ink);margin:48px 0 16px;letter-spacing:-.02em}
+.content h3{font-size:1.15rem;font-weight:600;color:var(--ink);margin:32px 0 10px}
+.content p{font-size:1.05rem;color:var(--ink-soft);margin-bottom:20px}
+.content ul{margin-bottom:20px;padding-left:24px}
+.content li{font-size:1.05rem;color:var(--ink-soft);margin-bottom:8px}
+.content strong{color:var(--ink)}
+.features{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin:32px 0}
+.feature-card{background:var(--paper-raised);border:1px solid var(--line);border-radius:8px;padding:24px}
+.feature-card h3{font-size:1rem;margin:0 0 8px}
+.feature-card p{font-size:.9rem;color:var(--ink-faint);margin:0}
+footer{text-align:center;padding:48px 24px;border-top:1px solid var(--line);color:var(--ink-faint);font-size:14px}
+footer a{color:var(--ink-soft);text-decoration:none}
+footer a:hover{color:var(--primary)}
+footer .footer-links{display:flex;justify-content:center;gap:20px;flex-wrap:wrap;margin-bottom:16px}
+footer .footer-sub{font-size:12px}
+@media(max-width:640px){
+  nav{padding:12px 16px}
+  nav .nav-links{display:none}
+  .hero{padding:60px 16px 40px}
+  .content{padding:0 16px 40px}
+}
+</style>
+<script type="application/ld+json">
+{
+  "@context":"https://schema.org",
+  "@type":"SoftwareApplication",
+  "name":"MiNegocio POS",
+  "applicationCategory":"BusinessApplication",
+  "operatingSystem":"Web, Android, iOS",
+  "description":"Sistema punto de venta para kioscos y almacenes en Rosario. Funciona sin internet, controlá stock y fiados desde el celular.",
+  "offers":{"@type":"Offer","price":"0","priceCurrency":"ARS"},
+  "areaServed":{"@type":"City","name":"Rosario"},
+  "author":{"@type":"Organization","name":"MiNegocio","url":"https://mi-negocio.app"}
+}
+</script>
+</head>
+<body>
+<nav>
+  <div class="nav-inner">
+    <a href="/" aria-label="MiNegocio - Inicio"><img src="/seo-assets/logo.png" alt="MiNegocio" class="logo-img"></a>
+    <div class="nav-links">
+      <a href="/funcionalidades/">Funcionalidades</a>
+      <a href="/precios/">Precios</a>
+      <a href="/glosario/">Glosario</a>
+      <a href="/blog/">Blog</a>
+      <a href="/" class="cta">Probar gratis</a>
+    </div>
+  </div>
+</nav>
+
+<section class="hero">
+  <h1>Sistema punto de venta para kioscos en&nbsp;Rosario</h1>
+  <p>Vendé sin internet, controlá el stock en tiempo real y gestioná fiados desde tu celular. Probá MiNegocio 7 días gratis, sin tarjeta de crédito. Funciona en Rosario y alrededores.</p>
+  <a href="/" class="cta-hero">Empezar 7 días gratis →</a>
+</section>
+
+<div class="content">
+  <h2>¿Por qué MiNegocio en Rosario?</h2>
+  <p>En Rosario y el sur de Santa Fe, donde los cortes de luz en verano complican todo, MiNegocio te permite <strong>seguir vendiendo igual</strong>: las ventas se guardan en tu dispositivo y se sincronizan cuando vuelve la conexión.</p>
+
+  <div class="features">
+    <div class="feature-card">
+      <h3>📶 Funciona sin internet</h3>
+      <p>La caja no se bloquea. Las ventas se guardan localmente y se sincronizan solas al reconectar.</p>
+    </div>
+    <div class="feature-card">
+      <h3>📱 Desde el celular</h3>
+      <p>Usalo en tu celu, tablet o compu. Si se rompe un dispositivo, usás el otro sin perder datos.</p>
+    </div>
+    <div class="feature-card">
+      <h3>📋 Control de fiados</h3>
+      <p>Sabé al instante quién te debe y cuánto. Adiós al cuaderno de anotaciones que se pierde.</p>
+    </div>
+    <div class="feature-card">
+      <h3>📊 Cierre de caja automático</h3>
+      <p>Al final del día, el sistema calcula todo: ventas en efectivo, tarjeta, transferencia y vuelto.</p>
+    </div>
+  </div>
+
+  <h2>Hecho para negocios de Rosario</h2>
+  <p>Entendemos la realidad del comerciante rosarino: calor extremo en verano, cortes de luz frecuentes, y la necesidad de un sistema simple que cualquier empleado pueda usar sin vueltas.</p>
+
+  <h3>¿Tenés más de un local?</h3>
+  <p>Con el plan Pro o IA podés manejar varias sucursales desde la misma cuenta. Ideal si tenés locales en distintos barrios: el centro, zona sur o Fisherton. Todo sincronizado en tiempo real.</p>
+
+  <h2>Cómo empezar</h2>
+  <p>Creás tu cuenta en 3 minutos. Sin descargar nada, sin instalar programas. Entrás desde el navegador del celu o la compu. Tenés <strong>7 días gratis</strong> para probar todas las funciones. Si te sirve, elegís el plan que necesitás.</p>
+  <p style="margin-top:24px"><a href="/precios/" style="color:var(--primary);font-weight:700">Ver planes y precios →</a></p>
+</div>
+
+<footer>
+  <div class="footer-links">
+    <a href="/">Inicio</a>
+    <a href="/funcionalidades/">Funcionalidades</a>
+    <a href="/precios/">Precios</a>
+    <a href="/blog/">Blog</a>
+    <a href="/glosario/">Glosario</a>
+    <a href="/soporte/">Soporte</a>
+  </div>
+  <p class="footer-sub">© 2026 MiNegocio · Sistema de ventas para kioscos y comercios de Argentina</p>
+</footer>
+</body>
+</html>
