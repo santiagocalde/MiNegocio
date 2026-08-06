@@ -475,6 +475,67 @@ async def init_pg() -> None:
             );
             CREATE INDEX IF NOT EXISTS idx_obras_business_id ON obras(business_id);
 
+            -- Corralón V2: Acopios (material pagado no retirado)
+            CREATE TABLE IF NOT EXISTS acopios (
+                id              SERIAL PRIMARY KEY,
+                business_id     TEXT NOT NULL REFERENCES businesses(id),
+                customer_id     INTEGER REFERENCES customers(id),
+                obra_id         INTEGER REFERENCES obras(id),
+                status          TEXT DEFAULT 'active',
+                created_at      TIMESTAMPTZ DEFAULT now(),
+                completed_at    TIMESTAMPTZ
+            );
+            CREATE INDEX IF NOT EXISTS idx_acopios_business_id ON acopios(business_id);
+
+            CREATE TABLE IF NOT EXISTS acopio_items (
+                id              SERIAL PRIMARY KEY,
+                acopio_id       INTEGER NOT NULL REFERENCES acopios(id) ON DELETE CASCADE,
+                product_id      INTEGER NOT NULL,
+                quantity_total  NUMERIC(12,3) NOT NULL DEFAULT 0,
+                quantity_retirada NUMERIC(12,3) NOT NULL DEFAULT 0,
+                unit_price      NUMERIC(12,2) NOT NULL DEFAULT 0
+            );
+
+            CREATE TABLE IF NOT EXISTS acopio_withdrawals (
+                id              SERIAL PRIMARY KEY,
+                acopio_id       INTEGER NOT NULL REFERENCES acopios(id),
+                driver          TEXT,
+                notes           TEXT,
+                created_at      TIMESTAMPTZ DEFAULT now()
+            );
+
+            CREATE TABLE IF NOT EXISTS acopio_withdrawal_items (
+                id              SERIAL PRIMARY KEY,
+                withdrawal_id   INTEGER NOT NULL REFERENCES acopio_withdrawals(id) ON DELETE CASCADE,
+                acopio_item_id  INTEGER NOT NULL REFERENCES acopio_items(id),
+                quantity        NUMERIC(12,3) NOT NULL DEFAULT 0
+            );
+
+            -- Corralón V2: Devoluciones con nota de crédito
+            CREATE TABLE IF NOT EXISTS credit_notes (
+                id              SERIAL PRIMARY KEY,
+                business_id     TEXT NOT NULL REFERENCES businesses(id),
+                customer_id     INTEGER REFERENCES customers(id),
+                total           NUMERIC(12,2) NOT NULL DEFAULT 0,
+                reason          TEXT,
+                operator        TEXT,
+                created_at      TIMESTAMPTZ DEFAULT now()
+            );
+            CREATE INDEX IF NOT EXISTS idx_credit_notes_business_id ON credit_notes(business_id);
+
+            CREATE TABLE IF NOT EXISTS credit_note_items (
+                id              SERIAL PRIMARY KEY,
+                credit_note_id  INTEGER NOT NULL REFERENCES credit_notes(id) ON DELETE CASCADE,
+                product_id      INTEGER,
+                product_name    TEXT,
+                quantity        NUMERIC(12,3) NOT NULL DEFAULT 0,
+                unit_price      NUMERIC(12,2) NOT NULL DEFAULT 0
+            );
+
+            -- Corralón V2: Hojas de Ruta (columnas en remitos)
+            ALTER TABLE remitos ADD COLUMN IF NOT EXISTS zone VARCHAR(100);
+            ALTER TABLE remitos ADD COLUMN IF NOT EXISTS sort_order INTEGER;
+
             CREATE TABLE IF NOT EXISTS sucursales (
                 id              SERIAL PRIMARY KEY,
                 business_id     TEXT NOT NULL REFERENCES businesses(id),

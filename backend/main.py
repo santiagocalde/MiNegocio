@@ -382,6 +382,9 @@ from routers.operators import router as operators_router
 from routers.quotes import router as quotes_router
 from routers.remitos import router as remitos_router
 from routers.obras import router as obras_router
+from routers.acopios import router as acopios_router
+from routers.credit_notes import router as credit_notes_router
+from routers.hojas_de_ruta import router as hojas_de_ruta_router
 from routers.products import router as products_router
 from routers.sales import router as sales_router
 from routers.inventory import router as inventory_router
@@ -411,6 +414,9 @@ app.include_router(admin_router)
 app.include_router(quotes_router)
 app.include_router(remitos_router)
 app.include_router(obras_router)
+app.include_router(acopios_router)
+app.include_router(credit_notes_router)
+app.include_router(hojas_de_ruta_router)
 
 if __name__ == "__main__":
     import uvicorn
