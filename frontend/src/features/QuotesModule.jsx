@@ -84,10 +84,44 @@ export default function QuotesModule() {
     } else { addToast?.('Error al crear presupuesto.', 'error'); }
   };
 
-  const handleStatus = async (id, status) => {
+const handleStatus = async (id, status) => {
     const res = await apiPost(`/quotes/${id}/status`, { status });
-    if (res.ok) { addToast?.(`Estado: ${STATUS_MAP[status]?.label || status}.`, 'success'); fetchQuotes(); }
+    if (res.ok) { addToast?.(`Estado: ${STATUS_MAP[status]?.label || status}.`, 'success'); fetch(); }
     else { addToast?.('Error al cambiar estado.', 'error'); }
+  };
+
+  const handlePrint = () => {
+    if (!detail) return;
+    const d = detail;
+    const items = d.items.map(it =>
+      `<tr><td style="padding:4px 0">${it.product_name}</td><td style="text-align:center">${it.quantity}</td><td style="text-align:right;font-family:monospace">$${formatPesos(it.unit_price)}</td><td style="text-align:right;font-family:monospace">$${formatPesos(it.unit_price * it.quantity)}</td></tr>`
+    ).join('');
+    const total = d.items.reduce((s, i) => s + i.unit_price * i.quantity, 0);
+    const block = (label) => `
+      <div style="border:1px solid #ccc;padding:12mm;margin-bottom:5mm">
+        <div style="text-align:center;font-weight:900;font-size:14px;margin-bottom:6mm;letter-spacing:2px">${label}</div>
+        <div style="font-size:13px;margin-bottom:4mm"><strong>Presupuesto N° ${d.quote.id}</strong></div>
+        <div style="font-size:12px;margin-bottom:2mm">Cliente: ${d.quote.customer_name || '—'}</div>
+        <div style="font-size:12px;margin-bottom:2mm">Obra: ${d.quote.note || '—'}</div>
+        <div style="font-size:12px;margin-bottom:2mm">Lista: ${d.quote.list_type === 'b' ? 'B (Contratista)' : 'A (Público)'}</div>
+        <div style="font-size:12px;margin-bottom:2mm">Válido hasta: ${fmtDate(d.quote.expires_at)}</div>
+        <table style="width:100%;border-collapse:collapse;margin-top:6mm;font-size:12px">
+          <tr style="border-bottom:2px solid #333"><th style="text-align:left;padding:4px 0">Producto</th><th style="text-align:center">Cant</th><th style="text-align:right">Unit.</th><th style="text-align:right">Total</th></tr>
+          ${items}
+          <tr style="border-top:2px solid #333"><td colspan="3" style="text-align:right;font-weight:700;padding:6px 0">TOTAL</td><td style="text-align:right;font-weight:900;font-family:monospace;font-size:15px">$${formatPesos(total)}</td></tr>
+        </table>
+        <div style="margin-top:12mm;font-size:11px;text-align:center">Firma: ___________________________</div>
+      </div>`;
+
+    const w = window.open('', '_blank', 'width=800,height=600');
+    w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Presupuesto N° ${d.quote.id}</title>
+      <style>@page{size:A4;margin:10mm}body{font-family:Arial,sans-serif;color:#111;margin:0;padding:10mm}</style></head><body>
+      ${block('ORIGINAL')}
+      <div style="border-top:1px dashed #999;margin:8mm 0;text-align:center;color:#999;font-size:10px">- - - cortar aquí - - -</div>
+      ${block('DUPLICADO')}
+      </body></html>`);
+    w.document.close();
+    setTimeout(() => { w.focus(); w.print(); }, 300);
   };
 
   const handleDelete = async (id) => {
@@ -273,6 +307,7 @@ export default function QuotesModule() {
               {['draft', 'sent'].includes(detail.quote.status) && (
                 <button onClick={() => handleStatus(detail.quote.id, 'rejected')} className="lp-btn lp-btn--ghost" style={{ flex: 1, fontSize: '0.85rem', color: 'var(--lp-red)' }}>Rechazar</button>
               )}
+              <button onClick={handlePrint} className="lp-btn lp-btn--ghost" style={{ fontSize: '0.85rem' }}>🖨️ Imprimir</button>
               <button onClick={() => { handleDelete(detail.quote.id); setDetail(null); }} className="lp-btn lp-btn--ghost" style={{ fontSize: '0.85rem', color: 'var(--lp-red)' }}>Eliminar</button>
             </div>
           </div>
