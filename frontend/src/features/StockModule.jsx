@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { TableVirtuoso } from 'react-virtuoso';
 import { usePanelContext } from '../context/PanelContext';
-import { apiGet, apiPost, apiPatch, apiPut, apiDelete, SERVER_URL } from '../services/apiClient';
+import { apiGet, apiPost, apiPut, apiDelete, SERVER_URL } from '../services/apiClient';
 import { SkeletonTable } from '../components/ui/Skeleton';
 import EmptyState from '../components/ui/EmptyState';
 import useSortable from '../hooks/useSortable.jsx';
@@ -604,7 +604,7 @@ export default function StockModule() {
                             setPromptState(prev => ({...prev, isOpen: false}));
                             if (newPrice !== null && newPrice !== '' && !isNaN(newPrice) && parseFloat(newPrice) >= 0) {
                               try {
-                                const res = await apiPatch(`/products/${p.id}/price`, { price: parseFloat(newPrice) });
+                                const res = await apiPost(`/products/${p.id}/price`, { price: parseFloat(newPrice) });
                                 if (res.ok) {
                                   if (addToast) addToast(`Precio de ${p.name} actualizado.`, 'success');
                                   fetchProducts();
@@ -628,7 +628,7 @@ export default function StockModule() {
                             setPromptState(prev => ({...prev, isOpen: false}));
                             if (newStock !== null && newStock !== '' && !isNaN(newStock) && parseInt(newStock) >= 0) {
                               try {
-                                const res = await apiPatch(`/products/${p.id}/stock`, { stock: parseInt(newStock) });
+                                const res = await apiPost(`/products/${p.id}/stock`, { stock: parseInt(newStock) });
                                 if (res.ok) {
                                   if (addToast) addToast(`Stock de ${p.name} actualizado.`, 'success');
                                   fetchProducts();

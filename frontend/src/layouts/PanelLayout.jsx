@@ -90,11 +90,11 @@ export default function PanelLayout() {
       return;
     }
     try {
-      const { apiPatch } = await import('../services/apiClient');
+      const { apiPost } = await import('../services/apiClient');
       const opName = auth.currentOperator?.name || 'Dueño';
       const operatorId = auth.currentOperator?.id;
       if (!operatorId) throw new Error('No se encontro el operador actual');
-      const res = await apiPatch(`/operators/${operatorId}`, {
+      const res = await apiPost(`/operators/${operatorId}`, {
         name: opName,
         pin: newPassword,
         role: 'admin',

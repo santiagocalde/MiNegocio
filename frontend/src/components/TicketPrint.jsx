@@ -43,6 +43,7 @@ export default function TicketPrint({ cart, total, payment, change, operator, ti
   const subtitulo = config?.subtitulo || '';
   const direccion = config?.direccion || '';
   const telefono = config?.telefono || '';
+  const instagram = config?.instagram || '';
   const cuit = config?.cuit || '';
   const condicion = config?.condicion_iva || 'Monotributista';
   const mensaje = config?.mensaje_ticket || '¡Gracias por su compra!';
@@ -75,6 +76,7 @@ export default function TicketPrint({ cart, total, payment, change, operator, ti
 {subtitulo ? center(subtitulo) : ''}
 {direccion ? center(direccion) : ''}
 {telefono ? center(`Tel: ${telefono}`) : ''}
+{instagram ? center(`IG: ${instagram}`) : ''}
 {DLINE}
 {`CUIT: ${cuit}`}
 {`Cond. IVA: ${condicion}`}

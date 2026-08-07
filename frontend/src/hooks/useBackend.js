@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { apiGet, apiPost, apiPatch, SERVER_URL } from '../services/apiClient';
+import { apiGet, apiPost, SERVER_URL } from '../services/apiClient';
 
 export default function useBackend(currentOperator, currentTurnId, currentSucursalId, addToast) {
   const [productsDB, setProductsDB] = useState([]);
@@ -70,7 +70,7 @@ export default function useBackend(currentOperator, currentTurnId, currentSucurs
   const handleDevolucionItem = useCallback(async (productId, productName, lastSaleId, devolucionQtysLocal, supervisorPin) => {
     try {
       const qty = parseFloat(devolucionQtysLocal?.[productId]) || 1;
-      const res = await apiPatch(`/sales/${lastSaleId}/revert-item`, {
+      const res = await apiPost(`/sales/${lastSaleId}/revert-item`, {
         product_id: productId,
         quantity: qty,
         operator: currentOperator?.name || 'Sistema',
@@ -91,7 +91,7 @@ export default function useBackend(currentOperator, currentTurnId, currentSucurs
     if (!lastSaleId) return false;
     setIsReverting(true);
     try {
-      const res = await apiPatch(`/sales/${lastSaleId}/revert?operator=${currentOperator?.name || 'Sistema'}`, {
+      const res = await apiPost(`/sales/${lastSaleId}/revert?operator=${currentOperator?.name || 'Sistema'}`, {
         supervisor_pin: supervisorPin || '',
       });
       if (res.ok) {

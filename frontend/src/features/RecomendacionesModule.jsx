@@ -150,8 +150,8 @@ export default function RecomendacionesModule() {
 
   const handleApplyOne = async (s) => {
     try {
-      const { apiPatch } = await import('../services/apiClient');
-      const res = await apiPatch(`/products/${s.product_id}/price`, { price: s.price_sugerido });
+      const { apiPost } = await import('../services/apiClient');
+      const res = await apiPost(`/products/${s.product_id}/price`, { price: s.price_sugerido });
       return res.ok;
     } catch {
       return false;
@@ -170,10 +170,10 @@ export default function RecomendacionesModule() {
         if (addToast) addToast('No hay precios sugeridos para aplicar.', 'info');
         return;
       }
-      const { apiPatch } = await import('../services/apiClient');
+      const { apiPost } = await import('../services/apiClient');
       let applied = 0;
       for (const p of prices) {
-        const res = await apiPatch(`/products/${p.id}/price`, { price: p.price });
+        const res = await apiPost(`/products/${p.id}/price`, { price: p.price });
         if (res.ok) applied++;
       }
       if (addToast) addToast(`${applied} precios actualizados correctamente.`, 'success');

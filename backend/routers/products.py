@@ -346,7 +346,7 @@ async def create_product(request: Request, product: dict = Body(...)) -> Dict[st
             return {"id": cur.lastrowid, **product, "extra_codes": extra}
 
 
-@router.patch("/api/products/{product_id}/price", summary="Actualizar precio")
+@router.post("/api/products/{product_id}/price", summary="Actualizar precio")
 async def update_price(product_id: int, body: dict) -> dict:
     price = body.get("price", 0)
     operator = body.get("operator", "Sistema")
@@ -369,7 +369,7 @@ async def update_price(product_id: int, body: dict) -> dict:
             return {"success": True, "old_price": row[0], "new_price": price}
 
 
-@router.patch("/api/products/{product_id}/stock", summary="Fijar stock absoluto")
+@router.post("/api/products/{product_id}/stock", summary="Fijar stock absoluto")
 async def update_stock(product_id: int, body: dict) -> dict:
     """Fija el stock ABSOLUTO del producto (no es un movimiento sumable).
 

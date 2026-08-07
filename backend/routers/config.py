@@ -239,7 +239,7 @@ async def create_sucursal(request: Request, name: str = Query(...), address: str
             return {"id": cur.lastrowid, "name": name, "address": address, "phone": phone}
 
 
-@router.patch("/api/sucursales/{sucursal_id}", summary="Actualizar sucursal")
+@router.post("/api/sucursales/{sucursal_id}", summary="Actualizar sucursal")
 async def update_sucursal(sucursal_id: int, name: str = Query(None), address: str = Query(None), phone: str = Query(None)) -> dict:
     if USE_PG:
         from db_helpers import get_pg_pool

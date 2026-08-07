@@ -115,6 +115,7 @@ export default function ConfigPage() {
       setSaved(true);
       addToast('Configuración guardada', 'success');
       setTimeout(() => setSaved(false), 2000);
+      try { localStorage.setItem('minegocio_config', JSON.stringify(config)); } catch { /* noop */ }
     } catch {
       addToast('No se pudo guardar la configuración. Reintentá o revisá tu conexión.', 'error');
     }

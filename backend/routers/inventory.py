@@ -89,7 +89,7 @@ async def list_fiados() -> list:
             return [row_to_dict(r, cur.description) for r in rows]
 
 
-@router.patch("/api/sales/{sale_id}/cobrar-fiado", summary="Marcar fiado como cobrado")
+@router.post("/api/sales/{sale_id}/cobrar-fiado", summary="Marcar fiado como cobrado")
 async def cobrar_fiado(sale_id: int) -> dict:
     if USE_PG:
         b_id = _biz_id()
@@ -105,7 +105,7 @@ async def cobrar_fiado(sale_id: int) -> dict:
             return {"success": True}
 
 
-@router.patch("/api/sales/{sale_id}/revert-item", summary="Revertir item de venta")
+@router.post("/api/sales/{sale_id}/revert-item", summary="Revertir item de venta")
 async def revert_sale_item(sale_id: int, body: dict) -> dict:
     if USE_PG:
         b_id = _biz_id()
@@ -174,7 +174,7 @@ async def revert_sale_item(sale_id: int, body: dict) -> dict:
             return {"success": True}
 
 
-@router.patch("/api/sales/{sale_id}/revert", summary="Anular venta completa")
+@router.post("/api/sales/{sale_id}/revert", summary="Anular venta completa")
 async def revert_sale(sale_id: int, body: dict = Body(default={}), operator: str = Query("Sistema")) -> dict:
     # Anular una venta completa (devuelve todo el stock) requiere el PIN de un
     # supervisor. El PIN viaja en el body, nunca en la URL/query.

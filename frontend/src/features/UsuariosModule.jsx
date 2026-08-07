@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { usePanelContext } from '../context/PanelContext';
-import { apiGet, apiPost, apiPatch, apiDelete } from '../services/apiClient';
+import { apiGet, apiPost, apiDelete } from '../services/apiClient';
 import EmptyState from '../components/ui/EmptyState';
 import useSortable from '../hooks/useSortable.jsx';
 
@@ -77,12 +77,12 @@ export default function UsuariosModule() {
         if (!target?.id) throw new Error('Operador invalido');
         const payload = { name: form.name.trim(), role: form.role };
         if (form.pin) payload.pin = form.pin;
-        responses = [await apiPatch(`/operators/${target.id}`, payload)];
+        responses = [await apiPost(`/operators/${target.id}`, payload)];
       } else {
         if (isFirstEmployee) {
           const owner = usuarios[0];
           if (!owner?.id) throw new Error('Operador dueño invalido');
-          const ownerRes = await apiPatch(`/operators/${owner.id}`, { pin: adminPin });
+          const ownerRes = await apiPost(`/operators/${owner.id}`, { pin: adminPin });
           if (!ownerRes.ok) throw new Error('No se pudo guardar el PIN del dueño');
         }
         responses = [await apiPost('/operators', { name: form.name.trim(), pin: form.pin, role: form.role })];
