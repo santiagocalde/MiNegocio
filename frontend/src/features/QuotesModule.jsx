@@ -149,12 +149,16 @@ const handleStatus = async (id, status) => {
     // ── Datos del negocio ─────────────────────────────────────
     const biz = JSON.parse(localStorage.getItem('saas_business') || '{}');
     const cfg = JSON.parse(localStorage.getItem('minegocio_config') || '{}');
-    const bizName  = biz.business_name || cfg.nombre || 'Corralón';
-    const logoUrl  = cfg.logo_url || '';
-    const address  = cfg.direccion || '';
-    const phone    = cfg.telefono || '';
-    const cuit     = cfg.cuit || '';
-    const condIva  = cfg.condicion_iva || '';
+    const bizName    = biz.business_name || cfg.nombre || 'Corralón';
+    const logoUrl    = cfg.logo_url || '';
+    const address    = cfg.direccion || '';
+    const phone      = cfg.telefono || '';
+    const cuit       = cfg.cuit || '';
+    const instagram  = cfg.instagram || '';
+    const propietario= cfg.propietario || '';
+    const ingBrutos  = cfg.ing_brutos || '';
+    const inicioAct  = cfg.inicio_actividades || '';
+    const condIva    = cfg.condicion_iva || '';
 
     // ── Cálculos ──────────────────────────────────────────────
     const subtotal    = d.items.reduce((s, i) => s + Number(i.unit_price) * Number(i.quantity), 0);
@@ -186,19 +190,23 @@ const handleStatus = async (id, status) => {
 
     const makeBlock = (copyLabel) => `
 <div class="sheet">
-  <!-- Header minimalista: logo + nombre + datos básicos | doc info -->
   <div class="doc-header">
     <div class="biz-left">
       ${logoImg}
       <div class="biz-info">
         <div class="biz-name">${bizName}</div>
-        ${address ? `<div class="biz-detail">${address}</div>` : ''}
-        ${phone   ? `<div class="biz-detail">Tel: ${phone}</div>` : ''}
-        ${cuit    ? `<div class="biz-detail">CUIT: ${cuit}</div>` : ''}
+        ${instagram  ? `<div class="biz-detail biz-social">&#128247; ${instagram}</div>` : ''}
+        ${phone      ? `<div class="biz-detail biz-social">&#128222; ${phone}</div>` : ''}
+        ${propietario? `<div class="biz-detail">De ${propietario}</div>` : ''}
+        ${address    ? `<div class="biz-detail">${address}</div>` : ''}
       </div>
     </div>
     <div class="biz-right">
       <div class="doc-date">${fmtDate(d.quote.created_at || new Date())}</div>
+      ${inicioAct ? `<div class="biz-detail-r">Inicio de Actividades: ${inicioAct}</div>` : ''}
+      ${cuit      ? `<div class="biz-detail-r">C.U.I.T.: ${cuit}</div>` : ''}
+      ${ingBrutos ? `<div class="biz-detail-r">Ing. Brutos: ${ingBrutos}</div>` : ''}
+      ${condIva   ? `<div class="biz-detail-r">${condIva.toUpperCase()}</div>` : ''}
     </div>
   </div>
 
@@ -267,7 +275,10 @@ const handleStatus = async (id, status) => {
       .biz-info { display: flex; flex-direction: column; gap: 1px; }
       .biz-name { font-size: 12px; font-weight: 900; letter-spacing: -0.2px; }
       .biz-detail { font-size: 8px; color: #444; line-height: 1.35; }
-      .biz-right { text-align: right; font-size: 9px; color: #444; }
+      .biz-social { font-size: 8.5px; color: #222; font-weight: 600; }
+      .biz-right { text-align: right; font-size: 8px; color: #444; }
+      .doc-date { font-size: 9px; font-weight: 700; color: #111; margin-bottom: 1px; }
+      .biz-detail-r { font-size: 7.5px; color: #444; line-height: 1.4; }
 
       /* Título */
       .doc-title { text-align: center; font-size: 14px; font-weight: 900; letter-spacing: 0.5px; padding: 2mm 0 2.5mm; border-bottom: 1px solid #e0e0e0; margin-bottom: 2.5mm; }
@@ -320,7 +331,10 @@ const handleStatus = async (id, status) => {
       .biz-info { display: flex; flex-direction: column; gap: 2px; }
       .biz-name { font-size: 14px; font-weight: 900; letter-spacing: -0.2px; }
       .biz-detail { font-size: 9px; color: #444; line-height: 1.4; }
-      .biz-right { text-align: right; font-size: 10px; color: #444; }
+      .biz-social { font-size: 9.5px; color: #222; font-weight: 600; }
+      .biz-right { text-align: right; font-size: 9px; color: #444; }
+      .doc-date { font-size: 11px; font-weight: 700; color: #111; margin-bottom: 2px; }
+      .biz-detail-r { font-size: 8.5px; color: #444; line-height: 1.45; }
       .doc-title { text-align: center; font-size: 17px; font-weight: 900; letter-spacing: 0.5px; padding: 3mm 0; border-bottom: 1px solid #e0e0e0; margin-bottom: 4mm; }
       .mono { font-family: 'Courier New', monospace; font-variant-numeric: tabular-nums; }
       .client-section { background: #f8f8f8; border: 1px solid #e0e0e0; padding: 3mm 4mm; margin-bottom: 4mm; }

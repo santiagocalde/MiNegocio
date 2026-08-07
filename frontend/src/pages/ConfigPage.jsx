@@ -7,18 +7,22 @@ import useIsMobile from '../hooks/useIsMobile';
 import { API_BASE } from '../config';
 
 const FIELDS = [
-  { key: 'nombre',         label: 'Nombre del negocio',    placeholder: 'Kiosco Don Julio' },
-  { key: 'subtitulo',      label: 'Subtítulo / Slogan',    placeholder: 'Atención 7 días de la semana' },
-  { key: 'direccion',      label: 'Dirección',             placeholder: 'Av. Corrientes 1234, CABA' },
-  { key: 'telefono',       label: 'Teléfono',              placeholder: '011-4855-0000' },
-  { key: 'cuit',           label: 'CUIT / CUIL',           placeholder: '20-12345678-9' },
-  { key: 'condicion_iva',  label: 'Condición IVA',         placeholder: 'Monotributista', options: ['Monotributista', 'Responsable Inscripto', 'Exento', 'Consumidor Final'] },
-  { key: 'numero_caja',    label: 'Nombre de la caja',     placeholder: 'CAJA 1' },
-  { key: 'logo_url',       label: 'Logo del negocio', placeholder: 'https://ejemplo.com/logo.png', isLogo: true },
-  { key: 'mensaje_ticket', label: 'Mensaje final del ticket', placeholder: '¡Gracias por su compra!' },
-  { key: 'iva_rate',       label: 'IVA % por defecto',     placeholder: '21', options: ['21', '10.5', '27', '0'] },
-  { key: 'mp_access_token',label: 'Access Token de Mercado Pago', placeholder: 'APP_USR-...', type: 'password' },
-  { key: 'mp_collector_id',label: 'Alias / ID de Cobro de Mercado Pago', placeholder: 'TuAliasMP o ID de caja', type: 'password' },
+  { key: 'nombre',              label: 'Nombre del negocio',          placeholder: 'Kiosco Don Julio' },
+  { key: 'subtitulo',           label: 'Subtítulo / Slogan',          placeholder: 'Atención 7 días de la semana' },
+  { key: 'direccion',           label: 'Dirección',                   placeholder: 'Av. Corrientes 1234, CABA' },
+  { key: 'telefono',            label: 'Teléfono / WhatsApp',         placeholder: '1123063167' },
+  { key: 'instagram',           label: 'Instagram',                   placeholder: '@tunegocio' },
+  { key: 'propietario',         label: 'Propietario / Responsable',   placeholder: 'De López Juan Manuel' },
+  { key: 'cuit',                label: 'CUIT / CUIL',                 placeholder: '20-12345678-9' },
+  { key: 'ing_brutos',          label: 'Ing. Brutos (Nº)',            placeholder: '(902)-20-18423262-7' },
+  { key: 'inicio_actividades',  label: 'Inicio de Actividades',       placeholder: '01/07/2025' },
+  { key: 'condicion_iva',       label: 'Condición IVA',               placeholder: 'Monotributista', options: ['Monotributista', 'Responsable Inscripto', 'Exento', 'Consumidor Final'] },
+  { key: 'numero_caja',         label: 'Nombre de la caja',           placeholder: 'CAJA 1' },
+  { key: 'logo_url',            label: 'Logo del negocio',            placeholder: 'https://ejemplo.com/logo.png', isLogo: true },
+  { key: 'mensaje_ticket',      label: 'Mensaje final del ticket',    placeholder: '¡Gracias por su compra!' },
+  { key: 'iva_rate',            label: 'IVA % por defecto',           placeholder: '21', options: ['21', '10.5', '27', '0'] },
+  { key: 'mp_access_token',     label: 'Access Token de Mercado Pago', placeholder: 'APP_USR-...', type: 'password' },
+  { key: 'mp_collector_id',     label: 'Alias / ID de Cobro de Mercado Pago', placeholder: 'TuAliasMP o ID de caja', type: 'password' },
 ];
 
 const inputStyle = {
@@ -46,7 +50,7 @@ export default function ConfigPage() {
     try {
       const fd = new FormData();
       fd.append('file', file);
-      const token = localStorage.getItem('auth_token');
+      const token = localStorage.getItem('saas_token');
       const res = await fetch(`${API_BASE}/api/config/logo`, {
         method: 'POST',
         headers: token ? { Authorization: `Bearer ${token}` } : {},

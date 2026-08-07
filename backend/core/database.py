@@ -425,6 +425,12 @@ async def init_db(DB_PATH: str, logger) -> None:
         await add_column_if_not_exists(db, "quotes", "discount_pct", "REAL", default="0")
         await add_column_if_not_exists(db, "quotes", "forma_pago", "TEXT", default="'Contado'")
 
+        # Config v2: redes sociales y datos fiscales adicionales
+        await add_column_if_not_exists(db, "business_config", "instagram", "TEXT", default="''")
+        await add_column_if_not_exists(db, "business_config", "propietario", "TEXT", default="''")
+        await add_column_if_not_exists(db, "business_config", "ing_brutos", "TEXT", default="''")
+        await add_column_if_not_exists(db, "business_config", "inicio_actividades", "TEXT", default="''")
+
         # Corralón V2: Hojas de Ruta
         await add_column_if_not_exists(db, "remitos", "zone", "TEXT")
         await add_column_if_not_exists(db, "remitos", "sort_order", "INTEGER")

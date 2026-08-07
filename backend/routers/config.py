@@ -134,7 +134,8 @@ async def update_config(request: Request, data: dict) -> dict:
 
         COLS = ["nombre", "subtitulo", "direccion", "telefono", "cuit", "condicion_iva",
                 "numero_caja", "mensaje_ticket", "iva_rate", "mp_access_token", "mp_collector_id",
-                "catalogo_activo", "catalogo_slug", "catalogo_whatsapp", "catalogo_tema"]
+                "catalogo_activo", "catalogo_slug", "catalogo_whatsapp", "catalogo_tema",
+                "instagram", "propietario", "ing_brutos", "inicio_actividades", "logo_url"]
         pool = await get_pg_pool()
         async with pool.acquire() as conn:
             b_id = _biz_id()
@@ -184,7 +185,8 @@ async def update_config(request: Request, data: dict) -> dict:
         # business_config en SQLite es clave-valor: upsert no destructivo (lo enviado pisa,
         # lo no enviado se conserva), igual que la rama Postgres de arriba.
         COLS = ["nombre", "subtitulo", "direccion", "telefono", "cuit", "condicion_iva",
-                "numero_caja", "mensaje_ticket", "iva_rate", "mp_access_token", "mp_collector_id"]
+                "numero_caja", "mensaje_ticket", "iva_rate", "mp_access_token", "mp_collector_id",
+                "instagram", "propietario", "ing_brutos", "inicio_actividades", "logo_url"]
         async with aiosqlite.connect(main.DB_PATH) as db:
             # business_config key-value: upsert no destructivo. mp_access_token ya
             # fue removido de data arriba si llegó vacío, así se conserva el guardado.

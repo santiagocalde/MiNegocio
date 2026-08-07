@@ -624,6 +624,12 @@ async def init_pg() -> None:
             ALTER TABLE quotes ADD COLUMN IF NOT EXISTS discount_pct NUMERIC(5,2) DEFAULT 0;
             ALTER TABLE quotes ADD COLUMN IF NOT EXISTS forma_pago VARCHAR(50) DEFAULT 'Contado';
 
+            -- Config v2: redes sociales y datos fiscales adicionales
+            ALTER TABLE business_config ADD COLUMN IF NOT EXISTS instagram TEXT DEFAULT '';
+            ALTER TABLE business_config ADD COLUMN IF NOT EXISTS propietario TEXT DEFAULT '';
+            ALTER TABLE business_config ADD COLUMN IF NOT EXISTS ing_brutos TEXT DEFAULT '';
+            ALTER TABLE business_config ADD COLUMN IF NOT EXISTS inicio_actividades TEXT DEFAULT '';
+
             CREATE TABLE IF NOT EXISTS audit_log (
                 id              SERIAL PRIMARY KEY,
                 business_id     TEXT NOT NULL REFERENCES businesses(id),
