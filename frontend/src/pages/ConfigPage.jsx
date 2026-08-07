@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import ConfigPrinting from '../components/pos/ConfigPrinting';
 import { usePanelContext } from '../context/PanelContext';
 import { apiGet, apiPut, apiPatch } from '../services/apiClient';
 import { Icons } from '../components/ui/Icons';
 import useIsMobile from '../hooks/useIsMobile';
+import { API_BASE } from '../config';
 
 const FIELDS = [
   { key: 'nombre',         label: 'Nombre del negocio',    placeholder: 'Kiosco Don Julio' },
@@ -13,7 +14,7 @@ const FIELDS = [
   { key: 'cuit',           label: 'CUIT / CUIL',           placeholder: '20-12345678-9' },
   { key: 'condicion_iva',  label: 'Condición IVA',         placeholder: 'Monotributista', options: ['Monotributista', 'Responsable Inscripto', 'Exento', 'Consumidor Final'] },
   { key: 'numero_caja',    label: 'Nombre de la caja',     placeholder: 'CAJA 1' },
-  { key: 'logo_url',       label: 'URL del logo (imagen)', placeholder: 'https://ejemplo.com/logo.png' },
+  { key: 'logo_url',       label: 'Logo del negocio', placeholder: 'https://ejemplo.com/logo.png', isLogo: true },
   { key: 'mensaje_ticket', label: 'Mensaje final del ticket', placeholder: '¡Gracias por su compra!' },
   { key: 'iva_rate',       label: 'IVA % por defecto',     placeholder: '21', options: ['21', '10.5', '27', '0'] },
   { key: 'mp_access_token',label: 'Access Token de Mercado Pago', placeholder: 'APP_USR-...', type: 'password' },
@@ -34,7 +35,35 @@ export default function ConfigPage() {
   const [saved, setSaved] = useState(false);
   const [operators, setOperators] = useState([]);
   const [showMpToken, setShowMpToken] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const logoInputRef = useRef(null);
   const isMobile = useIsMobile();
+
+  const handleLogoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingLogo(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const token = localStorage.getItem('auth_token');
+      const res = await fetch(`${API_BASE}/api/config/logo`, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: fd,
+      });
+      if (res.ok) {
+        const { logo_url } = await res.json();
+        setConfig(prev => ({ ...prev, logo_url }));
+        addToast?.('Logo actualizado correctamente.', 'success');
+      } else {
+        const err = await res.json().catch(() => ({}));
+        addToast?.(err.detail || 'Error al subir el logo.', 'error');
+      }
+    } catch { addToast?.('Error de red al subir el logo.', 'error'); }
+    setUploadingLogo(false);
+    e.target.value = '';
+  };
 
   useEffect(() => {
     apiGet('/config')
@@ -102,7 +131,35 @@ export default function ConfigPage() {
                 <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px' }}>
                   {f.label}
                 </label>
-                {f.options ? (
+                {f.isLogo ? (
+                  <div>
+                    <input ref={logoInputRef} type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" style={{ display: 'none' }} onChange={handleLogoUpload} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      {config.logo_url && (
+                        <div style={{ width: 72, height: 72, border: '1px solid var(--border-color)', borderRadius: 8, overflow: 'hidden', background: 'var(--bg-card)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <img src={config.logo_url} alt="Logo" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+                        </div>
+                      )}
+                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        <button
+                          type="button"
+                          onClick={() => logoInputRef.current?.click()}
+                          disabled={uploadingLogo}
+                          style={{ ...inputStyle, cursor: 'pointer', background: 'var(--bg-card)', border: '1px dashed var(--border-color)', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.9rem', padding: '10px 16px' }}
+                        >
+                          {uploadingLogo ? 'Subiendo...' : config.logo_url ? '🖼️ Cambiar logo' : '📁 Subir logo (PNG, JPG, WebP)'}
+                        </button>
+                        <input
+                          type="text"
+                          value={config.logo_url || ''}
+                          placeholder="O pegá una URL: https://ejemplo.com/logo.png"
+                          onChange={e => setConfig(prev => ({ ...prev, logo_url: e.target.value }))}
+                          style={{ ...inputStyle, fontSize: '0.8rem', padding: '8px 12px', color: 'var(--text-secondary)' }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ) : f.options ? (
                   <select
                     value={config[f.key] || ''}
                     onChange={e => setConfig(prev => ({ ...prev, [f.key]: e.target.value }))}
