@@ -33,4 +33,23 @@
   <url><loc>https://mi-negocio.app/pos-sin-internet/</loc><lastmod>2026-08-06</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://mi-negocio.app/sistema-fiados/</loc><lastmod>2026-08-06</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
 
+  <!-- ETAPA 4: Corralón - Rubro -->
+  <url><loc>https://mi-negocio.app/software-corralon-materiales/</loc><lastmod>2026-08-07</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+
+  <!-- ETAPA 5: Corralón - Ciudades -->
+  <url><loc>https://mi-negocio.app/software-corralon-buenos-aires/</loc><lastmod>2026-08-07</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://mi-negocio.app/software-corralon-rosario/</loc><lastmod>2026-08-07</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://mi-negocio.app/software-corralon-cordoba/</loc><lastmod>2026-08-07</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://mi-negocio.app/software-corralon-mendoza/</loc><lastmod>2026-08-07</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://mi-negocio.app/software-corralon-mar-del-plata/</loc><lastmod>2026-08-07</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+
+  <!-- ETAPA 6: Corralón - Features -->
+  <url><loc>https://mi-negocio.app/sistema-presupuestos-corralon/</loc><lastmod>2026-08-07</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://mi-negocio.app/software-control-obras/</loc><lastmod>2026-08-07</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://mi-negocio.app/hojas-de-ruta-reparto-materiales/</loc><lastmod>2026-08-07</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://mi-negocio.app/sistema-gestion-acopios/</loc><lastmod>2026-08-07</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+
+  <!-- ETAPA 7: Corralón - Comparativa -->
+  <url><loc>https://mi-negocio.app/comparar-sistemas-para-corralones/</loc><lastmod>2026-08-07</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+
 </urlset>
