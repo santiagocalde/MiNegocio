@@ -544,6 +544,18 @@ async def init_pg() -> None:
             ALTER TABLE customers ADD COLUMN IF NOT EXISTS email TEXT;
             ALTER TABLE customers ADD COLUMN IF NOT EXISTS dni_cuit TEXT;
 
+            -- Etapa 2: múltiples direcciones por cliente
+            CREATE TABLE IF NOT EXISTS customer_addresses (
+                id          SERIAL PRIMARY KEY,
+                business_id TEXT NOT NULL REFERENCES businesses(id),
+                customer_id INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+                label       TEXT NOT NULL DEFAULT 'Dirección',
+                address     TEXT NOT NULL,
+                is_default  BOOLEAN NOT NULL DEFAULT false,
+                created_at  TIMESTAMPTZ DEFAULT now()
+            );
+            CREATE INDEX IF NOT EXISTS idx_customer_addresses_customer ON customer_addresses(customer_id);
+
             CREATE TABLE IF NOT EXISTS sucursales (
                 id              SERIAL PRIMARY KEY,
                 business_id     TEXT NOT NULL REFERENCES businesses(id),

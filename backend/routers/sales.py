@@ -692,30 +692,132 @@ async def turn_detail(turn_id: int) -> dict:
             return detail
 
 
-@router.get("/api/customers", summary="Listar clientes con cuentas corrientes")
-async def list_customers(q: Optional[str] = Query(None)) -> list:
+@router.get("/api/customers", summary="Listar clientes")
+async def list_customers(
+    q: Optional[str] = Query(None),
+    solo_deudores: bool = Query(False),
+) -> list:
+    """
+    Por defecto devuelve TODOS los clientes.
+    Con ?solo_deudores=true devuelve solo los que tienen balance > 0 (Cuentas corrientes).
+    """
     b_id = _biz_id()
     if USE_PG:
         from db_helpers import get_pg_pool
         pool = await get_pg_pool()
         async with pool.acquire() as conn:
+            clauses = ["business_id = $1"]
+            params = [b_id]; n = 2
+            if solo_deudores:
+                clauses.append("balance > 0")
             if q:
-                rows = await conn.fetch(
-                    "SELECT * FROM customers WHERE business_id = $1 AND balance > 0 AND (name ILIKE $2 OR phone ILIKE $2) ORDER BY balance DESC",
-                    b_id, f"%{q}%"
-                )
-            else:
-                rows = await conn.fetch("SELECT * FROM customers WHERE business_id = $1 AND balance > 0 ORDER BY balance DESC", b_id)
+                clauses.append(f"(name ILIKE ${n} OR phone ILIKE ${n})")
+                params.append(f"%{q}%"); n += 1
+            order = "balance DESC" if solo_deudores else "name ASC"
+            rows = await conn.fetch(
+                f"SELECT * FROM customers WHERE {' AND '.join(clauses)} ORDER BY {order}",
+                *params
+            )
             return [dict(r) for r in rows]
     else:
         import aiosqlite
         async with aiosqlite.connect(main.DB_PATH) as db:
+            clauses = []; params = []
+            if solo_deudores:
+                clauses.append("balance > 0")
             if q:
-                cur = await db.execute("SELECT * FROM customers WHERE balance > 0 AND (name LIKE ? OR phone LIKE ?) ORDER BY balance DESC", (f"%{q}%", f"%{q}%"))
-            else:
-                cur = await db.execute("SELECT * FROM customers WHERE balance > 0 ORDER BY balance DESC")
-            rows = await cur.fetchall()
-            return [row_to_dict(r, cur.description) for r in rows]
+                clauses.append("(name LIKE ? OR phone LIKE ?)")
+                params.extend([f"%{q}%", f"%{q}%"])
+            w = ("WHERE " + " AND ".join(clauses)) if clauses else ""
+            order = "balance DESC" if solo_deudores else "name ASC"
+            cur = await db.execute(f"SELECT * FROM customers {w} ORDER BY {order}", tuple(params))
+            return [row_to_dict(r, cur.description) for r in await cur.fetchall()]
+
+
+# ── Direcciones de cliente ─────────────────────────────────────
+
+@router.get("/api/customers/{customer_id}/addresses", summary="Listar direcciones de un cliente")
+async def list_customer_addresses(customer_id: int) -> list:
+    from main import USE_PG, row_to_dict; import main
+    b_id = _biz_id()
+    if USE_PG:
+        from db_helpers import get_pg_pool
+        pool = await get_pg_pool()
+        async with pool.acquire() as conn:
+            rows = await conn.fetch(
+                "SELECT ca.* FROM customer_addresses ca JOIN customers c ON c.id = ca.customer_id WHERE ca.customer_id = $1 AND c.business_id = $2 ORDER BY ca.is_default DESC, ca.created_at ASC",
+                customer_id, b_id
+            )
+            return [dict(r) for r in rows]
+    else:
+        import aiosqlite
+        async with aiosqlite.connect(main.DB_PATH) as db:
+            cur = await db.execute(
+                "SELECT * FROM customer_addresses WHERE customer_id = ? ORDER BY is_default DESC, created_at ASC",
+                (customer_id,)
+            )
+            return [row_to_dict(r, cur.description) for r in await cur.fetchall()]
+
+
+@router.post("/api/customers/{customer_id}/addresses", summary="Agregar dirección a un cliente")
+async def add_customer_address(customer_id: int, body: dict = Body(...)) -> dict:
+    from main import USE_PG; import main
+    b_id = _biz_id()
+    label = (body.get("label") or "Dirección").strip()
+    address = (body.get("address") or "").strip()
+    if not address:
+        raise HTTPException(400, detail="La dirección no puede estar vacía")
+    is_default = bool(body.get("is_default", False))
+    if USE_PG:
+        from db_helpers import get_pg_pool
+        pool = await get_pg_pool()
+        async with pool.acquire() as conn:
+            async with conn.transaction():
+                # Verificar que el cliente pertenece al negocio
+                ok = await conn.fetchval("SELECT id FROM customers WHERE id = $1 AND business_id = $2", customer_id, b_id)
+                if not ok:
+                    raise HTTPException(404, detail="Cliente no encontrado")
+                if is_default:
+                    await conn.execute("UPDATE customer_addresses SET is_default = false WHERE customer_id = $1", customer_id)
+                row = await conn.fetchrow(
+                    "INSERT INTO customer_addresses (business_id, customer_id, label, address, is_default) VALUES ($1,$2,$3,$4,$5) RETURNING id",
+                    b_id, customer_id, label, address, is_default
+                )
+                return {"id": row["id"], "success": True}
+    else:
+        import aiosqlite
+        async with aiosqlite.connect(main.DB_PATH) as db:
+            if is_default:
+                await db.execute("UPDATE customer_addresses SET is_default = 0 WHERE customer_id = ?", (customer_id,))
+            cur = await db.execute(
+                "INSERT INTO customer_addresses (customer_id, label, address, is_default) VALUES (?,?,?,?)",
+                (customer_id, label, address, 1 if is_default else 0)
+            )
+            await db.commit()
+            return {"id": cur.lastrowid, "success": True}
+
+
+@router.delete("/api/customers/addresses/{address_id}", summary="Eliminar dirección de un cliente")
+async def delete_customer_address(address_id: int) -> dict:
+    from main import USE_PG; import main
+    b_id = _biz_id()
+    if USE_PG:
+        from db_helpers import get_pg_pool
+        pool = await get_pg_pool()
+        async with pool.acquire() as conn:
+            r = await conn.execute(
+                "DELETE FROM customer_addresses ca USING customers c WHERE ca.id = $1 AND ca.customer_id = c.id AND c.business_id = $2",
+                address_id, b_id
+            )
+            if r == "DELETE 0":
+                raise HTTPException(404, detail="Dirección no encontrada")
+            return {"success": True}
+    else:
+        import aiosqlite
+        async with aiosqlite.connect(main.DB_PATH) as db:
+            await db.execute("DELETE FROM customer_addresses WHERE id = ?", (address_id,))
+            await db.commit()
+            return {"success": True}
 
 
 @router.get("/api/customers/{customer_id}/transactions", summary="Transacciones de cliente")

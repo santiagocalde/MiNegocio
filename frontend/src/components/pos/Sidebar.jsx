@@ -153,9 +153,8 @@ export default function Sidebar({
       {
         category: 'CLIENTES',
         items: [
-          { label: 'Lista de clientes', path: '/panel/clientes', icon: 'Users', roles: ['admin', 'manager', 'operator'], featureKey: 'fiados' },
+          { label: 'Lista de clientes', path: '/panel/lista-clientes', icon: 'Users', roles: ['admin', 'manager', 'operator'] },
           { label: 'Cuentas corrientes', path: '/panel/clientes', icon: 'Book', roles: ['admin', 'manager', 'operator'], featureKey: 'fiados' },
-          { label: 'Obras', path: '/panel/obras', icon: 'Edit', roles: ['admin', 'manager'] },
         ],
       },
       {

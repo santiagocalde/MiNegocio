@@ -442,6 +442,18 @@ async def init_db(DB_PATH: str, logger) -> None:
         await add_column_if_not_exists(db, "customers", "address", "TEXT")
         await add_column_if_not_exists(db, "customers", "email", "TEXT")
         await add_column_if_not_exists(db, "customers", "dni_cuit", "TEXT")
+
+        # Etapa 2: múltiples direcciones por cliente
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS customer_addresses (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                customer_id INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+                label       TEXT NOT NULL DEFAULT 'Dirección',
+                address     TEXT NOT NULL,
+                is_default  INTEGER NOT NULL DEFAULT 0,
+                created_at  TEXT DEFAULT (datetime('now','localtime'))
+            )
+        """)
         # suppliers.phone: el frontend y el INSERT usan 'phone', pero el esquema SQLite
         # solo tenía 'cuit' -> crear proveedor en modo local fallaba con 500.
         await add_column_if_not_exists(db, "suppliers", "debt", "REAL", default="0")
