@@ -25,6 +25,7 @@ from fastapi import FastAPI, HTTPException, Query, Header, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.staticfiles import StaticFiles
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
@@ -417,6 +418,12 @@ app.include_router(obras_router)
 app.include_router(acopios_router)
 app.include_router(credit_notes_router)
 app.include_router(hojas_de_ruta_router)
+
+# Archivos estáticos — logos subidos por negocios
+import pathlib
+_static_dir = pathlib.Path(__file__).parent / "static"
+_static_dir.mkdir(exist_ok=True)
+app.mount("/static", StaticFiles(directory=str(_static_dir)), name="static")
 
 if __name__ == "__main__":
     import uvicorn

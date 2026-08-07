@@ -273,3 +273,43 @@ async def delete_sucursal(sucursal_id: int) -> dict:
             await db.execute("DELETE FROM sucursales WHERE id = ?", (sucursal_id,))
             await db.commit()
             return {"success": True}
+
+
+# ── LOGO UPLOAD ───────────────────────────────────────────────
+from fastapi import UploadFile, File
+import pathlib, uuid, os
+
+LOGO_DIR = pathlib.Path(__file__).parent.parent / "static" / "logos"
+LOGO_DIR.mkdir(parents=True, exist_ok=True)
+ALLOWED_EXTS = {".png", ".jpg", ".jpeg", ".webp", ".svg"}
+MAX_SIZE = 2 * 1024 * 1024  # 2 MB
+
+@router.post("/api/config/logo", summary="Subir logo del negocio")
+async def upload_logo(file: UploadFile = File(...)) -> dict:
+    ext = pathlib.Path(file.filename or "logo.png").suffix.lower()
+    if ext not in ALLOWED_EXTS:
+        raise HTTPException(400, "Formato no soportado. Usá PNG, JPG, WEBP o SVG.")
+    data = await file.read()
+    if len(data) > MAX_SIZE:
+        raise HTTPException(400, "El archivo excede el límite de 2 MB.")
+    b_id = str(_biz_id() or "unknown").replace("/", "_")
+    filename = f"{b_id}{ext}"
+    dest = LOGO_DIR / filename
+    dest.write_bytes(data)
+    logo_url = f"/static/logos/{filename}"
+    # Guardar en business_config
+    if USE_PG:
+        from db_helpers import get_pg_pool
+        pool = await get_pg_pool()
+        async with pool.acquire() as conn:
+            await conn.execute(
+                "UPDATE business_config SET logo_url = $1 WHERE business_id = $2",
+                logo_url, _biz_id()
+            )
+    else:
+        import aiosqlite
+        async with aiosqlite.connect(main.DB_PATH) as db:
+            await db.execute("UPDATE business_config SET logo_url = ? WHERE business_id = ?",
+                             (logo_url, _biz_id()))
+            await db.commit()
+    return {"success": True, "logo_url": logo_url}
