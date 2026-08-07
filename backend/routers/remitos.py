@@ -37,7 +37,8 @@ async def list_remitos(request: Request, status: Optional[str] = Query(None), fe
             if status:
                 where.append(f"r.status = ${n}"); params.append(status); n += 1
             if fecha:
-                where.append(f"r.scheduled_date::date = ${n}::date"); params.append(fecha); n += 1
+                from datetime import date as _date
+                where.append(f"r.scheduled_date::date = ${n}"); params.append(_date.fromisoformat(fecha)); n += 1
             rows = await conn.fetch(f"""
                 SELECT r.*, c.name as customer_name
                 FROM remitos r LEFT JOIN customers c ON c.id = r.customer_id
