@@ -307,9 +307,10 @@ export default function StockModule() {
     if (addToast) addToast(`Importando ${file.name}...`, 'info');
     try {
       const text = await file.text();
+      const token = localStorage.getItem('saas_token');
       const res = await fetch(`${SERVER_URL}/products/import`, {
         method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },
+        headers: { 'Content-Type': 'text/plain', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: text,
       });
       const data = await res.json();
