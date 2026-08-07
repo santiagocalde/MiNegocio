@@ -88,6 +88,10 @@ export default function LandingNav({
               <a href="/pos-sin-internet/" className="lp-dropdown-item">Sistema sin internet</a>
               <a href="/sistema-fiados/" className="lp-dropdown-item">Control de fiados</a>
               <a href="/comparar-sistemas-para-kioscos/" className="lp-dropdown-item">Comparar sistemas</a>
+              <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--lp-ink-faint)', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '10px 12px 2px' }}>Corralones</div>
+              <a href="/software-corralon-materiales/" className="lp-dropdown-item">Software para corralones</a>
+              <a href="/sistema-presupuestos-corralon/" className="lp-dropdown-item">Presupuestos para corralon</a>
+              <a href="/software-control-obras/" className="lp-dropdown-item">Control de obras</a>
             </div>
           </div>
         </div>

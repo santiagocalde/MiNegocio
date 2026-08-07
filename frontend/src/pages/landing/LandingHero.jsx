@@ -10,7 +10,7 @@ const Svg = {
 /* El typewriter de rubros — mantiene el gesto pero sin gradient-text.
    La palabra va en tinta turquesa sobre un resaltado tipo marcador. */
 function TypewriterRubro() {
-  const words = ['kiosco', 'almacén', 'fiambrería', 'verdulería', 'despensa', 'maxikiosco', 'vinería'];
+  const words = ['kiosco', 'almacén', 'fiambrería', 'verdulería', 'despensa', 'maxikiosco', 'vinería', 'corralón', 'ferretería'];
   const [i, setI] = useState(0);
   const [txt, setTxt] = useState('');
   const [del, setDel] = useState(false);
@@ -149,11 +149,11 @@ export default function LandingHero({ isLoggedIn, goPanel, goOnboard }) {
       <Reveal delay={2}>
         <p className="hero-sub">
           <strong>Vendé sin internet, controlá los fiados y sabé cuánta plata tenés en caja.</strong>{' '}
-          Más fácil que WhatsApp. Sin cuentas mal hechas ni horas perdidas cerrando el día.
+          Más fácil que WhatsApp. Sin cuentas mal hechas ni horas perdidas cerrando el día. Para kioscos, almacenes, corralones y más.
         </p>
         <div><span className="hero-proof">
           <span className="tick"><Svg.Check /></span>
-          Más de 52 kioscos ya digitalizaron su negocio en Argentina
+          Más de 79 negocios ya digitalizaron su negocio en Argentina
         </span></div>
       </Reveal>
 

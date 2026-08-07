@@ -27,7 +27,7 @@ function AnimatedStat({ value, label, suffix = '', isLast }) {
 }
 
 const DEFAULT_STATS = [
-  { value: 52, label: 'Negocios activos' },
+  { value: 79, label: 'Negocios activos' },
   { value: 56476, label: 'Ventas procesadas' },
   { value: 24, label: 'Soporte', suffix: '/7' },
 ];
@@ -40,7 +40,7 @@ export default function LandingSocialProof() {
       .then(res => res.ok ? res.json() : Promise.reject())
       .then(data => {
         setStats([
-          { value: data.kioscos_activos || 52, label: 'Negocios activos' },
+          { value: data.kioscos_activos || 79, label: 'Negocios activos' },
           { value: data.ventas_procesadas || 56476, label: 'Ventas procesadas' },
           { value: 24, label: 'Soporte', suffix: '/7' },
         ]);
