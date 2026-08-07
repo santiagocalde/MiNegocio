@@ -83,7 +83,7 @@ async def get_quote(quote_id: int) -> dict:
             if not q:
                 raise HTTPException(404, "Presupuesto no encontrado")
             items = await conn.fetch(
-                "SELECT qi.*, p.name as product_name FROM quote_items qi JOIN products p ON p.id = qi.product_id WHERE qi.quote_id = $1", quote_id
+                "SELECT qi.*, p.name as product_name, p.code as product_code, p.unit_label FROM quote_items qi JOIN products p ON p.id = qi.product_id WHERE qi.quote_id = $1", quote_id
             )
             return {"quote": dict(q), "items": [dict(i) for i in items]}
     else:
@@ -93,7 +93,7 @@ async def get_quote(quote_id: int) -> dict:
             q = await cur.fetchone()
             if not q:
                 raise HTTPException(404, "Presupuesto no encontrado")
-            cur = await db.execute("SELECT qi.*, p.name as product_name FROM quote_items qi JOIN products p ON p.id = qi.product_id WHERE qi.quote_id = ?", (quote_id,))
+            cur = await db.execute("SELECT qi.*, p.name as product_name, p.code as product_code, p.unit_label FROM quote_items qi JOIN products p ON p.id = qi.product_id WHERE qi.quote_id = ?", (quote_id,))
             items = [row_to_dict(r, cur.description) for r in await cur.fetchall()]
             return {"quote": row_to_dict(q, cur.description), "items": items}
 
@@ -113,16 +113,19 @@ async def create_quote(body: dict = Body(...)) -> dict:
     valid_days = int(body.get("valid_days", 15))
     expires_at = _now() + timedelta(days=valid_days)
 
+    discount_pct = float(body.get("discount_pct", 0) or 0)
+    forma_pago = body.get("forma_pago", "Contado") or "Contado"
+
     if USE_PG:
         from db_helpers import get_pg_pool
         pool = await get_pg_pool()
         async with pool.acquire() as conn:
             async with conn.transaction():
                 row = await conn.fetchrow("""
-                    INSERT INTO quotes (business_id, customer_id, status, list_type, note, valid_days, created_at, expires_at)
-                    VALUES ($1,$2,'draft',$3,$4,$5,$6,$7) RETURNING id
+                    INSERT INTO quotes (business_id, customer_id, status, list_type, note, valid_days, created_at, expires_at, discount_pct, forma_pago)
+                    VALUES ($1,$2,'draft',$3,$4,$5,$6,$7,$8,$9) RETURNING id
                 """, b_id, customer_id, body.get("list_type", "a"),
-                    body.get("note", ""), valid_days, _now(), expires_at)
+                    body.get("note", ""), valid_days, _now(), expires_at, discount_pct, forma_pago)
                 qid = row["id"]
                 for it in items:
                     await conn.execute("""
@@ -137,10 +140,10 @@ async def create_quote(body: dict = Body(...)) -> dict:
         async with aiosqlite.connect(main.DB_PATH) as db:
             await db.execute("BEGIN IMMEDIATE")
             cur = await db.execute("""
-                INSERT INTO quotes (customer_id, status, list_type, note, valid_days, created_at, expires_at)
-                VALUES (?,?,'draft',?,?,?,?)
+                INSERT INTO quotes (customer_id, status, list_type, note, valid_days, created_at, expires_at, discount_pct, forma_pago)
+                VALUES (?,?,'draft',?,?,?,?,?,?)
             """, (customer_id, body.get("list_type", "a"),
-                  body.get("note", ""), valid_days, _now(), expires_at))
+                  body.get("note", ""), valid_days, _now(), expires_at, discount_pct, forma_pago))
             qid = cur.lastrowid
             for it in items:
                 await db.execute("""

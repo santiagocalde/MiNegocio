@@ -14,6 +14,43 @@ const STATUS_MAP = {
 const formatPesos = (v) => (v ?? 0).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 const fmtDate = (s) => { if (!s) return '—'; return new Date(s).toLocaleDateString('es-AR', { day: 'numeric', month: 'short', year: 'numeric' }); };
 
+// ── Monto en letras (formato argentino) ───────────────────────
+function numToLetras(monto) {
+  const UNIDADES = ['', 'UN', 'DOS', 'TRES', 'CUATRO', 'CINCO', 'SEIS', 'SIETE', 'OCHO', 'NUEVE',
+    'DIEZ', 'ONCE', 'DOCE', 'TRECE', 'CATORCE', 'QUINCE', 'DIECISÉIS', 'DIECISIETE', 'DIECIOCHO', 'DIECINUEVE'];
+  const DECENAS = ['', 'DIEZ', 'VEINTE', 'TREINTA', 'CUARENTA', 'CINCUENTA', 'SESENTA', 'SETENTA', 'OCHENTA', 'NOVENTA'];
+  const CENTENAS = ['', 'CIENTO', 'DOSCIENTOS', 'TRESCIENTOS', 'CUATROCIENTOS', 'QUINIENTOS', 'SEISCIENTOS', 'SETECIENTOS', 'OCHOCIENTOS', 'NOVECIENTOS'];
+  function grupo(n) {
+    if (n === 0) return '';
+    let s = '';
+    const c = Math.floor(n / 100);
+    const resto = n % 100;
+    if (c > 0) s += (c === 1 && resto === 0 ? 'CIEN' : CENTENAS[c]);
+    if (resto > 0) {
+      if (s) s += ' ';
+      if (resto < 20) s += UNIDADES[resto];
+      else { s += DECENAS[Math.floor(resto / 10)]; if (resto % 10 > 0) s += ' Y ' + UNIDADES[resto % 10]; }
+    }
+    return s;
+  }
+  function toLetras(n) {
+    if (n === 0) return 'CERO';
+    let s = '';
+    const millones = Math.floor(n / 1000000);
+    const miles = Math.floor((n % 1000000) / 1000);
+    const resto = n % 1000;
+    if (millones > 0) { s += (millones === 1 ? 'UN MILLÓN' : grupo(millones) + ' MILLONES'); }
+    if (miles > 0) { if (s) s += ' '; s += (miles === 1 ? 'MIL' : grupo(miles) + ' MIL'); }
+    if (resto > 0) { if (s) s += ' '; s += grupo(resto); }
+    return s;
+  }
+  const entero = Math.floor(monto);
+  const centavos = Math.round((monto - entero) * 100);
+  let res = 'PESOS ' + toLetras(entero);
+  if (centavos > 0) res += ` CON ${String(centavos).padStart(2, '0')}/100`;
+  return res;
+}
+
 export default function QuotesModule() {
   const { addToast } = usePanelContext();
   const [quotes, setQuotes] = useState([]);
@@ -27,6 +64,8 @@ export default function QuotesModule() {
   const [formListType, setFormListType] = useState('a');
   const [formItems, setFormItems] = useState([]);
   const [formValidDays, setFormValidDays] = useState(15);
+  const [formDiscount, setFormDiscount] = useState('');
+  const [formFormaPago, setFormFormaPago] = useState('Contado');
 
   // Product search
   const [productSearch, setProductSearch] = useState('');
@@ -73,6 +112,8 @@ export default function QuotesModule() {
       note: formNote,
       list_type: formListType,
       valid_days: formValidDays,
+      discount_pct: parseFloat(formDiscount) || 0,
+      forma_pago: formFormaPago || 'Contado',
       items: formItems.map(i => ({ product_id: i.product_id, quantity: i.quantity, unit_price: i.unit_price })),
     };
     const res = await apiPost('/quotes', body);
@@ -80,6 +121,7 @@ export default function QuotesModule() {
       addToast?.('Presupuesto creado.', 'success');
       setShowForm(false);
       setFormCustomer(''); setFormNote(''); setFormItems([]); setFormListType('a'); setFormValidDays(15);
+      setFormDiscount(''); setFormFormaPago('Contado');
       fetchQuotes();
     } else { addToast?.('Error al crear presupuesto.', 'error'); }
   };
@@ -103,40 +145,176 @@ const handleStatus = async (id, status) => {
   const handlePrint = () => {
     if (!detail) return;
     const d = detail;
-    const bizName = JSON.parse(localStorage.getItem('saas_business') || '{}')?.business_name || 'Corralón';
-    const logoUrl = JSON.parse(localStorage.getItem('minegocio_config') || '{}')?.logo_url || '';
-    const logoBlock = logoUrl ? `<img src="${logoUrl}" style="max-height:50px;max-width:180px;object-fit:contain;margin-bottom:3mm" alt="logo" />` : '';
-    const items = d.items.map(it =>
-      `<tr><td style="padding:4px 0">${it.product_name}</td><td style="text-align:center">${it.quantity}</td><td style="text-align:right;font-family:monospace">$${formatPesos(it.unit_price)}</td><td style="text-align:right;font-family:monospace">$${formatPesos(it.unit_price * it.quantity)}</td></tr>`
-    ).join('');
-    const total = d.items.reduce((s, i) => s + i.unit_price * i.quantity, 0);
-    const header = `<div style="text-align:center;margin-bottom:6mm">${logoBlock}<div style="font-size:22px;font-weight:900;letter-spacing:1px">${bizName}</div><div style="font-size:11px;color:#666;margin-top:1mm">Presupuesto · MiNegocio</div></div>`;
-    const block = (label) => `
-      <div style="border:1px solid #ccc;padding:12mm;margin-bottom:5mm">
-        ${header}
-        <div style="text-align:center;font-weight:900;font-size:14px;margin-bottom:6mm;letter-spacing:2px">${label}</div>
-        <div style="font-size:13px;margin-bottom:4mm"><strong>Presupuesto N° ${d.quote.id}</strong></div>
-        <div style="font-size:12px;margin-bottom:2mm">Cliente: ${d.quote.customer_name || '—'}</div>
-        <div style="font-size:12px;margin-bottom:2mm">Obra: ${d.quote.note || '—'}</div>
-        <div style="font-size:12px;margin-bottom:2mm">Lista: ${d.quote.list_type === 'b' ? 'B (Contratista)' : 'A (Público)'}</div>
-        <div style="font-size:12px;margin-bottom:2mm">Válido hasta: ${fmtDate(d.quote.expires_at)}</div>
-        <table style="width:100%;border-collapse:collapse;margin-top:6mm;font-size:12px">
-          <tr style="border-bottom:2px solid #333"><th style="text-align:left;padding:4px 0">Producto</th><th style="text-align:center">Cant</th><th style="text-align:right">Unit.</th><th style="text-align:right">Total</th></tr>
-          ${items}
-          <tr style="border-top:2px solid #333"><td colspan="3" style="text-align:right;font-weight:700;padding:6px 0">TOTAL</td><td style="text-align:right;font-weight:900;font-family:monospace;font-size:15px">$${formatPesos(total)}</td></tr>
-        </table>
-        <div style="margin-top:12mm;font-size:11px;text-align:center">Firma: ___________________________</div>
-      </div>`;
 
-    const w = window.open('', '_blank', 'width=800,height=600');
-    w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Presupuesto N° ${d.quote.id}</title>
-      <style>@page{size:A4;margin:10mm}body{font-family:Arial,sans-serif;color:#111;margin:0;padding:10mm}</style></head><body>
-      ${block('ORIGINAL')}
-      <div style="border-top:1px dashed #999;margin:8mm 0;text-align:center;color:#999;font-size:10px">- - - cortar aquí - - -</div>
-      ${block('DUPLICADO')}
-      </body></html>`);
+    // ── Datos del negocio ─────────────────────────────────────
+    const biz = JSON.parse(localStorage.getItem('saas_business') || '{}');
+    const cfg = JSON.parse(localStorage.getItem('minegocio_config') || '{}');
+    const bizName  = biz.business_name || cfg.nombre || 'Corralón';
+    const logoUrl  = cfg.logo_url || '';
+    const address  = cfg.direccion || '';
+    const phone    = cfg.telefono || '';
+    const cuit     = cfg.cuit || '';
+    const condIva  = cfg.condicion_iva || '';
+
+    // ── Cálculos ──────────────────────────────────────────────
+    const subtotal    = d.items.reduce((s, i) => s + Number(i.unit_price) * Number(i.quantity), 0);
+    const discPct     = Number(d.quote.discount_pct || 0);
+    const discAmount  = subtotal * discPct / 100;
+    const finalTotal  = subtotal - discAmount;
+    const enLetras    = numToLetras(finalTotal);
+
+    // ── Filas de items ────────────────────────────────────────
+    const itemRows = d.items.map(it => {
+      const cant = Number(it.quantity);
+      const cantFmt = cant % 1 === 0 ? cant.toFixed(0) : cant.toLocaleString('es-AR', { maximumFractionDigits: 3 });
+      const unit = it.unit_label || 'C/U';
+      const cod  = it.product_code || '';
+      return `<tr>
+        <td class="tc">${cantFmt}</td>
+        <td class="tc cod">${cod}</td>
+        <td class="desc">${it.product_name}</td>
+        <td class="tc">${unit}</td>
+        <td class="num">$${formatPesos(it.unit_price)}</td>
+        <td class="num">$${formatPesos(Number(it.unit_price) * cant)}</td>
+      </tr>`;
+    }).join('');
+
+    // ── Header del documento ──────────────────────────────────
+    const logoHtml = logoUrl
+      ? `<img src="${logoUrl}" style="max-height:52px;max-width:160px;object-fit:contain" alt="logo" />`
+      : `<div style="font-size:26px;font-weight:900;letter-spacing:-0.5px">${bizName}</div>`;
+
+    const makeBlock = (copyLabel) => `
+<div class="sheet">
+  <!-- Encabezado -->
+  <div class="doc-header">
+    <div class="biz-left">
+      ${logoHtml}
+      <div class="biz-name">${logoUrl ? bizName : ''}</div>
+      ${address ? `<div class="biz-detail">${address}</div>` : ''}
+      ${phone   ? `<div class="biz-detail">Tel: ${phone}</div>` : ''}
+    </div>
+    <div class="biz-right">
+      <div class="doc-type">PRESUPUESTO</div>
+      <div class="doc-num">N° <span class="mono">${String(d.quote.id).padStart(4, '0')}</span></div>
+      <div class="doc-date">${fmtDate(d.quote.created_at || new Date())}</div>
+      ${cuit     ? `<div class="biz-detail">CUIT: ${cuit}</div>` : ''}
+      ${condIva  ? `<div class="iva-badge">${condIva}</div>` : ''}
+    </div>
+  </div>
+  <div class="copy-label">${copyLabel}</div>
+
+  <!-- Datos del cliente -->
+  <div class="client-section">
+    <table class="client-table">
+      <tr>
+        <td class="cl"><span class="cl-label">Cliente:</span> <strong>${d.quote.customer_name || 'CONSUMIDOR FINAL'}</strong></td>
+        <td class="cr"><span class="cl-label">Vendedor:</span> —</td>
+      </tr>
+      <tr>
+        <td class="cl"><span class="cl-label">Obra / Referencia:</span> ${d.quote.note || '—'}</td>
+        <td class="cr"><span class="cl-label">Forma de pago:</span> ${d.quote.forma_pago || 'Contado'}</td>
+      </tr>
+      <tr>
+        <td class="cl"><span class="cl-label">Lista:</span> ${d.quote.list_type === 'b' ? 'B (Contratista)' : 'A (Público)'}</td>
+        <td class="cr"><span class="cl-label">Válido hasta:</span> ${fmtDate(d.quote.expires_at)}</td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- Tabla de items -->
+  <table class="items">
+    <thead>
+      <tr>
+        <th class="tc">Cant.</th>
+        <th class="tc">Código</th>
+        <th class="desc">Descripción</th>
+        <th class="tc">Unidad</th>
+        <th class="num">Precio Unit.</th>
+        <th class="num">Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${itemRows}
+    </tbody>
+  </table>
+
+  <!-- Totales -->
+  <div class="totals">
+    <div class="total-row"><span>Subtotal</span><span class="mono">$${formatPesos(subtotal)}</span></div>
+    ${discPct > 0 ? `<div class="total-row disc"><span>Descuento ${discPct}%</span><span class="mono">- $${formatPesos(discAmount)}</span></div>` : ''}
+    <div class="total-row grand"><span>TOTAL</span><span class="mono">$${formatPesos(finalTotal)}</span></div>
+  </div>
+
+  <!-- Monto en letras -->
+  <div class="letras">SON ${enLetras}</div>
+
+  <!-- Firma -->
+  <div class="firma-row">
+    <div class="firma-box">Aclaración: ___________________________<br/>Firma: ___________________________</div>
+    <div class="firma-box" style="text-align:right">Recibí conforme</div>
+  </div>
+</div>`;
+
+    const css = `
+      @page { size: A4; margin: 8mm 10mm; }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { font-family: Arial, Helvetica, sans-serif; font-size: 11px; color: #111; background: #fff; }
+      .sheet { border: 1px solid #bbb; padding: 8mm 10mm; margin-bottom: 4mm; page-break-inside: avoid; }
+      /* Header */
+      .doc-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 5mm; padding-bottom: 4mm; border-bottom: 2px solid #111; }
+      .biz-left { display: flex; flex-direction: column; gap: 2px; }
+      .biz-name { font-size: 14px; font-weight: 900; letter-spacing: -0.3px; margin-top: 2px; }
+      .biz-detail { font-size: 10px; color: #444; }
+      .biz-right { text-align: right; }
+      .doc-type { font-size: 18px; font-weight: 900; letter-spacing: 1.5px; }
+      .doc-num { font-size: 14px; font-weight: 700; margin: 1mm 0; }
+      .doc-date { font-size: 11px; color: #444; }
+      .iva-badge { display: inline-block; margin-top: 2mm; font-size: 9px; font-weight: 700; letter-spacing: 0.5px; border: 1px solid #555; padding: 1px 5px; color: #333; }
+      .copy-label { text-align: center; font-size: 12px; font-weight: 900; letter-spacing: 3px; padding: 1.5mm 0; border-top: 1px solid #ddd; border-bottom: 1px solid #ddd; margin-bottom: 4mm; color: #555; }
+      /* Cliente */
+      .client-section { background: #f8f8f8; border: 1px solid #ddd; padding: 3mm 4mm; margin-bottom: 5mm; }
+      .client-table { width: 100%; border-collapse: collapse; }
+      .client-table td { padding: 1.5px 4px; font-size: 11px; }
+      .cl { width: 60%; }
+      .cr { width: 40%; }
+      .cl-label { font-weight: 700; color: #555; }
+      /* Items */
+      .items { width: 100%; border-collapse: collapse; margin-bottom: 3mm; }
+      .items thead tr { border-bottom: 2px solid #111; }
+      .items thead th { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; padding: 2.5mm 3px; color: #333; }
+      .items tbody tr { border-bottom: 1px solid #e5e5e5; }
+      .items tbody tr:last-child { border-bottom: 1px solid #aaa; }
+      .items td { padding: 2.5mm 3px; vertical-align: middle; }
+      .tc { text-align: center; width: 52px; }
+      .cod { font-family: monospace; font-size: 10px; color: #555; width: 60px; }
+      .desc { text-align: left; }
+      .num { text-align: right; font-family: monospace; width: 90px; font-variant-numeric: tabular-nums; }
+      /* Totales */
+      .totals { display: flex; flex-direction: column; align-items: flex-end; gap: 1mm; margin-bottom: 3mm; }
+      .total-row { display: flex; justify-content: flex-end; gap: 20mm; font-size: 11px; min-width: 120mm; }
+      .total-row.disc { color: #666; }
+      .total-row.grand { font-size: 14px; font-weight: 900; border-top: 2px solid #111; padding-top: 2mm; margin-top: 1mm; }
+      .mono { font-family: monospace; font-variant-numeric: tabular-nums; }
+      /* Monto en letras */
+      .letras { font-size: 10px; font-style: italic; color: #333; border-top: 1px dashed #aaa; padding-top: 2mm; margin-bottom: 6mm; }
+      /* Firma */
+      .firma-row { display: flex; justify-content: space-between; margin-top: 8mm; }
+      .firma-box { font-size: 10px; color: #555; line-height: 2.2; }
+      /* Corte */
+      .cut-line { text-align: center; color: #999; font-size: 9px; letter-spacing: 1px; margin: 3mm 0; border-top: 1px dashed #ccc; padding-top: 2mm; }
+    `;
+
+    const w = window.open('', '_blank', 'width=900,height=700');
+    w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8">
+      <title>Presupuesto N° ${String(d.quote.id).padStart(4, '0')} — ${bizName}</title>
+      <style>${css}</style></head><body>
+      ${makeBlock('ORIGINAL')}
+      <div class="cut-line">✂ ·  · · · · · · · · · · · · · · · · · · cortar aquí · · · · · · · · · · · · · · · · · · · ·  · ✂</div>
+      ${makeBlock('DUPLICADO')}
+    </body></html>`);
     w.document.close();
-    setTimeout(() => { w.focus(); w.print(); }, 300);
+    setTimeout(() => { w.focus(); w.print(); }, 350);
   };
 
   const handleDelete = async (id) => {
@@ -223,9 +401,32 @@ const handleStatus = async (id, status) => {
             </div>
 
             <div style={{ marginBottom: 12 }}>
-              <label style={{ fontSize: '0.78rem', color: 'var(--lp-ink-faint)', fontWeight: 600, display: 'block', marginBottom: 4 }}>Nota / Obra</label>
+              <label style={{ fontSize: '0.78rem', color: 'var(--lp-ink-faint)', fontWeight: 600, display: 'block', marginBottom: 4 }}>Obra / Referencia</label>
               <input value={formNote} onChange={e => setFormNote(e.target.value)} placeholder="Ej: Obra calle Corrientes 3400"
                 style={{ width: '100%', padding: '8px 12px', background: 'var(--lp-paper-sunken)', border: '1px solid var(--lp-line-strong)', borderRadius: 6, color: 'var(--lp-ink)', fontSize: '0.9rem', outline: 'none' }} />
+            </div>
+
+            <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+              <div style={{ flex: 1 }}>
+                <label style={{ fontSize: '0.78rem', color: 'var(--lp-ink-faint)', fontWeight: 600, display: 'block', marginBottom: 4 }}>Forma de pago</label>
+                <select value={formFormaPago} onChange={e => setFormFormaPago(e.target.value)}
+                  style={{ width: '100%', padding: '8px 12px', background: 'var(--lp-paper-sunken)', border: '1px solid var(--lp-line-strong)', borderRadius: 6, color: 'var(--lp-ink)', fontSize: '0.9rem', outline: 'none' }}>
+                  <option value="Contado">Contado</option>
+                  <option value="Transferencia">Transferencia</option>
+                  <option value="Cheque">Cheque</option>
+                  <option value="Cuenta corriente">Cuenta corriente</option>
+                  <option value="MercadoPago">MercadoPago</option>
+                </select>
+              </div>
+              <div style={{ width: 120 }}>
+                <label style={{ fontSize: '0.78rem', color: 'var(--lp-ink-faint)', fontWeight: 600, display: 'block', marginBottom: 4 }}>Descuento %</label>
+                <input
+                  type="number" min="0" max="100" step="0.5"
+                  value={formDiscount} onChange={e => setFormDiscount(e.target.value)}
+                  placeholder="0"
+                  style={{ width: '100%', padding: '8px 12px', background: 'var(--lp-paper-sunken)', border: '1px solid var(--lp-line-strong)', borderRadius: 6, color: 'var(--lp-ink)', fontSize: '0.9rem', outline: 'none', fontFamily: 'var(--lp-font-mono)' }}
+                />
+              </div>
             </div>
 
             {/* Product search */}
@@ -260,10 +461,29 @@ const handleStatus = async (id, status) => {
                     </div>
                   </div>
                 ))}
-                <div style={{ borderTop: '1px solid var(--lp-line-strong)', marginTop: 8, paddingTop: 8, display: 'flex', justifyContent: 'space-between', fontWeight: 700, fontSize: '1rem', color: 'var(--lp-ink)' }}>
-                  <span>Total</span>
-                  <span style={{ fontFamily: 'var(--lp-font-mono)' }}>${formatPesos(totalQuote)}</span>
-                </div>
+                {(() => {
+                  const disc = parseFloat(formDiscount) || 0;
+                  const discAmt = totalQuote * disc / 100;
+                  const final = totalQuote - discAmt;
+                  return (
+                    <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--lp-line-strong)' }}>
+                      {disc > 0 && (
+                        <>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: 'var(--lp-ink-faint)', marginBottom: 2 }}>
+                            <span>Subtotal</span><span style={{ fontFamily: 'var(--lp-font-mono)' }}>${formatPesos(totalQuote)}</span>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: 'var(--lp-ink-faint)', marginBottom: 4 }}>
+                            <span>Descuento {disc}%</span><span style={{ fontFamily: 'var(--lp-font-mono)' }}>- ${formatPesos(discAmt)}</span>
+                          </div>
+                        </>
+                      )}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, fontSize: '1rem', color: 'var(--lp-ink)' }}>
+                        <span>Total</span>
+                        <span style={{ fontFamily: 'var(--lp-font-mono)' }}>${formatPesos(final)}</span>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             )}
 

@@ -620,6 +620,10 @@ async def init_pg() -> None:
             ALTER TABLE products ADD COLUMN IF NOT EXISTS price_b NUMERIC(12,2);
             ALTER TABLE products ADD COLUMN IF NOT EXISTS unit_label VARCHAR(20) DEFAULT 'unidad';
 
+            -- Presupuestos v2: descuento global y forma de pago
+            ALTER TABLE quotes ADD COLUMN IF NOT EXISTS discount_pct NUMERIC(5,2) DEFAULT 0;
+            ALTER TABLE quotes ADD COLUMN IF NOT EXISTS forma_pago VARCHAR(50) DEFAULT 'Contado';
+
             CREATE TABLE IF NOT EXISTS audit_log (
                 id              SERIAL PRIMARY KEY,
                 business_id     TEXT NOT NULL REFERENCES businesses(id),

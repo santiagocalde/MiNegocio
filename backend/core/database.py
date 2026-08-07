@@ -421,6 +421,10 @@ async def init_db(DB_PATH: str, logger) -> None:
         await add_column_if_not_exists(db, "products", "price_b", "REAL")
         await add_column_if_not_exists(db, "products", "unit_label", "TEXT", default="'unidad'")
 
+        # Presupuestos v2: descuento global y forma de pago
+        await add_column_if_not_exists(db, "quotes", "discount_pct", "REAL", default="0")
+        await add_column_if_not_exists(db, "quotes", "forma_pago", "TEXT", default="'Contado'")
+
         # Corralón V2: Hojas de Ruta
         await add_column_if_not_exists(db, "remitos", "zone", "TEXT")
         await add_column_if_not_exists(db, "remitos", "sort_order", "INTEGER")
