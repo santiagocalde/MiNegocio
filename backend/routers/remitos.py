@@ -113,7 +113,8 @@ async def update_remito_status(request: Request, remito_id: int, body: dict = Bo
     import main
     b_id = _biz_id()
     new_status = body.get("status")
-    if new_status not in ("pending", "en_camino", "delivered", "failed"):
+    VALID_STATUSES = {"pending", "en_camino", "delivered", "failed", "postponed", "cancelled"}
+    if new_status not in VALID_STATUSES:
         raise HTTPException(400, detail="Estado inválido")
 
     if USE_PG:

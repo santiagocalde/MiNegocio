@@ -138,7 +138,13 @@ const handleStatus = async (id, status) => {
     const bizName = JSON.parse(localStorage.getItem('saas_business') || '{}')?.business_name || 'Corralón';
     const total = d.items.reduce((s, i) => s + i.unit_price * i.quantity, 0);
     const lines = d.items.map(it => `${it.product_name} x${it.quantity}: $${formatPesos(it.unit_price * it.quantity)}`).join('\n');
-    const msg = `*${bizName}* - Presupuesto N° ${d.quote.id}\n\n${lines}\n\n*TOTAL: $${formatPesos(total)}*\n${d.quote.list_type === 'b' ? '(Lista Contratista)' : '(Lista Público)'}\nVálido hasta: ${fmtDate(d.quote.expires_at)}\n${d.quote.note ? 'Obra: ' + d.quote.note : ''}`;
+    // Orden: negocio → nro → cliente → obra → items → validez → TOTAL (al final)
+    let msg = `*${bizName}* — Presupuesto N° ${d.quote.id}`;
+    if (d.quote.customer_name) msg += `\nCliente: ${d.quote.customer_name}`;
+    if (d.quote.note) msg += `\nObra: ${d.quote.note}`;
+    msg += `\n\n${lines}`;
+    msg += `\n\nVálido hasta: ${fmtDate(d.quote.expires_at)}`;
+    msg += `\n*TOTAL: $${formatPesos(total)}*`;
     window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
   };
 

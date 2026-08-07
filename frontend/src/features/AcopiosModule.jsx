@@ -13,6 +13,8 @@ export default function AcopiosModule() {
   const [detail, setDetail] = useState(null);
   const [showWithdrawal, setShowWithdrawal] = useState(null);
   const [withdrawalItems, setWithdrawalItems] = useState({});
+  const [withdrawalType, setWithdrawalType] = useState('retiro'); // 'retiro' | 'entrega'
+  const [withdrawalAddress, setWithdrawalAddress] = useState('');
 
   // Form
   const [formItems, setFormItems] = useState([]);
@@ -53,11 +55,29 @@ export default function AcopiosModule() {
 
   const handleWithdrawal = async () => {
     if (!showWithdrawal) return;
-    const items = Object.entries(withdrawalItems).filter(([, q]) => parseFloat(q) > 0).map(([k, q]) => ({ acopio_item_id: parseInt(k), quantity: parseFloat(q) }));
-    if (items.length === 0) return;
-    const r = await apiPost(`/acopios/${showWithdrawal}/withdrawals`, { items });
-    if (r.ok) { addToast?.('Retiro registrado.', 'success'); setShowWithdrawal(null); setWithdrawalItems({}); fetch(); if (detail) showDetail(detail.acopio.id); }
-    else addToast?.('Error.', 'error');
+    const items = Object.entries(withdrawalItems)
+      .filter(([, q]) => parseFloat(q) > 0)
+      .map(([k, q]) => ({ acopio_item_id: parseInt(k), quantity: parseFloat(q) }));
+    if (items.length === 0) {
+      addToast?.('Ingresá al menos una cantidad antes de confirmar.', 'error');
+      return;
+    }
+    const body = {
+      items,
+      notes: withdrawalType === 'entrega'
+        ? `Entrega a domicilio${withdrawalAddress ? ': ' + withdrawalAddress : ''}`
+        : 'Retiro en depósito',
+    };
+    const r = await apiPost(`/acopios/${showWithdrawal}/withdrawals`, body);
+    if (r.ok) {
+      addToast?.('Registrado correctamente.', 'success');
+      setShowWithdrawal(null);
+      setWithdrawalItems({});
+      setWithdrawalType('retiro');
+      setWithdrawalAddress('');
+      fetch();
+      if (detail) showDetail(detail.acopio.id);
+    } else { addToast?.('Error al registrar.', 'error'); }
   };
 
   return (
@@ -140,20 +160,61 @@ export default function AcopiosModule() {
             </div>
             {showWithdrawal === detail.acopio.id ? (
               <div>
-                {detail.items.filter(it => it.quantity_retirada < it.quantity_total).map(it => (
-                  <div key={it.id} style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '4px 0', fontSize: '0.82rem' }}>
-                    <span style={{ flex: 1 }}>{it.product_name} (disp: {it.quantity_total - it.quantity_retirada})</span>
-                    <input type="number" value={withdrawalItems[it.id] || ''} onChange={e => setWithdrawalItems(p => ({ ...p, [it.id]: e.target.value }))} placeholder="0" style={{ width: 60, padding: '4px 8px', background: 'var(--lp-paper-sunken)', border: '1px solid var(--lp-line-strong)', borderRadius: 4, color: 'var(--lp-ink)', textAlign: 'center', outline: 'none' }} />
-                  </div>
-                ))}
-                <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                  <button onClick={() => { setShowWithdrawal(null); setWithdrawalItems({}); }} className="lp-btn lp-btn--ghost" style={{ flex: 1 }}>Cancelar</button>
-                  <button onClick={handleWithdrawal} className="lp-btn lp-btn--primary" style={{ flex: 1 }}>Registrar retiro</button>
+                {/* Selector retiro / entrega */}
+                <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+                  {[['retiro', '🏭 Retiro en depósito'], ['entrega', '🚛 Entrega a domicilio']].map(([val, lbl]) => (
+                    <button key={val} onClick={() => setWithdrawalType(val)}
+                      style={{ flex: 1, padding: '8px 4px', fontSize: '0.8rem', fontWeight: 700, borderRadius: 8, cursor: 'pointer',
+                        border: withdrawalType === val ? '2px solid var(--lp-primary)' : '1.5px solid var(--lp-line-strong)',
+                        background: withdrawalType === val ? 'rgba(20,187,166,0.12)' : 'transparent',
+                        color: withdrawalType === val ? 'var(--lp-primary)' : 'var(--lp-ink-faint)',
+                        transition: 'all 0.15s' }}>
+                      {lbl}
+                    </button>
+                  ))}
+                </div>
+                {withdrawalType === 'entrega' && (
+                  <input value={withdrawalAddress} onChange={e => setWithdrawalAddress(e.target.value)}
+                    placeholder="Dirección de entrega"
+                    style={{ width: '100%', padding: '7px 10px', background: 'var(--lp-paper-sunken)', border: '1px solid var(--lp-line-strong)', borderRadius: 6, color: 'var(--lp-ink)', fontSize: '0.85rem', outline: 'none', marginBottom: 8 }} />
+                )}
+                {/* Cantidades — pre-llenadas con el disponible */}
+                {detail.items.filter(it => it.quantity_retirada < it.quantity_total).map(it => {
+                  const disponible = it.quantity_total - it.quantity_retirada;
+                  return (
+                    <div key={it.id} style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '5px 0', fontSize: '0.83rem' }}>
+                      <span style={{ flex: 1, color: 'var(--lp-ink)' }}>
+                        {it.product_name}
+                        <span style={{ color: 'var(--lp-ink-faint)', fontSize: '0.75rem' }}> (disp: {disponible})</span>
+                      </span>
+                      <input type="number"
+                        value={withdrawalItems[it.id] !== undefined ? withdrawalItems[it.id] : disponible}
+                        onChange={e => setWithdrawalItems(p => ({ ...p, [it.id]: e.target.value }))}
+                        min={0} max={disponible} step={1}
+                        style={{ width: 70, padding: '5px 8px', background: 'var(--lp-paper-sunken)', border: '1px solid var(--lp-line-strong)', borderRadius: 4, color: 'var(--lp-ink)', textAlign: 'center', outline: 'none', fontFamily: 'var(--lp-font-mono)' }} />
+                    </div>
+                  );
+                })}
+                <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                  <button onClick={() => { setShowWithdrawal(null); setWithdrawalItems({}); setWithdrawalType('retiro'); setWithdrawalAddress(''); }} className="lp-btn lp-btn--ghost" style={{ flex: 1 }}>Cancelar</button>
+                  <button onClick={handleWithdrawal} className="lp-btn lp-btn--primary" style={{ flex: 2 }}>
+                    Confirmar {withdrawalType === 'entrega' ? 'entrega' : 'retiro'}
+                  </button>
                 </div>
               </div>
             ) : (
               detail.acopio.status === 'active' && (
-                <button onClick={() => setShowWithdrawal(detail.acopio.id)} className="lp-btn lp-btn--primary" style={{ width: '100%' }}>Registrar retiro</button>
+                <button onClick={() => {
+                  // Pre-llenar con disponible al abrir
+                  const preloaded = {};
+                  detail.items.filter(it => it.quantity_retirada < it.quantity_total).forEach(it => {
+                    preloaded[it.id] = it.quantity_total - it.quantity_retirada;
+                  });
+                  setWithdrawalItems(preloaded);
+                  setShowWithdrawal(detail.acopio.id);
+                }} className="lp-btn lp-btn--primary" style={{ width: '100%' }}>
+                  Registrar retiro / entrega
+                </button>
               )
             )}
           </div>

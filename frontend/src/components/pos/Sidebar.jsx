@@ -101,7 +101,15 @@ export default function Sidebar({
 
   const role = currentOperator?.role || 'admin';
 
-  const isActive = (path) => currentPath === path;
+  const isActive = (path) => {
+    const [pathname, qs] = path.split('?');
+    if (qs) {
+      // Si el item tiene query string, exigir que coincida el search también
+      return currentPath === pathname && location.search === `?${qs}`;
+    }
+    // Si no tiene query string, solo activo cuando tampoco hay search
+    return currentPath === pathname && !location.search;
+  };
 
   const features = getBusinessFeatures(businessType);
 
@@ -138,7 +146,7 @@ export default function Sidebar({
         category: 'LOGÍSTICA',
         roles: ['admin', 'manager'],
         items: [
-          { label: 'Remitos', path: '/panel/remitos', icon: 'Truck' },
+          { label: 'Notas de pedido', path: '/panel/remitos', icon: 'Truck' },
           { label: 'Despacho del día', path: '/panel/remitos?filter=today', icon: 'Clock' },
         ],
       },
