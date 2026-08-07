@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import ConfigPrinting from '../components/pos/ConfigPrinting';
 import { usePanelContext } from '../context/PanelContext';
-import { apiGet, apiPut, apiPatch } from '../services/apiClient';
+import { apiGet, apiPost } from '../services/apiClient';
 import { Icons } from '../components/ui/Icons';
 import useIsMobile from '../hooks/useIsMobile';
 import { API_BASE } from '../config';
@@ -94,7 +94,7 @@ export default function ConfigPage() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const configRes = await apiPut('/config', config);
+      const configRes = await apiPost('/config', config);
       if (!configRes.ok) throw new Error('No se pudo guardar la configuracion');
 
       const operatorResponses = await Promise.all(
@@ -103,7 +103,7 @@ export default function ConfigPage() {
           .map(op => {
             const payload = { name: op.name, role: op.role };
             if (op.pin) payload.pin = op.pin;
-            return apiPatch(`/operators/${op.id}`, payload);
+            return apiPost(`/operators/${op.id}`, payload);
           })
       );
       if (operatorResponses.some(res => !res.ok)) {

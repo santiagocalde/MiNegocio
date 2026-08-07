@@ -288,7 +288,7 @@ async def create_operator(request: Request, data: dict) -> dict:
             return {"id": cur.lastrowid, "name": name, "role": role}
 
 
-@router.patch("/api/operators/{operator_id}", summary="Actualizar operador")
+@router.post("/api/operators/{operator_id}", summary="Actualizar operador")
 async def patch_operator(operator_id: int, data: dict) -> dict:
     if USE_PG:
         from db_helpers import get_pg_pool

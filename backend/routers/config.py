@@ -96,7 +96,7 @@ async def public_catalogo(request: Request, slug: str = Query("")) -> dict:
         }
 
 
-@router.put("/api/config", summary="Actualizar configuracion del negocio")
+@router.post("/api/config", summary="Actualizar configuracion del negocio")
 async def update_config(request: Request, data: dict) -> dict:
     iva_rate_raw = data.get("iva_rate")
     if iva_rate_raw is not None:
@@ -295,7 +295,8 @@ async def upload_logo(file: UploadFile = File(...)) -> dict:
     if len(data) > MAX_SIZE:
         raise HTTPException(400, "El archivo excede el límite de 2 MB.")
     b_id = str(_biz_id() or "unknown").replace("/", "_")
-    filename = f"{b_id}{ext}"
+    ts = uuid.uuid4().hex[:8]
+    filename = f"{b_id}_{ts}{ext}"
     dest = LOGO_DIR / filename
     dest.write_bytes(data)
     logo_url = f"/static/logos/{filename}"
