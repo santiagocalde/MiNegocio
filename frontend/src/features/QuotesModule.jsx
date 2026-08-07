@@ -203,10 +203,8 @@ const handleStatus = async (id, status) => {
     </div>
     <div class="biz-right">
       <div class="doc-date">${fmtDate(d.quote.created_at || new Date())}</div>
-      ${inicioAct ? `<div class="biz-detail-r">Inicio de Actividades: ${inicioAct}</div>` : ''}
-      ${cuit      ? `<div class="biz-detail-r">C.U.I.T.: ${cuit}</div>` : ''}
-      ${ingBrutos ? `<div class="biz-detail-r">Ing. Brutos: ${ingBrutos}</div>` : ''}
-      ${condIva   ? `<div class="biz-detail-r">${condIva.toUpperCase()}</div>` : ''}
+      ${cuit    ? `<div class="biz-detail-r">C.U.I.T.: ${cuit}</div>` : ''}
+      ${condIva ? `<div class="biz-detail-r">${condIva.toUpperCase()}</div>` : ''}
     </div>
   </div>
 
