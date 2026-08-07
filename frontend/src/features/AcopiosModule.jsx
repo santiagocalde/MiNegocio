@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { usePanelContext } from '../context/PanelContext';
 import { apiGet, apiPost } from '../services/apiClient';
+import ClientePicker from '../components/corralon/ClientePicker';
 
 const formatPesos = (v) => (v ?? 0).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 const fmtDate = (s) => s ? new Date(s).toLocaleDateString('es-AR', { day: 'numeric', month: 'short' }) : '—';
@@ -17,6 +18,7 @@ export default function AcopiosModule() {
   const [withdrawalAddress, setWithdrawalAddress] = useState('');
 
   // Form
+  const [formCustomer, setFormCustomer] = useState(null);
   const [formItems, setFormItems] = useState([]);
   const [productSearch, setProductSearch] = useState('');
   const [searchResults, setSearchResults] = useState([]);
@@ -42,9 +44,13 @@ export default function AcopiosModule() {
   };
 
   const handleCreate = async () => {
+    if (!formCustomer) { addToast?.('Seleccioná un cliente.', 'error'); return; }
     if (formItems.length === 0) return;
-    const r = await apiPost('/acopios', { items: formItems.map(i => ({ product_id: i.product_id, quantity: i.quantity, unit_price: i.unit_price })) });
-    if (r.ok) { addToast?.('Acopio creado.', 'success'); setShowForm(false); setFormItems([]); fetch(); }
+    const r = await apiPost('/acopios', {
+      customer_id: formCustomer.id,
+      items: formItems.map(i => ({ product_id: i.product_id, quantity: i.quantity, unit_price: i.unit_price })),
+    });
+    if (r.ok) { addToast?.('Acopio creado.', 'success'); setShowForm(false); setFormCustomer(null); setFormItems([]); fetch(); }
     else addToast?.('Error.', 'error');
   };
 
@@ -86,25 +92,41 @@ export default function AcopiosModule() {
         <h2 style={{ fontFamily: 'var(--lp-font-display)', fontSize: '1.3rem', fontWeight: 700, color: 'var(--lp-ink)', margin: 0, letterSpacing: '-0.02em' }}>Acopios</h2>
         <button onClick={() => setShowForm(true)} className="lp-btn lp-btn--primary" style={{ padding: '8px 18px', fontSize: '0.85rem' }}>Nuevo acopio</button>
       </div>
-      <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-        {loading ? <div style={{ color: 'var(--lp-ink-faint)', textAlign: 'center', padding: 40 }}>Cargando...</div> :
-         acopios.length === 0 ? <div style={{ color: 'var(--lp-ink-faint)', textAlign: 'center', padding: 40 }}>No hay acopios activos.</div> :
-         acopios.map(a => (
-          <div key={a.id} className="ledger-sheet" onClick={() => showDetail(a.id)} style={{ padding: '12px 18px', background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line)', borderRadius: 6, cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <div style={{ fontWeight: 700, color: 'var(--lp-ink)', fontSize: '0.9rem' }}>Acopio #{a.id}{a.customer_name ? ` · ${a.customer_name}` : ''}</div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--lp-ink-faint)' }}>{fmtDate(a.created_at)}</div>
-            </div>
-            <span style={{ fontSize: '0.72rem', fontWeight: 700, padding: '3px 8px', borderRadius: 4, color: 'var(--lp-amber)', background: 'rgba(245,158,11,0.12)' }}>Pendiente</span>
+      <div style={{ flex: 1, overflow: 'auto' }}>
+        {loading ? (
+          <div style={{ color: 'var(--lp-ink-faint)', textAlign: 'center', padding: 40 }}>Cargando...</div>
+        ) : acopios.length === 0 ? (
+          <div style={{ color: 'var(--lp-ink-faint)', textAlign: 'center', padding: 40 }}>No hay acopios activos.</div>
+        ) : (
+          <div className="ledger-sheet" style={{ overflow: 'hidden' }}>
+            {acopios.map(a => (
+              <div key={a.id} className="ledger-row ledger-row--hover" onClick={() => showDetail(a.id)}>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.9rem' }}>
+                    {a.customer_name || 'Sin cliente'}
+                  </div>
+                  <div className="ledger-label" style={{ marginTop: 2 }}>
+                    Acopio #{a.id} · {fmtDate(a.created_at)}
+                  </div>
+                </div>
+                <span style={{ fontSize: '0.72rem', fontWeight: 700, padding: '3px 10px', borderRadius: 20, color: 'var(--lp-amber)', background: 'rgba(245,158,11,0.12)', flexShrink: 0 }}>
+                  Activo
+                </span>
+              </div>
+            ))}
           </div>
-        ))}
+        )}
       </div>
 
       {/* Form modal */}
       {showForm && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(11,19,43,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} onMouseDown={e => { if (e.target === e.currentTarget) setShowForm(false); }}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(11,19,43,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} onMouseDown={e => { if (e.target === e.currentTarget) { setShowForm(false); setFormCustomer(null); } }}>
           <div onMouseDown={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 500, maxHeight: '90vh', overflow: 'auto', background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line-strong)', borderRadius: 12, padding: 24, boxShadow: 'var(--lp-shadow-lg)' }}>
-            <h3 style={{ fontFamily: 'var(--lp-font-display)', fontSize: '1.1rem', fontWeight: 700, color: 'var(--lp-ink)', margin: '0 0 12px' }}>Nuevo acopio</h3>
+            <h3 style={{ fontFamily: 'var(--lp-font-display)', fontSize: '1.1rem', fontWeight: 700, color: 'var(--lp-ink)', margin: '0 0 16px' }}>Nuevo acopio</h3>
+            <div style={{ marginBottom: 12 }}>
+              <label style={{ fontSize: '0.75rem', color: 'var(--lp-ink-faint)', fontWeight: 600, display: 'block', marginBottom: 4 }}>Cliente *</label>
+              <ClientePicker selected={formCustomer} onSelect={setFormCustomer} />
+            </div>
             <input value={productSearch} onChange={e => handleSearch(e.target.value)} placeholder="Buscar producto..." style={{ width: '100%', padding: '8px', background: 'var(--lp-paper-sunken)', border: '1px solid var(--lp-line-strong)', borderRadius: 6, color: 'var(--lp-ink)', marginBottom: 8, outline: 'none' }} />
             {searchResults.length > 0 && (
               <div style={{ marginBottom: 8, maxHeight: 120, overflow: 'auto', border: '1px solid var(--lp-line)', borderRadius: 6 }}>
@@ -120,10 +142,10 @@ export default function AcopiosModule() {
                 <button onClick={() => setFormItems(prev => prev.filter((_, idx) => idx !== i))} style={{ background: 'none', border: 'none', color: 'var(--lp-red)', cursor: 'pointer' }}>✕</button>
               </div>
             ))}
-            <button onClick={handleCreate} disabled={formItems.length === 0} className="lp-btn lp-btn--primary" style={{ width: '100%', padding: '12px', marginTop: 12, opacity: formItems.length === 0 ? 0.5 : 1 }}>
+            <button onClick={handleCreate} disabled={!formCustomer || formItems.length === 0} className="lp-btn lp-btn--primary" style={{ width: '100%', padding: '12px', marginTop: 12, opacity: (!formCustomer || formItems.length === 0) ? 0.5 : 1 }}>
               Crear acopio (descuenta stock)
             </button>
-            <button onClick={() => setShowForm(false)} className="lp-btn lp-btn--ghost" style={{ width: '100%', marginTop: 8 }}>Cancelar</button>
+            <button onClick={() => { setShowForm(false); setFormCustomer(null); }} className="lp-btn lp-btn--ghost" style={{ width: '100%', marginTop: 8 }}>Cancelar</button>
           </div>
         </div>
       )}

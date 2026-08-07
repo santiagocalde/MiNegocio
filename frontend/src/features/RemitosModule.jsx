@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { usePanelContext } from '../context/PanelContext';
 import { apiGet, apiPost } from '../services/apiClient';
+import ClientePicker from '../components/corralon/ClientePicker';
 
 const STATUS_MAP = {
   pending:   { label: 'Pendiente',  color: '#F59E0B', bg: 'rgba(245,158,11,0.09)'  },
@@ -54,7 +55,11 @@ export default function RemitosModule() {
   const [selected, setSelected]         = useState(new Set());
   const [loadingCarga, setLoadingCarga] = useState(false);
 
+  // Postergado — mini modal de fecha
+  const [postponeModal, setPostponeModal] = useState(null); // null | { remito_id, date }
+
   // Form
+  const [formCustomer, setFormCustomer] = useState(null); // { id, name, phone, address } | null
   const [formAddress, setFormAddress] = useState('');
   const [formDriver, setFormDriver]   = useState('');
   const [formDate, setFormDate]       = useState(() => new Date().toISOString().slice(0, 10));
@@ -107,28 +112,32 @@ export default function RemitosModule() {
   const totalItems = formItems.reduce((s, i) => s + i.quantity * i.unit_price, 0);
 
   const handleCreate = async () => {
-    if (formItems.length === 0) { addToast?.('Agregá productos.', 'error'); return; }
+    if (!formCustomer) { addToast?.('Seleccioná un cliente primero.', 'error'); return; }
+    if (formItems.length === 0) { addToast?.('Agregá al menos un producto.', 'error'); return; }
     const body = {
-      address: formAddress, driver: formDriver,
+      customer_id: formCustomer.id,
+      address: formAddress || formCustomer.address || '',
+      driver: formDriver,
       scheduled_date: formDate,
       items: formItems.map(i => ({ product_id: i.product_id, quantity: i.quantity, unit_price: i.unit_price })),
     };
     const res = await apiPost('/remitos', body);
     if (res.ok) {
       addToast?.('Nota de pedido creada.', 'success');
-      setShowForm(false); setFormAddress(''); setFormDriver(''); setFormItems([]);
+      setShowForm(false); setFormCustomer(null); setFormAddress(''); setFormDriver(''); setFormItems([]);
       fetchNotas();
     } else { addToast?.('Error al crear.', 'error'); }
   };
 
   const handleShareWhatsApp = (r) => {
     const bizName = JSON.parse(localStorage.getItem('saas_business') || '{}')?.business_name || 'Corralón';
-    const msg = `*${bizName}* — Nota de Pedido N° ${r.id}\nDirección: ${r.address || '—'}\nChofer: ${r.driver || '—'}\nFecha: ${fmtDate(r.scheduled_date)}`;
+    const cliente = r.customer_name || r.address || '—';
+    const msg = `*${bizName}* — Nota de Pedido N° ${r.id}\nCliente: ${cliente}${r.address ? '\nDirección: ' + r.address : ''}\nFecha: ${fmtDate(r.scheduled_date)}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
   };
 
-  const handleStatus = async (id, status) => {
-    const res = await apiPost(`/remitos/${id}/status`, { status });
+  const handleStatus = async (id, status, extra = {}) => {
+    const res = await apiPost(`/remitos/${id}/status`, { status, ...extra });
     if (res.ok) {
       addToast?.(`${STATUS_MAP[status]?.label || status}.`, 'success');
       fetchNotas();
@@ -493,10 +502,10 @@ ${stopRows}
                 onClick={() => showDetail(r.id)}>
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontWeight: 700, color: 'var(--lp-ink)', fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    N° {r.id} — {r.address || 'Sin dirección'}
+                    N° {r.id} — {r.customer_name || r.address || 'Sin cliente'}
                   </div>
                   <div style={{ fontSize: '0.74rem', color: 'var(--lp-ink-faint)', marginTop: 2 }}>
-                    {fmtDate(r.scheduled_date)}{r.driver ? ` · ${r.driver}` : ''}{r.customer_name ? ` · ${r.customer_name}` : ''}
+                    {fmtDate(r.scheduled_date)}{r.driver ? ` · ${r.driver}` : ''}{r.address ? ` · ${r.address}` : ''}
                   </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
@@ -555,16 +564,32 @@ ${stopRows}
       {/* ── Modal: Nueva nota de pedido ── */}
       {showForm && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(11,19,43,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
-          onMouseDown={e => { if (e.target === e.currentTarget) setShowForm(false); }}>
+          onMouseDown={e => { if (e.target === e.currentTarget) { setShowForm(false); setFormCustomer(null); } }}>
           <div onMouseDown={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 540, maxHeight: '92vh', overflow: 'auto', background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line-strong)', borderRadius: 12, padding: 24, boxShadow: 'var(--lp-shadow-lg)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
               <h3 style={{ fontFamily: 'var(--lp-font-display)', fontSize: '1.1rem', fontWeight: 700, color: 'var(--lp-ink)', margin: 0 }}>Nueva nota de pedido</h3>
-              <button onClick={() => setShowForm(false)} style={{ background: 'none', border: 'none', color: 'var(--lp-ink-faint)', cursor: 'pointer', fontSize: '1.3rem' }}>✕</button>
+              <button onClick={() => { setShowForm(false); setFormCustomer(null); }} style={{ background: 'none', border: 'none', color: 'var(--lp-ink-faint)', cursor: 'pointer', fontSize: '1.3rem' }}>✕</button>
             </div>
+
+            {/* ── 1. Cliente (obligatorio) ── */}
+            <div style={{ marginBottom: 12 }}>
+              <label style={{ fontSize: '0.75rem', color: 'var(--lp-ink-faint)', fontWeight: 600, display: 'block', marginBottom: 4 }}>
+                Cliente *
+              </label>
+              <ClientePicker
+                selected={formCustomer}
+                onSelect={c => {
+                  setFormCustomer(c);
+                  if (c?.address) setFormAddress(c.address);
+                }}
+              />
+            </div>
+
+            {/* ── 2. Dirección + Chofer + Fecha ── */}
             <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
-              <div style={{ flex: 1 }}>
-                <label style={{ fontSize: '0.75rem', color: 'var(--lp-ink-faint)', fontWeight: 600, display: 'block', marginBottom: 3 }}>Dirección</label>
-                <input value={formAddress} onChange={e => setFormAddress(e.target.value)} placeholder="Calle / Obra" style={inputStyle} />
+              <div style={{ flex: 2 }}>
+                <label style={{ fontSize: '0.75rem', color: 'var(--lp-ink-faint)', fontWeight: 600, display: 'block', marginBottom: 3 }}>Dirección de entrega</label>
+                <input value={formAddress} onChange={e => setFormAddress(e.target.value)} placeholder="Calle / Obra (opcional si ya está en cliente)" style={inputStyle} />
               </div>
               <div style={{ flex: 1 }}>
                 <label style={{ fontSize: '0.75rem', color: 'var(--lp-ink-faint)', fontWeight: 600, display: 'block', marginBottom: 3 }}>Chofer</label>
@@ -575,6 +600,8 @@ ${stopRows}
                 <input type="date" value={formDate} onChange={e => setFormDate(e.target.value)} style={inputStyle} />
               </div>
             </div>
+
+            {/* ── 3. Productos ── */}
             <input value={productSearch} onChange={e => handleSearch(e.target.value)} placeholder="Buscar producto..." style={{ ...inputStyle, marginBottom: 8 }} />
             {searchResults.length > 0 && (
               <div style={{ marginBottom: 8, maxHeight: 130, overflow: 'auto', border: '1px solid var(--lp-line)', borderRadius: 6 }}>
@@ -603,10 +630,60 @@ ${stopRows}
                 </div>
               </div>
             )}
-            <button onClick={handleCreate} disabled={formItems.length === 0} className="lp-btn lp-btn--primary"
-              style={{ width: '100%', padding: '12px', fontSize: '0.95rem', opacity: formItems.length === 0 ? 0.5 : 1 }}>
+            <button onClick={handleCreate} disabled={!formCustomer || formItems.length === 0} className="lp-btn lp-btn--primary"
+              style={{ width: '100%', padding: '12px', fontSize: '0.95rem', opacity: (!formCustomer || formItems.length === 0) ? 0.5 : 1 }}>
               Crear nota de pedido
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal: Postergar (mini date picker) ── */}
+      {postponeModal && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1001, background: 'rgba(11,19,43,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+          onMouseDown={e => { if (e.target === e.currentTarget) setPostponeModal(null); }}>
+          <div onMouseDown={e => e.stopPropagation()} style={{
+            width: '100%', maxWidth: 380, background: 'var(--lp-paper-raised)',
+            border: '1px solid var(--lp-line-strong)', borderRadius: 12, padding: 24,
+            boxShadow: 'var(--lp-shadow-lg)',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <h3 style={{ fontFamily: 'var(--lp-font-display)', fontSize: '1.05rem', fontWeight: 700, color: 'var(--lp-ink)', margin: 0 }}>
+                Postergar entrega
+              </h3>
+              <button onClick={() => setPostponeModal(null)}
+                style={{ background: 'none', border: 'none', color: 'var(--lp-ink-faint)', cursor: 'pointer', fontSize: '1.2rem' }}>✕</button>
+            </div>
+            <p style={{ fontSize: '0.82rem', color: 'var(--lp-ink-faint)', margin: '0 0 14px 0' }}>
+              ¿Para qué día reprogramamos la nota N° {postponeModal.remito_id}?
+            </p>
+            <div style={{ marginBottom: 18 }}>
+              <label style={{ fontSize: '0.75rem', color: 'var(--lp-ink-faint)', fontWeight: 600, display: 'block', marginBottom: 5 }}>
+                Nueva fecha de entrega
+              </label>
+              <input type="date" value={postponeModal.date}
+                onChange={e => setPostponeModal(prev => ({ ...prev, date: e.target.value }))}
+                style={{
+                  width: '100%', padding: '10px 14px',
+                  background: 'var(--lp-paper-sunken)',
+                  border: '1px solid var(--lp-line-strong)',
+                  borderRadius: 6, color: 'var(--lp-ink)',
+                  fontSize: '0.95rem', outline: 'none',
+                }} />
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={() => setPostponeModal(null)}
+                className="lp-btn lp-btn--ghost" style={{ flex: 1 }}>
+                Cancelar
+              </button>
+              <button onClick={() => {
+                handleStatus(postponeModal.remito_id, 'postponed', { scheduled_date: postponeModal.date });
+                setPostponeModal(null);
+              }}
+                className="lp-btn lp-btn--primary" style={{ flex: 2 }}>
+                Confirmar postergación
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -620,7 +697,7 @@ ${stopRows}
               <h3 style={{ fontFamily: 'var(--lp-font-display)', fontSize: '1.1rem', fontWeight: 700, color: 'var(--lp-ink)', margin: 0 }}>
                 Nota de pedido N° {detail.remito.id}
               </h3>
-              <button onClick={() => { setDetail(null); setShowCobrar(false); }} style={{ background: 'none', border: 'none', color: 'var(--lp-ink-faint)', cursor: 'pointer', fontSize: '1.3rem' }}>✕</button>
+              <button onClick={() => { setDetail(null); setShowCobrar(false); setPostponeModal(null); }} style={{ background: 'none', border: 'none', color: 'var(--lp-ink-faint)', cursor: 'pointer', fontSize: '1.3rem' }}>✕</button>
             </div>
 
             {(() => {
@@ -664,13 +741,19 @@ ${stopRows}
                 ) : (<>
                   {detail.remito.status === 'pending' && (<>
                     {btnStatus('#F59E0B', '🚛 En camino', () => handleStatus(detail.remito.id, 'en_camino'))}
-                    {btnStatus('#F97316', '📅 Postergado', () => handleStatus(detail.remito.id, 'postponed'))}
+                    {btnStatus('#F97316', '📅 Postergado', () => {
+                      const tom = new Date(); tom.setDate(tom.getDate() + 1);
+                      setPostponeModal({ remito_id: detail.remito.id, date: tom.toISOString().slice(0, 10) });
+                    })}
                     {btnStatus('#6B7280', 'Cancelar', () => handleStatus(detail.remito.id, 'cancelled'))}
                   </>)}
                   {detail.remito.status === 'en_camino' && (<>
                     {btnStatus('#10B981', '✅ Entregado', () => handleStatus(detail.remito.id, 'delivered'))}
                     {btnStatus('#EF4444', '✕ Fallido', () => handleStatus(detail.remito.id, 'failed'))}
-                    {btnStatus('#F97316', '📅 Postergado', () => handleStatus(detail.remito.id, 'postponed'))}
+                    {btnStatus('#F97316', '📅 Postergado', () => {
+                      const tom = new Date(); tom.setDate(tom.getDate() + 1);
+                      setPostponeModal({ remito_id: detail.remito.id, date: tom.toISOString().slice(0, 10) });
+                    })}
                   </>)}
                   {detail.remito.status === 'postponed' && (<>
                     {btnStatus('#F59E0B', '↩ Retomar', () => handleStatus(detail.remito.id, 'pending'))}

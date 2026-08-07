@@ -218,9 +218,10 @@ async def quote_to_remito(quote_id: int, body: dict = Body(default={})) -> dict:
     from datetime import date
     b_id = _biz_id()
 
-    address   = body.get("address", "")
-    driver    = body.get("driver", "")
-    sched_raw = body.get("scheduled_date", str(_now().date())[:10])
+    address             = body.get("address", "")
+    driver              = body.get("driver", "")
+    sched_raw           = body.get("scheduled_date", str(_now().date())[:10])
+    customer_id_override = body.get("customer_id")  # permite sobreescribir el cliente del presupuesto
 
     if USE_PG:
         from db_helpers import get_pg_pool
@@ -240,7 +241,7 @@ async def quote_to_remito(quote_id: int, body: dict = Body(default={})) -> dict:
                 row = await conn.fetchrow("""
                     INSERT INTO remitos (business_id, quote_id, customer_id, address, driver, scheduled_date, status, created_at)
                     VALUES ($1, $2, $3, $4, $5, $6, 'pending', $7) RETURNING id
-                """, b_id, quote_id, quote["customer_id"],
+                """, b_id, quote_id, customer_id_override or quote["customer_id"],
                     address, driver,
                     date.fromisoformat(sched_raw[:10]), _now())
                 remito_id = row["id"]
@@ -275,7 +276,7 @@ async def quote_to_remito(quote_id: int, body: dict = Body(default={})) -> dict:
             cur3 = await db.execute("""
                 INSERT INTO remitos (quote_id, customer_id, address, driver, scheduled_date, status, created_at)
                 VALUES (?, ?, ?, ?, ?, 'pending', ?)
-            """, (quote_id, q.get("customer_id"), address,
+            """, (quote_id, customer_id_override or q.get("customer_id"), address,
                   driver, sched_raw[:10], _now()))
             remito_id = cur3.lastrowid
             for it in items:

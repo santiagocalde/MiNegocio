@@ -139,6 +139,58 @@ function PendientesCobro({ navigate }) {
   );
 }
 
+// ── Widget: Actividad reciente (historial de movimientos) ──────
+function ActividadReciente() {
+  const [items, setItems] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+  const fmtTime = (s) => {
+    if (!s) return '';
+    const d = new Date(s);
+    const hoy = new Date();
+    const esHoy = d.toDateString() === hoy.toDateString();
+    if (esHoy) return d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+    return d.toLocaleDateString('es-AR', { day: 'numeric', month: 'short' }) + ' ' + d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+  };
+
+  React.useEffect(() => {
+    let alive = true;
+    apiGet('/activity?limit=20')
+      .then(r => r.ok ? r.json() : [])
+      .then(d => { if (alive) { setItems(Array.isArray(d) ? d : []); setLoading(false); } })
+      .catch(() => { if (alive) setLoading(false); });
+    return () => { alive = false; };
+  }, []);
+
+  if (loading || items.length === 0) return null;
+
+  return (
+    <div className="ledger-sheet" style={{ marginBottom: 18 }}>
+      <div style={{ padding: '13px 18px', borderBottom: '1px solid var(--rule-strong)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: '1rem' }}>🕐</span>
+          <h2 className="ledger-title" style={{ fontSize: '1rem', margin: 0 }}>Actividad reciente</h2>
+        </div>
+        <span style={{ fontSize: '0.72rem', color: 'var(--text-faint)' }}>Últimos movimientos</span>
+      </div>
+      {items.slice(0, 15).map((it, i) => (
+        <div key={it.id || i} className="ledger-row" style={{ padding: '10px 18px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 }}>
+            <span style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
+              {it.label}
+            </span>
+            <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {it.details}
+            </span>
+          </div>
+          <span style={{ fontSize: '0.72rem', color: 'var(--text-faint)', whiteSpace: 'nowrap', flexShrink: 0, marginLeft: 12 }}>
+            {fmtTime(it.timestamp)}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function InicioPage() {
   const navigate = useNavigate();
   const { backend, auth, currentPlan, businessType } = usePanelContext();
@@ -181,6 +233,7 @@ export default function InicioPage() {
 
       {currentPlan === 'ia' && <ResumenIA />}
       {businessType === 'corralon' && <PendientesCobro navigate={navigate} />}
+      <ActividadReciente />
 
       {/* Cuerpo: dos columnas — el libro del día + acciones/stock */}
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.5fr) minmax(0, 1fr)', gap: 18, alignItems: 'start' }}>

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { usePanelContext } from '../context/PanelContext';
 import { apiGet, apiPost, apiDelete } from '../services/apiClient';
+import ClientePicker from '../components/corralon/ClientePicker';
 
 const STATUS_MAP = {
   draft:     { label: 'Borrador',  color: 'var(--lp-ink-faint)' },
@@ -75,6 +76,7 @@ export default function QuotesModule() {
 
   // Convertir presupuesto → Nota de pedido
   const [showToRemito, setShowToRemito]       = useState(false);
+  const [toRemitoCustomer, setToRemitoCustomer] = useState(null);
   const [toRemitoAddress, setToRemitoAddress] = useState('');
   const [toRemitoDriver, setToRemitoDriver]   = useState('');
   const [toRemitoDate, setToRemitoDate]       = useState(() => new Date().toISOString().slice(0, 10));
@@ -141,7 +143,7 @@ export default function QuotesModule() {
 
 const handleStatus = async (id, status) => {
     const res = await apiPost(`/quotes/${id}/status`, { status });
-    if (res.ok) { addToast?.(`Estado: ${STATUS_MAP[status]?.label || status}.`, 'success'); fetch(); }
+    if (res.ok) { addToast?.(`Estado: ${STATUS_MAP[status]?.label || status}.`, 'success'); fetchQuotes(); }
     else { addToast?.('Error al cambiar estado.', 'error'); }
   };
 
@@ -431,8 +433,10 @@ const handleStatus = async (id, status) => {
 
   const handleToRemito = async () => {
     if (!detail) return;
+    if (!toRemitoCustomer) { addToast?.('Seleccioná un cliente.', 'error'); return; }
     setToRemitoLoading(true);
     const res = await apiPost(`/quotes/${detail.quote.id}/to-remito`, {
+      customer_id: toRemitoCustomer.id,
       address: toRemitoAddress.trim(),
       driver: toRemitoDriver.trim(),
       scheduled_date: toRemitoDate,
@@ -458,7 +462,7 @@ const handleStatus = async (id, status) => {
       </div>
 
       {/* Lista */}
-      <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+      <div style={{ flex: 1, overflow: 'auto' }}>
         {loading ? (
           <div style={{ color: 'var(--lp-ink-faint)', textAlign: 'center', padding: 40 }}>Cargando...</div>
         ) : quotes.length === 0 ? (
@@ -466,26 +470,30 @@ const handleStatus = async (id, status) => {
             No hay presupuestos todavía.<br/>Creá el primero con el botón "Nuevo presupuesto".
           </div>
         ) : (
-          quotes.map(q => (
-            <div key={q.id} className="ledger-sheet" onClick={() => showDetail(q.id)} style={{
-              padding: '14px 20px', background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line)',
-              borderRadius: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              cursor: 'pointer', transition: 'box-shadow 0.15s',
-            }}
-              onMouseEnter={e => e.currentTarget.style.boxShadow = 'var(--lp-shadow-sm)'}
-              onMouseLeave={e => e.currentTarget.style.boxShadow = 'none'}
-            >
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                <div style={{ fontWeight: 700, color: 'var(--lp-ink)', fontSize: '0.95rem' }}>#{q.id} — {q.note || 'Presupuesto'} {q.customer_name ? `· ${q.customer_name}` : ''}</div>
-                <div style={{ fontSize: '0.78rem', color: 'var(--lp-ink-faint)' }}>{fmtDate(q.created_at)} · {(() => { try { const cfg = JSON.parse(localStorage.getItem('minegocio_config') || '{}'); return { a: cfg.price_list_a_name || 'Lista A', b: cfg.price_list_b_name || 'Lista B', c: cfg.price_list_c_name || 'Lista C', d: cfg.price_list_d_name || 'Lista D', e: cfg.price_list_e_name || 'Lista E' }[q.list_type] || 'Lista A'; } catch { return 'Lista ' + (q.list_type || 'a').toUpperCase(); } })()} · Vence {fmtDate(q.expires_at)}</div>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: STATUS_MAP[q.status]?.color, background: STATUS_MAP[q.status]?.color + '15', padding: '3px 8px', borderRadius: 4, fontFamily: 'var(--lp-font-mono)' }}>
-                  {STATUS_MAP[q.status]?.label || q.status}
-                </span>
-              </div>
-            </div>
-          ))
+          <div className="ledger-sheet" style={{ overflow: 'hidden' }}>
+            {quotes.map(q => {
+              let listLabel = 'Lista A';
+              try {
+                const cfg = JSON.parse(localStorage.getItem('minegocio_config') || '{}');
+                listLabel = { a: cfg.price_list_a_name || 'Lista A', b: cfg.price_list_b_name || 'Lista B', c: cfg.price_list_c_name || 'Lista C', d: cfg.price_list_d_name || 'Lista D', e: cfg.price_list_e_name || 'Lista E' }[q.list_type] || ('Lista ' + (q.list_type || 'a').toUpperCase());
+              } catch {}
+              return (
+                <div key={q.id} className="ledger-row ledger-row--hover" onClick={() => showDetail(q.id)}>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.95rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {q.note || 'Sin referencia'}{q.customer_name ? ` · ${q.customer_name}` : ''}
+                    </div>
+                    <div className="ledger-label" style={{ marginTop: 2 }}>
+                      #{q.id} · {fmtDate(q.created_at)} · {listLabel} · Vence {fmtDate(q.expires_at)}
+                    </div>
+                  </div>
+                  <span style={{ fontSize: '0.73rem', fontWeight: 700, color: STATUS_MAP[q.status]?.color, background: STATUS_MAP[q.status]?.color + '18', padding: '3px 10px', borderRadius: 20, flexShrink: 0, marginLeft: 12 }}>
+                    {STATUS_MAP[q.status]?.label || q.status}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
         )}
       </div>
 
@@ -684,6 +692,8 @@ const handleStatus = async (id, status) => {
                 <>
                   <button onClick={() => {
                     setToRemitoAddress(detail.quote.address || '');
+                    setToRemitoCustomer(detail.quote.customer_id ? { id: detail.quote.customer_id, name: detail.quote.customer_name || '', phone: detail.quote.customer_phone || '', address: detail.quote.address || '' } : null);
+                    if (detail.quote.address) setToRemitoAddress(detail.quote.address);
                     setToRemitoDriver('');
                     setToRemitoDate(new Date().toISOString().slice(0, 10));
                     setShowToRemito(true);
@@ -697,27 +707,37 @@ const handleStatus = async (id, status) => {
                 <div style={{ width: '100%', background: 'var(--lp-paper-sunken)', border: '1.5px solid rgba(20,187,166,0.35)', borderRadius: 10, padding: 16, marginTop: 4 }}>
                   <div style={{ fontWeight: 800, color: 'var(--lp-primary)', fontSize: '0.9rem', marginBottom: 12, display: 'flex', justifyContent: 'space-between' }}>
                     <span>🚛 Nueva Nota de pedido</span>
-                    <button onClick={() => setShowToRemito(false)} style={{ background: 'none', border: 'none', color: 'var(--lp-ink-faint)', cursor: 'pointer', fontSize: '1rem' }}>✕</button>
+                    <button onClick={() => { setShowToRemito(false); setToRemitoCustomer(null); }} style={{ background: 'none', border: 'none', color: 'var(--lp-ink-faint)', cursor: 'pointer', fontSize: '1rem' }}>✕</button>
                   </div>
-                  {[
-                    { label: 'Dirección de entrega', val: toRemitoAddress, set: setToRemitoAddress, placeholder: 'Ej: Av. San Martín 1234' },
-                    { label: 'Chofer (opcional)', val: toRemitoDriver, set: setToRemitoDriver, placeholder: 'Nombre del chofer' },
-                  ].map(f => (
-                    <div key={f.label} style={{ marginBottom: 10 }}>
-                      <label style={{ fontSize: '0.73rem', fontWeight: 700, color: 'var(--lp-ink-faint)', display: 'block', marginBottom: 3 }}>{f.label}</label>
-                      <input value={f.val} onChange={e => f.set(e.target.value)} placeholder={f.placeholder}
-                        style={{ width: '100%', padding: '8px 12px', background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line-strong)', borderRadius: 6, color: 'var(--lp-ink)', fontSize: '0.88rem', outline: 'none' }} />
-                    </div>
-                  ))}
+                  <div style={{ marginBottom: 10 }}>
+                    <label style={{ fontSize: '0.73rem', fontWeight: 700, color: 'var(--lp-ink-faint)', display: 'block', marginBottom: 3 }}>Cliente *</label>
+                    <ClientePicker
+                      selected={toRemitoCustomer}
+                      onSelect={c => {
+                        setToRemitoCustomer(c);
+                        if (c?.address) setToRemitoAddress(c.address);
+                      }}
+                    />
+                  </div>
+                  <div style={{ marginBottom: 10 }}>
+                    <label style={{ fontSize: '0.73rem', fontWeight: 700, color: 'var(--lp-ink-faint)', display: 'block', marginBottom: 3 }}>Dirección de entrega</label>
+                    <input value={toRemitoAddress} onChange={e => setToRemitoAddress(e.target.value)} placeholder="Calle / Obra"
+                      style={{ width: '100%', padding: '8px 12px', background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line-strong)', borderRadius: 6, color: 'var(--lp-ink)', fontSize: '0.88rem', outline: 'none' }} />
+                  </div>
+                  <div style={{ marginBottom: 10 }}>
+                    <label style={{ fontSize: '0.73rem', fontWeight: 700, color: 'var(--lp-ink-faint)', display: 'block', marginBottom: 3 }}>Chofer (opcional)</label>
+                    <input value={toRemitoDriver} onChange={e => setToRemitoDriver(e.target.value)} placeholder="Nombre del chofer"
+                      style={{ width: '100%', padding: '8px 12px', background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line-strong)', borderRadius: 6, color: 'var(--lp-ink)', fontSize: '0.88rem', outline: 'none' }} />
+                  </div>
                   <div style={{ marginBottom: 12 }}>
                     <label style={{ fontSize: '0.73rem', fontWeight: 700, color: 'var(--lp-ink-faint)', display: 'block', marginBottom: 3 }}>Fecha de despacho</label>
                     <input type="date" value={toRemitoDate} onChange={e => setToRemitoDate(e.target.value)}
                       style={{ width: '100%', padding: '8px 12px', background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line-strong)', borderRadius: 6, color: 'var(--lp-ink)', fontSize: '0.88rem', outline: 'none' }} />
                   </div>
                   <div style={{ display: 'flex', gap: 8 }}>
-                    <button onClick={() => setShowToRemito(false)} className="lp-btn lp-btn--ghost" style={{ flex: 1 }}>Cancelar</button>
-                    <button onClick={handleToRemito} disabled={toRemitoLoading} className="lp-btn lp-btn--primary"
-                      style={{ flex: 2, opacity: toRemitoLoading ? 0.6 : 1, fontWeight: 800 }}>
+                    <button onClick={() => { setShowToRemito(false); setToRemitoCustomer(null); }} className="lp-btn lp-btn--ghost" style={{ flex: 1 }}>Cancelar</button>
+                    <button onClick={handleToRemito} disabled={toRemitoLoading || !toRemitoCustomer} className="lp-btn lp-btn--primary"
+                      style={{ flex: 2, opacity: (toRemitoLoading || !toRemitoCustomer) ? 0.6 : 1, fontWeight: 800 }}>
                       {toRemitoLoading ? 'Creando...' : 'Confirmar y crear'}
                     </button>
                   </div>

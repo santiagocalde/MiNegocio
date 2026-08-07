@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { usePanelContext } from '../context/PanelContext';
 import { apiGet, apiPost } from '../services/apiClient';
+import ClientePicker from '../components/corralon/ClientePicker';
 
 const formatPesos = (v) => (v ?? 0).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 const fmtDate = (s) => s ? new Date(s).toLocaleDateString('es-AR', { day: 'numeric', month: 'short' }) : '—';
@@ -13,7 +14,7 @@ export default function CreditNotesModule() {
   const [detail, setDetail] = useState(null);
 
   // Form
-  const [formCustomerId, setFormCustomerId] = useState('');
+  const [formCustomer, setFormCustomer] = useState(null);
   const [formReason, setFormReason] = useState('');
   const [formItems, setFormItems] = useState([]);
   const [productSearch, setProductSearch] = useState('');
@@ -44,11 +45,11 @@ export default function CreditNotesModule() {
   const handleCreate = async () => {
     if (formItems.length === 0) return;
     const r = await apiPost('/credit-notes', {
-      customer_id: formCustomerId ? parseInt(formCustomerId) : null,
+      customer_id: formCustomer?.id ?? null,
       reason: formReason,
       items: formItems.map(i => ({ product_id: i.product_id, product_name: i.product_name, quantity: i.quantity, unit_price: i.unit_price })),
     });
-    if (r.ok) { addToast?.('Nota de crédito creada.', 'success'); setShowForm(false); setFormItems([]); setFormCustomerId(''); setFormReason(''); fetch(); }
+    if (r.ok) { addToast?.('Nota de crédito creada.', 'success'); setShowForm(false); setFormItems([]); setFormCustomer(null); setFormReason(''); fetch(); }
     else addToast?.('Error.', 'error');
   };
 
@@ -65,33 +66,44 @@ export default function CreditNotesModule() {
         <h2 style={{ fontFamily: 'var(--lp-font-display)', fontSize: '1.3rem', fontWeight: 700, color: 'var(--lp-ink)', margin: 0, letterSpacing: '-0.02em' }}>Notas de Crédito</h2>
         <button onClick={() => setShowForm(true)} className="lp-btn lp-btn--primary" style={{ padding: '8px 18px', fontSize: '0.85rem' }}>Nueva devolución</button>
       </div>
-      <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-        {loading ? <div style={{ color: 'var(--lp-ink-faint)', textAlign: 'center', padding: 40 }}>Cargando...</div> :
-         notes.length === 0 ? <div style={{ color: 'var(--lp-ink-faint)', textAlign: 'center', padding: 40 }}>No hay notas de crédito.</div> :
-         notes.map(n => (
-          <div key={n.id} className="ledger-sheet" onClick={() => showDetail(n.id)} style={{ padding: '12px 18px', background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line)', borderRadius: 6, cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <div style={{ fontWeight: 700, color: 'var(--lp-ink)', fontSize: '0.9rem' }}>NC #{n.id} · ${formatPesos(n.total)}</div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--lp-ink-faint)' }}>{n.customer_name || 'Sin cliente'} · {fmtDate(n.created_at)}</div>
-            </div>
+      <div style={{ flex: 1, overflow: 'auto' }}>
+        {loading ? (
+          <div style={{ color: 'var(--lp-ink-faint)', textAlign: 'center', padding: 40 }}>Cargando...</div>
+        ) : notes.length === 0 ? (
+          <div style={{ color: 'var(--lp-ink-faint)', textAlign: 'center', padding: 40 }}>No hay notas de crédito.</div>
+        ) : (
+          <div className="ledger-sheet" style={{ overflow: 'hidden' }}>
+            {notes.map(n => (
+              <div key={n.id} className="ledger-row ledger-row--hover" onClick={() => showDetail(n.id)}>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.9rem' }}>
+                    {n.customer_name || 'Sin cliente'}
+                  </div>
+                  <div className="ledger-label" style={{ marginTop: 2 }}>
+                    NC #{n.id} · {fmtDate(n.created_at)}{n.reason ? ` · ${n.reason}` : ''}
+                  </div>
+                </div>
+                <div className="ledger-num" style={{ color: 'var(--accent-success)', fontSize: '1rem', fontWeight: 700, flexShrink: 0 }}>
+                  ${formatPesos(n.total)}
+                </div>
+              </div>
+            ))}
           </div>
-        ))}
+        )}
       </div>
 
       {/* Form */}
       {showForm && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(11,19,43,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} onMouseDown={e => { if (e.target === e.currentTarget) setShowForm(false); }}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(11,19,43,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} onMouseDown={e => { if (e.target === e.currentTarget) { setShowForm(false); setFormCustomer(null); } }}>
           <div onMouseDown={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 500, maxHeight: '90vh', overflow: 'auto', background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line-strong)', borderRadius: 12, padding: 24, boxShadow: 'var(--lp-shadow-lg)' }}>
             <h3 style={{ fontFamily: 'var(--lp-font-display)', fontSize: '1.1rem', fontWeight: 700, color: 'var(--lp-ink)', margin: '0 0 12px' }}>Nueva devolución</h3>
-            <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
-              <div style={{ flex: 1 }}>
-                <label style={{ fontSize: '0.75rem', color: 'var(--lp-ink-faint)', fontWeight: 600, display: 'block', marginBottom: 3 }}>ID Cliente</label>
-                <input value={formCustomerId} onChange={e => setFormCustomerId(e.target.value)} placeholder="Opcional" style={{ width: '100%', padding: '8px', background: 'var(--lp-paper-sunken)', border: '1px solid var(--lp-line-strong)', borderRadius: 6, color: 'var(--lp-ink)', outline: 'none' }} />
-              </div>
-              <div style={{ flex: 2 }}>
-                <label style={{ fontSize: '0.75rem', color: 'var(--lp-ink-faint)', fontWeight: 600, display: 'block', marginBottom: 3 }}>Motivo</label>
-                <input value={formReason} onChange={e => setFormReason(e.target.value)} placeholder="Ej: material sobrante de obra" style={{ width: '100%', padding: '8px', background: 'var(--lp-paper-sunken)', border: '1px solid var(--lp-line-strong)', borderRadius: 6, color: 'var(--lp-ink)', outline: 'none' }} />
-              </div>
+            <div style={{ marginBottom: 10 }}>
+              <label style={{ fontSize: '0.75rem', color: 'var(--lp-ink-faint)', fontWeight: 600, display: 'block', marginBottom: 4 }}>Cliente (opcional)</label>
+              <ClientePicker selected={formCustomer} onSelect={setFormCustomer} placeholder="Buscar cliente…" />
+            </div>
+            <div style={{ marginBottom: 10 }}>
+              <label style={{ fontSize: '0.75rem', color: 'var(--lp-ink-faint)', fontWeight: 600, display: 'block', marginBottom: 3 }}>Motivo</label>
+              <input value={formReason} onChange={e => setFormReason(e.target.value)} placeholder="Ej: material sobrante de obra" style={{ width: '100%', padding: '8px', background: 'var(--lp-paper-sunken)', border: '1px solid var(--lp-line-strong)', borderRadius: 6, color: 'var(--lp-ink)', outline: 'none' }} />
             </div>
             <input value={productSearch} onChange={e => handleSearch(e.target.value)} placeholder="Buscar producto..." style={{ width: '100%', padding: '8px', background: 'var(--lp-paper-sunken)', border: '1px solid var(--lp-line-strong)', borderRadius: 6, color: 'var(--lp-ink)', marginBottom: 8, outline: 'none' }} />
             <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
@@ -114,7 +126,7 @@ export default function CreditNotesModule() {
             ))}
             {formItems.length > 0 && <div style={{ borderTop: '1px solid var(--lp-line-strong)', marginTop: 6, paddingTop: 6, fontWeight: 700, color: 'var(--lp-ink)' }}>Total: ${formatPesos(totalFrom(formItems))}</div>}
             <button onClick={handleCreate} disabled={formItems.length === 0} className="lp-btn lp-btn--primary" style={{ width: '100%', padding: '12px', marginTop: 12, opacity: formItems.length === 0 ? 0.5 : 1 }}>Crear nota de crédito</button>
-            <button onClick={() => setShowForm(false)} className="lp-btn lp-btn--ghost" style={{ width: '100%', marginTop: 8 }}>Cancelar</button>
+            <button onClick={() => { setShowForm(false); setFormCustomer(null); }} className="lp-btn lp-btn--ghost" style={{ width: '100%', marginTop: 8 }}>Cancelar</button>
           </div>
         </div>
       )}

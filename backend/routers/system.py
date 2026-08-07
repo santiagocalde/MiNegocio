@@ -392,3 +392,63 @@ async def list_testimonials(request: Request) -> list:
     except:
         return [{"id": 1, "text": "Antes usaba un cuaderno. Ahora se cuanto vendi. Cambio todo.", "name": "Carlos", "business": "Kiosco Don Carlos", "stars": 5},
                 {"id": 2, "text": "Se corto internet 3 dias y cobramos normal.", "name": "Maria", "business": "Almacen La Buena Fe", "stars": 5}]
+
+
+@router.get("/api/activity", summary="Actividad reciente del negocio")
+@limiter.limit("30/minute")
+async def activity_feed(request: Request, limit: int = Query(50)) -> list:
+    """Timeline unificado de movimientos del negocio (ventas, presupuestos, etc)."""
+    b_id = _biz_id()
+    if not b_id:
+        raise HTTPException(401, detail="No autenticado")
+    
+    LABELS = {
+        "sale_created": ("💰 Venta", "accent-success"),
+        "quote_created": ("📋 Presupuesto", "accent-primary"),
+        "quote_approved": ("✅ Aprobado", "accent-primary"),
+        "quote_delivered": ("🚛 Entregado", "accent-primary"),
+        "quote_to_remito": ("🚛 Nota de pedido", "accent-primary"),
+        "remito_created": ("📦 Nota creada", "accent-primary"),
+        "remito_status_delivered": ("✅ Entrega confirmada", "accent-success"),
+        "remito_status_en_camino": ("🚛 En camino", "accent-primary"),
+        "acopio_created": ("🏭 Acopio", None),
+        "acopio_withdrawal": ("📤 Retiro de acopio", None),
+    }
+
+    if USE_PG:
+        from db_helpers import get_pg_pool
+        pool = await get_pg_pool()
+        async with pool.acquire() as conn:
+            rows = await conn.fetch(
+                "SELECT id, action, operator, details, timestamp FROM audit_log WHERE business_id = $1 ORDER BY timestamp DESC LIMIT $2",
+                b_id, limit
+            )
+    else:
+        async with aiosqlite.connect(DB_PATH) as db:
+            cur = await db.execute(
+                "SELECT id, action, operator, details, timestamp FROM audit_log WHERE business_id = ? ORDER BY timestamp DESC LIMIT ?",
+                (b_id, limit)
+            )
+            rows = await cur.fetchall()
+
+    results = []
+    for r in rows:
+        if USE_PG:
+            action = r["action"]
+            details = r["details"] or ""
+            ts = r["timestamp"]
+        else:
+            action = r[1]
+            details = r[3] or ""
+            ts = r[4]
+        
+        label_info = LABELS.get(action, (f"📌 {action.replace('_', ' ').title()}", None))
+        results.append({
+            "id": r["id"] if USE_PG else r[0],
+            "action": action,
+            "label": label_info[0],
+            "tone": label_info[1],
+            "details": details,
+            "timestamp": ts.isoformat() if hasattr(ts, 'isoformat') else str(ts),
+        })
+    return results

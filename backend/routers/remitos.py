@@ -118,15 +118,30 @@ async def update_remito_status(request: Request, remito_id: int, body: dict = Bo
     if new_status not in VALID_STATUSES:
         raise HTTPException(400, detail="Estado inválido")
 
+    # Fecha de postergación — solo aplica cuando status == "postponed"
+    sched = None
+    if new_status == "postponed" and body.get("scheduled_date"):
+        from datetime import date as _date
+        try:
+            sched = _date.fromisoformat(str(body["scheduled_date"])[:10])
+        except ValueError:
+            pass
+
     if USE_PG:
         from db_helpers import get_pg_pool
         pool = await get_pg_pool()
         async with pool.acquire() as conn:
             async with conn.transaction():
-                await conn.execute(
-                    "UPDATE remitos SET status = $1 WHERE id = $2 AND business_id = $3",
-                    new_status, remito_id, b_id
-                )
+                if sched:
+                    await conn.execute(
+                        "UPDATE remitos SET status = $1, scheduled_date = $2 WHERE id = $3 AND business_id = $4",
+                        new_status, sched, remito_id, b_id
+                    )
+                else:
+                    await conn.execute(
+                        "UPDATE remitos SET status = $1 WHERE id = $2 AND business_id = $3",
+                        new_status, remito_id, b_id
+                    )
                 await conn.execute("INSERT INTO audit_log (business_id, action, operator, details) VALUES ($1,$2,$3,$4)",
                     b_id, "remito_status", body.get("operator", "Sistema"), f"Remito #{remito_id} → {new_status}")
                 # Descontar stock al confirmar entrega
@@ -141,7 +156,13 @@ async def update_remito_status(request: Request, remito_id: int, body: dict = Bo
     else:
         import aiosqlite
         async with aiosqlite.connect(main.DB_PATH) as db:
-            await db.execute("UPDATE remitos SET status = ? WHERE id = ?", (new_status, remito_id))
+            if sched:
+                await db.execute(
+                    "UPDATE remitos SET status = ?, scheduled_date = ? WHERE id = ?",
+                    (new_status, str(sched), remito_id)
+                )
+            else:
+                await db.execute("UPDATE remitos SET status = ? WHERE id = ?", (new_status, remito_id))
             if new_status == "delivered":
                 items = await db.execute("SELECT * FROM remito_items WHERE remito_id = ?", (remito_id,))
                 async for it in items:
