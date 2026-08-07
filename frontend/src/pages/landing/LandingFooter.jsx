@@ -26,8 +26,16 @@ export default function LandingFooter({ navigate, setShowContactModal, handleDog
         { label: 'Sistema sin internet', href: '/pos-sin-internet/' },
         { label: 'Control de fiados', href: '/sistema-fiados/' },
         { label: 'Comparar sistemas', href: '/comparar-sistemas-para-kioscos/' },
-        { label: 'Software para corralones', href: '/software-corralon-materiales/' },
         { label: 'Centro de soporte', onClick: () => navigate('/soporte') },
+      ],
+    },
+    {
+      title: 'Por rubro',
+      links: [
+        { label: 'Kioscos', href: '/software-kiosco/' },
+        { label: 'Almacenes', href: '/software-almacen/' },
+        { label: 'Ferreterias', href: '/software-ferreteria/' },
+        { label: 'Corralones', href: '/software-corralon-materiales/' },
       ],
     },
     {

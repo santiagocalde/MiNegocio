@@ -78,20 +78,27 @@ export default function LandingNav({
             <button className="lp-nav-link">
               Info <Svg.ChevronRight />
             </button>
-            <div id="info-dropdown" style={{ opacity: 0, pointerEvents: 'none', transform: 'translateX(-50%) translateY(-10px)', transition: 'all 0.2s', position: 'absolute', top: '100%', left: '50%', background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line)', borderRadius: 14, padding: 8, display: 'flex', flexDirection: 'column', minWidth: 200, boxShadow: 'var(--lp-shadow-md)' }}>
-              <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--lp-ink-faint)', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '6px 12px 2px' }}>Empresa</div>
-              <a onClick={(e) => { e.preventDefault(); navigate('/nosotros'); }} className="lp-dropdown-item">Sobre Nosotros</a>
-              <a onClick={(e) => { e.preventDefault(); navigate('/soporte'); }} className="lp-dropdown-item">Soporte</a>
-              <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--lp-ink-faint)', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '10px 12px 2px' }}>Recursos</div>
-              <a href="/blog/" className="lp-dropdown-item">Blog</a>
-              <a href="/glosario/" className="lp-dropdown-item">Glosario</a>
-              <a href="/pos-sin-internet/" className="lp-dropdown-item">Sistema sin internet</a>
-              <a href="/sistema-fiados/" className="lp-dropdown-item">Control de fiados</a>
-              <a href="/comparar-sistemas-para-kioscos/" className="lp-dropdown-item">Comparar sistemas</a>
-              <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--lp-ink-faint)', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '10px 12px 2px' }}>Corralones</div>
-              <a href="/software-corralon-materiales/" className="lp-dropdown-item">Software para corralones</a>
-              <a href="/sistema-presupuestos-corralon/" className="lp-dropdown-item">Presupuestos para corralon</a>
-              <a href="/software-control-obras/" className="lp-dropdown-item">Control de obras</a>
+            <div id="info-dropdown" style={{ opacity: 0, pointerEvents: 'none', transform: 'translateX(-50%) translateY(-10px)', transition: 'all 0.2s', position: 'absolute', top: '100%', left: '50%', background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line)', borderRadius: 14, padding: 12, display: 'flex', gap: 24, minWidth: 440, boxShadow: 'var(--lp-shadow-md)' }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--lp-ink-faint)', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '4px 10px 4px' }}>Empresa</div>
+                <a onClick={(e) => { e.preventDefault(); navigate('/nosotros'); }} className="lp-dropdown-item">Sobre Nosotros</a>
+                <a onClick={(e) => { e.preventDefault(); navigate('/soporte'); }} className="lp-dropdown-item">Soporte</a>
+                <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--lp-ink-faint)', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '10px 10px 4px' }}>Recursos</div>
+                <a href="/blog/" className="lp-dropdown-item">Blog</a>
+                <a href="/glosario/" className="lp-dropdown-item">Glosario</a>
+                <a href="/pos-sin-internet/" className="lp-dropdown-item">Sistema sin internet</a>
+                <a href="/sistema-fiados/" className="lp-dropdown-item">Control de fiados</a>
+                <a href="/comparar-sistemas-para-kioscos/" className="lp-dropdown-item">Comparar sistemas</a>
+              </div>
+              <div style={{ flex: 1, borderLeft: '1px solid var(--lp-line)', paddingLeft: 20 }}>
+                <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--lp-ink-faint)', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '4px 10px 4px' }}>Soluciones por rubro</div>
+                <a href="/software-kiosco/" className="lp-dropdown-item">Kioscos</a>
+                <a href="/software-almacen/" className="lp-dropdown-item">Almacenes</a>
+                <a href="/software-vineria/" className="lp-dropdown-item">Vinerias</a>
+                <a href="/software-dietetica/" className="lp-dropdown-item">Dieteticas</a>
+                <a href="/software-ferreteria/" className="lp-dropdown-item">Ferreterias</a>
+                <a href="/software-corralon-materiales/" className="lp-dropdown-item" style={{ fontWeight: 700, color: 'var(--lp-primary)' }}>Corralones de materiales</a>
+              </div>
             </div>
           </div>
         </div>
