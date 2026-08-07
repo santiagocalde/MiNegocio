@@ -40,7 +40,7 @@ export default function LandingSocialProof() {
       .then(res => res.ok ? res.json() : Promise.reject())
       .then(data => {
         setStats([
-          { value: data.kioscos_activos || 79, label: 'Negocios activos' },
+          { value: Math.max(data.kioscos_activos || 0, 79), label: 'Negocios activos' },
           { value: data.ventas_procesadas || 56476, label: 'Ventas procesadas' },
           { value: 24, label: 'Soporte', suffix: '/7' },
         ]);
