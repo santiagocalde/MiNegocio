@@ -73,6 +73,13 @@ export default function QuotesModule() {
   const [productQty, setProductQty] = useState('1');
   const [productPrice, setProductPrice] = useState('');
 
+  // Convertir presupuesto → Nota de pedido
+  const [showToRemito, setShowToRemito]       = useState(false);
+  const [toRemitoAddress, setToRemitoAddress] = useState('');
+  const [toRemitoDriver, setToRemitoDriver]   = useState('');
+  const [toRemitoDate, setToRemitoDate]       = useState(() => new Date().toISOString().slice(0, 10));
+  const [toRemitoLoading, setToRemitoLoading] = useState(false);
+
   const fetchQuotes = useCallback(async () => {
     setLoading(true);
     try {
@@ -422,6 +429,27 @@ const handleStatus = async (id, status) => {
     if (res.ok) setDetail(await res.json());
   };
 
+  const handleToRemito = async () => {
+    if (!detail) return;
+    setToRemitoLoading(true);
+    const res = await apiPost(`/quotes/${detail.quote.id}/to-remito`, {
+      address: toRemitoAddress.trim(),
+      driver: toRemitoDriver.trim(),
+      scheduled_date: toRemitoDate,
+    });
+    if (res.ok) {
+      const data = await res.json();
+      addToast?.(`✅ Nota de pedido N° ${data.remito_id} creada.`, 'success');
+      setShowToRemito(false);
+      setDetail(null);
+      fetchQuotes();
+    } else {
+      const err = await res.json().catch(() => ({}));
+      addToast?.(err.detail || 'Error al convertir.', 'error');
+    }
+    setToRemitoLoading(false);
+  };
+
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', gap: '10px', overflow: 'hidden', padding: '12px 20px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
@@ -652,8 +680,48 @@ const handleStatus = async (id, status) => {
               {detail.quote.status === 'sent' && (
                 <button onClick={() => handleStatus(detail.quote.id, 'approved')} className="lp-btn lp-btn--primary" style={{ flex: 1, fontSize: '0.85rem' }}>Aprobar</button>
               )}
-              {detail.quote.status === 'approved' && (
-                <button onClick={() => handleStatus(detail.quote.id, 'delivered')} className="lp-btn lp-btn--primary" style={{ flex: 1, fontSize: '0.85rem' }}>Marcar entregado</button>
+              {detail.quote.status === 'approved' && !showToRemito && (
+                <>
+                  <button onClick={() => {
+                    setToRemitoAddress(detail.quote.address || '');
+                    setToRemitoDriver('');
+                    setToRemitoDate(new Date().toISOString().slice(0, 10));
+                    setShowToRemito(true);
+                  }} className="lp-btn lp-btn--primary" style={{ flex: 2, fontSize: '0.85rem', fontWeight: 800 }}>
+                    🚛 Crear Nota de pedido
+                  </button>
+                  <button onClick={() => handleStatus(detail.quote.id, 'delivered')} className="lp-btn lp-btn--ghost" style={{ flex: 1, fontSize: '0.82rem' }}>Entregado sin remito</button>
+                </>
+              )}
+              {detail.quote.status === 'approved' && showToRemito && (
+                <div style={{ width: '100%', background: 'var(--lp-paper-sunken)', border: '1.5px solid rgba(20,187,166,0.35)', borderRadius: 10, padding: 16, marginTop: 4 }}>
+                  <div style={{ fontWeight: 800, color: 'var(--lp-primary)', fontSize: '0.9rem', marginBottom: 12, display: 'flex', justifyContent: 'space-between' }}>
+                    <span>🚛 Nueva Nota de pedido</span>
+                    <button onClick={() => setShowToRemito(false)} style={{ background: 'none', border: 'none', color: 'var(--lp-ink-faint)', cursor: 'pointer', fontSize: '1rem' }}>✕</button>
+                  </div>
+                  {[
+                    { label: 'Dirección de entrega', val: toRemitoAddress, set: setToRemitoAddress, placeholder: 'Ej: Av. San Martín 1234' },
+                    { label: 'Chofer (opcional)', val: toRemitoDriver, set: setToRemitoDriver, placeholder: 'Nombre del chofer' },
+                  ].map(f => (
+                    <div key={f.label} style={{ marginBottom: 10 }}>
+                      <label style={{ fontSize: '0.73rem', fontWeight: 700, color: 'var(--lp-ink-faint)', display: 'block', marginBottom: 3 }}>{f.label}</label>
+                      <input value={f.val} onChange={e => f.set(e.target.value)} placeholder={f.placeholder}
+                        style={{ width: '100%', padding: '8px 12px', background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line-strong)', borderRadius: 6, color: 'var(--lp-ink)', fontSize: '0.88rem', outline: 'none' }} />
+                    </div>
+                  ))}
+                  <div style={{ marginBottom: 12 }}>
+                    <label style={{ fontSize: '0.73rem', fontWeight: 700, color: 'var(--lp-ink-faint)', display: 'block', marginBottom: 3 }}>Fecha de despacho</label>
+                    <input type="date" value={toRemitoDate} onChange={e => setToRemitoDate(e.target.value)}
+                      style={{ width: '100%', padding: '8px 12px', background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line-strong)', borderRadius: 6, color: 'var(--lp-ink)', fontSize: '0.88rem', outline: 'none' }} />
+                  </div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button onClick={() => setShowToRemito(false)} className="lp-btn lp-btn--ghost" style={{ flex: 1 }}>Cancelar</button>
+                    <button onClick={handleToRemito} disabled={toRemitoLoading} className="lp-btn lp-btn--primary"
+                      style={{ flex: 2, opacity: toRemitoLoading ? 0.6 : 1, fontWeight: 800 }}>
+                      {toRemitoLoading ? 'Creando...' : 'Confirmar y crear'}
+                    </button>
+                  </div>
+                </div>
               )}
               {['draft', 'sent'].includes(detail.quote.status) && (
                 <button onClick={() => handleStatus(detail.quote.id, 'rejected')} className="lp-btn lp-btn--ghost" style={{ flex: 1, fontSize: '0.85rem', color: 'var(--lp-red)' }}>Rechazar</button>
