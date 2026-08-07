@@ -91,9 +91,15 @@ export default function QuotesModule() {
     if (res.ok) { const data = await res.json(); setSearchResults(data || []); }
   };
 
+  // Precio según lista seleccionada; cae en Lista A (minorista) si la lista pedida no está cargada
+  const getListPrice = (p, lt) => {
+    const map = { a: p.price, b: p.price_b, c: p.price_c, d: p.price_d, e: p.price_e };
+    return parseFloat(map[lt] ?? p.price) || parseFloat(p.price) || 0;
+  };
+
   const addItem = (p) => {
     const qty = parseFloat(productQty) || 1;
-    const price = parseFloat(productPrice) || p.price_b || p.price || 0;
+    const price = parseFloat(productPrice) || getListPrice(p, formListType);
     setFormItems(prev => [...prev, { product_id: p.id, product_name: p.name, quantity: qty, unit_price: price }]);
     setProductSearch('');
     setSearchResults([]);
@@ -479,11 +485,24 @@ const handleStatus = async (id, status) => {
                 </select>
               </div>
               <div>
-                <label style={{ fontSize: '0.78rem', color: 'var(--lp-ink-faint)', fontWeight: 600, display: 'block', marginBottom: 4 }}>Lista</label>
-                <select value={formListType} onChange={e => setFormListType(e.target.value)}
-                  style={{ padding: '8px 12px', background: 'var(--lp-paper-sunken)', border: '1px solid var(--lp-line-strong)', borderRadius: 6, color: 'var(--lp-ink)', fontSize: '0.9rem', outline: 'none' }}>
-                  <option value="a">Lista A</option><option value="b">Lista B</option>
-                </select>
+                <label style={{ fontSize: '0.78rem', color: 'var(--lp-ink-faint)', fontWeight: 600, display: 'block', marginBottom: 4 }}>Lista de precios</label>
+                {(() => {
+                  let cfg = {};
+                  try { cfg = JSON.parse(localStorage.getItem('minegocio_config') || '{}'); } catch {}
+                  const lists = [
+                    { v: 'a', label: cfg.price_list_a_name || 'Lista A — Minorista' },
+                    { v: 'b', label: cfg.price_list_b_name || 'Lista B — Mayorista' },
+                    { v: 'c', label: cfg.price_list_c_name || 'Lista C' },
+                    { v: 'd', label: cfg.price_list_d_name || 'Lista D' },
+                    { v: 'e', label: cfg.price_list_e_name || 'Lista E' },
+                  ];
+                  return (
+                    <select value={formListType} onChange={e => setFormListType(e.target.value)}
+                      style={{ padding: '8px 12px', background: 'var(--lp-paper-sunken)', border: '1px solid var(--lp-line-strong)', borderRadius: 6, color: 'var(--lp-ink)', fontSize: '0.9rem', outline: 'none', maxWidth: 180 }}>
+                      {lists.map(l => <option key={l.v} value={l.v}>{l.label}</option>)}
+                    </select>
+                  );
+                })()}
               </div>
             </div>
 
@@ -522,16 +541,26 @@ const handleStatus = async (id, status) => {
                 style={{ width: '100%', padding: '8px 12px', background: 'var(--lp-paper-sunken)', border: '1px solid var(--lp-line-strong)', borderRadius: 6, color: 'var(--lp-ink)', fontSize: '0.9rem', outline: 'none' }} />
               {searchResults.length > 0 && (
                 <div style={{ marginTop: 4, maxHeight: 150, overflow: 'auto', background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line)', borderRadius: 6 }}>
-                  {searchResults.map(p => (
-                    <div key={p.id} onClick={() => addItem(p)} style={{
-                      display: 'flex', justifyContent: 'space-between', padding: '6px 10px', cursor: 'pointer',
-                      fontSize: '0.85rem', borderBottom: '1px solid var(--lp-line)',
-                      color: 'var(--lp-ink)', transition: 'background 0.1s',
-                    }} onMouseEnter={e => e.currentTarget.style.background = 'var(--lp-paper-sunken)'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                      <span>{p.name}</span>
-                      <span style={{ fontFamily: 'var(--lp-font-mono)', color: 'var(--lp-ink-faint)' }}>${formatPesos(p.price_b || p.price)}</span>
-                    </div>
-                  ))}
+                  {searchResults.map(p => {
+                    const lp = getListPrice(p, formListType);
+                    const base = parseFloat(p.price) || 0;
+                    const isDiff = lp !== base;
+                    return (
+                      <div key={p.id} onClick={() => addItem(p)} style={{
+                        display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '7px 10px', cursor: 'pointer',
+                        fontSize: '0.85rem', borderBottom: '1px solid var(--lp-line)',
+                        color: 'var(--lp-ink)', transition: 'background 0.1s',
+                      }} onMouseEnter={e => e.currentTarget.style.background = 'var(--lp-paper-sunken)'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                        <span>{p.name}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          {isDiff && (
+                            <span style={{ fontFamily: 'var(--lp-font-mono)', color: 'var(--lp-ink-faint)', fontSize: '0.75rem', textDecoration: 'line-through' }}>${formatPesos(base)}</span>
+                          )}
+                          <span style={{ fontFamily: 'var(--lp-font-mono)', color: 'var(--lp-primary)', fontWeight: 700 }}>${formatPesos(lp)}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>

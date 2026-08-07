@@ -632,6 +632,18 @@ async def init_pg() -> None:
             ALTER TABLE products ADD COLUMN IF NOT EXISTS price_b NUMERIC(12,2);
             ALTER TABLE products ADD COLUMN IF NOT EXISTS unit_label VARCHAR(20) DEFAULT 'unidad';
 
+            -- 5 listas de precio (C, D, E) — A = price (minorista), B = price_b (mayorista)
+            ALTER TABLE products ADD COLUMN IF NOT EXISTS price_c NUMERIC(12,2);
+            ALTER TABLE products ADD COLUMN IF NOT EXISTS price_d NUMERIC(12,2);
+            ALTER TABLE products ADD COLUMN IF NOT EXISTS price_e NUMERIC(12,2);
+
+            -- Nombres configurables para cada lista de precios
+            ALTER TABLE business_config ADD COLUMN IF NOT EXISTS price_list_a_name TEXT DEFAULT 'Lista A — Minorista';
+            ALTER TABLE business_config ADD COLUMN IF NOT EXISTS price_list_b_name TEXT DEFAULT 'Lista B — Mayorista';
+            ALTER TABLE business_config ADD COLUMN IF NOT EXISTS price_list_c_name TEXT DEFAULT 'Lista C';
+            ALTER TABLE business_config ADD COLUMN IF NOT EXISTS price_list_d_name TEXT DEFAULT 'Lista D';
+            ALTER TABLE business_config ADD COLUMN IF NOT EXISTS price_list_e_name TEXT DEFAULT 'Lista E';
+
             -- Presupuestos v2: descuento global y forma de pago
             ALTER TABLE quotes ADD COLUMN IF NOT EXISTS discount_pct NUMERIC(5,2) DEFAULT 0;
             ALTER TABLE quotes ADD COLUMN IF NOT EXISTS forma_pago VARCHAR(50) DEFAULT 'Contado';

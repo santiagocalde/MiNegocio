@@ -121,7 +121,7 @@ export default function StockModule() {
 
   const [showNuevoProducto, setShowNuevoProducto] = useState(false);
   const [categories, setCategories] = useState([]);
-  const [newProduct, setNewProduct] = useState({ code: '', name: '', price: '', cost_price: '', price_b: '', stock: '', min_stock: '5', iva: '21%', category_id: '', unit_label: 'unidad', codigos_extra: '' });
+  const [newProduct, setNewProduct] = useState({ code: '', name: '', price: '', cost_price: '', price_b: '', price_c: '', price_d: '', price_e: '', stock: '', min_stock: '5', iva: '21%', category_id: '', unit_label: 'unidad', codigos_extra: '' });
   const [confirmState, setConfirmState] = useState({ isOpen: false, title: '', message: '', onConfirm: null, confirmLabel: 'Confirmar', variant: 'danger' });
   const [showNewCategory, setShowNewCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -233,13 +233,16 @@ export default function StockModule() {
         iva: newProduct.iva || '21%',
         category_id: newProduct.category_id ? parseInt(newProduct.category_id) : null,
         price_b: newProduct.price_b ? parseFloat(newProduct.price_b) : null,
+        price_c: newProduct.price_c ? parseFloat(newProduct.price_c) : null,
+        price_d: newProduct.price_d ? parseFloat(newProduct.price_d) : null,
+        price_e: newProduct.price_e ? parseFloat(newProduct.price_e) : null,
         unit_label: newProduct.unit_label || 'unidad',
         extra_codes: (newProduct.codigos_extra || '').split(',').map(c => c.trim()).filter(Boolean),
       });
       if (res.ok) {
         if (addToast) addToast('Producto creado exitosamente.', 'success');
         setShowNuevoProducto(false);
-        setNewProduct({ code: '', name: '', price: '', cost_price: '', stock: '', min_stock: '5', iva: '21%', category_id: '', codigos_extra: '' });
+        setNewProduct({ code: '', name: '', price: '', cost_price: '', price_b: '', price_c: '', price_d: '', price_e: '', stock: '', min_stock: '5', iva: '21%', category_id: '', unit_label: 'unidad', codigos_extra: '' });
         fetchProducts();
         if (onProductsUpdated) onProductsUpdated();
       } else {
@@ -820,7 +823,11 @@ export default function StockModule() {
               {[{ label: 'Código', key: 'code', type: 'text' }, { label: 'Nombre', key: 'name', type: 'text' },
                 { label: 'Precio Venta ($)', key: 'price', type: 'number' }, { label: 'Precio Costo ($)', key: 'cost_price', type: 'number' },
                 { label: 'Stock', key: 'stock', type: 'number' }, { label: 'Stock Mínimo', key: 'min_stock', type: 'number' },
-                { label: 'Precio Mayorista ($)', key: 'price_b', type: 'number' }, { label: 'Unidad', key: 'unit_label', type: 'text' },
+                { label: (() => { try { return JSON.parse(localStorage.getItem('minegocio_config')||'{}').price_list_b_name || 'Lista B — Mayorista'; } catch { return 'Lista B — Mayorista'; } })() + ' ($)', key: 'price_b', type: 'number' },
+                { label: (() => { try { return JSON.parse(localStorage.getItem('minegocio_config')||'{}').price_list_c_name || 'Lista C'; } catch { return 'Lista C'; } })() + ' ($)', key: 'price_c', type: 'number' },
+                { label: (() => { try { return JSON.parse(localStorage.getItem('minegocio_config')||'{}').price_list_d_name || 'Lista D'; } catch { return 'Lista D'; } })() + ' ($)', key: 'price_d', type: 'number' },
+                { label: (() => { try { return JSON.parse(localStorage.getItem('minegocio_config')||'{}').price_list_e_name || 'Lista E'; } catch { return 'Lista E'; } })() + ' ($)', key: 'price_e', type: 'number' },
+                { label: 'Unidad', key: 'unit_label', type: 'text' },
               ].map(f => (
                 <div key={f.key}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
