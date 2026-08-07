@@ -32,43 +32,62 @@ export default function AuditModule() {
     }
     setLoading(true);
     try {
-      const movRes = await apiGet('/movements?limit=100');
-      if (!movRes.ok) throw new Error('Error de movimientos');
-      const movData = await movRes.json();
-      
-      let egrData = [];
-      try {
-        const egrRes = await apiGet('/egresos');
-        if (egrRes.ok) {
-          const rawEgr = await egrRes.json();
-          egrData = Array.isArray(rawEgr) ? rawEgr : (rawEgr?.egresos || []);
-        }
-      } catch {
-        console.warn('Endpoint de egresos no disponible, ignorando...');
+      // Fetch en paralelo: movimientos de stock + egresos de caja + actividad de negocio
+      const [movRes, egrRes, actRes] = await Promise.allSettled([
+        apiGet('/movements?limit=100'),
+        apiGet('/egresos'),
+        apiGet('/activity?limit=100'),
+      ]);
+
+      // Movimientos de stock
+      let movList = [];
+      if (movRes.status === 'fulfilled' && movRes.value.ok) {
+        const movData = await movRes.value.json();
+        movList = Array.isArray(movData) ? movData : (movData?.movements || []);
       }
 
-      const formattedEgresos = egrData.map(e => ({
-        id: `egr-${e.id}`,
-        movement_type: 'egreso',
-        timestamp: e.timestamp,
-        product_name: 'RETIRO EFECTIVO CAJA',
-        quantity: e.monto,
-        reason: e.motivo,
-        operator: e.operator
-      }));
+      // Egresos de caja
+      let formattedEgresos = [];
+      if (egrRes.status === 'fulfilled' && egrRes.value.ok) {
+        const rawEgr = await egrRes.value.json();
+        const egrData = Array.isArray(rawEgr) ? rawEgr : (rawEgr?.egresos || []);
+        formattedEgresos = egrData.map(e => ({
+          id: `egr-${e.id}`,
+          movement_type: 'egreso',
+          timestamp: e.timestamp,
+          product_name: 'RETIRO EFECTIVO CAJA',
+          quantity: e.monto,
+          reason: e.motivo,
+          operator: e.operator,
+        }));
+      }
 
-      const movList = Array.isArray(movData) ? movData : (movData?.movements || []);
-      const combined = [...movList, ...formattedEgresos].sort(
+      // Actividad de negocio (remitos, presupuestos, acopios, ventas)
+      // Excluimos sale_created porque las ventas ya aparecen como movimientos de stock
+      let formattedActivity = [];
+      if (actRes.status === 'fulfilled' && actRes.value.ok) {
+        const actData = await actRes.value.json();
+        formattedActivity = (Array.isArray(actData) ? actData : [])
+          .filter(e => e.action !== 'sale_created') // evitar duplicado con /movements
+          .map(e => ({
+            id: `act-${e.id}`,
+            movement_type: 'event',
+            timestamp: e.timestamp,
+            product_name: e.label,
+            quantity: null,
+            reason: e.details,
+            operator: e.operator || 'Sistema',
+            tone: e.tone,
+          }));
+      }
+
+      const combined = [...movList, ...formattedEgresos, ...formattedActivity].sort(
         (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
       );
-
       setMovements(combined);
     } catch (e) {
       console.error('fetchMovements failed:', e);
-      const msg = e.message === 'Error de movimientos'
-        ? 'No se pudieron cargar los movimientos. Reintentá o revisá tu conexión.'
-        : 'Sin internet. Verificá tu conexión e intentá de nuevo.';
-      if (addToast) addToast(msg, 'error');
+      if (addToast) addToast('Sin internet. Verificá tu conexión e intentá de nuevo.', 'error');
     } finally {
       setLoading(false);
     }
@@ -80,7 +99,11 @@ export default function AuditModule() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const getBadgeStyle = (type) => {
+  const getBadgeStyle = (type, tone) => {
+    if (type === 'event') {
+      if (tone === 'accent-success') return { background: 'rgba(16, 185, 129, 0.15)', color: 'var(--accent-success)', border: '1px solid rgba(16, 185, 129, 0.3)' };
+      return { background: 'rgba(20,187,166,0.15)', color: 'var(--accent-primary)', border: '1px solid rgba(20,187,166,0.3)' };
+    }
     switch (type) {
       case 'entrada': return { background: 'rgba(16, 185, 129, 0.15)', color: 'var(--accent-success)', border: '1px solid rgba(16, 185, 129, 0.3)' };
       case 'salida': return { background: 'rgba(239, 68, 68, 0.15)', color: 'var(--accent-danger)', border: '1px solid rgba(239, 68, 68, 0.3)' };
@@ -96,6 +119,7 @@ export default function AuditModule() {
       case 'salida': return 'Venta';
       case 'price_change': return 'Cambio Precio';
       case 'egreso': return 'Retiro Caja';
+      case 'event': return 'Negocio';
       default: return 'Ajuste';
     }
   };
@@ -138,8 +162,9 @@ export default function AuditModule() {
             style={{ width: '100%', background: 'var(--bg-main)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '12px 16px', borderRadius: '8px', fontSize: '0.95rem', outline: 'none', cursor: 'pointer' }}
           >
             <option value="all">Todos los movimientos</option>
-            <option value="entrada">Ingresos de Stock</option>
+            <option value="event">Actividad del negocio</option>
             <option value="salida">Ventas (Salidas)</option>
+            <option value="entrada">Ingresos de Stock</option>
             <option value="price_change">Cambios de Precio</option>
             <option value="egreso">Retiros de Caja</option>
             <option value="ajuste">Ajustes Manuales</option>
@@ -169,27 +194,29 @@ export default function AuditModule() {
             {filtered.map(m => (
               <div key={m.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-main)', padding: '16px 24px', borderRadius: '12px', border: '1px solid var(--border-color)', transition: 'transform 0.2s' }} onMouseEnter={e => e.currentTarget.style.transform='translateX(4px)'} onMouseLeave={e => e.currentTarget.style.transform='none'}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '24px', flex: 1 }}>
-                  <div style={{ width: '120px' }}>
-                    <span style={{ padding: '6px 12px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', ...getBadgeStyle(m.movement_type) }}>
+                  <div style={{ width: '130px', flexShrink: 0 }}>
+                    <span style={{ padding: '6px 12px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', ...getBadgeStyle(m.movement_type, m.tone) }}>
                       {translateType(m.movement_type)}
                     </span>
                   </div>
-                  <div style={{ flex: 1 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '1.05rem', marginBottom: '4px' }}>
                       {m.product_name}
                     </div>
                     <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                      {m.timestamp ? new Date(m.timestamp).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' }) : '---'} • Operador: {m.operator || 'Sistema'}
+                      {m.timestamp ? new Date(m.timestamp).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' }) : '---'}{m.operator && m.operator !== 'Sistema' ? ` • ${m.operator}` : ''}
                     </div>
                   </div>
-                  <div style={{ flex: 1, color: 'var(--text-secondary)', fontSize: '0.85rem', padding: '0 16px' }}>
-                    {m.reason ? `Motivo: ${m.reason}` : ''}
+                  <div style={{ flex: 1, color: 'var(--text-secondary)', fontSize: '0.85rem', padding: '0 16px', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {m.reason || ''}
                   </div>
                 </div>
-                <div style={{ width: '150px', textAlign: 'right' }}>
-                  <span style={{ fontSize: '1.2rem', fontWeight: 800, fontFamily: 'var(--font-mono)', color: m.movement_type === 'entrada' ? 'var(--accent-success)' : (m.movement_type === 'salida' || m.movement_type === 'egreso' ? 'var(--accent-danger)' : 'var(--text-primary)') }}>
-                    {m.movement_type === 'price_change' ? '-' : (m.movement_type === 'entrada' ? `+${m.quantity}` : (m.movement_type === 'egreso' ? `-$${m.quantity}` : `-${m.quantity}`))}
-                  </span>
+                <div style={{ width: '120px', textAlign: 'right', flexShrink: 0 }}>
+                  {m.movement_type !== 'event' && (
+                    <span style={{ fontSize: '1.2rem', fontWeight: 800, fontFamily: 'var(--font-mono)', color: m.movement_type === 'entrada' ? 'var(--accent-success)' : (m.movement_type === 'salida' || m.movement_type === 'egreso' ? 'var(--accent-danger)' : 'var(--text-primary)') }}>
+                      {m.movement_type === 'price_change' ? '—' : (m.movement_type === 'entrada' ? `+${m.quantity}` : (m.movement_type === 'egreso' ? `-$${m.quantity?.toLocaleString('es-AR')}` : `-${m.quantity}`))}
+                    </span>
+                  )}
                 </div>
               </div>
             ))}
