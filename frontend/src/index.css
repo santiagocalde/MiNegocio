@@ -747,6 +747,42 @@ body.landing-open[data-lp-theme="dark"] {
   --lp-text-muted: rgba(230,255,251,0.74);
 }
 
+/* ── LP vars en el panel OSCURO (default) ────────────────────────────────
+   El panel usa modo oscuro por defecto (:root sin data-panel-theme="light").
+   Los módulos del panel que usan --lp-* (Remitos, Presupuestos, Acopios,
+   Clientes) necesitan valores oscuros cuando no estamos en la landing page;
+   de lo contrario heredan los valores claros del :root y muestran fondo
+   blanco (#FFFFFF) sobre el navy del panel. Sin esta regla: papel blanco
+   sobre océano. Con esta regla: fondo navy consistente con el panel.       */
+:root:not([data-panel-theme="light"]) body:not(.landing-open) {
+  --lp-paper:        #0B132B;
+  --lp-paper-raised: #111C33;
+  --lp-paper-sunken: #0A1122;
+  --lp-ink:          #EDF3F2;
+  --lp-ink-soft:     rgba(230,255,251,0.74);
+  --lp-ink-faint:    rgba(230,255,251,0.52);
+  --lp-line:         rgba(255,255,255,0.10);
+  --lp-line-strong:  rgba(255,255,255,0.18);
+  --lp-primary:      #2BD4BE;
+  --lp-primary-ink:  #6FE9D8;
+  --lp-primary-wash: rgba(43,212,190,0.12);
+  --lp-primary-glow: rgba(43,212,190,0.28);
+  --lp-peso:         #F0B357;
+  --lp-peso-wash:    rgba(240,179,87,0.12);
+  --lp-green:        #34D399;
+  --lp-red:          #F87171;
+  --lp-shadow-sm:    0 1px 2px rgba(0,0,0,0.3);
+  --lp-shadow-md:    0 8px 28px rgba(0,0,0,0.45);
+  --lp-shadow-lg:    0 20px 50px rgba(0,0,0,0.55);
+  --lp-gradient-main: linear-gradient(135deg, #2BD4BE, #14BBA6);
+  --lp-bg:           #0B132B;
+  --lp-text:         #EDF3F2;
+  --lp-text-muted:   rgba(230,255,251,0.74);
+  --lp-amber:        #f59e0b;
+  --lp-amber-light:  #d97706;
+  --lp-amber-glow:   rgba(245,158,11,0.20);
+}
+
 body.landing-open {
   overflow-x: hidden;
   overflow-y: auto;
