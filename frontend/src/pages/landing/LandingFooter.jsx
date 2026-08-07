@@ -32,10 +32,9 @@ export default function LandingFooter({ navigate, setShowContactModal, handleDog
     {
       title: 'Por rubro',
       links: [
-        { label: 'Kioscos', href: '/software-kiosco/' },
-        { label: 'Almacenes', href: '/software-almacen/' },
+        { label: 'Kioscos y almacenes', href: '/software-kiosco/' },
         { label: 'Ferreterias', href: '/software-ferreteria/' },
-        { label: 'Corralones', href: '/software-corralon-materiales/' },
+        { label: 'Corralones de materiales', href: '/software-corralon-materiales/' },
       ],
     },
     {
@@ -71,7 +70,7 @@ export default function LandingFooter({ navigate, setShowContactModal, handleDog
         .ftr-inner { max-width: 1160px; margin: 0 auto; }
         .ftr-grid {
           display: grid;
-          grid-template-columns: 1.6fr 1fr 1fr 1fr;
+          grid-template-columns: 1.4fr 1fr 1fr 1fr 1fr;
           gap: 48px;
         }
         /* ── Columna de marca ── */

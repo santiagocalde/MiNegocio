@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Server Security Stats</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0a0a0a;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    padding: 20px;
+  }
+  .card {
+    width: 640px;
+    background: #0d1117;
+    border: 1px solid #1a1f2b;
+    border-radius: 16px;
+    padding: 36px;
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #f85149, #d29922, #3fb950);
+  }
+  .header {
+    margin-bottom: 28px;
+  }
+  .header h1 {
+    color: #f0f6fc;
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+  }
+  .header .sub {
+    color: #8b949e;
+    font-size: 13px;
+    margin-top: 4px;
+  }
+  .big-number {
+    text-align: center;
+    margin-bottom: 24px;
+  }
+  .big-number .count {
+    font-size: 56px;
+    font-weight: 800;
+    letter-spacing: -2px;
+    background: linear-gradient(135deg, #f85149, #d29922);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .big-number .label {
+    color: #8b949e;
+    font-size: 14px;
+    margin-top: 4px;
+  }
+  .stats-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+  .stat {
+    flex: 1;
+    background: #131820;
+    border: 1px solid #1a1f2b;
+    border-radius: 10px;
+    padding: 14px;
+    text-align: center;
+  }
+  .stat .num {
+    font-size: 22px;
+    font-weight: 700;
+    color: #f0f6fc;
+  }
+  .stat .lbl {
+    font-size: 11px;
+    color: #8b949e;
+    margin-top: 3px;
+  }
+  .attackers {
+    margin-bottom: 20px;
+  }
+  .attackers .section-title {
+    color: #8b949e;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+    font-weight: 600;
+  }
+  .attacker-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+    font-size: 13px;
+  }
+  .attacker-row:last-child { border-bottom: none; }
+  .attacker-row .flag { width: 20px; font-size: 14px; }
+  .attacker-row .country { color: #c9d1d9; flex: 1; }
+  .attacker-row .attempts { color: #f85149; font-weight: 700; font-family: monospace; font-size: 12px; }
+  .attacker-row .bar {
+    width: 80px; height: 4px;
+    background: #1a1f2b;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .attacker-row .bar-fill {
+    height: 100%;
+    background: #f85149;
+    border-radius: 2px;
+  }
+  .before-after {
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+  }
+  .ba-col {
+    flex: 1;
+    background: #131820;
+    border-radius: 10px;
+    padding: 14px;
+    border: 1px solid #1a1f2b;
+  }
+  .ba-col .ba-title {
+    font-size: 11px;
+    font-weight: 700;
+    margin-bottom: 10px;
+    letter-spacing: 0.5px;
+  }
+  .ba-col.before .ba-title { color: #f85149; }
+  .ba-col.after .ba-title { color: #3fb950; }
+  .ba-col .ba-item {
+    font-size: 12px;
+    color: #c9d1d9;
+    padding: 3px 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .ba-col .ba-item .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .ba-col.before .dot { background: rgba(248,81,73,0.6); }
+  .ba-col.after .dot { background: rgba(63,185,80,0.6); }
+  .footer {
+    margin-top: 20px;
+    text-align: center;
+    color: #3fb950;
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .footer .check { color: #3fb950; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="header">
+    <h1>512.999 intentos de ataque</h1>
+    <div class="sub">1 mes · 0 accesos · Server blindado</div>
+  </div>
+
+  <div class="big-number">
+    <div class="count">0</div>
+    <div class="label">intrusos que lograron entrar</div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat">
+      <div class="num">79</div>
+      <div class="lbl">IPs baneadas ahora</div>
+    </div>
+    <div class="stat">
+      <div class="num">399</div>
+      <div class="lbl">baneos totales</div>
+    </div>
+    <div class="stat">
+      <div class="num">~17k/h</div>
+      <div class="lbl">antes del hardening</div>
+    </div>
+    <div class="stat">
+      <div class="num">~14/h</div>
+      <div class="lbl">despues del hardening</div>
+    </div>
+  </div>
+
+  <div class="attackers">
+    <div class="section-title">Top 5 atacantes</div>
+    <div class="attacker-row">
+      <span class="flag">🇧🇷</span>
+      <span class="country">Brasil</span>
+      <span class="attempts">17.640</span>
+      <div class="bar"><div class="bar-fill" style="width:100%"></div></div>
+    </div>
+    <div class="attacker-row">
+      <span class="flag">🇺🇸</span>
+      <span class="country">Estados Unidos</span>
+      <span class="attempts">16.619</span>
+      <div class="bar"><div class="bar-fill" style="width:94%"></div></div>
+    </div>
+    <div class="attacker-row">
+      <span class="flag">🇳🇱</span>
+      <span class="country">Holanda</span>
+      <span class="attempts">8.703</span>
+      <div class="bar"><div class="bar-fill" style="width:49%"></div></div>
+    </div>
+    <div class="attacker-row">
+      <span class="flag">🇲🇴</span>
+      <span class="country">Macao</span>
+      <span class="attempts">5.298</span>
+      <div class="bar"><div class="bar-fill" style="width:30%"></div></div>
+    </div>
+    <div class="attacker-row">
+      <span class="flag">🇺🇸</span>
+      <span class="country">Estados Unidos</span>
+      <span class="attempts">5.298</span>
+      <div class="bar"><div class="bar-fill" style="width:30%"></div></div>
+    </div>
+  </div>
+
+  <div class="before-after">
+    <div class="ba-col before">
+      <div class="ba-title">ANTES</div>
+      <div class="ba-item"><span class="dot"></span> Login con contraseña</div>
+      <div class="ba-item"><span class="dot"></span> Firewall apagado</div>
+      <div class="ba-item"><span class="dot"></span> Sin rate limits</div>
+      <div class="ba-item"><span class="dot"></span> Datos en texto plano</div>
+    </div>
+    <div class="ba-col after">
+      <div class="ba-title">AHORA</div>
+      <div class="ba-item"><span class="dot"></span> Solo llave SSH</div>
+      <div class="ba-item"><span class="dot"></span> Firewall activo</div>
+      <div class="ba-item"><span class="dot"></span> Rate limits por IP</div>
+      <div class="ba-item"><span class="dot"></span> Datos encriptados</div>
+    </div>
+  </div>
+
+  <div class="footer">
+    ✓ Defensa en capas. Si falla una, hay otra atrás.
+  </div>
+</div>
+</body>
+</html>
