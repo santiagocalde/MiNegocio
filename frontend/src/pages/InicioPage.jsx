@@ -83,8 +83,7 @@ function PendientesCobro({ navigate }) {
   if (loading) return null;
   if (!data) return null;
 
-  const totalQuotes  = data.quotes.reduce((s, q) => s + (q.total || 0), 0);
-  const totalRemitos = data.remitos.length; // los remitos delivered no tienen total pre-calculado en la lista
+  const totalQuotes = data.quotes.reduce((s, q) => s + (q.total || 0), 0);
   const countQ = data.quotes.length;
   const countR = data.remitos.length;
   const total = countQ + countR;

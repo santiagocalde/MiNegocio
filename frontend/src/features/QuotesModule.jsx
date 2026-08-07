@@ -477,7 +477,7 @@ const handleStatus = async (id, status) => {
             >
               <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                 <div style={{ fontWeight: 700, color: 'var(--lp-ink)', fontSize: '0.95rem' }}>#{q.id} — {q.note || 'Presupuesto'} {q.customer_name ? `· ${q.customer_name}` : ''}</div>
-                <div style={{ fontSize: '0.78rem', color: 'var(--lp-ink-faint)' }}>{fmtDate(q.created_at)} · {q.list_type === 'b' ? 'Lista B' : 'Lista A'} · Vence {fmtDate(q.expires_at)}</div>
+                <div style={{ fontSize: '0.78rem', color: 'var(--lp-ink-faint)' }}>{fmtDate(q.created_at)} · {(() => { try { const cfg = JSON.parse(localStorage.getItem('minegocio_config') || '{}'); return { a: cfg.price_list_a_name || 'Lista A', b: cfg.price_list_b_name || 'Lista B', c: cfg.price_list_c_name || 'Lista C', d: cfg.price_list_d_name || 'Lista D', e: cfg.price_list_e_name || 'Lista E' }[q.list_type] || 'Lista A'; } catch { return 'Lista ' + (q.list_type || 'a').toUpperCase(); } })()} · Vence {fmtDate(q.expires_at)}</div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <span style={{ fontSize: '0.75rem', fontWeight: 700, color: STATUS_MAP[q.status]?.color, background: STATUS_MAP[q.status]?.color + '15', padding: '3px 8px', borderRadius: 4, fontFamily: 'var(--lp-font-mono)' }}>
@@ -642,11 +642,11 @@ const handleStatus = async (id, status) => {
       {/* Detail modal */}
       {detail && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(11,19,43,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
-          onMouseDown={e => { if (e.target === e.currentTarget) setDetail(null); }}>
+          onMouseDown={e => { if (e.target === e.currentTarget) { setDetail(null); setShowToRemito(false); } }}>
           <div onMouseDown={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 560, maxHeight: '90vh', overflow: 'auto', background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line-strong)', borderRadius: 12, padding: 28, boxShadow: 'var(--lp-shadow-lg)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
               <h3 style={{ fontFamily: 'var(--lp-font-display)', fontSize: '1.1rem', fontWeight: 700, color: 'var(--lp-ink)', margin: 0 }}>Presupuesto #{detail.quote.id}</h3>
-              <button onClick={() => setDetail(null)} style={{ background: 'none', border: 'none', color: 'var(--lp-ink-faint)', cursor: 'pointer', fontSize: '1.3rem' }}>✕</button>
+              <button onClick={() => { setDetail(null); setShowToRemito(false); }} style={{ background: 'none', border: 'none', color: 'var(--lp-ink-faint)', cursor: 'pointer', fontSize: '1.3rem' }}>✕</button>
             </div>
 
             <div style={{ fontSize: '0.85rem', color: 'var(--lp-ink-faint)', marginBottom: 16 }}>
@@ -728,7 +728,7 @@ const handleStatus = async (id, status) => {
               )}
               <button onClick={handleShareWhatsApp} className="lp-btn lp-btn--ghost" style={{ fontSize: '0.85rem', color: '#25D366' }}>📱 WhatsApp</button>
               <button onClick={handlePrint} className="lp-btn lp-btn--ghost" style={{ fontSize: '0.85rem' }}>🖨️ Imprimir</button>
-              <button onClick={() => { handleDelete(detail.quote.id); setDetail(null); }} className="lp-btn lp-btn--ghost" style={{ fontSize: '0.85rem', color: 'var(--lp-red)' }}>Eliminar</button>
+              <button onClick={() => { handleDelete(detail.quote.id); setDetail(null); setShowToRemito(false); }} className="lp-btn lp-btn--ghost" style={{ fontSize: '0.85rem', color: 'var(--lp-red)' }}>Eliminar</button>
             </div>
           </div>
         </div>

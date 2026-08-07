@@ -206,8 +206,6 @@ async def delete_quote(quote_id: int) -> dict:
 
 
 # ── CONVERTIR PRESUPUESTO → NOTA DE PEDIDO ───────────────────────
-from fastapi import Request as _Request
-
 @router.post("/api/quotes/{quote_id}/to-remito", summary="Convertir presupuesto aprobado en nota de pedido")
 async def quote_to_remito(quote_id: int, body: dict = Body(default={})) -> dict:
     """
@@ -243,7 +241,7 @@ async def quote_to_remito(quote_id: int, body: dict = Body(default={})) -> dict:
                     INSERT INTO remitos (business_id, quote_id, customer_id, address, driver, scheduled_date, status, created_at)
                     VALUES ($1, $2, $3, $4, $5, $6, 'pending', $7) RETURNING id
                 """, b_id, quote_id, quote["customer_id"],
-                    address or quote.get("address", ""), driver,
+                    address, driver,
                     date.fromisoformat(sched_raw[:10]), _now())
                 remito_id = row["id"]
                 for it in items:
@@ -277,7 +275,7 @@ async def quote_to_remito(quote_id: int, body: dict = Body(default={})) -> dict:
             cur3 = await db.execute("""
                 INSERT INTO remitos (quote_id, customer_id, address, driver, scheduled_date, status, created_at)
                 VALUES (?, ?, ?, ?, ?, 'pending', ?)
-            """, (quote_id, q.get("customer_id"), address or q.get("address", ""),
+            """, (quote_id, q.get("customer_id"), address,
                   driver, sched_raw[:10], _now()))
             remito_id = cur3.lastrowid
             for it in items:
