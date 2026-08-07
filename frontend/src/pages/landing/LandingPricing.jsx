@@ -9,8 +9,8 @@ const Svg = {
 
 const FALLBACK_PLANS = [
   { id: 'simple', name: 'Básico', monthly: 19999, yearly: 180000, desc: 'Arrancá a vender hoy.', popular: false, features: ['Punto de venta sin internet', 'Control de stock en tiempo real', 'Cuentas corrientes y fiados', 'Lector de códigos de barras', 'Impresión de tickets', 'Hasta 3.500 productos', 'Hasta 2 usuarios'], cta: 'Adquirir' },
-  { id: 'pro', name: 'Pro', monthly: 29999, yearly: 270000, desc: 'El plan más completo.', popular: true, features: ['Presupuestos A4 profesionales', 'Control de obras (activas/terminadas)', 'Remitos de entrega', 'Catálogo web con QR', 'Reportes de ventas y ganancias', 'Análisis de rentabilidad', 'Manejo de proveedores', 'Hasta 7.000 productos', 'Hasta 5 usuarios'], cta: 'Adquirir' },
-  { id: 'ia', name: 'IA', monthly: 39999, yearly: 360000, desc: 'Inteligencia artificial para tu negocio.', popular: false, features: ['Acopios con retiros parciales', 'Hojas de ruta para reparto', 'Escáner de facturas con IA', 'Resumen diario con IA', 'Asesor de precios con IA', 'Cobranza de fiados por WhatsApp', 'Hasta 10.000 productos', 'Usuarios ilimitados'], cta: 'Adquirir' },
+  { id: 'pro', name: 'Pro', monthly: 29999, yearly: 270000, desc: 'El plan más completo.', popular: true, features: ['Presupuestos profesionales A4', 'Control de obras y remitos', 'Catálogo web con QR', 'Reportes de ventas y ganancias', 'Análisis de rentabilidad', 'Manejo de proveedores', 'Hasta 7.000 productos', 'Hasta 5 usuarios'], cta: 'Adquirir' },
+  { id: 'ia', name: 'IA', monthly: 39999, yearly: 360000, desc: 'Inteligencia artificial.', popular: false, features: ['Acopios y hojas de ruta', 'Escáner de facturas con IA', 'Resumen diario con IA', 'Asesor de precios con IA', 'Cobranza de fiados por WhatsApp', 'Hasta 10.000 productos', 'Usuarios ilimitados'], cta: 'Adquirir' },
 ];
 
 function PlanCard({ plan, isYearly, onCta, isLoggedIn }) {
