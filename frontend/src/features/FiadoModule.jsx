@@ -28,6 +28,9 @@ export default function FiadoModule() {
   const [newClientName, setNewClientName] = useState('');
   const [newClientPhone, setNewClientPhone] = useState('');
   const [newClientAmount, setNewClientAmount] = useState('');
+  const [newClientAddress, setNewClientAddress] = useState('');
+  const [newClientEmail, setNewClientEmail] = useState('');
+  const [newClientDniCuit, setNewClientDniCuit] = useState('');
 
   const fetchCustomers = async () => {
     setLoading(true);
@@ -101,12 +104,16 @@ export default function FiadoModule() {
   const handleCreateClient = async () => {
     if (!newClientName.trim()) return;
     try {
-      const res = await apiPost('/customers', { name: newClientName, phone: newClientPhone, amount: Number(newClientAmount) || 0, operator: 'Cajero' });
+      const res = await apiPost('/customers', { name: newClientName, phone: newClientPhone, amount: Number(newClientAmount) || 0, operator: 'Cajero', address: newClientAddress, email: newClientEmail, dni_cuit: newClientDniCuit });
       if (res.ok) {
         addToast?.('Cliente creado exitosamente.', 'success');
         setNewClientModal(false);
         setNewClientName('');
         setNewClientPhone('');
+        setNewClientAmount('');
+        setNewClientAddress('');
+        setNewClientEmail('');
+        setNewClientDniCuit('');
         setNewClientAmount('');
         fetchCustomers();
       } else {
@@ -381,6 +388,22 @@ export default function FiadoModule() {
             <div style={{ marginBottom: '16px' }}>
               <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Teléfono (Opcional)</label>
               <input type="text" value={newClientPhone} onChange={e => setNewClientPhone(e.target.value)} style={{ width: '100%', background: 'var(--bg-main)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '12px 16px', borderRadius: '12px', fontSize: '1rem', outline: 'none' }} />
+            </div>
+
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Dirección (Opcional)</label>
+              <input type="text" value={newClientAddress} onChange={e => setNewClientAddress(e.target.value)} placeholder="Ej: Av. Siempre Viva 742" style={{ width: '100%', background: 'var(--bg-main)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '12px 16px', borderRadius: '12px', fontSize: '1rem', outline: 'none' }} />
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
+              <div style={{ flex: 1 }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Email (Opcional)</label>
+                <input type="email" value={newClientEmail} onChange={e => setNewClientEmail(e.target.value)} placeholder="cliente@email.com" style={{ width: '100%', background: 'var(--bg-main)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '12px 16px', borderRadius: '12px', fontSize: '1rem', outline: 'none', boxSizing: 'border-box' }} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-secondary)' }}>DNI / CUIT (Opcional)</label>
+                <input type="text" value={newClientDniCuit} onChange={e => setNewClientDniCuit(e.target.value)} placeholder="20-12345678-9" style={{ width: '100%', background: 'var(--bg-main)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '12px 16px', borderRadius: '12px', fontSize: '1rem', outline: 'none', boxSizing: 'border-box' }} />
+              </div>
             </div>
 
             <div style={{ marginBottom: '24px' }}>

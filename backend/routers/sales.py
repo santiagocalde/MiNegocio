@@ -740,7 +740,9 @@ async def customer_transactions(customer_id: int) -> list:
 
 @router.post("/api/customers", summary="Crear cliente")
 async def create_customer(name: str = Body(...), phone: Optional[str] = Body(None),
-                          amount: float = Body(0), operator: str = Body("Sistema")) -> dict:
+                          amount: float = Body(0), operator: str = Body("Sistema"),
+                          address: Optional[str] = Body(None), email: Optional[str] = Body(None),
+                          dni_cuit: Optional[str] = Body(None)) -> dict:
     b_id = _biz_id()
     try:
         debt = round(float(amount or 0), 2)
@@ -754,8 +756,8 @@ async def create_customer(name: str = Body(...), phone: Optional[str] = Body(Non
         async with pool.acquire() as conn:
             async with conn.transaction():
                 row = await conn.fetchrow(
-                    "INSERT INTO customers (business_id, name, phone, balance) VALUES ($1,$2,$3,$4) RETURNING id",
-                    b_id, name.strip(), phone, debt
+                    "INSERT INTO customers (business_id, name, phone, balance, address, email, dni_cuit) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id",
+                    b_id, name.strip(), phone, debt, address or '', email or '', dni_cuit or ''
                 )
                 if debt > 0:
                     await conn.execute(
@@ -766,7 +768,7 @@ async def create_customer(name: str = Body(...), phone: Optional[str] = Body(Non
     else:
         import aiosqlite
         async with aiosqlite.connect(main.DB_PATH) as db:
-            cur = await db.execute("INSERT INTO customers (name, phone, balance) VALUES (?,?,?)", (name.strip(), phone, debt))
+            cur = await db.execute("INSERT INTO customers (name, phone, balance, address, email, dni_cuit) VALUES (?,?,?,?,?,?)", (name.strip(), phone, debt, address or '', email or '', dni_cuit or ''))
             cid = cur.lastrowid
             if debt > 0:
                 await db.execute(
@@ -775,6 +777,22 @@ async def create_customer(name: str = Body(...), phone: Optional[str] = Body(Non
                 )
             await db.commit()
             return {"id": cid, "name": name.strip(), "phone": phone, "balance": debt}
+
+
+@router.get("/api/customers/{customer_id}/obras", summary="Obras de un cliente")
+async def customer_obras(customer_id: int) -> list:
+    from main import USE_PG, row_to_dict; import main
+    if USE_PG:
+        from db_helpers import get_pg_pool
+        pool = await get_pg_pool()
+        async with pool.acquire() as conn:
+            rows = await conn.fetch("SELECT * FROM obras WHERE customer_id = $1 ORDER BY created_at DESC", customer_id)
+            return [dict(r) for r in rows]
+    else:
+        import aiosqlite
+        async with aiosqlite.connect(main.DB_PATH) as db:
+            cur = await db.execute("SELECT * FROM obras WHERE customer_id = ? ORDER BY created_at DESC", (customer_id,))
+            return [row_to_dict(r, cur.description) for r in await cur.fetchall()]
 
 
 @router.post("/api/customers/{customer_id}/pay", summary="Registrar pago de cliente")

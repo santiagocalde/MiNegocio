@@ -539,6 +539,11 @@ async def init_pg() -> None:
             -- Logo del negocio
             ALTER TABLE business_config ADD COLUMN IF NOT EXISTS logo_url TEXT;
 
+            -- Clientes mejorados: direccion, email, DNI/CUIT para facturacion
+            ALTER TABLE customers ADD COLUMN IF NOT EXISTS address TEXT;
+            ALTER TABLE customers ADD COLUMN IF NOT EXISTS email TEXT;
+            ALTER TABLE customers ADD COLUMN IF NOT EXISTS dni_cuit TEXT;
+
             CREATE TABLE IF NOT EXISTS sucursales (
                 id              SERIAL PRIMARY KEY,
                 business_id     TEXT NOT NULL REFERENCES businesses(id),
