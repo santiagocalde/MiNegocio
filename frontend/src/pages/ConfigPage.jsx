@@ -51,7 +51,7 @@ export default function ConfigPage() {
       const fd = new FormData();
       fd.append('file', file);
       const token = localStorage.getItem('saas_token');
-      const res = await fetch(`${API_BASE}/api/config/logo`, {
+      const res = await fetch(`${API_BASE}/config/logo`, {
         method: 'POST',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: fd,
