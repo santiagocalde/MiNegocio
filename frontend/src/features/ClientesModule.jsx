@@ -126,32 +126,36 @@ export default function ClientesModule() {
       </div>
 
       {/* ── Lista ── */}
-      <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column', gap: 5 }}>
+      <div style={{ flex: 1, overflow: 'auto' }}>
         {loading ? (
           <div style={{ color: 'var(--lp-ink-faint)', textAlign: 'center', padding: 40 }}>Cargando...</div>
         ) : clientes.length === 0 ? (
           <div style={{ color: 'var(--lp-ink-faint)', textAlign: 'center', padding: 40 }}>
             {search ? 'Sin resultados.' : 'No hay clientes. Creá uno con "+ Nuevo cliente".'}
           </div>
-        ) : clientes.map(c => (
-          <div key={c.id} onClick={() => loadDetail(c)}
-            style={{ padding: '11px 16px', background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line)', borderRadius: 7, cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', transition: 'filter 0.12s' }}
-            onMouseEnter={e => e.currentTarget.style.filter = 'brightness(0.94)'}
-            onMouseLeave={e => e.currentTarget.style.filter = 'none'}
-          >
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-              <div style={{ fontWeight: 700, color: 'var(--lp-ink)', fontSize: '0.92rem' }}>{c.name}</div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--lp-ink-faint)' }}>
-                {[c.phone, c.address].filter(Boolean).join(' · ')}
+        ) : (
+          <div className="ledger-sheet" style={{ overflow: 'hidden' }}>
+            {clientes.map(c => (
+              <div key={c.id} className="ledger-row ledger-row--hover" onClick={() => loadDetail(c)}>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.92rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {c.name}
+                  </div>
+                  {(c.phone || c.address) && (
+                    <div className="ledger-label" style={{ marginTop: 2 }}>
+                      {[c.phone, c.address].filter(Boolean).join(' · ')}
+                    </div>
+                  )}
+                </div>
+                {c.balance > 0 && (
+                  <div className="ledger-num" style={{ color: 'var(--accent-danger)', fontSize: '0.9rem', fontWeight: 700, flexShrink: 0, marginLeft: 12 }}>
+                    ${formatPesos(c.balance)}
+                  </div>
+                )}
               </div>
-            </div>
-            {c.balance > 0 && (
-              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#EF4444', background: 'rgba(239,68,68,0.1)', padding: '3px 9px', borderRadius: 20, whiteSpace: 'nowrap' }}>
-                Debe ${formatPesos(c.balance)}
-              </span>
-            )}
+            ))}
           </div>
-        ))}
+        )}
       </div>
 
       {/* ── Modal: Nuevo cliente ── */}
