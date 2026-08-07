@@ -26,6 +26,10 @@ export default function FiadoModule() {
   const [abonoAmount, setAbonoAmount] = useState('');
   const [newClientModal, setNewClientModal] = useState(false);
   const [newClientName, setNewClientName] = useState('');
+  const [showObraForm, setShowObraForm] = useState(null); // {customer_id}
+  const [newObraName, setNewObraName] = useState('');
+  const [newObraAddress, setNewObraAddress] = useState('');
+  const [customerObras, setCustomerObras] = useState({}); // {customer_id: [obras]}
   const [newClientPhone, setNewClientPhone] = useState('');
   const [newClientAmount, setNewClientAmount] = useState('');
   const [newClientAddress, setNewClientAddress] = useState('');
@@ -122,6 +126,25 @@ export default function FiadoModule() {
     } catch {
       addToast?.('Error de conexión al crear cliente.', 'error');
     }
+  };
+
+  const handleCreateObra = async (customerId) => {
+    if (!newObraName.trim()) return;
+    try {
+      const res = await apiPost('/obras', { name: newObraName.trim(), address: newObraAddress, customer_id: customerId });
+      if (res.ok) {
+        addToast?.('Obra agregada.', 'success');
+        setNewObraName(''); setNewObraAddress(''); setShowObraForm(null);
+        const obrasRes = await apiGet('/customers/' + customerId + '/obras');
+        if (obrasRes.ok) { const data = await obrasRes.json(); setCustomerObras(function(prev) { var next = {}; Object.assign(next, prev); next[customerId] = data; return next; }); }
+      } else addToast?.('Error.', 'error');
+    } catch { addToast?.('Error de conexión.', 'error'); }
+  };
+
+  const toggleObras = async (customerId) => {
+    if (customerObras[customerId]) return;
+    const res = await apiGet('/customers/' + customerId + '/obras');
+    if (res.ok) { const data = await res.json(); setCustomerObras(function(prev) { var next = {}; Object.assign(next, prev); next[customerId] = data; return next; }); }
   };
 
   const handleCobranzaIA = async (c) => {
@@ -298,7 +321,35 @@ export default function FiadoModule() {
                         ))
                       )}
                     </tbody>
-                  </table>
+                    </table>
+
+                  {/* Obras del cliente */}
+                  <div style={{ borderTop: '1px solid var(--rule-strong)', padding: '16px 24px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                      <span className="ledger-label" style={{ fontSize: '0.8rem' }}>Obras</span>
+                      <button onClick={() => { toggleObras(c.id); setShowObraForm(showObraForm?.customer_id === c.id ? null : { customer_id: c.id }); }}
+                        style={{ background: 'var(--accent-primary)', color: '#fff', border: 'none', padding: '4px 12px', borderRadius: 'var(--radius-sm)', fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer' }}>
+                        + Agregar obra
+                      </button>
+                    </div>
+                    {showObraForm?.customer_id === c.id && (
+                      <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+                        <input value={newObraName} onChange={e => setNewObraName(e.target.value)} placeholder="Nombre de la obra" style={{ flex: 1, padding: '6px 10px', background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: 6, color: 'var(--text-primary)', fontSize: '0.82rem', outline: 'none' }} autoFocus />
+                        <input value={newObraAddress} onChange={e => setNewObraAddress(e.target.value)} placeholder="Dirección" style={{ flex: 1, padding: '6px 10px', background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: 6, color: 'var(--text-primary)', fontSize: '0.82rem', outline: 'none' }} />
+                        <button onClick={() => handleCreateObra(c.id)} disabled={!newObraName.trim()} className="lp-btn lp-btn--primary" style={{ padding: '6px 14px', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>Guardar</button>
+                      </div>
+                    )}
+                    {customerObras[c.id]?.length > 0 ? (
+                      customerObras[c.id].map(o => (
+                        <div key={o.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: '0.82rem', color: 'var(--text-primary)', borderBottom: '1px solid var(--rule)' }}>
+                          <span>{o.name}</span>
+                          <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>{o.address || '—'}</span>
+                        </div>
+                      ))
+                    ) : (
+                      <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>Sin obras cargadas</div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
