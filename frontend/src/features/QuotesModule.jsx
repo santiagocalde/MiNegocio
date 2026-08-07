@@ -305,14 +305,40 @@ const handleStatus = async (id, status) => {
       .cut-line { text-align: center; color: #999; font-size: 9px; letter-spacing: 1px; margin: 3mm 0; border-top: 1px dashed #ccc; padding-top: 2mm; }
     `;
 
+    // ── ¿Entran 2 copias en 1 A4? ────────────────────────────
+    // Estimación: header fijo ~100mm + cada item ~6.5mm + pie ~30mm
+    // A4 útil: ~277mm. Con 2 copias = 2 × bloque + corte ~8mm
+    const FIXED_MM = 100; // header + cliente + pie fijo por bloque
+    const ROW_MM = 6.5;
+    const DISC_MM = discPct > 0 ? 6.5 : 0;
+    const blockMM = FIXED_MM + d.items.length * ROW_MM + DISC_MM;
+    const fitsTwoPerPage = (blockMM * 2 + 8) <= 272;
+
     const w = window.open('', '_blank', 'width=900,height=700');
-    w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8">
-      <title>Presupuesto N° ${String(d.quote.id).padStart(4, '0')} — ${bizName}</title>
-      <style>${css}</style></head><body>
-      ${makeBlock('ORIGINAL')}
-      <div class="cut-line">✂ ·  · · · · · · · · · · · · · · · · · · cortar aquí · · · · · · · · · · · · · · · · · · · ·  · ✂</div>
-      ${makeBlock('DUPLICADO')}
-    </body></html>`);
+    if (fitsTwoPerPage) {
+      // ── 2 copias en 1 A4 (óptimo para presupuestos cortos) ──
+      w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8">
+        <title>Presupuesto N° ${String(d.quote.id).padStart(4, '0')} — ${bizName}</title>
+        <style>${css}</style></head><body>
+        ${makeBlock('ORIGINAL')}
+        <div class="cut-line">✂ · · · · · · · · · · · · cortar aquí · · · · · · · · · · · · ✂</div>
+        ${makeBlock('DUPLICADO')}
+      </body></html>`);
+    } else {
+      // ── 1 copia por página (presupuestos largos) ─────────────
+      const cssMulti = css.replace(
+        '.sheet {',
+        '.sheet { page-break-after: always; page-break-inside: avoid;'
+      );
+      w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8">
+        <title>Presupuesto N° ${String(d.quote.id).padStart(4, '0')} — ${bizName}</title>
+        <style>${cssMulti}
+        .sheet:last-child { page-break-after: avoid; }
+        </style></head><body>
+        ${makeBlock('ORIGINAL')}
+        ${makeBlock('DUPLICADO')}
+      </body></html>`);
+    }
     w.document.close();
     setTimeout(() => { w.focus(); w.print(); }, 350);
   };
