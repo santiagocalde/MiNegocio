@@ -203,3 +203,86 @@ async def delete_quote(quote_id: int) -> dict:
             await db.execute("DELETE FROM quotes WHERE id = ?", (quote_id,))
             await db.commit()
             return {"success": True}
+
+
+# ── CONVERTIR PRESUPUESTO → NOTA DE PEDIDO ───────────────────────
+@router.post("/api/quotes/{quote_id}/to-remito", summary="Convertir presupuesto aprobado en nota de pedido")
+async def quote_to_remito(quote_id: int, body: dict = Body(default={})) -> dict:
+    """
+    Crea un remito/nota de pedido a partir de un presupuesto aprobado.
+    Copia los ítems del presupuesto al remito y cambia el presupuesto a 'delivered'.
+    El stock se descuenta cuando el remito se marca como 'delivered', no aquí.
+    """
+    from main import USE_PG, row_to_dict
+    import main
+    from datetime import date
+    b_id = _biz_id()
+
+    address   = body.get("address", "")
+    driver    = body.get("driver", "")
+    sched_raw = body.get("scheduled_date", str(_now().date())[:10])
+
+    if USE_PG:
+        from db_helpers import get_pg_pool
+        pool = await get_pg_pool()
+        async with pool.acquire() as conn:
+            quote = await conn.fetchrow(
+                "SELECT * FROM quotes WHERE id = $1 AND business_id = $2", quote_id, b_id
+            )
+            if not quote:
+                raise HTTPException(404, "Presupuesto no encontrado")
+            if quote["status"] not in ("approved", "sent"):
+                raise HTTPException(400, "Solo se pueden convertir presupuestos aprobados o enviados")
+            items = await conn.fetch(
+                "SELECT * FROM quote_items WHERE quote_id = $1", quote_id
+            )
+            async with conn.transaction():
+                row = await conn.fetchrow("""
+                    INSERT INTO remitos (business_id, quote_id, customer_id, address, driver, scheduled_date, status, created_at)
+                    VALUES ($1, $2, $3, $4, $5, $6, 'pending', $7) RETURNING id
+                """, b_id, quote_id, quote["customer_id"],
+                    address, driver,
+                    date.fromisoformat(sched_raw[:10]), _now())
+                remito_id = row["id"]
+                for it in items:
+                    await conn.execute("""
+                        INSERT INTO remito_items (remito_id, product_id, quantity, unit_price)
+                        VALUES ($1, $2, $3, $4)
+                    """, remito_id, it["product_id"], it["quantity"], it["unit_price"])
+                await conn.execute(
+                    "UPDATE quotes SET status = 'delivered' WHERE id = $1 AND business_id = $2",
+                    quote_id, b_id
+                )
+                await conn.execute(
+                    "INSERT INTO audit_log (business_id, action, operator, details) VALUES ($1,$2,$3,$4)",
+                    b_id, "quote_to_remito", body.get("operator", "Sistema"),
+                    f"Presupuesto #{quote_id} → Nota de pedido #{remito_id}"
+                )
+            return {"remito_id": remito_id, "success": True}
+    else:
+        import aiosqlite
+        async with aiosqlite.connect(main.DB_PATH) as db:
+            cur = await db.execute("SELECT * FROM quotes WHERE id = ?", (quote_id,))
+            quote = await cur.fetchone()
+            if not quote:
+                raise HTTPException(404, "Presupuesto no encontrado")
+            q = row_to_dict(quote, cur.description)
+            if q["status"] not in ("approved", "sent"):
+                raise HTTPException(400, "Solo se pueden convertir presupuestos aprobados o enviados")
+            cur2 = await db.execute("SELECT * FROM quote_items WHERE quote_id = ?", (quote_id,))
+            items = [row_to_dict(r, cur2.description) for r in await cur2.fetchall()]
+            await db.execute("BEGIN IMMEDIATE")
+            cur3 = await db.execute("""
+                INSERT INTO remitos (quote_id, customer_id, address, driver, scheduled_date, status, created_at)
+                VALUES (?, ?, ?, ?, ?, 'pending', ?)
+            """, (quote_id, q.get("customer_id"), address,
+                  driver, sched_raw[:10], _now()))
+            remito_id = cur3.lastrowid
+            for it in items:
+                await db.execute(
+                    "INSERT INTO remito_items (remito_id, product_id, quantity, unit_price) VALUES (?,?,?,?)",
+                    (remito_id, it["product_id"], it["quantity"], it["unit_price"])
+                )
+            await db.execute("UPDATE quotes SET status = 'delivered' WHERE id = ?", (quote_id,))
+            await db.commit()
+            return {"remito_id": remito_id, "success": True}

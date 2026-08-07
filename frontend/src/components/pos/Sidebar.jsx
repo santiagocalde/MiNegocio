@@ -101,7 +101,15 @@ export default function Sidebar({
 
   const role = currentOperator?.role || 'admin';
 
-  const isActive = (path) => currentPath === path;
+  const isActive = (path) => {
+    const [pathname, qs] = path.split('?');
+    if (qs) {
+      // Si el item tiene query string, exigir que coincida el search también
+      return currentPath === pathname && location.search === `?${qs}`;
+    }
+    // Si no tiene query string, solo activo cuando tampoco hay search
+    return currentPath === pathname && !location.search;
+  };
 
   const features = getBusinessFeatures(businessType);
 
@@ -136,18 +144,17 @@ export default function Sidebar({
       },
       {
         category: 'LOGÍSTICA',
-        roles: ['admin', 'manager'],
+        roles: ['admin', 'manager', 'logistica'],
         items: [
-          { label: 'Remitos', path: '/panel/remitos', icon: 'Truck' },
-          { label: 'Despacho del día', path: '/panel/remitos?filter=today', icon: 'Clock' },
+          { label: 'Notas de pedido', path: '/panel/remitos', icon: 'Truck', roles: ['admin', 'manager'] },
+          { label: 'Despacho del día', path: '/panel/remitos?filter=today', icon: 'Clock', roles: ['admin', 'manager', 'logistica'] },
         ],
       },
       {
         category: 'CLIENTES',
         items: [
-          { label: 'Lista de clientes', path: '/panel/clientes', icon: 'Users', roles: ['admin', 'manager', 'operator'], featureKey: 'fiados' },
+          { label: 'Lista de clientes', path: '/panel/lista-clientes', icon: 'Users', roles: ['admin', 'manager', 'operator'] },
           { label: 'Cuentas corrientes', path: '/panel/clientes', icon: 'Book', roles: ['admin', 'manager', 'operator'], featureKey: 'fiados' },
-          { label: 'Obras', path: '/panel/obras', icon: 'Edit', roles: ['admin', 'manager'] },
         ],
       },
       {

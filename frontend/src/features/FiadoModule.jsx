@@ -39,7 +39,7 @@ export default function FiadoModule() {
   const fetchCustomers = async () => {
     setLoading(true);
     try {
-      const res = await apiGet('/customers');
+      const res = await apiGet('/customers?solo_deudores=true');
       if (res.ok) {
         const data = await res.json();
         setCustomers(data);

@@ -421,6 +421,18 @@ async def init_db(DB_PATH: str, logger) -> None:
         await add_column_if_not_exists(db, "products", "price_b", "REAL")
         await add_column_if_not_exists(db, "products", "unit_label", "TEXT", default="'unidad'")
 
+        # 5 listas de precio (C, D, E)
+        await add_column_if_not_exists(db, "products", "price_c", "REAL")
+        await add_column_if_not_exists(db, "products", "price_d", "REAL")
+        await add_column_if_not_exists(db, "products", "price_e", "REAL")
+
+        # Nombres configurables de listas de precio
+        await add_column_if_not_exists(db, "business_config", "price_list_a_name", "TEXT", default="'Lista A — Minorista'")
+        await add_column_if_not_exists(db, "business_config", "price_list_b_name", "TEXT", default="'Lista B — Mayorista'")
+        await add_column_if_not_exists(db, "business_config", "price_list_c_name", "TEXT", default="'Lista C'")
+        await add_column_if_not_exists(db, "business_config", "price_list_d_name", "TEXT", default="'Lista D'")
+        await add_column_if_not_exists(db, "business_config", "price_list_e_name", "TEXT", default="'Lista E'")
+
         # Presupuestos v2: descuento global y forma de pago
         await add_column_if_not_exists(db, "quotes", "discount_pct", "REAL", default="0")
         await add_column_if_not_exists(db, "quotes", "forma_pago", "TEXT", default="'Contado'")
@@ -442,6 +454,18 @@ async def init_db(DB_PATH: str, logger) -> None:
         await add_column_if_not_exists(db, "customers", "address", "TEXT")
         await add_column_if_not_exists(db, "customers", "email", "TEXT")
         await add_column_if_not_exists(db, "customers", "dni_cuit", "TEXT")
+
+        # Etapa 2: múltiples direcciones por cliente
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS customer_addresses (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                customer_id INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+                label       TEXT NOT NULL DEFAULT 'Dirección',
+                address     TEXT NOT NULL,
+                is_default  INTEGER NOT NULL DEFAULT 0,
+                created_at  TEXT DEFAULT (datetime('now','localtime'))
+            )
+        """)
         # suppliers.phone: el frontend y el INSERT usan 'phone', pero el esquema SQLite
         # solo tenía 'cuit' -> crear proveedor en modo local fallaba con 500.
         await add_column_if_not_exists(db, "suppliers", "debt", "REAL", default="0")

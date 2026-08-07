@@ -206,6 +206,7 @@ export default function UsuariosModule() {
               <select value={form.role} onChange={e => setForm({ ...form, role: e.target.value })}
                 style={{ width: '100%', padding: '10px 12px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '8px', outline: 'none', fontSize: '0.95rem', boxSizing: 'border-box' }}>
                 <option value="cashier">Cajero</option>
+                <option value="logistica">Logística (solo despacho)</option>
                 <option value="admin">Admin</option>
               </select>
             </div>

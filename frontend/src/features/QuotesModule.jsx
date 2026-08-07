@@ -73,6 +73,13 @@ export default function QuotesModule() {
   const [productQty, setProductQty] = useState('1');
   const [productPrice, setProductPrice] = useState('');
 
+  // Convertir presupuesto → Nota de pedido
+  const [showToRemito, setShowToRemito]       = useState(false);
+  const [toRemitoAddress, setToRemitoAddress] = useState('');
+  const [toRemitoDriver, setToRemitoDriver]   = useState('');
+  const [toRemitoDate, setToRemitoDate]       = useState(() => new Date().toISOString().slice(0, 10));
+  const [toRemitoLoading, setToRemitoLoading] = useState(false);
+
   const fetchQuotes = useCallback(async () => {
     setLoading(true);
     try {
@@ -91,9 +98,15 @@ export default function QuotesModule() {
     if (res.ok) { const data = await res.json(); setSearchResults(data || []); }
   };
 
+  // Precio según lista seleccionada; cae en Lista A (minorista) si la lista pedida no está cargada
+  const getListPrice = (p, lt) => {
+    const map = { a: p.price, b: p.price_b, c: p.price_c, d: p.price_d, e: p.price_e };
+    return parseFloat(map[lt] ?? p.price) || parseFloat(p.price) || 0;
+  };
+
   const addItem = (p) => {
     const qty = parseFloat(productQty) || 1;
-    const price = parseFloat(productPrice) || p.price_b || p.price || 0;
+    const price = parseFloat(productPrice) || getListPrice(p, formListType);
     setFormItems(prev => [...prev, { product_id: p.id, product_name: p.name, quantity: qty, unit_price: price }]);
     setProductSearch('');
     setSearchResults([]);
@@ -138,7 +151,13 @@ const handleStatus = async (id, status) => {
     const bizName = JSON.parse(localStorage.getItem('saas_business') || '{}')?.business_name || 'Corralón';
     const total = d.items.reduce((s, i) => s + i.unit_price * i.quantity, 0);
     const lines = d.items.map(it => `${it.product_name} x${it.quantity}: $${formatPesos(it.unit_price * it.quantity)}`).join('\n');
-    const msg = `*${bizName}* - Presupuesto N° ${d.quote.id}\n\n${lines}\n\n*TOTAL: $${formatPesos(total)}*\n${d.quote.list_type === 'b' ? '(Lista Contratista)' : '(Lista Público)'}\nVálido hasta: ${fmtDate(d.quote.expires_at)}\n${d.quote.note ? 'Obra: ' + d.quote.note : ''}`;
+    // Orden: negocio → nro → cliente → obra → items → validez → TOTAL (al final)
+    let msg = `*${bizName}* — Presupuesto N° ${d.quote.id}`;
+    if (d.quote.customer_name) msg += `\nCliente: ${d.quote.customer_name}`;
+    if (d.quote.note) msg += `\nObra: ${d.quote.note}`;
+    msg += `\n\n${lines}`;
+    msg += `\n\nVálido hasta: ${fmtDate(d.quote.expires_at)}`;
+    msg += `\n*TOTAL: $${formatPesos(total)}*`;
     window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
   };
 
@@ -410,6 +429,27 @@ const handleStatus = async (id, status) => {
     if (res.ok) setDetail(await res.json());
   };
 
+  const handleToRemito = async () => {
+    if (!detail) return;
+    setToRemitoLoading(true);
+    const res = await apiPost(`/quotes/${detail.quote.id}/to-remito`, {
+      address: toRemitoAddress.trim(),
+      driver: toRemitoDriver.trim(),
+      scheduled_date: toRemitoDate,
+    });
+    if (res.ok) {
+      const data = await res.json();
+      addToast?.(`✅ Nota de pedido N° ${data.remito_id} creada.`, 'success');
+      setShowToRemito(false);
+      setDetail(null);
+      fetchQuotes();
+    } else {
+      const err = await res.json().catch(() => ({}));
+      addToast?.(err.detail || 'Error al convertir.', 'error');
+    }
+    setToRemitoLoading(false);
+  };
+
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', gap: '10px', overflow: 'hidden', padding: '12px 20px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
@@ -437,7 +477,7 @@ const handleStatus = async (id, status) => {
             >
               <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                 <div style={{ fontWeight: 700, color: 'var(--lp-ink)', fontSize: '0.95rem' }}>#{q.id} — {q.note || 'Presupuesto'} {q.customer_name ? `· ${q.customer_name}` : ''}</div>
-                <div style={{ fontSize: '0.78rem', color: 'var(--lp-ink-faint)' }}>{fmtDate(q.created_at)} · {q.list_type === 'b' ? 'Lista B' : 'Lista A'} · Vence {fmtDate(q.expires_at)}</div>
+                <div style={{ fontSize: '0.78rem', color: 'var(--lp-ink-faint)' }}>{fmtDate(q.created_at)} · {(() => { try { const cfg = JSON.parse(localStorage.getItem('minegocio_config') || '{}'); return { a: cfg.price_list_a_name || 'Lista A', b: cfg.price_list_b_name || 'Lista B', c: cfg.price_list_c_name || 'Lista C', d: cfg.price_list_d_name || 'Lista D', e: cfg.price_list_e_name || 'Lista E' }[q.list_type] || 'Lista A'; } catch { return 'Lista ' + (q.list_type || 'a').toUpperCase(); } })()} · Vence {fmtDate(q.expires_at)}</div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <span style={{ fontSize: '0.75rem', fontWeight: 700, color: STATUS_MAP[q.status]?.color, background: STATUS_MAP[q.status]?.color + '15', padding: '3px 8px', borderRadius: 4, fontFamily: 'var(--lp-font-mono)' }}>
@@ -473,11 +513,24 @@ const handleStatus = async (id, status) => {
                 </select>
               </div>
               <div>
-                <label style={{ fontSize: '0.78rem', color: 'var(--lp-ink-faint)', fontWeight: 600, display: 'block', marginBottom: 4 }}>Lista</label>
-                <select value={formListType} onChange={e => setFormListType(e.target.value)}
-                  style={{ padding: '8px 12px', background: 'var(--lp-paper-sunken)', border: '1px solid var(--lp-line-strong)', borderRadius: 6, color: 'var(--lp-ink)', fontSize: '0.9rem', outline: 'none' }}>
-                  <option value="a">Lista A</option><option value="b">Lista B</option>
-                </select>
+                <label style={{ fontSize: '0.78rem', color: 'var(--lp-ink-faint)', fontWeight: 600, display: 'block', marginBottom: 4 }}>Lista de precios</label>
+                {(() => {
+                  let cfg = {};
+                  try { cfg = JSON.parse(localStorage.getItem('minegocio_config') || '{}'); } catch {}
+                  const lists = [
+                    { v: 'a', label: cfg.price_list_a_name || 'Lista A — Minorista' },
+                    { v: 'b', label: cfg.price_list_b_name || 'Lista B — Mayorista' },
+                    { v: 'c', label: cfg.price_list_c_name || 'Lista C' },
+                    { v: 'd', label: cfg.price_list_d_name || 'Lista D' },
+                    { v: 'e', label: cfg.price_list_e_name || 'Lista E' },
+                  ];
+                  return (
+                    <select value={formListType} onChange={e => setFormListType(e.target.value)}
+                      style={{ padding: '8px 12px', background: 'var(--lp-paper-sunken)', border: '1px solid var(--lp-line-strong)', borderRadius: 6, color: 'var(--lp-ink)', fontSize: '0.9rem', outline: 'none', maxWidth: 180 }}>
+                      {lists.map(l => <option key={l.v} value={l.v}>{l.label}</option>)}
+                    </select>
+                  );
+                })()}
               </div>
             </div>
 
@@ -516,16 +569,26 @@ const handleStatus = async (id, status) => {
                 style={{ width: '100%', padding: '8px 12px', background: 'var(--lp-paper-sunken)', border: '1px solid var(--lp-line-strong)', borderRadius: 6, color: 'var(--lp-ink)', fontSize: '0.9rem', outline: 'none' }} />
               {searchResults.length > 0 && (
                 <div style={{ marginTop: 4, maxHeight: 150, overflow: 'auto', background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line)', borderRadius: 6 }}>
-                  {searchResults.map(p => (
-                    <div key={p.id} onClick={() => addItem(p)} style={{
-                      display: 'flex', justifyContent: 'space-between', padding: '6px 10px', cursor: 'pointer',
-                      fontSize: '0.85rem', borderBottom: '1px solid var(--lp-line)',
-                      color: 'var(--lp-ink)', transition: 'background 0.1s',
-                    }} onMouseEnter={e => e.currentTarget.style.background = 'var(--lp-paper-sunken)'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                      <span>{p.name}</span>
-                      <span style={{ fontFamily: 'var(--lp-font-mono)', color: 'var(--lp-ink-faint)' }}>${formatPesos(p.price_b || p.price)}</span>
-                    </div>
-                  ))}
+                  {searchResults.map(p => {
+                    const lp = getListPrice(p, formListType);
+                    const base = parseFloat(p.price) || 0;
+                    const isDiff = lp !== base;
+                    return (
+                      <div key={p.id} onClick={() => addItem(p)} style={{
+                        display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '7px 10px', cursor: 'pointer',
+                        fontSize: '0.85rem', borderBottom: '1px solid var(--lp-line)',
+                        color: 'var(--lp-ink)', transition: 'background 0.1s',
+                      }} onMouseEnter={e => e.currentTarget.style.background = 'var(--lp-paper-sunken)'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                        <span>{p.name}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          {isDiff && (
+                            <span style={{ fontFamily: 'var(--lp-font-mono)', color: 'var(--lp-ink-faint)', fontSize: '0.75rem', textDecoration: 'line-through' }}>${formatPesos(base)}</span>
+                          )}
+                          <span style={{ fontFamily: 'var(--lp-font-mono)', color: 'var(--lp-primary)', fontWeight: 700 }}>${formatPesos(lp)}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -579,11 +642,11 @@ const handleStatus = async (id, status) => {
       {/* Detail modal */}
       {detail && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(11,19,43,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
-          onMouseDown={e => { if (e.target === e.currentTarget) setDetail(null); }}>
+          onMouseDown={e => { if (e.target === e.currentTarget) { setDetail(null); setShowToRemito(false); } }}>
           <div onMouseDown={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 560, maxHeight: '90vh', overflow: 'auto', background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line-strong)', borderRadius: 12, padding: 28, boxShadow: 'var(--lp-shadow-lg)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
               <h3 style={{ fontFamily: 'var(--lp-font-display)', fontSize: '1.1rem', fontWeight: 700, color: 'var(--lp-ink)', margin: 0 }}>Presupuesto #{detail.quote.id}</h3>
-              <button onClick={() => setDetail(null)} style={{ background: 'none', border: 'none', color: 'var(--lp-ink-faint)', cursor: 'pointer', fontSize: '1.3rem' }}>✕</button>
+              <button onClick={() => { setDetail(null); setShowToRemito(false); }} style={{ background: 'none', border: 'none', color: 'var(--lp-ink-faint)', cursor: 'pointer', fontSize: '1.3rem' }}>✕</button>
             </div>
 
             <div style={{ fontSize: '0.85rem', color: 'var(--lp-ink-faint)', marginBottom: 16 }}>
@@ -617,15 +680,55 @@ const handleStatus = async (id, status) => {
               {detail.quote.status === 'sent' && (
                 <button onClick={() => handleStatus(detail.quote.id, 'approved')} className="lp-btn lp-btn--primary" style={{ flex: 1, fontSize: '0.85rem' }}>Aprobar</button>
               )}
-              {detail.quote.status === 'approved' && (
-                <button onClick={() => handleStatus(detail.quote.id, 'delivered')} className="lp-btn lp-btn--primary" style={{ flex: 1, fontSize: '0.85rem' }}>Marcar entregado</button>
+              {detail.quote.status === 'approved' && !showToRemito && (
+                <>
+                  <button onClick={() => {
+                    setToRemitoAddress(detail.quote.address || '');
+                    setToRemitoDriver('');
+                    setToRemitoDate(new Date().toISOString().slice(0, 10));
+                    setShowToRemito(true);
+                  }} className="lp-btn lp-btn--primary" style={{ flex: 2, fontSize: '0.85rem', fontWeight: 800 }}>
+                    🚛 Crear Nota de pedido
+                  </button>
+                  <button onClick={() => handleStatus(detail.quote.id, 'delivered')} className="lp-btn lp-btn--ghost" style={{ flex: 1, fontSize: '0.82rem' }}>Entregado sin remito</button>
+                </>
+              )}
+              {detail.quote.status === 'approved' && showToRemito && (
+                <div style={{ width: '100%', background: 'var(--lp-paper-sunken)', border: '1.5px solid rgba(20,187,166,0.35)', borderRadius: 10, padding: 16, marginTop: 4 }}>
+                  <div style={{ fontWeight: 800, color: 'var(--lp-primary)', fontSize: '0.9rem', marginBottom: 12, display: 'flex', justifyContent: 'space-between' }}>
+                    <span>🚛 Nueva Nota de pedido</span>
+                    <button onClick={() => setShowToRemito(false)} style={{ background: 'none', border: 'none', color: 'var(--lp-ink-faint)', cursor: 'pointer', fontSize: '1rem' }}>✕</button>
+                  </div>
+                  {[
+                    { label: 'Dirección de entrega', val: toRemitoAddress, set: setToRemitoAddress, placeholder: 'Ej: Av. San Martín 1234' },
+                    { label: 'Chofer (opcional)', val: toRemitoDriver, set: setToRemitoDriver, placeholder: 'Nombre del chofer' },
+                  ].map(f => (
+                    <div key={f.label} style={{ marginBottom: 10 }}>
+                      <label style={{ fontSize: '0.73rem', fontWeight: 700, color: 'var(--lp-ink-faint)', display: 'block', marginBottom: 3 }}>{f.label}</label>
+                      <input value={f.val} onChange={e => f.set(e.target.value)} placeholder={f.placeholder}
+                        style={{ width: '100%', padding: '8px 12px', background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line-strong)', borderRadius: 6, color: 'var(--lp-ink)', fontSize: '0.88rem', outline: 'none' }} />
+                    </div>
+                  ))}
+                  <div style={{ marginBottom: 12 }}>
+                    <label style={{ fontSize: '0.73rem', fontWeight: 700, color: 'var(--lp-ink-faint)', display: 'block', marginBottom: 3 }}>Fecha de despacho</label>
+                    <input type="date" value={toRemitoDate} onChange={e => setToRemitoDate(e.target.value)}
+                      style={{ width: '100%', padding: '8px 12px', background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line-strong)', borderRadius: 6, color: 'var(--lp-ink)', fontSize: '0.88rem', outline: 'none' }} />
+                  </div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button onClick={() => setShowToRemito(false)} className="lp-btn lp-btn--ghost" style={{ flex: 1 }}>Cancelar</button>
+                    <button onClick={handleToRemito} disabled={toRemitoLoading} className="lp-btn lp-btn--primary"
+                      style={{ flex: 2, opacity: toRemitoLoading ? 0.6 : 1, fontWeight: 800 }}>
+                      {toRemitoLoading ? 'Creando...' : 'Confirmar y crear'}
+                    </button>
+                  </div>
+                </div>
               )}
               {['draft', 'sent'].includes(detail.quote.status) && (
                 <button onClick={() => handleStatus(detail.quote.id, 'rejected')} className="lp-btn lp-btn--ghost" style={{ flex: 1, fontSize: '0.85rem', color: 'var(--lp-red)' }}>Rechazar</button>
               )}
               <button onClick={handleShareWhatsApp} className="lp-btn lp-btn--ghost" style={{ fontSize: '0.85rem', color: '#25D366' }}>📱 WhatsApp</button>
               <button onClick={handlePrint} className="lp-btn lp-btn--ghost" style={{ fontSize: '0.85rem' }}>🖨️ Imprimir</button>
-              <button onClick={() => { handleDelete(detail.quote.id); setDetail(null); }} className="lp-btn lp-btn--ghost" style={{ fontSize: '0.85rem', color: 'var(--lp-red)' }}>Eliminar</button>
+              <button onClick={() => { handleDelete(detail.quote.id); setDetail(null); setShowToRemito(false); }} className="lp-btn lp-btn--ghost" style={{ fontSize: '0.85rem', color: 'var(--lp-red)' }}>Eliminar</button>
             </div>
           </div>
         </div>

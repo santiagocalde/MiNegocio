@@ -61,9 +61,87 @@ function LedgerLine({ label, hint, value, tone }) {
   );
 }
 
+// ── Widget: Pendientes de cobro (solo corralón) ──────────────────
+function PendientesCobro({ navigate }) {
+  const [data, setData] = React.useState(null);
+  const [loading, setLoading] = React.useState(true);
+  const fmt = (v) => (v ?? 0).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+
+  React.useEffect(() => {
+    let alive = true;
+    Promise.all([
+      apiGet('/quotes?status=approved&limit=100').then(r => r.ok ? r.json() : []),
+      apiGet('/remitos?status=delivered&limit=100').then(r => r.ok ? r.json() : []),
+    ]).then(([quotes, remitos]) => {
+      if (!alive) return;
+      setData({ quotes, remitos });
+      setLoading(false);
+    }).catch(() => { if (alive) setLoading(false); });
+    return () => { alive = false; };
+  }, []);
+
+  if (loading) return null;
+  if (!data) return null;
+
+  const totalQuotes = data.quotes.reduce((s, q) => s + (q.total || 0), 0);
+  const countQ = data.quotes.length;
+  const countR = data.remitos.length;
+  const total = countQ + countR;
+  if (total === 0) return null; // nada pendiente, no ocupar espacio
+
+  return (
+    <div className="ledger-sheet" style={{ marginBottom: 18 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '13px 18px', borderBottom: '1px solid var(--rule-strong)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: '1rem' }}>💰</span>
+          <h2 className="ledger-title" style={{ fontSize: '1rem', margin: 0 }}>Pendientes de cobro</h2>
+        </div>
+        <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#F59E0B', background: 'rgba(245,158,11,0.12)', padding: '3px 10px', borderRadius: 20 }}>
+          {total} {total === 1 ? 'item' : 'items'}
+        </span>
+      </div>
+
+      {countQ > 0 && (
+        <div className="ledger-row" style={{ padding: '11px 18px', cursor: 'pointer' }}
+          onClick={() => navigate('/panel/presupuestos')}
+          onMouseEnter={e => e.currentTarget.style.background = 'rgba(20,187,166,0.05)'}
+          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+          <div>
+            <div style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+              {countQ} presupuesto{countQ !== 1 ? 's' : ''} aprobado{countQ !== 1 ? 's' : ''}
+            </div>
+            <div className="ledger-label" style={{ fontSize: '0.74rem', marginTop: 2 }}>Esperan factura o nota de pedido</div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
+            {totalQuotes > 0 && <span className="ledger-num" style={{ color: 'var(--accent-primary)', fontSize: '0.95rem', fontWeight: 800 }}>${fmt(totalQuotes)}</span>}
+            <span style={{ fontSize: '0.72rem', color: 'var(--text-faint)' }}>Ver →</span>
+          </div>
+        </div>
+      )}
+
+      {countR > 0 && (
+        <div className="ledger-row" style={{ padding: '11px 18px', cursor: 'pointer' }}
+          onClick={() => navigate('/panel/remitos')}
+          onMouseEnter={e => e.currentTarget.style.background = 'rgba(20,187,166,0.05)'}
+          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+          <div>
+            <div style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+              {countR} entrega{countR !== 1 ? 's' : ''} sin cobrar
+            </div>
+            <div className="ledger-label" style={{ fontSize: '0.74rem', marginTop: 2 }}>Notas entregadas, cobro pendiente</div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
+            <span style={{ fontSize: '0.72rem', color: 'var(--text-faint)' }}>Ver →</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function InicioPage() {
   const navigate = useNavigate();
-  const { backend, auth, currentPlan } = usePanelContext();
+  const { backend, auth, currentPlan, businessType } = usePanelContext();
 
   const [now, setNow] = React.useState(() => new Date());
   React.useEffect(() => {
@@ -102,6 +180,7 @@ export default function InicioPage() {
       </div>
 
       {currentPlan === 'ia' && <ResumenIA />}
+      {businessType === 'corralon' && <PendientesCobro navigate={navigate} />}
 
       {/* Cuerpo: dos columnas — el libro del día + acciones/stock */}
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.5fr) minmax(0, 1fr)', gap: 18, alignItems: 'start' }}>
