@@ -59,6 +59,10 @@ export default function ConfigPage() {
       if (res.ok) {
         const { logo_url } = await res.json();
         setConfig(prev => ({ ...prev, logo_url }));
+        // Actualizar localStorage para que el logo aparezca en presupuestos
+        const cfg = JSON.parse(localStorage.getItem('minegocio_config') || '{}');
+        cfg.logo_url = logo_url;
+        localStorage.setItem('minegocio_config', JSON.stringify(cfg));
         addToast?.('Logo actualizado correctamente.', 'success');
       } else {
         const err = await res.json().catch(() => ({}));
