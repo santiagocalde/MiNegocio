@@ -249,7 +249,7 @@ async def create_operator(request: Request, data: dict) -> dict:
         raise HTTPException(400, detail="Nombre requerido")
     if not pin.isdigit() or len(pin) < 4 or len(pin) > 6:
         raise HTTPException(400, detail="PIN 4-6 digitos")
-    if role not in ("admin", "manager", "employee", "cashier"):
+    if role not in ("admin", "manager", "employee", "cashier", "logistica"):
         raise HTTPException(400, detail="Rol invalido")
 
     if USE_PG:

@@ -426,6 +426,7 @@ ${stopRows}
     : 'No hay notas de pedido. Creá una con "Nueva nota".';
 
   const selectedCount = selected.size;
+  const isLogistica = auth?.currentOperator?.role === 'logistica';
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', gap: 10, overflow: 'hidden', padding: '12px 20px' }}>
@@ -449,9 +450,11 @@ ${stopRows}
               ☑ Seleccionar pendientes
             </button>
           )}
-          <button onClick={() => setShowForm(true)} className="lp-btn lp-btn--primary" style={{ padding: '8px 18px', fontSize: '0.85rem' }}>
-            + Nueva nota
-          </button>
+          {!isLogistica && (
+            <button onClick={() => setShowForm(true)} className="lp-btn lp-btn--primary" style={{ padding: '8px 18px', fontSize: '0.85rem' }}>
+              + Nueva nota
+            </button>
+          )}
         </div>
       </div>
 
@@ -651,23 +654,32 @@ ${stopRows}
 
             {!showCobrar && (
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
-                {detail.remito.status === 'pending' && (<>
-                  {btnStatus('#F59E0B', '🚛 En camino', () => handleStatus(detail.remito.id, 'en_camino'))}
-                  {btnStatus('#F97316', '📅 Postergado', () => handleStatus(detail.remito.id, 'postponed'))}
-                  {btnStatus('#6B7280', 'Cancelar', () => handleStatus(detail.remito.id, 'cancelled'))}
+                {/* Logística: solo puede confirmar entrega cuando está en camino */}
+                {isLogistica ? (
+                  detail.remito.status === 'en_camino'
+                    ? btnStatus('#10B981', '✅ Confirmar entrega', () => handleStatus(detail.remito.id, 'delivered'))
+                    : <p style={{ fontSize: '0.8rem', color: 'var(--lp-ink-faint)', margin: 0 }}>
+                        {detail.remito.status === 'delivered' ? '✅ Ya entregado.' : 'Pendiente de despacho.'}
+                      </p>
+                ) : (<>
+                  {detail.remito.status === 'pending' && (<>
+                    {btnStatus('#F59E0B', '🚛 En camino', () => handleStatus(detail.remito.id, 'en_camino'))}
+                    {btnStatus('#F97316', '📅 Postergado', () => handleStatus(detail.remito.id, 'postponed'))}
+                    {btnStatus('#6B7280', 'Cancelar', () => handleStatus(detail.remito.id, 'cancelled'))}
+                  </>)}
+                  {detail.remito.status === 'en_camino' && (<>
+                    {btnStatus('#10B981', '✅ Entregado', () => handleStatus(detail.remito.id, 'delivered'))}
+                    {btnStatus('#EF4444', '✕ Fallido', () => handleStatus(detail.remito.id, 'failed'))}
+                    {btnStatus('#F97316', '📅 Postergado', () => handleStatus(detail.remito.id, 'postponed'))}
+                  </>)}
+                  {detail.remito.status === 'postponed' && (<>
+                    {btnStatus('#F59E0B', '↩ Retomar', () => handleStatus(detail.remito.id, 'pending'))}
+                    {btnStatus('#6B7280', 'Cancelar', () => handleStatus(detail.remito.id, 'cancelled'))}
+                  </>)}
+                  {detail.remito.status === 'delivered' && (
+                    btnStatus('#10B981', '💵 Cobrar', () => setShowCobrar(true))
+                  )}
                 </>)}
-                {detail.remito.status === 'en_camino' && (<>
-                  {btnStatus('#10B981', '✅ Entregado', () => handleStatus(detail.remito.id, 'delivered'))}
-                  {btnStatus('#EF4444', '✕ Fallido', () => handleStatus(detail.remito.id, 'failed'))}
-                  {btnStatus('#F97316', '📅 Postergado', () => handleStatus(detail.remito.id, 'postponed'))}
-                </>)}
-                {detail.remito.status === 'postponed' && (<>
-                  {btnStatus('#F59E0B', '↩ Retomar', () => handleStatus(detail.remito.id, 'pending'))}
-                  {btnStatus('#6B7280', 'Cancelar', () => handleStatus(detail.remito.id, 'cancelled'))}
-                </>)}
-                {detail.remito.status === 'delivered' && (
-                  btnStatus('#10B981', '💵 Cobrar', () => setShowCobrar(true))
-                )}
               </div>
             )}
 
