@@ -96,7 +96,6 @@ export default function ConfigPage() {
     try {
       const configRes = await apiPut('/config', config);
       if (!configRes.ok) throw new Error('No se pudo guardar la configuracion');
-      localStorage.setItem('minegocio_config', JSON.stringify(config));
 
       const operatorResponses = await Promise.all(
         operators
