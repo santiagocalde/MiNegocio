@@ -17,6 +17,26 @@ const STATUS_ORDER = { pending: 0, en_camino: 1, delivered: 2, postponed: 3, fai
 const formatPesos = (v) => (v ?? 0).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 const fmtDate = (s) => { if (!s) return '—'; return new Date(s).toLocaleDateString('es-AR', { day: 'numeric', month: 'short' }); };
 
+// ── Checkbox estilizado Ocean Dark ──────────────────────────────
+function Checkbox({ checked, onChange }) {
+  return (
+    <div onClick={e => { e.stopPropagation(); onChange(!checked); }}
+      style={{
+        width: 20, height: 20, borderRadius: 5, flexShrink: 0, cursor: 'pointer',
+        border: checked ? '2px solid var(--lp-primary)' : '2px solid var(--lp-line-strong)',
+        background: checked ? 'var(--lp-primary)' : 'var(--lp-paper-sunken)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        transition: 'all 0.15s',
+      }}>
+      {checked && (
+        <svg width="11" height="9" viewBox="0 0 11 9" fill="none">
+          <path d="M1 4L4 7L10 1" stroke="#0B132B" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      )}
+    </div>
+  );
+}
+
 export default function RemitosModule() {
   const { addToast, auth } = usePanelContext();
   const location = useLocation();
@@ -29,6 +49,10 @@ export default function RemitosModule() {
   const [showCobrar, setShowCobrar] = useState(false);
   const [cobrarMethod, setCobrarMethod] = useState('cash');
   const [cobrarLoading, setCobrarLoading] = useState(false);
+
+  // Multi-select (solo en Despacho del día)
+  const [selected, setSelected]         = useState(new Set());
+  const [loadingCarga, setLoadingCarga] = useState(false);
 
   // Form
   const [formAddress, setFormAddress] = useState('');
@@ -54,8 +78,18 @@ export default function RemitosModule() {
   }, [isDespacho]);
 
   useEffect(() => { fetchNotas(); }, [fetchNotas]);
-  // Re-fetch al cambiar entre Notas de pedido y Despacho del día
-  useEffect(() => { fetchNotas(); }, [location.search]); // eslint-disable-line
+  useEffect(() => { fetchNotas(); setSelected(new Set()); }, [location.search]); // eslint-disable-line
+
+  const toggleSelect = (id) => setSelected(prev => {
+    const n = new Set(prev);
+    n.has(id) ? n.delete(id) : n.add(id);
+    return n;
+  });
+
+  const selectPendientes = () => {
+    const activos = notas.filter(r => ['pending', 'en_camino'].includes(r.status)).map(r => r.id);
+    setSelected(new Set(activos));
+  };
 
   const handleSearch = async (q) => {
     setProductSearch(q);
@@ -98,7 +132,6 @@ export default function RemitosModule() {
     if (res.ok) {
       addToast?.(`${STATUS_MAP[status]?.label || status}.`, 'success');
       fetchNotas();
-      // Refrescar detail si está abierto
       if (detail?.remito?.id === id) showDetail(id);
     } else { addToast?.('Error al cambiar estado.', 'error'); }
   };
@@ -108,7 +141,7 @@ export default function RemitosModule() {
     if (res.ok) setDetail(await res.json());
   };
 
-  // ── Imprimir nota de pedido individual ────────────────────────
+  // ── Imprimir nota individual ──────────────────────────────────
   const handlePrint = (nota) => {
     const cfg = JSON.parse(localStorage.getItem('minegocio_config') || '{}');
     const biz = JSON.parse(localStorage.getItem('saas_business') || '{}');
@@ -200,6 +233,143 @@ th:last-child,th:nth-last-child(2){text-align:right}
     if (w) { w.document.write(html); w.document.close(); }
   };
 
+  // ── ORDEN DE CARGA — impresión agregada de múltiples notas ────
+  const handlePrintOrdenCarga = async () => {
+    if (selected.size === 0) return;
+    setLoadingCarga(true);
+    try {
+      const ids = [...selected];
+      const details = await Promise.all(
+        ids.map(id => apiGet(`/remitos/${id}`).then(r => r.ok ? r.json() : null))
+      );
+      const validos = details.filter(Boolean);
+      if (validos.length === 0) { addToast?.('No se pudieron cargar los pedidos.', 'error'); setLoadingCarga(false); return; }
+
+      const cfg = JSON.parse(localStorage.getItem('minegocio_config') || '{}');
+      const biz = JSON.parse(localStorage.getItem('saas_business') || '{}');
+      const bizName  = biz.business_name || cfg.nombre || 'Corralón';
+      const logoUrl  = cfg.logo_url || '';
+      const address  = cfg.direccion || '';
+      const phone    = cfg.telefono || '';
+      const fechaStr = new Date().toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+      const logoImg = logoUrl
+        ? `<img src="${logoUrl}" style="max-height:48px;max-width:130px;object-fit:contain;display:block;margin-bottom:4px;" />`
+        : '';
+
+      // Agregar items por nombre de producto (suma de cantidades)
+      const agg = {}; // { product_name: { qty, unit } }
+      validos.forEach(d => {
+        d.items.forEach(it => {
+          const key = it.product_name;
+          if (!agg[key]) agg[key] = { qty: 0 };
+          agg[key].qty += Number(it.quantity);
+        });
+      });
+      const aggRows = Object.entries(agg)
+        .sort((a, b) => a[0].localeCompare(b[0]))
+        .map(([name, { qty }]) => {
+          const cantFmt = qty % 1 === 0 ? qty.toFixed(0) : qty.toLocaleString('es-AR', { maximumFractionDigits: 3 });
+          return `<tr>
+            <td style="padding:9px 12px;border-bottom:1px solid #e0e0e0;font-weight:700;font-size:14px;">${cantFmt}</td>
+            <td style="padding:9px 12px;border-bottom:1px solid #e0e0e0;font-size:14px;">${name}</td>
+            <td style="padding:9px 12px;border-bottom:1px solid #e0e0e0;text-align:center;">☐</td>
+          </tr>`;
+        }).join('');
+
+      // Detalle por nota
+      const stopRows = validos.map((d, i) => {
+        const r = d.remito;
+        const subItems = d.items.map(it => {
+          const qty = Number(it.quantity);
+          const cantFmt = qty % 1 === 0 ? qty.toFixed(0) : qty.toLocaleString('es-AR', { maximumFractionDigits: 3 });
+          return `<tr>
+            <td style="padding:5px 10px;font-size:12px;border-bottom:1px solid #f0f0f0;">${cantFmt}</td>
+            <td style="padding:5px 10px;font-size:12px;border-bottom:1px solid #f0f0f0;">${it.product_name}</td>
+          </tr>`;
+        }).join('');
+        return `<div style="margin-bottom:18px;border:1px solid #ccc;border-radius:6px;overflow:hidden;page-break-inside:avoid;">
+          <div style="background:#222;color:#fff;padding:8px 14px;display:flex;justify-content:space-between;align-items:center;">
+            <strong style="font-size:14px;">Parada ${i + 1} — N° ${r.id}</strong>
+            <span style="font-size:12px;opacity:0.75;">${STATUS_MAP[r.status]?.label || r.status}</span>
+          </div>
+          <div style="padding:8px 14px;background:#f9f9f9;border-bottom:1px solid #eee;">
+            ${r.address ? `<div style="font-size:13px;font-weight:700;">📍 ${r.address}</div>` : ''}
+            ${r.customer_name ? `<div style="font-size:12px;color:#555;">👤 ${r.customer_name}</div>` : ''}
+          </div>
+          <table style="width:100%;border-collapse:collapse;">
+            <thead><tr>
+              <th style="width:60px;background:#555;color:#fff;padding:6px 10px;font-size:11px;text-align:left;">Cant.</th>
+              <th style="background:#555;color:#fff;padding:6px 10px;font-size:11px;text-align:left;">Producto</th>
+            </tr></thead>
+            <tbody>${subItems}</tbody>
+          </table>
+        </div>`;
+      }).join('');
+
+      const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
+<title>Orden de carga — ${fechaStr}</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;font-size:13px;color:#111;padding:24px;max-width:860px;margin:auto}
+.header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #111;padding-bottom:16px;margin-bottom:20px}
+.biz-name{font-size:20px;font-weight:900;margin-bottom:2px}
+.biz-sub{font-size:11px;color:#555;line-height:1.7}
+.doc-title{font-size:28px;font-weight:900;text-align:right;letter-spacing:-0.5px}
+.doc-sub{font-size:12px;color:#555;text-align:right;line-height:1.7;margin-top:3px}
+.section-title{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:#333;border-bottom:2px solid #111;padding-bottom:6px;margin:20px 0 12px}
+table.agg{width:100%;border-collapse:collapse;margin-bottom:6px}
+table.agg thead th{background:#111;color:#fff;padding:9px 12px;font-size:12px;text-align:left}
+table.agg thead th:last-child{width:70px;text-align:center}
+.firma{margin-top:30px;display:flex;gap:60px}
+.firma-item{flex:1;border-top:1px solid #999;padding-top:6px;font-size:11px;color:#666;text-align:center}
+.footer{margin-top:28px;text-align:center;font-size:10px;color:#aaa;border-top:1px solid #eee;padding-top:10px}
+@media print{body{padding:10px}.footer{margin-top:14px}button{display:none}}
+</style></head><body>
+<div class="header">
+  <div>
+    ${logoImg}
+    <div class="biz-name">${bizName}</div>
+    <div class="biz-sub">
+      ${address ? address + '<br>' : ''}
+      ${phone ? 'Tel: ' + phone : ''}
+    </div>
+  </div>
+  <div>
+    <div class="doc-title">ORDEN DE CARGA</div>
+    <div class="doc-sub">${fechaStr}</div>
+    <div class="doc-sub">${validos.length} parada${validos.length !== 1 ? 's' : ''} · ${Object.keys(agg).length} producto${Object.keys(agg).length !== 1 ? 's' : ''}</div>
+  </div>
+</div>
+
+<div class="section-title">📦 Resumen — qué cargar al camión</div>
+<table class="agg">
+  <thead><tr>
+    <th style="width:70px;">Cant.</th>
+    <th>Producto</th>
+    <th style="width:70px;text-align:center;">✓</th>
+  </tr></thead>
+  <tbody>${aggRows}</tbody>
+</table>
+
+<div class="section-title">🗺️ Paradas del día</div>
+${stopRows}
+
+<div class="firma">
+  <div class="firma-item">Chofer</div>
+  <div class="firma-item">Recibí conforme</div>
+</div>
+
+<div class="footer">Generado por MiNegocio · ${new Date().toLocaleDateString('es-AR', { day:'numeric',month:'long',year:'numeric' })}</div>
+<script>window.onload=()=>{window.print()}</script>
+</body></html>`;
+
+      const w = window.open('', '_blank', 'width=920,height=720');
+      if (w) { w.document.write(html); w.document.close(); }
+    } catch { addToast?.('Error al generar la orden.', 'error'); }
+    setLoadingCarga(false);
+  };
+
   // ── Cobrar mini-modal ─────────────────────────────────────────
   const handleCobrar = async () => {
     if (!detail) return;
@@ -231,7 +401,6 @@ th:last-child,th:nth-last-child(2){text-align:right}
     setCobrarLoading(false);
   };
 
-  // ── Estilos compartidos ───────────────────────────────────────
   const inputStyle = {
     width: '100%', padding: '8px 12px',
     background: 'var(--lp-paper-sunken)',
@@ -244,8 +413,7 @@ th:last-child,th:nth-last-child(2){text-align:right}
       flex: 1, padding: '9px 4px', fontSize: '0.82rem', fontWeight: 700,
       border: `1.5px solid ${color}`, borderRadius: 8,
       background: color + '18', color, cursor: 'pointer',
-      transition: 'background 0.15s',
-      textAlign: 'center',
+      transition: 'background 0.15s', textAlign: 'center',
     }}
       onMouseEnter={e => e.currentTarget.style.background = color + '32'}
       onMouseLeave={e => e.currentTarget.style.background = color + '18'}
@@ -257,71 +425,129 @@ th:last-child,th:nth-last-child(2){text-align:right}
     ? 'No hay pedidos programados para hoy.'
     : 'No hay notas de pedido. Creá una con "Nueva nota".';
 
+  const selectedCount = selected.size;
+
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', gap: '10px', overflow: 'hidden', padding: '12px 20px' }}>
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
-        <h2 style={{ fontFamily: 'var(--lp-font-display)', fontSize: '1.3rem', fontWeight: 700, color: 'var(--lp-ink)', margin: 0, letterSpacing: '-0.02em' }}>
-          {title}
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', gap: 10, overflow: 'hidden', padding: '12px 20px' }}>
+
+      {/* ── Header ── */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0, gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <h2 style={{ fontFamily: 'var(--lp-font-display)', fontSize: '1.3rem', fontWeight: 700, color: 'var(--lp-ink)', margin: 0, letterSpacing: '-0.02em' }}>
+            {title}
+          </h2>
           {isDespacho && (
-            <span style={{ marginLeft: 10, fontSize: '0.75rem', background: 'rgba(59,130,246,0.12)', color: '#3B82F6', padding: '2px 10px', borderRadius: 20, fontWeight: 700, verticalAlign: 'middle' }}>
+            <span style={{ fontSize: '0.75rem', background: 'rgba(59,130,246,0.12)', color: '#3B82F6', padding: '2px 10px', borderRadius: 20, fontWeight: 700 }}>
               {new Date().toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'short' })}
             </span>
           )}
-        </h2>
-        <button onClick={() => setShowForm(true)} className="lp-btn lp-btn--primary" style={{ padding: '8px 18px', fontSize: '0.85rem' }}>
-          + Nueva nota
-        </button>
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {isDespacho && notas.length > 0 && (
+            <button onClick={selectPendientes}
+              style={{ padding: '8px 14px', fontSize: '0.8rem', fontWeight: 700, background: 'rgba(20,187,166,0.08)', border: '1px solid rgba(20,187,166,0.3)', color: 'var(--lp-primary)', borderRadius: 8, cursor: 'pointer' }}>
+              ☑ Seleccionar pendientes
+            </button>
+          )}
+          <button onClick={() => setShowForm(true)} className="lp-btn lp-btn--primary" style={{ padding: '8px 18px', fontSize: '0.85rem' }}>
+            + Nueva nota
+          </button>
+        </div>
       </div>
 
-      {/* Lista */}
-      <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column', gap: '5px' }}>
+      {/* ── Lista ── */}
+      <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column', gap: 5 }}>
         {loading ? (
           <div style={{ color: 'var(--lp-ink-faint)', textAlign: 'center', padding: 40 }}>Cargando...</div>
         ) : notas.length === 0 ? (
           <div style={{ color: 'var(--lp-ink-faint)', textAlign: 'center', padding: 40 }}>{emptyMsg}</div>
         ) : notas.map(r => {
           const st = STATUS_MAP[r.status] || STATUS_MAP.pending;
+          const isSel = selected.has(r.id);
           return (
             <div key={r.id}
-              onClick={() => showDetail(r.id)}
+              onClick={() => { if (!isDespacho) showDetail(r.id); }}
               style={{
                 padding: '11px 16px',
-                background: st.bg,
-                border: `1px solid ${st.color}30`,
-                borderLeft: `4px solid ${st.color}`,
+                background: isSel ? 'rgba(20,187,166,0.11)' : st.bg,
+                border: isSel ? '1.5px solid rgba(20,187,166,0.55)' : `1px solid ${st.color}30`,
+                borderLeft: `4px solid ${isSel ? 'var(--lp-primary)' : st.color}`,
                 borderRadius: 7,
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                cursor: 'pointer', transition: 'filter 0.12s',
+                display: 'flex', alignItems: 'center', gap: 12,
+                cursor: isDespacho ? 'default' : 'pointer',
+                transition: 'border 0.15s, background 0.15s, filter 0.12s',
               }}
-              onMouseEnter={e => e.currentTarget.style.filter = 'brightness(0.94)'}
-              onMouseLeave={e => e.currentTarget.style.filter = 'none'}
+              onMouseEnter={e => { if (!isDespacho) e.currentTarget.style.filter = 'brightness(0.94)'; }}
+              onMouseLeave={e => { e.currentTarget.style.filter = 'none'; }}
             >
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                <div style={{ fontWeight: 700, color: 'var(--lp-ink)', fontSize: '0.9rem' }}>
-                  N° {r.id} — {r.address || 'Sin dirección'}
+              {/* Checkbox solo en Despacho */}
+              {isDespacho && (
+                <Checkbox checked={isSel} onChange={() => toggleSelect(r.id)} />
+              )}
+
+              {/* Contenido clickeable para detalle (en despacho: click en el texto) */}
+              <div style={{ flex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', minWidth: 0 }}
+                onClick={() => showDetail(r.id)}>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontWeight: 700, color: 'var(--lp-ink)', fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    N° {r.id} — {r.address || 'Sin dirección'}
+                  </div>
+                  <div style={{ fontSize: '0.74rem', color: 'var(--lp-ink-faint)', marginTop: 2 }}>
+                    {fmtDate(r.scheduled_date)}{r.driver ? ` · ${r.driver}` : ''}{r.customer_name ? ` · ${r.customer_name}` : ''}
+                  </div>
                 </div>
-                <div style={{ fontSize: '0.74rem', color: 'var(--lp-ink-faint)' }}>
-                  {fmtDate(r.scheduled_date)}{r.driver ? ` · ${r.driver}` : ''}{r.customer_name ? ` · ${r.customer_name}` : ''}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                  <span style={{
+                    fontSize: '0.72rem', fontWeight: 800, color: st.color,
+                    background: st.color + '20', padding: '3px 9px', borderRadius: 20,
+                    whiteSpace: 'nowrap',
+                  }}>
+                    {st.label}
+                  </span>
+                  <button onClick={e => { e.stopPropagation(); handleShareWhatsApp(r); }}
+                    style={{ background: 'rgba(37,211,102,0.09)', border: '1px solid rgba(37,211,102,0.25)', color: '#25D366', padding: '3px 8px', borderRadius: 4, cursor: 'pointer', fontSize: '0.7rem', fontWeight: 700 }}>
+                    📱
+                  </button>
                 </div>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{
-                  fontSize: '0.72rem', fontWeight: 800, color: st.color,
-                  background: st.color + '20', padding: '3px 9px', borderRadius: 20,
-                  whiteSpace: 'nowrap',
-                }}>
-                  {st.label}
-                </span>
-                <button onClick={e => { e.stopPropagation(); handleShareWhatsApp(r); }}
-                  style={{ background: 'rgba(37,211,102,0.09)', border: '1px solid rgba(37,211,102,0.25)', color: '#25D366', padding: '3px 8px', borderRadius: 4, cursor: 'pointer', fontSize: '0.7rem', fontWeight: 700 }}>
-                  📱
-                </button>
               </div>
             </div>
           );
         })}
       </div>
+
+      {/* ── Barra de acción: Orden de carga ── */}
+      {isDespacho && selectedCount > 0 && (
+        <div style={{
+          flexShrink: 0,
+          padding: '12px 16px',
+          background: 'linear-gradient(135deg, rgba(20,187,166,0.14) 0%, rgba(0,229,255,0.08) 100%)',
+          border: '1.5px solid rgba(20,187,166,0.4)',
+          borderRadius: 10,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: '1.3rem' }}>📋</span>
+            <div>
+              <div style={{ fontWeight: 800, color: 'var(--lp-primary)', fontSize: '0.9rem' }}>
+                {selectedCount} nota{selectedCount !== 1 ? 's' : ''} seleccionada{selectedCount !== 1 ? 's' : ''}
+              </div>
+              <div style={{ fontSize: '0.74rem', color: 'var(--lp-ink-faint)' }}>
+                Generá la hoja de carga para el camión
+              </div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={() => setSelected(new Set())}
+              style={{ padding: '8px 14px', fontSize: '0.8rem', fontWeight: 700, background: 'transparent', border: '1px solid var(--lp-line-strong)', color: 'var(--lp-ink-faint)', borderRadius: 8, cursor: 'pointer' }}>
+              Limpiar
+            </button>
+            <button onClick={handlePrintOrdenCarga} disabled={loadingCarga}
+              style={{ padding: '10px 20px', fontSize: '0.88rem', fontWeight: 800, background: 'var(--lp-primary)', border: 'none', color: '#0B132B', borderRadius: 8, cursor: loadingCarga ? 'wait' : 'pointer', opacity: loadingCarga ? 0.7 : 1, display: 'flex', alignItems: 'center', gap: 6 }}>
+              {loadingCarga ? '⏳ Generando...' : '🖨️ Imprimir Orden de carga'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── Modal: Nueva nota de pedido ── */}
       {showForm && (
@@ -387,17 +613,13 @@ th:last-child,th:nth-last-child(2){text-align:right}
         <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(11,19,43,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
           onMouseDown={e => { if (e.target === e.currentTarget) { setDetail(null); setShowCobrar(false); } }}>
           <div onMouseDown={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 510, maxHeight: '92vh', overflow: 'auto', background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line-strong)', borderRadius: 12, padding: 24, boxShadow: 'var(--lp-shadow-lg)' }}>
-            {/* Título */}
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
-              <div>
-                <h3 style={{ fontFamily: 'var(--lp-font-display)', fontSize: '1.1rem', fontWeight: 700, color: 'var(--lp-ink)', margin: 0 }}>
-                  Nota de pedido N° {detail.remito.id}
-                </h3>
-              </div>
+              <h3 style={{ fontFamily: 'var(--lp-font-display)', fontSize: '1.1rem', fontWeight: 700, color: 'var(--lp-ink)', margin: 0 }}>
+                Nota de pedido N° {detail.remito.id}
+              </h3>
               <button onClick={() => { setDetail(null); setShowCobrar(false); }} style={{ background: 'none', border: 'none', color: 'var(--lp-ink-faint)', cursor: 'pointer', fontSize: '1.3rem' }}>✕</button>
             </div>
 
-            {/* Badge de estado */}
             {(() => {
               const st = STATUS_MAP[detail.remito.status] || STATUS_MAP.pending;
               return (
@@ -407,7 +629,6 @@ th:last-child,th:nth-last-child(2){text-align:right}
               );
             })()}
 
-            {/* Info */}
             <div style={{ fontSize: '0.83rem', color: 'var(--lp-ink-faint)', marginBottom: 14, display: 'flex', flexDirection: 'column', gap: 3 }}>
               {detail.remito.address && <div>📍 <strong style={{ color: 'var(--lp-ink)' }}>{detail.remito.address}</strong></div>}
               {detail.remito.customer_name && <div>👤 {detail.remito.customer_name}</div>}
@@ -415,7 +636,6 @@ th:last-child,th:nth-last-child(2){text-align:right}
               <div>📅 Programado: {fmtDate(detail.remito.scheduled_date)}</div>
             </div>
 
-            {/* Items */}
             <div style={{ borderTop: '1px solid var(--lp-line)', paddingTop: 10, marginBottom: 14 }}>
               {detail.items.map((it, i) => (
                 <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: '0.83rem', color: 'var(--lp-ink)' }}>
@@ -429,7 +649,6 @@ th:last-child,th:nth-last-child(2){text-align:right}
               </div>
             </div>
 
-            {/* Acciones de estado */}
             {!showCobrar && (
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
                 {detail.remito.status === 'pending' && (<>
@@ -452,7 +671,6 @@ th:last-child,th:nth-last-child(2){text-align:right}
               </div>
             )}
 
-            {/* Mini POS — cobrar */}
             {showCobrar && detail.remito.status === 'delivered' && (
               <div style={{ marginTop: 4, background: 'var(--lp-paper-sunken)', border: '1px solid var(--lp-line-strong)', borderRadius: 10, padding: 16 }}>
                 <div style={{ fontWeight: 700, color: 'var(--lp-ink)', fontSize: '0.95rem', marginBottom: 10 }}>Registrar cobro</div>
@@ -472,13 +690,12 @@ th:last-child,th:nth-last-child(2){text-align:right}
                   <button onClick={() => setShowCobrar(false)} className="lp-btn lp-btn--ghost" style={{ flex: 1 }}>Cancelar</button>
                   <button onClick={handleCobrar} disabled={cobrarLoading} className="lp-btn lp-btn--primary"
                     style={{ flex: 2, opacity: cobrarLoading ? 0.6 : 1 }}>
-                    {cobrarLoading ? 'Registrando...' : `Confirmar cobro`}
+                    {cobrarLoading ? 'Registrando...' : 'Confirmar cobro'}
                   </button>
                 </div>
               </div>
             )}
 
-            {/* Pie: imprimir + WhatsApp */}
             <div style={{ display: 'flex', gap: 8, marginTop: 12, justifyContent: 'center' }}>
               <button onClick={() => handlePrint(detail)}
                 style={{ background: 'rgba(107,114,128,0.1)', border: '1px solid var(--lp-line-strong)', color: 'var(--lp-ink-faint)', padding: '6px 14px', borderRadius: 6, cursor: 'pointer', fontSize: '0.78rem', fontWeight: 600 }}>
