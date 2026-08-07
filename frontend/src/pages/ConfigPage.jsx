@@ -76,7 +76,7 @@ export default function ConfigPage() {
   useEffect(() => {
     apiGet('/config')
       .then(r => r.json())
-      .then(d => { setConfig(d); setLoading(false); })
+      .then(d => { setConfig(d); localStorage.setItem('minegocio_config', JSON.stringify(d)); setLoading(false); })
       .catch(() => {
         setConfig({
           nombre: 'Kiosco El Barrio', subtitulo: 'Atención 7 días',
@@ -96,6 +96,7 @@ export default function ConfigPage() {
     try {
       const configRes = await apiPut('/config', config);
       if (!configRes.ok) throw new Error('No se pudo guardar la configuracion');
+      localStorage.setItem('minegocio_config', JSON.stringify(config));
 
       const operatorResponses = await Promise.all(
         operators
