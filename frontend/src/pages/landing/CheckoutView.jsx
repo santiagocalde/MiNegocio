@@ -8,6 +8,8 @@ const Svg = {
 export default function CheckoutView({ plan, isYearly, onBack, onComplete }) {
   const [step, setStep] = useState(1);
   const [usersLimit, setUsersLimit] = useState(2);
+  const [needsFactura, setNeedsFactura] = useState(null);
+  const [facturasPorMes, setFacturasPorMes] = useState('');
   const [formData, setFormData] = useState({ nombre: '', apellido: '', telefono: '' });
   const [isPaying, setIsPaying] = useState(false);
 
@@ -21,10 +23,16 @@ export default function CheckoutView({ plan, isYearly, onBack, onComplete }) {
 
   const handlePay = () => {
     setIsPaying(true);
-    console.log("Checkout iniciado", { plan: plan.name, isYearly, usersLimit, user: formData });
+    console.log("Checkout iniciado", { plan: plan.name, isYearly, usersLimit, needsFactura, facturasPorMes, user: formData });
     setTimeout(() => {
       onComplete();
     }, 1500);
+  };
+
+  const getBackLabel = () => {
+    if (step === 3) return 'Volver a Facturación';
+    if (step === 2) return 'Volver a Usuarios';
+    return 'Volver a los planes';
   };
 
   return (
@@ -32,15 +40,19 @@ export default function CheckoutView({ plan, isYearly, onBack, onComplete }) {
       <div className="lp-canvas" />
       <div className="lp-orb lp-orb--1" />
       <div className="lp-orb lp-orb--2" />
-      <div style={{ position: 'relative', zIndex: 10, width: '100%', maxWidth: step === 1 ? 600 : 950, display: 'flex', flexDirection: 'column', gap: 24, transition: 'all 0.3s ease' }}>
-        <button onClick={() => step === 2 ? setStep(1) : onBack()} style={{ background: 'transparent', border: 'none', color: 'var(--lp-text-muted)', fontSize: '1rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8, alignSelf: 'flex-start', marginBottom: 16 }} onMouseEnter={e => e.target.style.color = '#fff'} onMouseLeave={e => e.target.style.color = 'var(--lp-text-muted)'}>
-          <Svg.ArrowRight /> {step === 2 ? 'Volver a Cantidad de Usuarios' : 'Volver a los planes'}
+      <div style={{ position: 'relative', zIndex: 10, width: '100%', maxWidth: step === 1 || step === 2 ? 600 : 950, display: 'flex', flexDirection: 'column', gap: 24, transition: 'all 0.3s ease' }}>
+        <button onClick={() => {
+          if (step === 3) setStep(2);
+          else if (step === 2) setStep(1);
+          else onBack();
+        }} style={{ background: 'transparent', border: 'none', color: 'var(--lp-text-muted)', fontSize: '1rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8, alignSelf: 'flex-start', marginBottom: 16 }} onMouseEnter={e => e.target.style.color = '#fff'} onMouseLeave={e => e.target.style.color = 'var(--lp-text-muted)'}>
+          <Svg.ArrowRight /> {getBackLabel()}
         </button>
-        <div className="lp-glass" style={{ padding: step === 1 ? 40 : 0, borderRadius: 24, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(30,58,95,0.85)', overflow: 'hidden' }}>
+        <div className="lp-glass" style={{ padding: step !== 3 ? 40 : 0, borderRadius: 24, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(30,58,95,0.85)', overflow: 'hidden' }}>
           {step === 1 && (
             <div style={{ animation: 'fadeIn 0.4s ease' }}>
-              <h2 style={{ fontSize: '1.8rem', fontWeight: 800, marginBottom: 8, color: '#fff', letterSpacing: '-0.5px', textAlign: 'center' }}>Paso 1: Módulo de Usuarios</h2>
-              <p style={{ color: 'var(--lp-text-muted)', fontSize: '0.95rem', marginBottom: 32, textAlign: 'center' }}>¿Cuántas personas van a usar el sistema al mismo tiempo?</p>
+              <h2 style={{ fontSize: '1.8rem', fontWeight: 800, marginBottom: 8, color: '#fff', letterSpacing: '-0.5px', textAlign: 'center' }}>¿Cuántas personas lo van a usar?</h2>
+              <p style={{ color: 'var(--lp-text-muted)', fontSize: '0.95rem', marginBottom: 32, textAlign: 'center' }}>Elegí cuántos usuarios van a usar el sistema al mismo tiempo.</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 40 }}>
                 {[
                   { label: 'Hasta 2 usuarios/cajas', limit: 2, cost: extraCostMap[2] },
@@ -57,11 +69,39 @@ export default function CheckoutView({ plan, isYearly, onBack, onComplete }) {
                 ))}
               </div>
               <button onClick={() => setStep(2)} style={{ width: '100%', padding: '16px 0', borderRadius: 12, border: 'none', background: 'linear-gradient(90deg, var(--lp-primary), var(--lp-secondary))', color: '#fff', fontSize: '1rem', fontWeight: 700, cursor: 'pointer', boxShadow: '0 8px 32px rgba(20,187,166, 0.5)', transition: 'all 0.2s' }}>
-                Continuar a Datos
+                Continuar
               </button>
             </div>
           )}
+
           {step === 2 && (
+            <div style={{ animation: 'fadeIn 0.4s ease' }}>
+              <h2 style={{ fontSize: '1.8rem', fontWeight: 800, marginBottom: 8, color: '#fff', letterSpacing: '-0.5px', textAlign: 'center' }}>¿Necesitás facturar?</h2>
+              <p style={{ color: 'var(--lp-text-muted)', fontSize: '0.95rem', marginBottom: 32, textAlign: 'center' }}>Contanos si emitís facturas electrónicas para preparar tu cuenta.</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 24 }}>
+                {[
+                  { label: 'Sí, emito factura electrónica (ARCA/AFIP)', value: true },
+                  { label: 'No, por ahora no necesito', value: false },
+                ].map((opt, i) => (
+                  <label key={i} onClick={() => setNeedsFactura(opt.value)} style={{ display: 'flex', alignItems: 'center', padding: '16px 20px', background: needsFactura === opt.value ? 'rgba(20,187,166,0.15)' : 'rgba(255,255,255,0.03)', border: needsFactura === opt.value ? '1px solid rgba(20,187,166,0.4)' : '1px solid rgba(255,255,255,0.05)', borderRadius: 12, cursor: 'pointer', transition: 'all 0.2s' }}>
+                    <div style={{ width: 20, height: 20, borderRadius: '50%', border: needsFactura === opt.value ? '6px solid var(--lp-primary)' : '2px solid rgba(255,255,255,0.3)', transition: 'all 0.2s', background: needsFactura === opt.value ? 'var(--lp-primary)' : 'transparent', boxShadow: needsFactura === opt.value ? 'inset 0 0 0 3px rgba(30,58,95,0.85)' : 'none', flexShrink: 0, marginRight: 16 }} />
+                    <span style={{ fontSize: '1rem', color: '#fff', fontWeight: needsFactura === opt.value ? 600 : 400 }}>{opt.label}</span>
+                  </label>
+                ))}
+              </div>
+              {needsFactura === true && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 32 }}>
+                  <label style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.8)', fontWeight: 500 }}>¿Cuántas facturas hacés por mes aproximadamente?</label>
+                  <input type="number" min="1" placeholder="Ej: 50" value={facturasPorMes} onChange={e => setFacturasPorMes(e.target.value)} style={{ width: '100%', padding: '14px 16px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, color: '#fff', outline: 'none', fontSize: '0.95rem', transition: 'border-color 0.2s' }} onFocus={e => e.target.style.borderColor = 'var(--lp-primary)'} onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'} />
+                </div>
+              )}
+              <button onClick={() => setStep(3)} style={{ width: '100%', padding: '16px 0', borderRadius: 12, border: 'none', background: 'linear-gradient(90deg, var(--lp-primary), var(--lp-secondary))', color: '#fff', fontSize: '1rem', fontWeight: 700, cursor: 'pointer', boxShadow: '0 8px 32px rgba(20,187,166, 0.5)', transition: 'all 0.2s' }}>
+                Continuar a tus datos
+              </button>
+            </div>
+          )}
+
+          {step === 3 && (
             <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', alignItems: 'stretch', animation: 'fadeIn 0.4s ease' }}>
               <div style={{ padding: '48px 40px', display: 'flex', flexDirection: 'column' }}>
                 <h2 style={{ fontSize: '1.8rem', fontWeight: 800, marginBottom: 8, color: '#fff', letterSpacing: '-0.5px' }}>Tus Datos</h2>
