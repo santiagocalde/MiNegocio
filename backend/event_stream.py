@@ -58,5 +58,8 @@ class EventManager:
     def connection_count(self) -> int:
         return sum(len(b) for b in self._clients.values())
 
+    def tenant_counts(self) -> dict:
+        return {k: len(v) for k, v in self._clients.items()}
+
 
 events = EventManager()

@@ -986,6 +986,208 @@ async def admin_recent_activity(admin: dict = Depends(verify_superadmin)) -> lis
         return events[:50]
 
 
+# Panel en vivo: negocios online ahora + alertas operativas (poll ~8s del SuperAdmin).
+# "Señal de vida" = max(ultima venta, ultimo login, apertura de turno). La conexion
+# SSE abierta cuenta como señal aunque no haya actividad en BD (LEFT JOIN sobre la señal).
+@router.get("/api/admin/live", summary="Panel en vivo: negocios online ahora + alertas")
+async def admin_live(admin: dict = Depends(verify_superadmin)) -> dict:
+    # Conexiones SSE abiertas por tenant; la key "__local__" es el modo offline y se ignora.
+    from event_stream import events
+    sse_counts = events.tenant_counts()
+    sse_ids = [k for k in sse_counts if k != "__local__"]
+
+    pool = await _get_pool()
+    async with pool.acquire() as conn:
+        now = _now()
+
+        # Stats globales (ventas revertidas no cuentan)
+        total_businesses = await conn.fetchval("SELECT COUNT(*) FROM businesses") or 0
+        active_plans = await conn.fetchval("SELECT COUNT(*) FROM businesses WHERE status = 'active'") or 0
+        open_turns = await conn.fetchval("SELECT COUNT(*) FROM turns WHERE closed_at IS NULL") or 0
+        sales_1h = await conn.fetchrow(
+            """SELECT COUNT(*) AS cnt, COALESCE(SUM(total), 0) AS monto
+               FROM sales
+               WHERE reverted = 0 AND timestamp >= now() - INTERVAL '1 hour'"""
+        )
+
+        # Todos los negocios activos + los que tengan SSE abierta (aunque esten suspendidos).
+        rows = await conn.fetch("""
+            SELECT b.id AS business_id,
+                   b.business_name AS name,
+                   b.email,
+                   b.plan,
+                   b.status,
+                   b.plan_end_date,
+                   b.created_at,
+                   s.ventas_hoy,
+                   s.monto_hoy,
+                   s_last.last_sale,
+                   a.last_token,
+                   t.turn_id,
+                   t.turn_opened_at,
+                   t.turn_ventas,
+                   p.total_products,
+                   p.stock_negativos,
+                   ops.operators_count,
+                   suc.sucursales_count,
+                   GREATEST(COALESCE(s_last.last_sale, '-infinity'::timestamptz),
+                            COALESCE(a.last_token, '-infinity'::timestamptz),
+                            COALESCE(t.turn_opened_at, '-infinity'::timestamptz)) AS last_signal
+            FROM businesses b
+            LEFT JOIN LATERAL (
+                SELECT COUNT(*) AS ventas_hoy, COALESCE(SUM(total), 0) AS monto_hoy
+                FROM sales
+                WHERE business_id = b.id AND reverted = 0
+                  AND timestamp >= date_trunc('day', now())
+            ) s ON true
+            LEFT JOIN LATERAL (
+                SELECT MAX(timestamp) AS last_sale
+                FROM sales
+                WHERE business_id = b.id AND reverted = 0
+            ) s_last ON true
+            LEFT JOIN LATERAL (
+                SELECT MAX(created_at) AS last_token
+                FROM auth_tokens
+                WHERE business_id = b.id
+            ) a ON true
+            LEFT JOIN LATERAL (
+                SELECT t.id AS turn_id,
+                       t.opened_at AS turn_opened_at,
+                       (SELECT COUNT(*) FROM sales s2
+                         WHERE s2.turn_id = t.id AND s2.reverted = 0) AS turn_ventas
+                FROM turns t
+                WHERE t.business_id = b.id AND t.closed_at IS NULL
+                ORDER BY t.opened_at DESC
+                LIMIT 1
+            ) t ON true
+            LEFT JOIN LATERAL (
+                SELECT COUNT(*) AS total_products,
+                       COUNT(*) FILTER (WHERE stock < 0) AS stock_negativos
+                FROM products
+                WHERE business_id = b.id AND is_active = 1
+            ) p ON true
+            LEFT JOIN LATERAL (
+                SELECT COUNT(*) AS operators_count
+                FROM operators
+                WHERE business_id = b.id
+            ) ops ON true
+            LEFT JOIN LATERAL (
+                SELECT COUNT(*) AS sucursales_count
+                FROM sucursales
+                WHERE business_id = b.id
+            ) suc ON true
+            WHERE b.status = 'active' OR b.id = ANY($1::text[])
+            ORDER BY (b.id = ANY($1::text[])) DESC, last_signal DESC NULLS LAST
+        """, sse_ids)
+
+        threshold_15 = now - timedelta(minutes=15)
+        threshold_30 = now - timedelta(minutes=30)
+        online = []
+        alerts = []
+        for r in rows:
+            biz_id = r["business_id"]
+            sse = biz_id in sse_counts
+
+            # Señal mas reciente: venta / login / turno abierto
+            candidates = []
+            if r["last_sale"]:
+                candidates.append(("sale", r["last_sale"]))
+            if r["last_token"]:
+                candidates.append(("login", r["last_token"]))
+            if r["turn_opened_at"]:
+                candidates.append(("turn", r["turn_opened_at"]))
+            if candidates:
+                last_type, last_signal = max(candidates, key=lambda c: c[1])
+                last_seen_min = int((now - last_signal).total_seconds() // 60)
+            else:
+                last_type, last_signal, last_seen_min = "none", None, None
+
+            # Ultimo turno abierto (cerrado = closed_at IS NOT NULL)
+            turn_id = r["turn_id"]
+            turn_hours = None
+            turn_phantom = False
+            turn_con_ventas = False
+            if turn_id is not None and r["turn_opened_at"]:
+                turn_hours = int((now - r["turn_opened_at"]).total_seconds() // 3600)
+                turn_con_ventas = (r["turn_ventas"] or 0) > 0
+                turn_phantom = not turn_con_ventas and r["turn_opened_at"] < now - timedelta(hours=24)
+
+            # Online: activo con señal < 15 min, o conexion SSE abierta ahora
+            es_activo = r["status"] == "active"
+            senal_reciente = last_signal is not None and last_signal >= threshold_15
+            if (es_activo and senal_reciente) or sse:
+                online.append({
+                    "business_id": biz_id,
+                    "name": r["name"],
+                    "email": r["email"],
+                    "plan": r["plan"],
+                    "status": r["status"],
+                    "sse": sse,
+                    "last_seen_min": last_seen_min if last_seen_min is not None else 0,
+                    "last_seen_type": last_type,
+                    "ventas_hoy": int(r["ventas_hoy"] or 0),
+                    "monto_hoy": float(r["monto_hoy"] or 0),
+                    "turn_id": turn_id,
+                    "turn_abierto_horas": turn_hours,
+                    "turn_phantom": turn_phantom,
+                    "turn_abierto_con_ventas": turn_con_ventas,
+                    "stock_negativos": int(r["stock_negativos"] or 0),
+                    "operators": int(r["operators_count"] or 0),
+                    "products": int(r["total_products"] or 0),
+                    "sucursales": int(r["sucursales_count"] or 0),
+                })
+
+            # Alertas (solo negocios activos, sin spam)
+            if not es_activo:
+                continue
+            base = {"business_id": biz_id, "name": r["name"], "email": r["email"], "plan": r["plan"]}
+            if turn_id is not None and r["turn_opened_at"]:
+                if not turn_con_ventas and r["turn_opened_at"] < now - timedelta(hours=24):
+                    alerts.append({**base, "severity": "warning", "tipo": "turn_fantasma",
+                                   "msg": f"Turno fantasma abierto hace {turn_hours} h sin ventas (auto-se cerrará)"})
+                elif turn_con_ventas and turn_hours >= 12:
+                    alerts.append({**base, "severity": "info", "tipo": "turno_abierto",
+                                   "msg": f"Caja abierta con ventas, hace {turn_hours}h. Cerrar"})
+            if (r["stock_negativos"] or 0) > 0:
+                alerts.append({**base, "severity": "warning", "tipo": "stock_negativo",
+                               "msg": f"{r['stock_negativos']} productos con stock negativo"})
+            if r["plan_end_date"] and r["plan_end_date"] < now:
+                alerts.append({**base, "severity": "critical", "tipo": "plan_vencido",
+                               "msg": f"Plan {r['plan']} vencido el {r['plan_end_date'].date()}"})
+            # Sin ventas ni logins en 7 dias (y cuenta con mas de 7 dias, para no spamear trials nuevos)
+            ult_actividad = max([ts for ts in (r["last_sale"], r["last_token"]) if ts], default=None)
+            cuenta_antigua = r["created_at"] and r["created_at"] < now - timedelta(days=7)
+            if cuenta_antigua and (ult_actividad is None or ult_actividad < now - timedelta(days=7)):
+                dias = (now - ult_actividad).days if ult_actividad else (now - r["created_at"]).days
+                alerts.append({**base, "severity": "info", "tipo": "sin_actividad_7d",
+                               "msg": f"Sin actividad hace {dias} días"})
+
+        # Orden: primero los conectados por SSE, luego por señal mas reciente
+        online.sort(key=lambda b: (not b["sse"], b["last_seen_min"] or 0))
+        # Orden por severidad: critical -> warning -> info
+        sev = {"critical": 0, "warning": 1, "info": 2}
+        alerts.sort(key=lambda a: (sev.get(a["severity"], 9), a["business_id"]))
+
+        online_now = sum(1 for b in online if b["sse"])
+        active_30m = sum(1 for b in online if b["last_seen_min"] is not None and b["last_seen_min"] <= 30)
+
+        return {
+            "asof": now.isoformat(),
+            "stats": {
+                "total_businesses": total_businesses,
+                "active_plans": active_plans,
+                "online_now": online_now,
+                "active_30m": active_30m,
+                "sales_1h_total": float(sales_1h["monto"] or 0),
+                "sales_1h_count": int(sales_1h["cnt"] or 0),
+                "open_turns": open_turns,
+                "pending_alerts": len(alerts),
+            },
+            "online": online,
+            "alerts": alerts,
+        }
+
+
 # ────────────────────────────────────────────────────────────
 # SEED DEFAULT SUPERADMIN
 # ────────────────────────────────────────────────────────────

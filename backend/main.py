@@ -349,8 +349,11 @@ async def sse_event_stream(
     async def event_generator():
         try:
             while True:
-                payload = await queue.get()
-                yield payload
+                try:
+                    payload = await asyncio.wait_for(queue.get(), timeout=25)
+                    yield payload
+                except asyncio.TimeoutError:
+                    yield ": ping\n\n"
         except asyncio.CancelledError:
             pass
         finally:

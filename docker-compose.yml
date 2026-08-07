@@ -51,6 +51,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    volumes:
+      - static_logos:/app/static/logos
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0) if urllib.request.urlopen('http://localhost:8000/api/health', timeout=4).status==200 else sys.exit(1)"]
@@ -95,4 +97,5 @@ services:
         max-file: "3"
 
 volumes:
+  static_logos:
   pgdata:

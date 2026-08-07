@@ -147,6 +147,7 @@ export default function AdminPage() {
             {[
               { key: 'dashboard', label: 'Dashboard', icon: <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg> },
               { key: 'businesses', label: 'Negocios', icon: <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg> },
+              { key: 'vivo', label: 'En vivo', icon: <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/><circle cx="12" cy="12" r="2"/></svg> },
               { key: 'activity', label: 'Actividad', icon: <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/></svg> },
               { key: 'audit', label: 'Auditoria', icon: <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> },
               { key: 'insights', label: 'Insights', icon: <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path d="M2 12h4l3 8 4-16 3 8h4"/></svg> },
@@ -165,6 +166,7 @@ export default function AdminPage() {
       <Toast msg={toast} onClose={() => setToast('')} />
       <main style={{ flex: 1, overflow: 'auto', padding: '28px' }}>
         {tab === 'dashboard' && <Dashboard token={token} />}
+        {tab === 'vivo' && <LiveMonitor token={token} />}
         {tab === 'businesses' && <Businesses token={token} toast={s} />}
         {tab === 'activity' && <ActivityFeed token={token} />}
         {tab === 'audit' && <Audit token={token} />}
@@ -789,6 +791,213 @@ function Audit({ token }) {
           </table>
         )}
       </div>
+    </div>
+  );
+}
+
+/* ─── Live / Alertas (tiempo real) ─── */
+const SEVITY = {
+  critical: { label: 'Crítica', color: '#EF4444', bg: 'rgba(239,68,68,0.08)', row: 'rgba(239,68,68,0.05)' },
+  warning: { label: 'Advertencia', color: '#F59E0B', bg: 'rgba(245,158,11,0.08)', row: 'rgba(245,158,11,0.04)' },
+  info: { label: 'Info', color: '#38BDF8', bg: 'rgba(56,189,248,0.08)', row: 'rgba(56,189,248,0.03)' },
+};
+const LIVE_ICONS = { critical: '▲', warning: '◆', info: '●' };
+
+function LiveMonitor({ token }) {
+  const [data, setData] = useState(null);
+  const [err, setErr] = useState('');
+  const [updated, setUpdated] = useState(null);
+  const [selected, setSelected] = useState(null);
+
+  useEffect(() => {
+    const load = () => {
+      fetchAdmin(`${API}/live`, token)
+        .then(r => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
+        .then(d => { setData(d); setErr(''); setUpdated(Date.now()); })
+        .catch(e => { console.warn('LiveMonitor:', e.message); setErr('No se pudo cargar el estado en vivo'); });
+    };
+    load();
+    const interval = setInterval(load, 8000);
+    return () => clearInterval(interval);
+  }, [token]);
+
+  const dotColor = s => ({ online: '#22C55E', recent: '#F59E0B', idle: '#64748B' })[s];
+  const dotLabel = s => ({ online: 'Conectado ahora', recent: 'Activo <15 min', idle: 'Inactivo' })[s];
+  const stateOf = b => {
+    if (!b) return 'idle';
+    if (b.sse) return 'online';
+    if (b.last_seen_min != null && b.last_seen_min <= 15) return 'recent';
+    return 'idle';
+  };
+
+  const st = data ? data.stats : null;
+
+  if (err && !data) return <div style={{ ...S.card, textAlign: 'center', padding: 48, color: '#F87171' }}>{err}</div>;
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 22 }}>
+        <div>
+          <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#F1F5F9', margin: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
+            Estado en vivo
+            <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: '#22C55E', boxShadow: '0 0 10px #22C55E', animation: 'pulse 1.8s infinite' }} />
+          </h2>
+          <div style={{ color: MUTED, fontSize: '0.72rem', marginTop: 4 }}>Actualiza cada 8 segundos en tiempo real</div>
+        </div>
+        <button onClick={() => fetchAdmin(`${API}/live`, token).then(r => r.ok ? r.json() : Promise.reject()).then(d => { setData(d); setErr(''); setUpdated(Date.now()); }).catch(() => setErr('Error al refrescar'))} style={S.ghostBtn}>
+          ↻ Refrescar
+        </button>
+      </div>
+
+      {!data ? (
+        <div style={{ ...S.card, textAlign: 'center', padding: 48 }}>
+          <Skeleton h={14} w="30%" /><div style={{ height: 10 }} /><Skeleton h={14} w="50%" /><div style={{ height: 10 }} /><Skeleton h={14} w="40%" />
+        </div>
+      ) : (
+        <>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 14, marginBottom: 22 }}>
+            <StatCard color={(st?.online_now || 0) > 0 ? '#22C55E' : '#64748B'} label="En línea ahora" value={st?.online_now ?? 0} sub="con SSE activo" />
+            <StatCard color="#F59E0B" label="Activos (30 min)" value={st?.active_30m ?? 0} sub="con actividad" />
+            <StatCard color="#38BDF8" label="Ventas últ. hora" value={st?.sales_1h_count ?? 0} sub={st?.sales_1h_total != null ? fmtPesos(st.sales_1h_total) : ''} />
+            <StatCard color={(st?.pending_alerts || 0) > 0 ? '#EF4444' : '#10B981'} label="Alertas" value={st?.pending_alerts ?? 0} sub={(st?.pending_alerts || 0) > 0 ? 'requieren atención' : 'todo en orden'} />
+            <StatCard color="#14BBA6" label="Turnos abiertos" value={st?.open_turns ?? 0} sub="cajas" />
+          </div>
+
+          {err && <div style={{ padding: '10px 14px', borderRadius: 8, background: 'rgba(239,68,68,0.06)', color: '#F87171', fontSize: '0.78rem', marginBottom: 18 }}>{err}</div>}
+
+          {/* Alertas */}
+          <div style={{ marginBottom: 22 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+              <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#F1F5F9', margin: 0 }}>Alertas de los negocios</h3>
+              {(data.alerts || []).length > 0 && <span style={{ ...S.pill('#EF4444'), fontSize: '0.68rem' }}>{data.alerts.length}</span>}
+            </div>
+            {(!data.alerts || data.alerts.length === 0) ? (
+              <div style={{ ...S.card, textAlign: 'center', padding: 34, color: MUTED }}>
+                <div style={{ fontSize: '1.8rem', marginBottom: 8 }}>✅</div>
+                <div style={{ fontSize: '0.88rem', fontWeight: 600, color: '#10B981' }}>Sin alertas pendientes</div>
+                <div style={{ fontSize: '0.76rem', marginTop: 4 }}>Ningun negocio tiene problemas detectados en este momento</div>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {(data.alerts || []).map((a, i) => {
+                  const sev = SEVITY[a.severity] || SEVITY.info;
+                  return (
+                    <div key={`${a.business_id}-${i}`} style={{ ...S.card, padding: '13px 16px', display: 'flex', alignItems: 'center', gap: 12, background: sev.row, borderLeft: `3px solid ${sev.color}`, cursor: 'pointer' }}
+                      onClick={() => { const b = (data.online || []).find(x => x.business_id === a.business_id); setSelected(b || { name: a.name, email: a.email, plan: a.plan }); }}>
+                      <div style={{ width: 34, height: 34, borderRadius: 9, background: sev.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: sev.color, fontWeight: 800, fontSize: '0.72rem' }}>{LIVE_ICONS[a.severity] || '●'}</div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                          <span style={{ color: TEXT, fontWeight: 700, fontSize: '0.88rem' }}>{a.name}</span>
+                          <span style={{ ...S.pill(sev.color), fontSize: '0.64rem' }}>{sev.label}</span>
+                          <span style={{ color: MUTED, fontSize: '0.7rem' }}>{a.email}</span>
+                        </div>
+                        <div style={{ color: '#E2E8F0', fontSize: '0.78rem', marginTop: 4, lineHeight: 1.4 }}>{a.msg}</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Negocios en línea */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+            <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#F1F5F9', margin: 0 }}>Negocios activos ahora</h3>
+            {(data.online || []).length > 0 && <span style={{ ...S.pill('#22C55E'), fontSize: '0.66rem' }}>{data.online.length} en linea</span>}
+          </div>
+          {(data.online || []).length === 0 ? (
+            <div style={{ ...S.card, textAlign: 'center', padding: 48, color: MUTED }}>
+              <div style={{ fontSize: '2rem', marginBottom: 10 }}>📴</div>
+              <div style={{ fontSize: '0.9rem' }}>Sin negocios conectados en este momento</div>
+            </div>
+          ) : (
+            <div style={{ ...S.card, padding: 0, overflow: 'hidden' }}>
+              <div style={{ overflow: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.83rem', minWidth: 760 }}>
+                  <thead>
+                    <tr>
+                      <th style={S.tableTh}>Estado</th>
+                      <th style={S.tableTh}>Negocio</th>
+                      <th style={S.tableTh}>Plan</th>
+                      <th style={S.tableTh}>Ult. señal</th>
+                      <th style={S.tableTh}>Ventas hoy</th>
+                      <th style={S.tableTh}>Turno</th>
+                      <th style={S.tableTh}>Stock −</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(data.online || []).map(b => {
+                      const s = stateOf(b); const dc = dotColor(s);
+                      return (
+                        <tr key={b.business_id} style={{ transition: 'background 0.12s', cursor: 'pointer' }}
+                          onClick={() => setSelected(b)}
+                          onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.01)'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                          <td style={S.tableTd}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <span title={dotLabel(s)} style={{ display: 'inline-block', width: 9, height: 9, borderRadius: '50%', background: dc, boxShadow: b.sse ? `0 0 8px ${dc}` : 'none', animation: s === 'online' ? 'pulse 1.8s infinite' : 'none', flexShrink: 0 }} />
+                              <span style={{ color: dc, fontSize: '0.72rem', fontWeight: 700, whiteSpace: 'nowrap' }}>{dotLabel(s)}</span>
+                            </div>
+                          </td>
+                          <td style={S.tableTd}>
+                            <div style={{ color: TEXT, fontWeight: 600 }}>{b.name}</div>
+                            <div style={{ color: MUTED, fontSize: '0.72rem' }}>{b.email}</div>
+                          </td>
+                          <td style={S.tableTd}><span style={{ ...S.pill(PLAN[b.plan]?.color || '#64748B'), textTransform: 'capitalize' }}>{PLAN[b.plan]?.label || b.plan || '—'}</span></td>
+                          <td style={S.tableTd}>
+                            <div style={{ color: b.sse ? '#22C55E' : TEXT, fontWeight: 600 }}>
+                              {b.sse ? 'ahora mismo (SSE)' : (b.last_seen_min == null ? '—' : `hace ${b.last_seen_min} min`)}
+                            </div>
+                            <div style={{ color: MUTED, fontSize: '0.72rem' }}>{b.last_seen_type || ''}</div>
+                          </td>
+                          <td style={S.tableTd}>
+                            <div style={{ color: TEXT, fontWeight: 600 }}>{fmtPesos(b.monto_hoy)}</div>
+                            <div style={{ color: MUTED, fontSize: '0.72rem' }}>{b.ventas_hoy ?? 0} ventas</div>
+                          </td>
+                          <td style={S.tableTd}>
+                            {b.turn_abierto_horas != null ? (
+                              <span style={{ ...S.pill(b.turn_phantom ? '#EF4444' : (b.turn_abierto_horas > 12 ? '#F59E0B' : '#14BBA6')), fontSize: '0.7rem', whiteSpace: 'nowrap' }}>
+                                {b.turn_abierto_horas}h{b.turn_phantom ? ' · fantasma' : ''}
+                              </span>
+                            ) : <span style={{ color: MUTED, fontSize: '0.74rem' }}>sin caja</span>}
+                          </td>
+                          <td style={S.tableTd}>{b.stock_negativos > 0 ? <span style={{ color: '#EF4444', fontWeight: 700 }}>{b.stock_negativos}</span> : <span style={{ color: 'rgba(255,255,255,0.25)' }}>0</span>}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {selected && (
+            <div style={{ ...S.card, marginTop: 18, borderLeft: `3px solid ${ACCENT}` }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: TEXT }}>{selected.name}</h3>
+                <button onClick={() => setSelected(null)} style={{ ...S.ghostBtn, padding: '4px 10px', fontSize: '0.7rem' }}>Cerrar</button>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
+                {[
+                  ['Email', selected.email || '—'],
+                  ['Plan', PLAN[selected.plan]?.label || selected.plan || '—'],
+                  ['Ventas hoy', `${selected.ventas_hoy ?? 0} · ${fmtPesos(selected.monto_hoy)}`],
+                  ['Ult. señal', selected.sse ? 'Conectado ahora' : (selected.last_seen_min == null ? '—' : `hace ${selected.last_seen_min} min (${selected.last_seen_type || ''})`)],
+                  ['Operadores', selected.operators ?? '—'],
+                  ['Productos', selected.products ?? '—'],
+                  ['Sucursales', selected.sucursales ?? '—'],
+                  ['Turno', selected.turn_abierto_horas != null ? `${selected.turn_abierto_horas}h${selected.turn_phantom ? ' fantasma' : ''}` : 'sin caja'],
+                  ['Stock negativo', selected.stock_negativos ?? 0],
+                ].map(([k, v]) => (
+                  <div key={k} style={{ background: 'rgba(255,255,255,0.02)', border: `1px solid ${BORDER}`, borderRadius: 10, padding: '12px 14px' }}>
+                    <div style={{ color: MUTED, fontSize: '0.66rem', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>{k}</div>
+                    <div style={{ color: TEXT, fontWeight: 600, fontSize: '0.84rem' }}>{v}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }
