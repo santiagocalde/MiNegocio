@@ -180,26 +180,31 @@ const handleStatus = async (id, status) => {
     }).join('');
 
     // ── Header del documento ──────────────────────────────────
-    const logoHtml = logoUrl
-      ? `<img src="${logoUrl}" style="max-height:52px;max-width:160px;object-fit:contain" alt="logo" />`
-      : `<div style="font-size:26px;font-weight:900;letter-spacing:-0.5px">${bizName}</div>`;
+    // Logo: el CSS compacto pone logo e info en row; el holgado los apila
+    const logoImg = logoUrl
+      ? `<img src="${logoUrl}" style="max-height:52px;max-width:160px;object-fit:contain;display:block" alt="logo" />`
+      : '';
+    const bizInfoHtml = `
+      <div class="biz-info">
+        <div class="biz-name">${bizName}</div>
+        ${address ? `<div class="biz-detail">${address}</div>` : ''}
+        ${phone   ? `<div class="biz-detail">Tel: ${phone}</div>` : ''}
+        ${cuit    ? `<div class="biz-detail">CUIT: ${cuit}</div>` : ''}
+        ${condIva ? `<div class="iva-badge">${condIva}</div>` : ''}
+      </div>`;
 
     const makeBlock = (copyLabel) => `
 <div class="sheet">
   <!-- Encabezado -->
   <div class="doc-header">
     <div class="biz-left">
-      ${logoHtml}
-      <div class="biz-name">${logoUrl ? bizName : ''}</div>
-      ${address ? `<div class="biz-detail">${address}</div>` : ''}
-      ${phone   ? `<div class="biz-detail">Tel: ${phone}</div>` : ''}
+      ${logoImg}
+      ${bizInfoHtml}
     </div>
     <div class="biz-right">
       <div class="doc-type">PRESUPUESTO</div>
       <div class="doc-num">N° <span class="mono">${String(d.quote.id).padStart(4, '0')}</span></div>
       <div class="doc-date">${fmtDate(d.quote.created_at || new Date())}</div>
-      ${cuit     ? `<div class="biz-detail">CUIT: ${cuit}</div>` : ''}
-      ${condIva  ? `<div class="iva-badge">${condIva}</div>` : ''}
     </div>
   </div>
   <div class="copy-label">${copyLabel}</div>
@@ -256,85 +261,129 @@ const handleStatus = async (id, status) => {
   </div>
 </div>`;
 
-    const css = `
-      @page { size: A4; margin: 8mm 10mm; }
+    // ── CSS holgado (1 copia por página, 9+ items) ───────────
+    const cssLoose = `
+      @page { size: A4; margin: 10mm 12mm; }
       * { box-sizing: border-box; margin: 0; padding: 0; }
       body { font-family: Arial, Helvetica, sans-serif; font-size: 11px; color: #111; background: #fff; }
-      .sheet { border: 1px solid #bbb; padding: 8mm 10mm; margin-bottom: 4mm; page-break-inside: avoid; }
-      /* Header */
+      .sheet { border: 1px solid #bbb; padding: 10mm 12mm; page-break-after: always; page-break-inside: avoid; }
+      .sheet:last-child { page-break-after: avoid; }
       .doc-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 5mm; padding-bottom: 4mm; border-bottom: 2px solid #111; }
       .biz-left { display: flex; flex-direction: column; gap: 2px; }
       .biz-name { font-size: 14px; font-weight: 900; letter-spacing: -0.3px; margin-top: 2px; }
       .biz-detail { font-size: 10px; color: #444; }
       .biz-right { text-align: right; }
-      .doc-type { font-size: 18px; font-weight: 900; letter-spacing: 1.5px; }
+      .doc-type { font-size: 20px; font-weight: 900; letter-spacing: 1.5px; }
       .doc-num { font-size: 14px; font-weight: 700; margin: 1mm 0; }
       .doc-date { font-size: 11px; color: #444; }
       .iva-badge { display: inline-block; margin-top: 2mm; font-size: 9px; font-weight: 700; letter-spacing: 0.5px; border: 1px solid #555; padding: 1px 5px; color: #333; }
-      .copy-label { text-align: center; font-size: 12px; font-weight: 900; letter-spacing: 3px; padding: 1.5mm 0; border-top: 1px solid #ddd; border-bottom: 1px solid #ddd; margin-bottom: 4mm; color: #555; }
-      /* Cliente */
+      .copy-label { text-align: center; font-size: 12px; font-weight: 900; letter-spacing: 3px; padding: 2mm 0; border-top: 1px solid #ddd; border-bottom: 1px solid #ddd; margin-bottom: 5mm; color: #555; }
       .client-section { background: #f8f8f8; border: 1px solid #ddd; padding: 3mm 4mm; margin-bottom: 5mm; }
       .client-table { width: 100%; border-collapse: collapse; }
-      .client-table td { padding: 1.5px 4px; font-size: 11px; }
-      .cl { width: 60%; }
-      .cr { width: 40%; }
+      .client-table td { padding: 2px 4px; font-size: 11px; }
+      .cl { width: 60%; } .cr { width: 40%; }
       .cl-label { font-weight: 700; color: #555; }
-      /* Items */
-      .items { width: 100%; border-collapse: collapse; margin-bottom: 3mm; }
+      .items { width: 100%; border-collapse: collapse; margin-bottom: 4mm; }
       .items thead tr { border-bottom: 2px solid #111; }
-      .items thead th { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; padding: 2.5mm 3px; color: #333; }
+      .items thead th { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; padding: 3mm 3px; color: #333; }
       .items tbody tr { border-bottom: 1px solid #e5e5e5; }
       .items tbody tr:last-child { border-bottom: 1px solid #aaa; }
-      .items td { padding: 2.5mm 3px; vertical-align: middle; }
+      .items td { padding: 3mm 3px; vertical-align: middle; }
       .tc { text-align: center; width: 52px; }
       .cod { font-family: monospace; font-size: 10px; color: #555; width: 60px; }
       .desc { text-align: left; }
-      .num { text-align: right; font-family: monospace; width: 90px; font-variant-numeric: tabular-nums; }
-      /* Totales */
-      .totals { display: flex; flex-direction: column; align-items: flex-end; gap: 1mm; margin-bottom: 3mm; }
+      .num { text-align: right; font-family: monospace; width: 95px; font-variant-numeric: tabular-nums; }
+      .totals { display: flex; flex-direction: column; align-items: flex-end; gap: 1.5mm; margin-bottom: 4mm; }
       .total-row { display: flex; justify-content: flex-end; gap: 20mm; font-size: 11px; min-width: 120mm; }
       .total-row.disc { color: #666; }
-      .total-row.grand { font-size: 14px; font-weight: 900; border-top: 2px solid #111; padding-top: 2mm; margin-top: 1mm; }
+      .total-row.grand { font-size: 15px; font-weight: 900; border-top: 2px solid #111; padding-top: 2mm; margin-top: 1mm; }
       .mono { font-family: monospace; font-variant-numeric: tabular-nums; }
-      /* Monto en letras */
-      .letras { font-size: 10px; font-style: italic; color: #333; border-top: 1px dashed #aaa; padding-top: 2mm; margin-bottom: 6mm; }
-      /* Firma */
-      .firma-row { display: flex; justify-content: space-between; margin-top: 8mm; }
-      .firma-box { font-size: 10px; color: #555; line-height: 2.2; }
-      /* Corte */
-      .cut-line { text-align: center; color: #999; font-size: 9px; letter-spacing: 1px; margin: 3mm 0; border-top: 1px dashed #ccc; padding-top: 2mm; }
+      .letras { font-size: 10px; font-style: italic; color: #333; border-top: 1px dashed #aaa; padding-top: 2mm; margin-bottom: 8mm; }
+      .firma-row { display: flex; justify-content: space-between; margin-top: 10mm; }
+      .firma-box { font-size: 10px; color: #555; line-height: 2.4; }
+      .cut-line { display: none; }
     `;
 
-    // ── ¿Entran 2 copias en 1 A4? ────────────────────────────
-    // Estimación: header fijo ~100mm + cada item ~6.5mm + pie ~30mm
-    // A4 útil: ~277mm. Con 2 copias = 2 × bloque + corte ~8mm
-    const FIXED_MM = 100; // header + cliente + pie fijo por bloque
-    const ROW_MM = 6.5;
-    const DISC_MM = discPct > 0 ? 6.5 : 0;
-    const blockMM = FIXED_MM + d.items.length * ROW_MM + DISC_MM;
-    const fitsTwoPerPage = (blockMM * 2 + 8) <= 272;
+    // ── CSS compacto (2 copias por página, hasta 8 items) ────
+    // A4 usable con margin 5mm: 297-10 = 287mm
+    // Cada bloque objetivo ≤ 140mm para que 2+corte(7mm) = 287mm
+    const cssCompact = `
+      @page { size: A4; margin: 5mm 9mm; }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { font-family: Arial, Helvetica, sans-serif; font-size: 10px; color: #111; background: #fff; }
+      .sheet { border: 1px solid #bbb; padding: 5mm 8mm; page-break-inside: avoid; }
+      /* Header compacto: logo inline izquierda, datos negocio derecha */
+      .doc-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2.5mm; padding-bottom: 2.5mm; border-bottom: 1.5px solid #111; }
+      .biz-left { display: flex; flex-direction: row; align-items: center; gap: 6px; }
+      .biz-left img { max-height: 36px !important; max-width: 100px !important; }
+      .biz-info { display: flex; flex-direction: column; gap: 1px; }
+      .biz-name { font-size: 12px; font-weight: 900; letter-spacing: -0.2px; }
+      .biz-detail { font-size: 8.5px; color: #444; line-height: 1.35; }
+      .biz-right { text-align: right; }
+      .doc-type { font-size: 14px; font-weight: 900; letter-spacing: 1px; }
+      .doc-num { font-size: 12px; font-weight: 700; margin: 0.5mm 0; }
+      .doc-date { font-size: 9px; color: #444; }
+      .iva-badge { display: inline-block; margin-top: 1mm; font-size: 7.5px; font-weight: 700; letter-spacing: 0.4px; border: 1px solid #555; padding: 0.5px 4px; color: #333; }
+      .copy-label { text-align: center; font-size: 9.5px; font-weight: 900; letter-spacing: 3px; padding: 1mm 0; border-top: 1px solid #ddd; border-bottom: 1px solid #ddd; margin-bottom: 2.5mm; color: #555; }
+      /* Cliente compacto */
+      .client-section { background: #f8f8f8; border: 1px solid #ddd; padding: 1.5mm 3mm; margin-bottom: 2.5mm; }
+      .client-table { width: 100%; border-collapse: collapse; }
+      .client-table td { padding: 1px 3px; font-size: 9.5px; }
+      .cl { width: 60%; } .cr { width: 40%; }
+      .cl-label { font-weight: 700; color: #555; }
+      /* Items compacto */
+      .items { width: 100%; border-collapse: collapse; margin-bottom: 2mm; }
+      .items thead tr { border-bottom: 1.5px solid #111; }
+      .items thead th { font-size: 8.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.2px; padding: 1.5mm 2px; color: #333; }
+      .items tbody tr { border-bottom: 1px solid #e8e8e8; }
+      .items tbody tr:last-child { border-bottom: 1px solid #999; }
+      .items td { padding: 1.5mm 2px; vertical-align: middle; font-size: 9.5px; }
+      .tc { text-align: center; width: 40px; }
+      .cod { font-family: monospace; font-size: 8.5px; color: #555; width: 50px; }
+      .desc { text-align: left; }
+      .num { text-align: right; font-family: monospace; width: 80px; font-variant-numeric: tabular-nums; }
+      /* Totales compacto */
+      .totals { display: flex; flex-direction: column; align-items: flex-end; gap: 0.5mm; margin-bottom: 1.5mm; }
+      .total-row { display: flex; justify-content: flex-end; gap: 16mm; font-size: 9.5px; min-width: 100mm; }
+      .total-row.disc { color: #666; }
+      .total-row.grand { font-size: 12px; font-weight: 900; border-top: 1.5px solid #111; padding-top: 1.5mm; margin-top: 0.5mm; }
+      .mono { font-family: monospace; font-variant-numeric: tabular-nums; }
+      /* Monto en letras compacto */
+      .letras { font-size: 8.5px; font-style: italic; color: #444; border-top: 1px dashed #ccc; padding-top: 1.5mm; margin-bottom: 2mm; }
+      /* Firma compacto — 1 sola línea */
+      .firma-row { display: flex; justify-content: space-between; margin-top: 3mm; gap: 16mm; }
+      .firma-box { font-size: 8.5px; color: #555; flex: 1; border-top: 1px solid #888; padding-top: 1mm; }
+      /* Línea de corte */
+      .cut-line { text-align: center; color: #bbb; font-size: 8px; letter-spacing: 0.5px; margin: 2.5mm 0; border-top: 1px dashed #ccc; padding-top: 1.5mm; }
+    `;
+
+    // ── ¿Entran 2 copias en 1 A4 compacto? ──────────────────
+    // Con cssCompact: bloque fijo ~68mm + cada item ~4.5mm + descuento 4.5mm
+    // A4 usable (5mm margin): 287mm → 2 bloques + corte ≤ 287mm
+    // → bloque máx = (287 - 7) / 2 = 140mm → items máx = (140-68)/4.5 ≈ 16
+    // En la práctica ser conservador: hasta 8 items con holgura
+    const COMPACT_FIXED = 68;
+    const COMPACT_ROW = 4.5;
+    const COMPACT_DISC = discPct > 0 ? 4.5 : 0;
+    const compactBlock = COMPACT_FIXED + d.items.length * COMPACT_ROW + COMPACT_DISC;
+    const fitsTwoPerPage = (compactBlock * 2 + 7) <= 287;
 
     const w = window.open('', '_blank', 'width=900,height=700');
+    const docTitle = `Presupuesto N° ${String(d.quote.id).padStart(4, '0')} — ${bizName}`;
     if (fitsTwoPerPage) {
-      // ── 2 copias en 1 A4 (óptimo para presupuestos cortos) ──
+      // ── 2 copias en 1 A4 con CSS compacto ───────────────────
       w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8">
-        <title>Presupuesto N° ${String(d.quote.id).padStart(4, '0')} — ${bizName}</title>
-        <style>${css}</style></head><body>
+        <title>${docTitle}</title>
+        <style>${cssCompact}</style></head><body>
         ${makeBlock('ORIGINAL')}
         <div class="cut-line">✂ · · · · · · · · · · · · cortar aquí · · · · · · · · · · · · ✂</div>
         ${makeBlock('DUPLICADO')}
       </body></html>`);
     } else {
-      // ── 1 copia por página (presupuestos largos) ─────────────
-      const cssMulti = css.replace(
-        '.sheet {',
-        '.sheet { page-break-after: always; page-break-inside: avoid;'
-      );
+      // ── 1 copia por página con CSS holgado ───────────────────
       w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8">
-        <title>Presupuesto N° ${String(d.quote.id).padStart(4, '0')} — ${bizName}</title>
-        <style>${cssMulti}
-        .sheet:last-child { page-break-after: avoid; }
-        </style></head><body>
+        <title>${docTitle}</title>
+        <style>${cssLoose}</style></head><body>
         ${makeBlock('ORIGINAL')}
         ${makeBlock('DUPLICADO')}
       </body></html>`);
