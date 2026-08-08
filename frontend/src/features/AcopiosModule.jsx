@@ -184,7 +184,7 @@ export default function AcopiosModule() {
               <div>
                 {/* Selector retiro / entrega */}
                 <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
-                  {[['retiro', '🏭 Retiro en depósito'], ['entrega', '🚛 Entrega a domicilio']].map(([val, lbl]) => (
+                  {[['retiro', 'Retiro en depósito'], ['entrega', 'Entrega a domicilio']].map(([val, lbl]) => (
                     <button key={val} onClick={() => setWithdrawalType(val)}
                       style={{ flex: 1, padding: '8px 4px', fontSize: '0.8rem', fontWeight: 700, borderRadius: 8, cursor: 'pointer',
                         border: withdrawalType === val ? '2px solid var(--lp-primary)' : '1.5px solid var(--lp-line-strong)',

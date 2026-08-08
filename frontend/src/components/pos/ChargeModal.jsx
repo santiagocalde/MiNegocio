@@ -165,7 +165,6 @@ export default function ChargeModal({
             {/* Tarjeta débito */}
             {paymentMethod === 'tarjeta' && (
               <div style={{ background: 'var(--bg-card)', padding: '24px', borderRadius: '16px', border: '1px solid var(--border-color)', textAlign: 'center' }}>
-                <div style={{ fontSize: '3rem', marginBottom: '8px' }}>💳</div>
                 <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px' }}>Pasá la tarjeta por el posnet</div>
                 <div style={{ fontSize: '2rem', fontWeight: 900, color: 'var(--accent-primary)', fontFamily: 'var(--font-mono)' }}>${finalTotal.toLocaleString('es-AR')}</div>
                 <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '8px' }}>Confirmá el pago en el posnet y luego presioná "Procesar Venta"</div>

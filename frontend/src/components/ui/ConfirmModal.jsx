@@ -1,11 +1,18 @@
+import { Icons } from './Icons';
+
+const VariantIcon = ({ variant }) => {
+  const base = { width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', margin: '0 auto 16px' };
+  if (variant === 'danger')   return <div style={{ ...base, background: 'var(--wash-danger)',   color: 'var(--accent-danger)'   }}><Icons.Alert /></div>;
+  if (variant === 'warning')  return <div style={{ ...base, background: 'var(--wash-warning)', color: 'var(--accent-warning)' }}><Icons.Alert /></div>;
+  return                             <div style={{ ...base, background: 'rgba(20,187,166,0.12)', color: 'var(--accent-primary)' }}><Icons.HelpCircle /></div>;
+};
+
 export default function ConfirmModal({ isOpen, onClose, onConfirm, title, message, confirmLabel = 'Confirmar', cancelLabel = 'Cancelar', variant = 'danger', loading }) {
   if (!isOpen) return null;
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(30,58,95,0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000 }}>
       <div style={{ background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '32px', width: '400px', maxWidth: '90vw', boxShadow: '0 10px 25px rgba(30,58,95,0.5)' }}>
-        <div style={{ fontSize: '2.5rem', textAlign: 'center', marginBottom: '16px' }}>
-          {variant === 'danger' ? '⚠️' : variant === 'warning' ? '⚡' : 'ℹ️'}
-        </div>
+        <VariantIcon variant={variant} />
         <h2 style={{ fontSize: '1.3rem', fontWeight: 800, margin: '0 0 12px 0', color: 'var(--text-primary)', textAlign: 'center' }}>
           {title || '¿Estás seguro?'}
         </h2>

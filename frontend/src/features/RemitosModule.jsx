@@ -518,7 +518,7 @@ ${stopRows}
                   </span>
                   <button onClick={e => { e.stopPropagation(); handleShareWhatsApp(r); }}
                     style={{ background: 'rgba(37,211,102,0.09)', border: '1px solid rgba(37,211,102,0.25)', color: '#25D366', padding: '3px 8px', borderRadius: 4, cursor: 'pointer', fontSize: '0.7rem', fontWeight: 700 }}>
-                    📱
+                    WA
                   </button>
                 </div>
               </div>
@@ -538,7 +538,7 @@ ${stopRows}
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ fontSize: '1.3rem' }}>📋</span>
+            <span style={{ width: 20, height: 20, display: 'inline-flex', color: 'var(--text-faint)' }}><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg></span>
             <div>
               <div style={{ fontWeight: 800, color: 'var(--lp-primary)', fontSize: '0.9rem' }}>
                 {selectedCount} nota{selectedCount !== 1 ? 's' : ''} seleccionada{selectedCount !== 1 ? 's' : ''}
@@ -555,7 +555,7 @@ ${stopRows}
             </button>
             <button onClick={handlePrintOrdenCarga} disabled={loadingCarga}
               style={{ padding: '10px 20px', fontSize: '0.88rem', fontWeight: 800, background: 'var(--lp-primary)', border: 'none', color: '#0B132B', borderRadius: 8, cursor: loadingCarga ? 'wait' : 'pointer', opacity: loadingCarga ? 0.7 : 1, display: 'flex', alignItems: 'center', gap: 6 }}>
-              {loadingCarga ? '⏳ Generando...' : '🖨️ Imprimir Orden de carga'}
+              {loadingCarga ? 'Generando...' : 'Imprimir Orden de carga'}
             </button>
           </div>
         </div>
@@ -711,9 +711,9 @@ ${stopRows}
 
             <div style={{ fontSize: '0.83rem', color: 'var(--lp-ink-faint)', marginBottom: 14, display: 'flex', flexDirection: 'column', gap: 3 }}>
               {detail.remito.address && <div>📍 <strong style={{ color: 'var(--lp-ink)' }}>{detail.remito.address}</strong></div>}
-              {detail.remito.customer_name && <div>👤 {detail.remito.customer_name}</div>}
-              {detail.remito.driver && <div>🚛 Chofer: {detail.remito.driver}</div>}
-              <div>📅 Programado: {fmtDate(detail.remito.scheduled_date)}</div>
+              {detail.remito.customer_name && <div>{detail.remito.customer_name}</div>}
+              {detail.remito.driver && <div>Chofer: {detail.remito.driver}</div>}
+              <div>Programado: {fmtDate(detail.remito.scheduled_date)}</div>
             </div>
 
             <div style={{ borderTop: '1px solid var(--lp-line)', paddingTop: 10, marginBottom: 14 }}>
@@ -734,13 +734,13 @@ ${stopRows}
                 {/* Logística: solo puede confirmar entrega cuando está en camino */}
                 {isLogistica ? (
                   detail.remito.status === 'en_camino'
-                    ? btnStatus('#10B981', '✅ Confirmar entrega', () => handleStatus(detail.remito.id, 'delivered'))
+                    ? btnStatus('#10B981', 'Confirmar entrega', () => handleStatus(detail.remito.id, 'delivered'))
                     : <p style={{ fontSize: '0.8rem', color: 'var(--lp-ink-faint)', margin: 0 }}>
-                        {detail.remito.status === 'delivered' ? '✅ Ya entregado.' : 'Pendiente de despacho.'}
+                        {detail.remito.status === 'delivered' ? 'Ya entregado.' : 'Pendiente de despacho.'}
                       </p>
                 ) : (<>
                   {detail.remito.status === 'pending' && (<>
-                    {btnStatus('#F59E0B', '🚛 En camino', () => handleStatus(detail.remito.id, 'en_camino'))}
+                    {btnStatus('#F59E0B', 'En camino', () => handleStatus(detail.remito.id, 'en_camino'))}
                     {btnStatus('#F97316', '📅 Postergado', () => {
                       const tom = new Date(); tom.setDate(tom.getDate() + 1);
                       setPostponeModal({ remito_id: detail.remito.id, date: tom.toISOString().slice(0, 10) });
@@ -748,7 +748,7 @@ ${stopRows}
                     {btnStatus('#6B7280', 'Cancelar', () => handleStatus(detail.remito.id, 'cancelled'))}
                   </>)}
                   {detail.remito.status === 'en_camino' && (<>
-                    {btnStatus('#10B981', '✅ Entregado', () => handleStatus(detail.remito.id, 'delivered'))}
+                    {btnStatus('#10B981', 'Entregado', () => handleStatus(detail.remito.id, 'delivered'))}
                     {btnStatus('#EF4444', '✕ Fallido', () => handleStatus(detail.remito.id, 'failed'))}
                     {btnStatus('#F97316', '📅 Postergado', () => {
                       const tom = new Date(); tom.setDate(tom.getDate() + 1);
@@ -760,7 +760,7 @@ ${stopRows}
                     {btnStatus('#6B7280', 'Cancelar', () => handleStatus(detail.remito.id, 'cancelled'))}
                   </>)}
                   {detail.remito.status === 'delivered' && (
-                    btnStatus('#10B981', '💵 Cobrar', () => setShowCobrar(true))
+                    btnStatus('#10B981', 'Cobrar', () => setShowCobrar(true))
                   )}
                 </>)}
               </div>
@@ -771,8 +771,8 @@ ${stopRows}
                 <div style={{ fontWeight: 700, color: 'var(--lp-ink)', fontSize: '0.95rem', marginBottom: 10 }}>Registrar cobro</div>
                 <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
                   {[
-                    { val: 'cash', label: '💵 Efectivo' },
-                    { val: 'transfer', label: '📲 Transferencia' },
+                    { val: 'cash', label: 'Efectivo' },
+                    { val: 'transfer', label: 'Transferencia' },
                     { val: 'fiado', label: '📒 Fiado' },
                   ].map(m => (
                     <button key={m.val} onClick={() => setCobrarMethod(m.val)}
@@ -794,11 +794,11 @@ ${stopRows}
             <div style={{ display: 'flex', gap: 8, marginTop: 12, justifyContent: 'center' }}>
               <button onClick={() => handlePrint(detail)}
                 style={{ background: 'rgba(107,114,128,0.1)', border: '1px solid var(--lp-line-strong)', color: 'var(--lp-ink-faint)', padding: '6px 14px', borderRadius: 6, cursor: 'pointer', fontSize: '0.78rem', fontWeight: 600 }}>
-                🖨️ Imprimir
+                Imprimir
               </button>
               <button onClick={() => handleShareWhatsApp(detail.remito)}
                 style={{ background: 'rgba(37,211,102,0.09)', border: '1px solid rgba(37,211,102,0.25)', color: '#25D366', padding: '6px 14px', borderRadius: 6, cursor: 'pointer', fontSize: '0.78rem', fontWeight: 600 }}>
-                📱 WhatsApp
+                WhatsApp
               </button>
             </div>
           </div>

@@ -5,12 +5,12 @@ export default function EgresoModal({ showEgreso, setShowEgreso, egresoType, set
   return (
     <div className="modal-overlay" onClick={() => setShowEgreso(false)}>
       <div className="modal-content" onClick={e => e.stopPropagation()}>
-        <h2 className="modal-title" style={{ fontSize: '1.5rem', color: 'var(--accent-warning)' }}>💸 Registrar Egreso / Retiro</h2>
+        <h2 className="modal-title" style={{ fontSize: '1.5rem', color: 'var(--accent-warning)' }}>Registrar Egreso / Retiro</h2>
         <p style={{ color: 'var(--text-secondary)', textAlign: 'center', marginBottom: '24px' }}>Registrá acá la plata que saques de la caja para que no te dé faltante en el cierre.</p>
         <div className="input-group"><label>Tipo de Operación</label>
           <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
-            <button onClick={() => setEgresoType('gasto')} style={{ flex: 1, padding: '12px', borderRadius: '8px', border: '1px solid', borderColor: egresoType === 'gasto' ? 'var(--accent-danger)' : 'var(--border-color)', background: egresoType === 'gasto' ? 'rgba(239,68,68,0.15)' : 'transparent', color: egresoType === 'gasto' ? 'var(--text-primary)' : 'var(--text-secondary)', fontWeight: 700, cursor: 'pointer' }}>📉 Gasto (Afecta Ganancia)</button>
-            <button onClick={() => setEgresoType('retiro')} style={{ flex: 1, padding: '12px', borderRadius: '8px', border: '1px solid', borderColor: egresoType === 'retiro' ? 'var(--accent-primary)' : 'var(--border-color)', background: egresoType === 'retiro' ? 'rgba(20,187,166,0.15)' : 'transparent', color: egresoType === 'retiro' ? 'var(--text-primary)' : 'var(--text-secondary)', fontWeight: 700, cursor: 'pointer' }}>💼 Sangría / Retiro (Dueño)</button>
+            <button onClick={() => setEgresoType('gasto')} style={{ flex: 1, padding: '12px', borderRadius: '8px', border: '1px solid', borderColor: egresoType === 'gasto' ? 'var(--accent-danger)' : 'var(--border-color)', background: egresoType === 'gasto' ? 'rgba(239,68,68,0.15)' : 'transparent', color: egresoType === 'gasto' ? 'var(--text-primary)' : 'var(--text-secondary)', fontWeight: 700, cursor: 'pointer' }}>Gasto — afecta ganancia</button>
+            <button onClick={() => setEgresoType('retiro')} style={{ flex: 1, padding: '12px', borderRadius: '8px', border: '1px solid', borderColor: egresoType === 'retiro' ? 'var(--accent-primary)' : 'var(--border-color)', background: egresoType === 'retiro' ? 'rgba(20,187,166,0.15)' : 'transparent', color: egresoType === 'retiro' ? 'var(--text-primary)' : 'var(--text-secondary)', fontWeight: 700, cursor: 'pointer' }}>Sangría / Retiro del dueño</button>
           </div>
         </div>
         <div className="input-group"><label>Monto a retirar ($)</label>
@@ -24,7 +24,7 @@ export default function EgresoModal({ showEgreso, setShowEgreso, egresoType, set
             placeholder={egresoType === 'gasto' ? "Ej: Pago de luz..." : "Ej: Retiro para pagar alquiler..."}
             style={{ fontSize: '1.25rem', fontFamily: 'var(--font-main)', padding: '16px' }} />
         </div>
-        <div style={{ background: 'var(--wash-danger)', borderLeft: '4px solid var(--accent-danger)', padding: '12px 16px', borderRadius: '4px', marginBottom: '24px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}><strong>⚠️ Importante:</strong> Recordá dejar el comprobante físico en la caja.</div>
+        <div style={{ background: 'var(--wash-danger)', borderLeft: '4px solid var(--accent-danger)', padding: '12px 16px', borderRadius: '4px', marginBottom: '24px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}><strong>Importante:</strong> Recordá dejar el comprobante físico en la caja.</div>
         <div className="modal-actions">
           <button className="btn btn-modal-cancel" onClick={() => { setShowEgreso(false); setEgresoMonto(''); setEgresoMotivo(''); setEgresoType('gasto'); }}>Cancelar (Esc)</button>
           <button className="btn btn-modal-confirm" style={{ background: 'var(--accent-warning)', color: '#1E3A5F' }} onClick={submitEgreso} disabled={!egresoMonto || !egresoMotivo}>Registrar {egresoType === 'gasto' ? 'Gasto' : 'Retiro'}</button>

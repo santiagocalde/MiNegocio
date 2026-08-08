@@ -18,7 +18,7 @@ export default function TopBar({ currentOperator, sucursales, currentSucursalId,
         {sucursales.length > 1 && !isCashier && (
           <select value={currentSucursalId} onChange={e => setCurrentSucursalId(parseInt(e.target.value))}
             style={{ marginLeft: '24px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '8px 16px', borderRadius: '8px', fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer', outline: 'none' }}>
-            {sucursales.map(s => <option key={s.id} value={s.id}>🏪 {s.name}</option>)}
+            {sucursales.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
           </select>
         )}
       </div>

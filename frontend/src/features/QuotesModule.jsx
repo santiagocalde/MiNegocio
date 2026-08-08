@@ -659,8 +659,8 @@ const handleStatus = async (id, status) => {
             <div style={{ fontSize: '0.85rem', color: 'var(--lp-ink-faint)', marginBottom: 16 }}>
               <div>Estado: <span style={{ color: STATUS_MAP[detail.quote.status]?.color, fontWeight: 700 }}>{STATUS_MAP[detail.quote.status]?.label}</span></div>
               <div>Creado: {fmtDate(detail.quote.created_at)} · Vence: {fmtDate(detail.quote.expires_at)}</div>
-              {detail.quote.customer_name && <div>👤 Cliente: <strong style={{ color: 'var(--lp-ink)' }}>{detail.quote.customer_name}</strong></div>}
-              {detail.quote.note && <div>🏗 Obra: {detail.quote.note}</div>}
+              {detail.quote.customer_name && <div>Cliente: <strong style={{ color: 'var(--lp-ink)' }}>{detail.quote.customer_name}</strong></div>}
+              {detail.quote.note && <div>Obra: {detail.quote.note}</div>}
             </div>
 
             {/* Items */}
@@ -698,7 +698,7 @@ const handleStatus = async (id, status) => {
                     setToRemitoDate(new Date().toISOString().slice(0, 10));
                     setShowToRemito(true);
                   }} className="lp-btn lp-btn--primary" style={{ flex: 2, fontSize: '0.85rem', fontWeight: 800 }}>
-                    🚛 Crear Nota de pedido
+                    Crear Nota de pedido
                   </button>
                   <button onClick={() => handleStatus(detail.quote.id, 'delivered')} className="lp-btn lp-btn--ghost" style={{ flex: 1, fontSize: '0.82rem' }}>Entregado sin remito</button>
                 </>
@@ -706,7 +706,7 @@ const handleStatus = async (id, status) => {
               {detail.quote.status === 'approved' && showToRemito && (
                 <div style={{ width: '100%', background: 'var(--lp-paper-sunken)', border: '1.5px solid rgba(20,187,166,0.35)', borderRadius: 10, padding: 16, marginTop: 4 }}>
                   <div style={{ fontWeight: 800, color: 'var(--lp-primary)', fontSize: '0.9rem', marginBottom: 12, display: 'flex', justifyContent: 'space-between' }}>
-                    <span>🚛 Nueva Nota de pedido</span>
+                    <span>Nueva Nota de pedido</span>
                     <button onClick={() => { setShowToRemito(false); setToRemitoCustomer(null); }} style={{ background: 'none', border: 'none', color: 'var(--lp-ink-faint)', cursor: 'pointer', fontSize: '1rem' }}>✕</button>
                   </div>
                   <div style={{ marginBottom: 10 }}>
@@ -746,8 +746,8 @@ const handleStatus = async (id, status) => {
               {['draft', 'sent'].includes(detail.quote.status) && (
                 <button onClick={() => handleStatus(detail.quote.id, 'rejected')} className="lp-btn lp-btn--ghost" style={{ flex: 1, fontSize: '0.85rem', color: 'var(--lp-red)' }}>Rechazar</button>
               )}
-              <button onClick={handleShareWhatsApp} className="lp-btn lp-btn--ghost" style={{ fontSize: '0.85rem', color: '#25D366' }}>📱 WhatsApp</button>
-              <button onClick={handlePrint} className="lp-btn lp-btn--ghost" style={{ fontSize: '0.85rem' }}>🖨️ Imprimir</button>
+              <button onClick={handleShareWhatsApp} className="lp-btn lp-btn--ghost" style={{ fontSize: '0.85rem', color: '#25D366' }}>WhatsApp</button>
+              <button onClick={handlePrint} className="lp-btn lp-btn--ghost" style={{ fontSize: '0.85rem' }}>Imprimir</button>
               <button onClick={() => { handleDelete(detail.quote.id); setDetail(null); setShowToRemito(false); }} className="lp-btn lp-btn--ghost" style={{ fontSize: '0.85rem', color: 'var(--lp-red)' }}>Eliminar</button>
             </div>
           </div>

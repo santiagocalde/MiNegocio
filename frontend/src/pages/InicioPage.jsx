@@ -93,7 +93,6 @@ function PendientesCobro({ navigate }) {
     <div className="ledger-sheet" style={{ marginBottom: 18 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '13px 18px', borderBottom: '1px solid var(--rule-strong)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: '1rem' }}>💰</span>
           <h2 className="ledger-title" style={{ fontSize: '1rem', margin: 0 }}>Pendientes de cobro</h2>
         </div>
         <span style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--accent-warning)', background: 'var(--wash-warning)', padding: '3px 10px', borderRadius: 20 }}>

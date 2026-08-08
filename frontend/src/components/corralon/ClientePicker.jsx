@@ -87,11 +87,11 @@ export default function ClientePicker({ selected, onSelect, placeholder = 'Busca
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '8px 12px', background: 'var(--lp-primary-wash)', border: '1.5px solid var(--lp-primary)', borderRadius: 6 }}>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontWeight: 700, color: 'var(--lp-ink)', fontSize: '0.88rem' }}>
-              👤 {selected.name}
+              {selected.name}
             </div>
             {selected.phone && (
               <div style={{ fontSize: '0.74rem', color: 'var(--lp-ink-faint)', marginTop: 2 }}>
-                📞 {selected.phone}
+                {selected.phone}
               </div>
             )}
             {selected.address && (
