@@ -49,6 +49,7 @@ export default function RemitosModule() {
   const [detail, setDetail]         = useState(null);
   const [showCobrar, setShowCobrar] = useState(false);
   const [cobrarMethod, setCobrarMethod] = useState('cash');
+  const [cobrarMonto, setCobrarMonto] = useState('');
   const [cobrarLoading, setCobrarLoading] = useState(false);
 
   // Multi-select (solo en Despacho del día)
@@ -382,29 +383,48 @@ ${stopRows}
   // ── Cobrar mini-modal ─────────────────────────────────────────
   const handleCobrar = async () => {
     if (!detail) return;
+    const montoNum = Number(String(cobrarMonto).replace(/\D/g, ''));
+    if (!montoNum || montoNum <= 0) {
+      addToast?.('Ingresá un monto mayor a $0.', 'error');
+      return;
+    }
     setCobrarLoading(true);
     try {
-      const total = detail.items.reduce((s, i) => s + Number(i.unit_price) * Number(i.quantity), 0);
+      // Distribuir el monto ingresado proporcionalmente entre los items,
+      // o usar precio unitario si está disponible.
+      const calcTotal = detail.items.reduce((s, i) => s + Number(i.unit_price || 0) * Number(i.quantity || 1), 0);
+      const items = detail.items.map(i => {
+        const lineTotal = calcTotal > 0
+          ? (Number(i.unit_price || 0) * Number(i.quantity || 1))
+          : (montoNum / detail.items.length);
+        return {
+          product_id: i.product_id,
+          quantity: i.quantity || 1,
+          unit_price: calcTotal > 0 ? (i.unit_price || 0) : montoNum / detail.items.length,
+          discount_amount: 0,
+          _lineTotal: lineTotal,
+        };
+      });
       const body = {
         turn_id: auth?.currentTurnId,
         operator: auth?.currentOperator?.name || 'Sistema',
-        payment_method: cobrarMethod,
-        total,
-        items: detail.items.map(i => ({
-          product_id: i.product_id,
-          quantity: i.quantity,
-          unit_price: i.unit_price,
-          discount_amount: 0,
-        })),
+        payment_method: cobrarMethod === 'fiado' ? 'fiado' : cobrarMethod,
+        is_fiado: cobrarMethod === 'fiado',
+        fiado_name: cobrarMethod === 'fiado' ? (detail.remito.customer_name || '') : undefined,
+        total: montoNum,
+        items: items.map(({ _lineTotal: _, ...rest }) => rest),
+        source_remito_id: detail.remito.id,
       };
       const res = await apiPost('/sales', body);
       if (res.ok) {
-        addToast?.('✅ Cobro registrado correctamente.', 'success');
+        addToast?.('Cobro registrado correctamente.', 'success');
         setShowCobrar(false);
+        setCobrarMonto('');
         setDetail(null);
         fetchNotas();
       } else {
-        addToast?.('Error al registrar cobro.', 'error');
+        const err = await res.json().catch(() => ({}));
+        addToast?.(err.detail || 'Error al registrar cobro.', 'error');
       }
     } catch { addToast?.('Error de conexión.', 'error'); }
     setCobrarLoading(false);
@@ -710,7 +730,7 @@ ${stopRows}
             })()}
 
             <div style={{ fontSize: '0.83rem', color: 'var(--lp-ink-faint)', marginBottom: 14, display: 'flex', flexDirection: 'column', gap: 3 }}>
-              {detail.remito.address && <div>📍 <strong style={{ color: 'var(--lp-ink)' }}>{detail.remito.address}</strong></div>}
+              {detail.remito.address && <div>Dirección: <strong style={{ color: 'var(--lp-ink)' }}>{detail.remito.address}</strong></div>}
               {detail.remito.customer_name && <div>{detail.remito.customer_name}</div>}
               {detail.remito.driver && <div>Chofer: {detail.remito.driver}</div>}
               <div>Programado: {fmtDate(detail.remito.scheduled_date)}</div>
@@ -760,7 +780,11 @@ ${stopRows}
                     {btnStatus('#6B7280', 'Cancelar', () => handleStatus(detail.remito.id, 'cancelled'))}
                   </>)}
                   {detail.remito.status === 'delivered' && (
-                    btnStatus('#10B981', 'Cobrar', () => setShowCobrar(true))
+                    btnStatus('#10B981', 'Cobrar', () => {
+                      const calc = detail.items.reduce((s, i) => s + Number(i.unit_price || 0) * Number(i.quantity || 1), 0);
+                      setCobrarMonto(calc > 0 ? String(calc) : '');
+                      setShowCobrar(true);
+                    })
                   )}
                 </>)}
               </div>
@@ -769,11 +793,27 @@ ${stopRows}
             {showCobrar && detail.remito.status === 'delivered' && (
               <div style={{ marginTop: 4, background: 'var(--lp-paper-sunken)', border: '1px solid var(--lp-line-strong)', borderRadius: 10, padding: 16 }}>
                 <div style={{ fontWeight: 700, color: 'var(--lp-ink)', fontSize: '0.95rem', marginBottom: 10 }}>Registrar cobro</div>
+
+                {/* Monto */}
+                <div style={{ marginBottom: 12 }}>
+                  <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--lp-ink-faint)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>Monto ($)</div>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={cobrarMonto}
+                    onChange={e => setCobrarMonto(e.target.value.replace(/\D/g, ''))}
+                    placeholder="0"
+                    autoFocus
+                    style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1.5px solid var(--lp-line-strong)', background: 'var(--lp-paper-raised)', color: 'var(--lp-ink)', fontSize: '1.4rem', fontFamily: 'var(--font-mono)', fontWeight: 800, outline: 'none', boxSizing: 'border-box' }}
+                  />
+                </div>
+
+                {/* Método */}
                 <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
                   {[
-                    { val: 'cash', label: 'Efectivo' },
+                    { val: 'cash',     label: 'Efectivo' },
                     { val: 'transfer', label: 'Transferencia' },
-                    { val: 'fiado', label: '📒 Fiado' },
+                    { val: 'fiado',    label: 'Cuenta cte.' },
                   ].map(m => (
                     <button key={m.val} onClick={() => setCobrarMethod(m.val)}
                       style={{ flex: 1, padding: '9px 4px', fontSize: '0.8rem', fontWeight: 700, borderRadius: 8, cursor: 'pointer', border: cobrarMethod === m.val ? '2px solid var(--lp-primary)' : '1.5px solid var(--lp-line-strong)', background: cobrarMethod === m.val ? 'rgba(20,187,166,0.12)' : 'transparent', color: cobrarMethod === m.val ? 'var(--lp-primary)' : 'var(--lp-ink-faint)', transition: 'all 0.15s' }}>
@@ -781,10 +821,11 @@ ${stopRows}
                     </button>
                   ))}
                 </div>
+
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <button onClick={() => setShowCobrar(false)} className="lp-btn lp-btn--ghost" style={{ flex: 1 }}>Cancelar</button>
-                  <button onClick={handleCobrar} disabled={cobrarLoading} className="lp-btn lp-btn--primary"
-                    style={{ flex: 2, opacity: cobrarLoading ? 0.6 : 1 }}>
+                  <button onClick={() => { setShowCobrar(false); setCobrarMonto(''); }} className="lp-btn lp-btn--ghost" style={{ flex: 1 }}>Cancelar</button>
+                  <button onClick={handleCobrar} disabled={cobrarLoading || !cobrarMonto || Number(cobrarMonto) <= 0} className="lp-btn lp-btn--primary"
+                    style={{ flex: 2, opacity: (cobrarLoading || !cobrarMonto || Number(cobrarMonto) <= 0) ? 0.5 : 1 }}>
                     {cobrarLoading ? 'Registrando...' : 'Confirmar cobro'}
                   </button>
                 </div>
