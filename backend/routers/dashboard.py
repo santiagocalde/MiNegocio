@@ -77,12 +77,12 @@ async def get_dashboard_summary(request: Request) -> dict:
                 LIMIT 6
             """, b_id)
 
-            # 5. Productos bajos en stock
+            # 5. Productos bajos en stock (PG usa is_active, no active)
             low_stock = await conn.fetch("""
                 SELECT name, stock, min_stock
                 FROM products
                 WHERE business_id = $1
-                  AND active = TRUE
+                  AND is_active = 1
                   AND (stock <= min_stock OR stock = 0)
                 ORDER BY stock ASC
                 LIMIT 8
