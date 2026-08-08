@@ -25,14 +25,14 @@ async def get_dashboard_summary(request: Request) -> dict:
         from db_helpers import get_pg_pool
         pool = await get_pg_pool()
         async with pool.acquire() as conn:
-            # 1. Ventas del mes en curso
+            # 1. Ventas del mes en curso (PG: sales usa 'timestamp', no 'created_at')
             ventas_row = await conn.fetchrow("""
                 SELECT
                     COALESCE(SUM(total), 0)   AS ventas_mes,
                     COUNT(*)                  AS tickets_mes
                 FROM sales
                 WHERE business_id = $1
-                  AND date_trunc('month', created_at) = date_trunc('month', NOW())
+                  AND date_trunc('month', "timestamp") = date_trunc('month', NOW())
             """, b_id)
 
             # 2. Clientes con saldo pendiente más de 20 días
@@ -64,14 +64,14 @@ async def get_dashboard_summary(request: Request) -> dict:
                 LIMIT 8
             """, b_id)
 
-            # 4. Productos más vendidos este mes
+            # 4. Productos más vendidos este mes (PG: sales.timestamp)
             top_products = await conn.fetch("""
                 SELECT p.name, SUM(si.quantity) AS qty_vendida, SUM(si.quantity * si.unit_price) AS total_vendido
                 FROM sale_items si
                 JOIN products p ON p.id = si.product_id
                 JOIN sales s ON s.id = si.sale_id
                 WHERE s.business_id = $1
-                  AND date_trunc('month', s.created_at) = date_trunc('month', NOW())
+                  AND date_trunc('month', s."timestamp") = date_trunc('month', NOW())
                 GROUP BY p.id, p.name
                 ORDER BY qty_vendida DESC
                 LIMIT 6
