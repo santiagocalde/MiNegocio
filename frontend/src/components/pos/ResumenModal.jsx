@@ -4,6 +4,13 @@ import { Icons } from '../ui/Icons';
 import { usePanelContext } from '../../context/PanelContext';
 import { apiGet } from '../../services/apiClient';
 
+/** Icono inline 16 × 16, color heredado del padre */
+const Ico = ({ icon: Icon }) => (
+  <span style={{ width: 16, height: 16, display: 'inline-flex', flexShrink: 0, color: 'var(--text-faint)', verticalAlign: 'middle' }}>
+    <Icon />
+  </span>
+);
+
 function ResumenModal({ showResumen, setShowResumen, resumenData, businessConfig, addToast }) {
   const { businessType } = usePanelContext();
   const isCorralon = businessType === 'corralon';
@@ -40,21 +47,21 @@ function ResumenModal({ showResumen, setShowResumen, resumenData, businessConfig
 
   // ── Kiosco: filas planas ──
   const kioscRows = [
-    ['💰 Total Vendido',       fmt(resumenData?.total_vendido),       'var(--accent-success)'],
-    ['🎫 Cantidad de Tickets', fmtN(resumenData?.total_tickets),      ''],
-    ['📊 Ticket Promedio',     fmt((resumenData?.total_vendido || 0) / Math.max(1, resumenData?.total_tickets || 1)), ''],
-    ['💵 Efectivo en Caja',   fmt(resumenData?.total_efectivo),      'var(--accent-primary)'],
-    ['💳 Tarjeta Débito',     fmt(resumenData?.total_tarjeta),       'var(--text-primary)'],
-    ['🏦 Transferencias',     fmt(resumenData?.total_transferencia), 'var(--text-primary)'],
-    ['📋 Fiado Pendiente',    fmt(resumenData?.total_fiado),         'var(--accent-warning)'],
+    ['Total vendido',       fmt(resumenData?.total_vendido),       'var(--accent-success)'],
+    ['Tickets',             fmtN(resumenData?.total_tickets),      ''],
+    ['Ticket promedio',     fmt((resumenData?.total_vendido || 0) / Math.max(1, resumenData?.total_tickets || 1)), ''],
+    ['Efectivo',            fmt(resumenData?.total_efectivo),      'var(--accent-primary)'],
+    ['Tarjeta débito',      fmt(resumenData?.total_tarjeta),       'var(--text-primary)'],
+    ['Transferencias',      fmt(resumenData?.total_transferencia), 'var(--text-primary)'],
+    ['Fiado pendiente',     fmt(resumenData?.total_fiado),         'var(--accent-warning)'],
   ];
 
   // ── Corralón: secciones ──
   const cajaSections = [
-    { label: 'Total facturado', value: fmt(resumenData?.total_vendido),       color: 'var(--accent-success)', big: true },
-    { label: 'Efectivo',        value: fmt(resumenData?.total_efectivo),      color: 'var(--accent-primary)' },
-    { label: 'Transferencias',  value: fmt(resumenData?.total_transferencia), color: 'var(--text-primary)' },
-    { label: 'Cta. corriente',  value: fmt(resumenData?.total_fiado),         color: 'var(--accent-warning)' },
+    { label: 'Total facturado',   value: fmt(resumenData?.total_vendido),       color: 'var(--accent-success)', big: true },
+    { label: 'Efectivo',          value: fmt(resumenData?.total_efectivo),      color: 'var(--accent-primary)' },
+    { label: 'Transferencias',    value: fmt(resumenData?.total_transferencia), color: 'var(--text-primary)' },
+    { label: 'Cuenta corriente',  value: fmt(resumenData?.total_fiado),         color: 'var(--accent-warning)' },
   ];
   const despachoPending = corralonData?.remitos_pendientes ?? 0;
   const presActivos     = corralonData?.presupuestos_activos ?? 0;
@@ -150,7 +157,9 @@ function ResumenModal({ showResumen, setShowResumen, resumenData, businessConfig
                   {/* Notas de pedido */}
                   <div className="ledger-row" style={{ padding: '10px 16px' }}>
                     <div style={{ minWidth: 0 }}>
-                      <span className="ledger-label" style={{ fontSize: '0.82rem' }}>🚚 Notas pendientes de entrega</span>
+                      <span className="ledger-label" style={{ fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <Ico icon={Icons.Truck} /> Notas pendientes de entrega
+                      </span>
                     </div>
                     <span className="ledger-num" style={{
                       color: despachoPending > 0 ? 'var(--accent-warning)' : 'var(--text-faint)',
@@ -161,7 +170,9 @@ function ResumenModal({ showResumen, setShowResumen, resumenData, businessConfig
                   {/* Presupuestos */}
                   <div className="ledger-row" style={{ padding: '10px 16px' }}>
                     <div style={{ minWidth: 0 }}>
-                      <span className="ledger-label" style={{ fontSize: '0.82rem' }}>📄 Presupuestos activos</span>
+                      <span className="ledger-label" style={{ fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <Ico icon={Icons.File} /> Presupuestos activos
+                      </span>
                     </div>
                     <span className="ledger-num" style={{
                       color: presActivos > 0 ? 'var(--accent-primary)' : 'var(--text-faint)',
@@ -172,7 +183,9 @@ function ResumenModal({ showResumen, setShowResumen, resumenData, businessConfig
                   {/* Acopios */}
                   <div className="ledger-row" style={{ padding: '10px 16px' }}>
                     <div style={{ minWidth: 0, flex: 1 }}>
-                      <span className="ledger-label" style={{ fontSize: '0.82rem' }}>📦 Acopios sin retirar</span>
+                      <span className="ledger-label" style={{ fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <Ico icon={Icons.Box} /> Acopios sin retirar
+                      </span>
                       {acopiosN > 0 && (
                         <div style={{ fontSize: '0.72rem', color: 'var(--text-faint)', marginTop: 2 }}>
                           Material reservado: {fmt(acopiosMonto)}
