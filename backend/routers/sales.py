@@ -490,8 +490,8 @@ async def create_sale(request: Request, body: SaleCreate, idempotency_key: Optio
 
                 await db.commit()
                 await db.execute(
-                    "INSERT INTO audit_log (business_id, action, operator, details) VALUES (?,?,?,?)",
-                    (b_id, "sale_created", body.operator or "Sistema", f"Venta #{sale_id} — ${total_sale:.2f} ({primary_method})")
+                    "INSERT INTO audit_log (action, operator, details) VALUES (?,?,?)",
+                    ("sale_created", body.operator or "Sistema", f"Venta #{sale_id} — ${total_sale:.2f} ({primary_method})")
                 )
                 await db.commit()
                 await events.emit("sale-created", {"id": sale_id, "business_id": b_id}, business_id=b_id)

@@ -377,6 +377,12 @@ async def create_purchase(request: Request, body: dict) -> dict:
                             "UPDATE products SET stock = stock + $1, cost_price = $2, updated_at = now() WHERE id = $3",
                             qty, cost_val, item.get("product_id")
                         )
+                        await conn.execute(
+                            "INSERT INTO stock_movements (business_id, product_id, movement_type, quantity, reason, operator) VALUES ($1,$2,'entrada',$3,$4,$5)",
+                            b_id, item["product_id"], qty,
+                            f"Compra #{purchase_id} — {item.get('product_name', '')}",
+                            body.get("operator", "Sistema"),
+                        )
                 if body.get("paid_from_register"):
                     # El egreso debe atarse al turno abierto para que el cierre de caja
                     # lo reste del efectivo esperado (si no, da faltante falso).
@@ -390,6 +396,11 @@ async def create_purchase(request: Request, body: dict) -> dict:
                         "INSERT INTO egresos_caja (business_id, turn_id, monto, motivo, type, operator) VALUES ($1,$2,$3,$4,$5,$6)",
                         b_id, turn_id, round(cost, 2), f"Compra #{purchase_id}", "pago_proveedor", body.get("operator", "Sistema")
                     )
+                await conn.execute(
+                    "INSERT INTO audit_log (business_id, action, operator, details) VALUES ($1,$2,$3,$4)",
+                    b_id, "compra_created", body.get("operator", "Sistema"),
+                    f"Compra #{purchase_id} — ${round(cost, 2)}",
+                )
                 return {"id": purchase_id, "total_cost": round(cost, 2)}
     else:
         async with main.db_write_lock:
@@ -413,9 +424,16 @@ async def create_purchase(request: Request, body: dict) -> dict:
                         (purchase_id, item.get("product_id"), item.get("product_name"), item.get("quantity"), item.get("unit_cost"))
                     )
                     if item.get("product_id"):
+                        qty = item.get("quantity", 0)
                         await db.execute(
                             "UPDATE products SET stock = stock + ?, cost_price = ?, updated_at = datetime('now','localtime') WHERE id = ?",
-                            (item.get("quantity", 0), item.get("unit_cost", 0), item.get("product_id"))
+                            (qty, item.get("unit_cost", 0), item.get("product_id"))
+                        )
+                        await db.execute(
+                            "INSERT INTO stock_movements (product_id, movement_type, quantity, reason, operator) VALUES (?,?,?,?,?)",
+                            (item["product_id"], "entrada", qty,
+                             f"Compra #{purchase_id} — {item.get('product_name', '')}",
+                             body.get("operator", "Sistema")),
                         )
                 if body.get("paid_from_register"):
                     turn_id = body.get("turn_id")
@@ -427,6 +445,10 @@ async def create_purchase(request: Request, body: dict) -> dict:
                         "INSERT INTO egresos_caja (turn_id, monto, motivo, type, operator) VALUES (?,?,?,?,?)",
                         (turn_id, round(cost, 2), f"Compra #{purchase_id}", "pago_proveedor", body.get("operator", "Sistema"))
                     )
+                await db.execute(
+                    "INSERT INTO audit_log (action, operator, details) VALUES (?,?,?)",
+                    ("compra_created", body.get("operator", "Sistema"), f"Compra #{purchase_id} — ${round(cost, 2)}"),
+                )
                 await db.commit()
                 return {"id": purchase_id, "total_cost": round(cost, 2)}
 

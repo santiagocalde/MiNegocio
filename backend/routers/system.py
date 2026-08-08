@@ -417,6 +417,13 @@ async def activity_feed(request: Request, limit: int = Query(50)) -> list:
         "acopio_withdrawal":         ("Retiro de acopio",   None),
         "credit_note_created":       ("Nota de crédito",    "accent-primary"),
         "obra_created":              ("Obra creada",        "accent-primary"),
+        # Catálogo y precios
+        "product_created":           ("Alta de producto",   "accent-success"),
+        "product_deleted":           ("Baja de producto",   "accent-danger"),
+        "batch_price_change":        ("Aumento de precios", "accent-warning"),
+        # Compras / stock
+        "compra_created":            ("Compra",             "accent-success"),
+        "stock_adjusted":            ("Ajuste de stock",    None),
     }
 
     if USE_PG:

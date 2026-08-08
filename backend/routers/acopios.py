@@ -50,12 +50,13 @@ async def get_acopio(request: Request, acopio_id: int) -> dict:
     else:
         import aiosqlite
         async with aiosqlite.connect(main.DB_PATH) as db:
-            a = await db.execute("SELECT *, (SELECT name FROM customers WHERE id = a.customer_id) as customer_name FROM acopios a WHERE id = ?", (acopio_id,)); a = await a.fetchone()
+            cur_a = await db.execute("SELECT *, (SELECT name FROM customers WHERE id = a.customer_id) as customer_name FROM acopios a WHERE id = ?", (acopio_id,))
+            a = await cur_a.fetchone()
             if not a: raise HTTPException(404)
-            items = await db.execute("SELECT ai.*, p.name as product_name FROM acopio_items ai JOIN products p ON p.id = ai.product_id WHERE ai.acopio_id = ?", (acopio_id,))
-            items = [row_to_dict(r, items.description) for r in await items.fetchall()]
-            wdraws = await db.execute("SELECT aw.*, (SELECT COUNT(*) FROM acopio_withdrawal_items WHERE withdrawal_id = aw.id) as item_count FROM acopio_withdrawals aw WHERE aw.acopio_id = ? ORDER BY aw.created_at DESC", (acopio_id,))
-            return {"acopio": row_to_dict(a, a.description), "items": items, "withdrawals": [row_to_dict(w, wdraws.description) for w in await wdraws.fetchall()]}
+            cur_items = await db.execute("SELECT ai.*, p.name as product_name FROM acopio_items ai JOIN products p ON p.id = ai.product_id WHERE ai.acopio_id = ?", (acopio_id,))
+            items = [row_to_dict(r, cur_items.description) for r in await cur_items.fetchall()]
+            cur_wdraws = await db.execute("SELECT aw.*, (SELECT COUNT(*) FROM acopio_withdrawal_items WHERE withdrawal_id = aw.id) as item_count FROM acopio_withdrawals aw WHERE aw.acopio_id = ? ORDER BY aw.created_at DESC", (acopio_id,))
+            return {"acopio": row_to_dict(a, cur_a.description), "items": items, "withdrawals": [row_to_dict(w, cur_wdraws.description) for w in await cur_wdraws.fetchall()]}
 
 @router.post("/api/acopios", summary="Crear acopio")
 @limiter.limit("30/minute")
@@ -85,6 +86,10 @@ async def create_acopio(request: Request, body: dict = Body(...)) -> dict:
             for it in items:
                 await db.execute("INSERT INTO acopio_items (acopio_id, product_id, quantity_total, quantity_retirada, unit_price) VALUES (?,?,?,0,?)", (aid, it["product_id"], it["quantity"], it.get("unit_price", 0)))
                 await db.execute("UPDATE products SET stock = MAX(0, stock - ?) WHERE id = ?", (it["quantity"], it["product_id"]))
+            await db.execute(
+                "INSERT INTO audit_log (action, operator, details) VALUES (?,?,?)",
+                ("acopio_created", body.get("operator", "Sistema"), f"Acopio #{aid} creado"),
+            )
             await db.commit()
         return {"id": aid, "success": True}
 
@@ -123,5 +128,9 @@ async def create_withdrawal(request: Request, acopio_id: int, body: dict = Body(
             remaining = await db.execute("SELECT COUNT(*) FROM acopio_items WHERE acopio_id = ? AND quantity_retirada < quantity_total", (acopio_id,))
             if (await remaining.fetchone())[0] == 0:
                 await db.execute("UPDATE acopios SET status = 'completed', completed_at = ? WHERE id = ?", (_now().isoformat(), acopio_id))
+            await db.execute(
+                "INSERT INTO audit_log (action, operator, details) VALUES (?,?,?)",
+                ("acopio_withdrawal", body.get("operator", "Sistema"), f"Retiro parcial acopio #{acopio_id}"),
+            )
             await db.commit()
         return {"id": wid, "success": True}

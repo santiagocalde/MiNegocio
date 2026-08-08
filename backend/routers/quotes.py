@@ -154,6 +154,10 @@ async def create_quote(body: dict = Body(...)) -> dict:
                     INSERT INTO quote_items (quote_id, product_id, quantity, unit_price)
                     VALUES (?,?,?,?)
                 """, (qid, it.get("product_id"), it.get("quantity", 1), it.get("unit_price", 0)))
+            await db.execute(
+                "INSERT INTO audit_log (action, operator, details) VALUES (?,?,?)",
+                ("quote_created", body.get("operator", "Sistema"), f"Presupuesto #{qid} creado"),
+            )
             await db.commit()
         return {"id": qid, "success": True}
 
@@ -182,6 +186,10 @@ async def update_quote_status(quote_id: int, body: dict = Body(...)) -> dict:
         import aiosqlite
         async with aiosqlite.connect(main.DB_PATH) as db:
             await db.execute("UPDATE quotes SET status = ? WHERE id = ?", (new_status, quote_id))
+            await db.execute(
+                "INSERT INTO audit_log (action, operator, details) VALUES (?,?,?)",
+                ("quote_status", body.get("operator", "Sistema"), f"Presupuesto #{quote_id} → {new_status}"),
+            )
             await db.commit()
             return {"success": True}
 

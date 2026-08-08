@@ -325,6 +325,10 @@ async def create_product(request: Request, product: dict = Body(...)) -> Dict[st
                     "INSERT INTO product_barcodes (business_id, product_id, code) VALUES ($1, $2, $3)",
                     [(b_id, row["id"], c) for c in extra],
                 )
+            await conn.execute(
+                "INSERT INTO audit_log (business_id, action, operator, details) VALUES ($1,$2,$3,$4)",
+                b_id, "product_created", "Sistema", f"Alta de '{product.get('name')}' (cod: {code})",
+            )
             return {"id": row["id"], **product, "extra_codes": extra}
     else:
         async with aiosqlite.connect(main.DB_PATH) as db:
@@ -336,14 +340,19 @@ async def create_product(request: Request, product: dict = Body(...)) -> Dict[st
                  product.get("parent_id"), product.get("pack_size", 1), product.get("expiry_date", ""),
                  product.get("price_b"), product.get("unit_label", "unidad"))
             )
+            new_id = cur.lastrowid
             extra = _parse_extra_codes(product.get("extra_codes"), code)
             if extra:
                 await db.executemany(
                     "INSERT INTO product_barcodes (product_id, code) VALUES (?, ?)",
-                    [(cur.lastrowid, c) for c in extra],
+                    [(new_id, c) for c in extra],
                 )
+            await db.execute(
+                "INSERT INTO audit_log (action, operator, details) VALUES (?,?,?)",
+                ("product_created", "Sistema", f"Alta de '{product.get('name')}' (cod: {code})"),
+            )
             await db.commit()
-            return {"id": cur.lastrowid, **product, "extra_codes": extra}
+            return {"id": new_id, **product, "extra_codes": extra}
 
 
 @router.post("/api/products/{product_id}/price", summary="Actualizar precio")
@@ -355,18 +364,27 @@ async def update_price(product_id: int, body: dict) -> dict:
         from db_helpers import get_pg_pool
         pool = await get_pg_pool()
         async with pool.acquire() as conn:
-            old = await conn.fetchrow("SELECT price FROM products WHERE id = $1 AND business_id = $2", product_id, b_id)
+            old = await conn.fetchrow("SELECT price, name FROM products WHERE id = $1 AND business_id = $2", product_id, b_id)
             if not old: raise HTTPException(404, detail="Producto no encontrado")
             await conn.execute("UPDATE products SET price = $1, updated_at = now() WHERE id = $2", price, product_id)
+            await conn.execute(
+                "INSERT INTO stock_movements (business_id, product_id, movement_type, quantity, reason, operator) VALUES ($1,$2,'price_change',0,$3,$4)",
+                b_id, product_id, f"{old['name']}: ${old['price']} → ${price}", operator,
+            )
             return {"success": True, "old_price": old["price"], "new_price": price}
     else:
         async with aiosqlite.connect(main.DB_PATH) as db:
-            cur = await db.execute("SELECT price FROM products WHERE id = ?", (product_id,))
+            cur = await db.execute("SELECT price, name FROM products WHERE id = ?", (product_id,))
             row = await cur.fetchone()
             if not row: raise HTTPException(404, detail="Producto no encontrado")
+            old_price, name = row[0], row[1]
             await db.execute("UPDATE products SET price = ?, updated_at = datetime('now','localtime') WHERE id = ?", (price, product_id))
+            await db.execute(
+                "INSERT INTO stock_movements (product_id, movement_type, quantity, reason, operator) VALUES (?,?,?,?,?)",
+                (product_id, "price_change", 0, f"{name}: ${old_price} → ${price}", operator),
+            )
             await db.commit()
-            return {"success": True, "old_price": row[0], "new_price": price}
+            return {"success": True, "old_price": old_price, "new_price": price}
 
 
 @router.post("/api/products/{product_id}/stock", summary="Fijar stock absoluto")
@@ -393,16 +411,27 @@ async def update_stock(product_id: int, body: dict) -> dict:
         async with pool.acquire() as conn:
             old = await conn.fetchrow("SELECT stock FROM products WHERE id = $1 AND business_id = $2", product_id, b_id)
             if not old: raise HTTPException(404, detail="Producto no encontrado")
+            delta = int(stock - old["stock"])
             await conn.execute("UPDATE products SET stock = $1, updated_at = now() WHERE id = $2", stock, product_id)
+            await conn.execute(
+                "INSERT INTO stock_movements (business_id, product_id, movement_type, quantity, reason, operator) VALUES ($1,$2,'ajuste',$3,$4,$5)",
+                b_id, product_id, delta, f"Ajuste manual: {old['stock']} → {stock}", operator,
+            )
             return {"success": True, "old_stock": old["stock"], "new_stock": stock}
     else:
         async with aiosqlite.connect(main.DB_PATH) as db:
             cur = await db.execute("SELECT stock FROM products WHERE id = ?", (product_id,))
             row = await cur.fetchone()
             if not row: raise HTTPException(404, detail="Producto no encontrado")
+            old_stock = row[0]
+            delta = int(stock - old_stock)
             await db.execute("UPDATE products SET stock = ?, updated_at = datetime('now','localtime') WHERE id = ?", (stock, product_id))
+            await db.execute(
+                "INSERT INTO stock_movements (product_id, movement_type, quantity, reason, operator) VALUES (?,?,?,?,?)",
+                (product_id, "ajuste", delta, f"Ajuste manual: {old_stock} → {stock}", operator),
+            )
             await db.commit()
-            return {"success": True, "old_stock": row[0], "new_stock": stock}
+            return {"success": True, "old_stock": old_stock, "new_stock": stock}
 
 
 @router.put("/api/products/{product_id}", summary="Actualizar producto")
@@ -468,11 +497,24 @@ async def delete_product(product_id: int) -> dict:
         from db_helpers import get_pg_pool
         pool = await get_pg_pool()
         async with pool.acquire() as conn:
+            row = await conn.fetchrow("SELECT name FROM products WHERE id = $1 AND business_id = $2", product_id, b_id)
             await conn.execute("UPDATE products SET is_active = 0, updated_at = now() WHERE id = $1 AND business_id = $2", product_id, b_id)
+            name_str = row["name"] if row else f"#{product_id}"
+            await conn.execute(
+                "INSERT INTO audit_log (business_id, action, operator, details) VALUES ($1,$2,$3,$4)",
+                b_id, "product_deleted", "Sistema", f"Baja de '{name_str}'",
+            )
             return {"success": True}
     else:
         async with aiosqlite.connect(main.DB_PATH) as db:
+            cur = await db.execute("SELECT name FROM products WHERE id = ?", (product_id,))
+            row = await cur.fetchone()
+            name_str = row[0] if row else f"#{product_id}"
             await db.execute("UPDATE products SET is_active = 0, updated_at = datetime('now','localtime') WHERE id = ?", (product_id,))
+            await db.execute(
+                "INSERT INTO audit_log (action, operator, details) VALUES (?,?,?)",
+                ("product_deleted", "Sistema", f"Baja de '{name_str}'"),
+            )
             await db.commit()
             return {"success": True}
 
@@ -483,22 +525,28 @@ async def batch_increase(body: dict) -> dict:
     category_id = body.get("category_id")
     b_id = _biz_id()
     multiplier = 1.0 + (percentage / 100.0)
+    scope_detail = f"categoría #{category_id}" if category_id else "todos los productos"
+    operator = body.get("operator", "Sistema")
     if USE_PG:
         from db_helpers import get_pg_pool
         pool = await get_pg_pool()
         async with pool.acquire() as conn:
             async with conn.transaction():
                 if category_id:
-                    result = await conn.execute(
+                    await conn.execute(
                         "UPDATE products SET price = ROUND(price * $1, 2), updated_at = now() WHERE business_id = $2 AND category_id = $3 AND is_active = 1",
                         multiplier, b_id, category_id
                     )
                 else:
-                    result = await conn.execute(
+                    await conn.execute(
                         "UPDATE products SET price = ROUND(price * $1, 2), updated_at = now() WHERE business_id = $2 AND is_active = 1",
                         multiplier, b_id
                     )
-            return {"success": True, "message": f"Precios aumentados {percentage}%"}
+                await conn.execute(
+                    "INSERT INTO audit_log (business_id, action, operator, details) VALUES ($1,$2,$3,$4)",
+                    b_id, "batch_price_change", operator, f"Aumento {percentage}% — {scope_detail}",
+                )
+        return {"success": True, "message": f"Precios aumentados {percentage}%"}
     else:
         async with aiosqlite.connect(main.DB_PATH) as db:
             if category_id:
@@ -511,6 +559,10 @@ async def batch_increase(body: dict) -> dict:
                     "UPDATE products SET price = ROUND(price * ?, 2), updated_at = datetime('now','localtime') WHERE is_active = 1",
                     (multiplier,)
                 )
+            await db.execute(
+                "INSERT INTO audit_log (action, operator, details) VALUES (?,?,?)",
+                ("batch_price_change", operator, f"Aumento {percentage}% — {scope_detail}"),
+            )
             await db.commit()
             return {"success": True, "message": f"Precios aumentados {percentage}%"}
 

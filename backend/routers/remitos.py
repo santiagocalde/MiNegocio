@@ -94,13 +94,17 @@ async def create_remito(request: Request, body: dict = Body(...)) -> dict:
             await db.execute("BEGIN IMMEDIATE")
             cur = await db.execute("""
                 INSERT INTO remitos (quote_id, customer_id, address, driver, scheduled_date, status, created_at)
-                VALUES (?,?,?,?,?,?,'pending',?)
+                VALUES (?,?,?,?,?,'pending',?)
             """, (body.get("quote_id"), body.get("customer_id"), body.get("address", ""),
                   body.get("driver", ""), body.get("scheduled_date", str(_now().date())), _now()))
             rid = cur.lastrowid
             for it in body.get("items", []):
                 await db.execute("INSERT INTO remito_items (remito_id, product_id, quantity, unit_price) VALUES (?,?,?,?)",
                     (rid, it.get("product_id"), it.get("quantity", 1), it.get("unit_price", 0)))
+            await db.execute(
+                "INSERT INTO audit_log (action, operator, details) VALUES (?,?,?)",
+                ("remito_created", body.get("operator", "Sistema"), f"Remito #{rid} creado"),
+            )
             await db.commit()
         return {"id": rid, "success": True}
 
@@ -167,6 +171,10 @@ async def update_remito_status(request: Request, remito_id: int, body: dict = Bo
                 items = await db.execute("SELECT * FROM remito_items WHERE remito_id = ?", (remito_id,))
                 async for it in items:
                     await db.execute("UPDATE products SET stock = MAX(0, stock - ?) WHERE id = ?", (it["quantity"], it["product_id"]))
+            await db.execute(
+                "INSERT INTO audit_log (action, operator, details) VALUES (?,?,?)",
+                ("remito_status", body.get("operator", "Sistema"), f"Remito #{remito_id} → {new_status}"),
+            )
             await db.commit()
         return {"success": True}
 
