@@ -2,7 +2,7 @@ import os
 import logging
 import aiosqlite
 from datetime import datetime, timedelta, timezone
-from fastapi import APIRouter, HTTPException, Depends, Header, Request
+from fastapi import APIRouter, HTTPException, Depends, Header, Request, Query
 from pydantic import BaseModel, EmailStr, field_validator
 import bcrypt
 from jose import jwt, JWTError
@@ -124,6 +124,19 @@ async def _preload_starter_catalog(conn, biz_id: str, business_type: str) -> int
             biz_id, f"INIT-{creados:03d}", nombre, cat_ids[categoria],
         )
     return creados
+
+
+@router.get("/check-email", summary="Verificar disponibilidad de email antes del registro")
+@auth_limiter.limit("15/minute")
+async def check_email(request: Request, email: str = Query(...)) -> dict:
+    """Devuelve {available: true} si el email no está registrado, {available: false} si ya existe."""
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        existing = await conn.fetchrow(
+            "SELECT id FROM businesses WHERE email = $1",
+            email.lower().strip(),
+        )
+    return {"available": not bool(existing)}
 
 
 @router.post("/register", summary="Registro de nuevo comercio (SaaS)")
