@@ -81,6 +81,25 @@ STARTER_CATALOG = {
         "Accesorios": ["Collar", "Correa", "Juguete", "Comedero"],
         "Farmacia": ["Antiparasitario interno", "Pipeta antipulgas", "Comprimido desparasitante", "Vitaminas", "Shampoo medicado"],
     },
+    "corralon": {
+        "Cemento y Cal": ["Cemento Portland 50kg", "Cal hidratada 25kg", "Mortero seco 40kg", "Yeso fino 30kg"],
+        "Arena y Piedra": ["Arena fina (bolsa)", "Arena gruesa (bolsa)", "Piedra partida 6/20 (bolsa)", "Cascote (bolsa)", "Pedregullo (bolsa)"],
+        "Hierro": ["Hierro 4.2mm x 12m", "Hierro 6mm x 12m", "Hierro 8mm x 12m", "Hierro 10mm x 12m", "Hierro 12mm x 12m", "Malla electrosoldada Q92", "Malla electrosoldada Q131"],
+        "Ladrillos y Bloques": ["Ladrillo comun x unidad", "Ladrillo hueco 8x18x33", "Ladrillo hueco 12x18x33", "Bloque ceramico 18x18x33", "Adoquin x unidad"],
+        "Materiales de Obra": ["Bolson de escombro", "Bolson de arena", "Madera tabla 1x10x3m", "Tirante 2x4x3m", "Telgopor 2cm x plancha"],
+        "Canos y Conexiones": ["Cano PVC 110mm x 3m", "Cano PVC 63mm x 3m", "Cano PVC 32mm x 3m", "Codo PVC 110mm", "Te PVC 110mm", "Cano corrugado 63mm"],
+        "Electricidad": ["Cable unipolar 2.5mm (m)", "Cable unipolar 4mm (m)", "Caja plastica rectangular", "Caja octogonal", "Toma triple"],
+        "Herramientas": ["Pala ancha", "Pala redonda", "Carretilla", "Nivel 40cm", "Cinta metrica 5m"],
+    },
+    "vineria": {
+        "Vinos Tintos": ["Vino tinto malbec 750ml", "Vino tinto cabernet 750ml", "Vino tinto blend 750ml", "Vino tinto tetrabrik 1L", "Vino tinto tetrabrik 2L"],
+        "Vinos Blancos": ["Vino blanco torrontes 750ml", "Vino blanco chardonnay 750ml", "Vino blanco tetrabrik 1L"],
+        "Espumantes": ["Espumante brut 750ml", "Espumante extra brut 750ml", "Champagne rosado 750ml"],
+        "Cervezas": ["Cerveza rubia lata 473ml", "Cerveza rubia 1L", "Cerveza negra 473ml", "Cerveza artesanal 500ml"],
+        "Aperitivos y Licores": ["Fernet 750ml", "Aperol 750ml", "Gin 750ml", "Whisky 750ml", "Vodka 750ml"],
+        "Sin Alcohol": ["Gaseosa 2.25L", "Agua mineral 500ml", "Agua saborizada", "Jugo en caja", "Tonica 220ml"],
+        "Accesorios": ["Copa de vino x6", "Descorchador", "Enfriador de vino", "Bolsa regalo"],
+    },
 }
 
 

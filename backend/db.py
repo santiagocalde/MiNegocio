@@ -638,8 +638,8 @@ async def init_pg() -> None:
             ALTER TABLE products ADD COLUMN IF NOT EXISTS price_e NUMERIC(12,2);
 
             -- Nombres configurables para cada lista de precios
-            ALTER TABLE business_config ADD COLUMN IF NOT EXISTS price_list_a_name TEXT DEFAULT 'Lista A — Minorista';
-            ALTER TABLE business_config ADD COLUMN IF NOT EXISTS price_list_b_name TEXT DEFAULT 'Lista B — Mayorista';
+            ALTER TABLE business_config ADD COLUMN IF NOT EXISTS price_list_a_name TEXT DEFAULT 'Lista A - Minorista';
+            ALTER TABLE business_config ADD COLUMN IF NOT EXISTS price_list_b_name TEXT DEFAULT 'Lista B - Mayorista';
             ALTER TABLE business_config ADD COLUMN IF NOT EXISTS price_list_c_name TEXT DEFAULT 'Lista C';
             ALTER TABLE business_config ADD COLUMN IF NOT EXISTS price_list_d_name TEXT DEFAULT 'Lista D';
             ALTER TABLE business_config ADD COLUMN IF NOT EXISTS price_list_e_name TEXT DEFAULT 'Lista E';

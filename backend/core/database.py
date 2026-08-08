@@ -427,8 +427,8 @@ async def init_db(DB_PATH: str, logger) -> None:
         await add_column_if_not_exists(db, "products", "price_e", "REAL")
 
         # Nombres configurables de listas de precio
-        await add_column_if_not_exists(db, "business_config", "price_list_a_name", "TEXT", default="'Lista A — Minorista'")
-        await add_column_if_not_exists(db, "business_config", "price_list_b_name", "TEXT", default="'Lista B — Mayorista'")
+        await add_column_if_not_exists(db, "business_config", "price_list_a_name", "TEXT", default="'Lista A - Minorista'")
+        await add_column_if_not_exists(db, "business_config", "price_list_b_name", "TEXT", default="'Lista B - Mayorista'")
         await add_column_if_not_exists(db, "business_config", "price_list_c_name", "TEXT", default="'Lista C'")
         await add_column_if_not_exists(db, "business_config", "price_list_d_name", "TEXT", default="'Lista D'")
         await add_column_if_not_exists(db, "business_config", "price_list_e_name", "TEXT", default="'Lista E'")
