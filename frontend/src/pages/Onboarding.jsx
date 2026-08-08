@@ -99,7 +99,7 @@ export default function Onboarding() {
     upper:   /[A-Z]/.test(_pwd),
     lower:   /[a-z]/.test(_pwd),
     digit:   /[0-9]/.test(_pwd),
-    special: /[!@#$%^&*()_+=[]{}|;:,.<>?/~-]/.test(_pwd),
+    special: /[^a-zA-Z0-9]/.test(_pwd),
   };
   const passwordValid = Object.values(pwdChecks).every(Boolean);
 
