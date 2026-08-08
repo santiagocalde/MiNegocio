@@ -403,16 +403,20 @@ async def activity_feed(request: Request, limit: int = Query(50)) -> list:
         raise HTTPException(401, detail="No autenticado")
     
     LABELS = {
-        "sale_created": ("💰 Venta", "accent-success"),
-        "quote_created": ("📋 Presupuesto", "accent-primary"),
-        "quote_approved": ("✅ Aprobado", "accent-primary"),
-        "quote_delivered": ("🚛 Entregado", "accent-primary"),
-        "quote_to_remito": ("🚛 Nota de pedido", "accent-primary"),
-        "remito_created": ("📦 Nota creada", "accent-primary"),
-        "remito_status_delivered": ("✅ Entrega confirmada", "accent-success"),
-        "remito_status_en_camino": ("🚛 En camino", "accent-primary"),
-        "acopio_created": ("🏭 Acopio", None),
-        "acopio_withdrawal": ("📤 Retiro de acopio", None),
+        "sale_created":              ("Venta",              "accent-success"),
+        "quote_created":             ("Presupuesto",        "accent-primary"),
+        "quote_approved":            ("Aprobado",           "accent-primary"),
+        "quote_delivered":           ("Entregado",          "accent-primary"),
+        "quote_to_remito":           ("Nota de pedido",     "accent-primary"),
+        "quote_status":              ("Presupuesto",        "accent-primary"),
+        "remito_created":            ("Nota de pedido",     "accent-primary"),
+        "remito_status":             ("Estado de remito",   "accent-primary"),
+        "remito_status_delivered":   ("Entrega confirmada", "accent-success"),
+        "remito_status_en_camino":   ("En camino",          "accent-primary"),
+        "acopio_created":            ("Acopio",             None),
+        "acopio_withdrawal":         ("Retiro de acopio",   None),
+        "credit_note_created":       ("Nota de crédito",    "accent-primary"),
+        "obra_created":              ("Obra creada",        "accent-primary"),
     }
 
     if USE_PG:
@@ -442,7 +446,7 @@ async def activity_feed(request: Request, limit: int = Query(50)) -> list:
             details = r[3] or ""
             ts = r[4]
         
-        label_info = LABELS.get(action, (f"📌 {action.replace('_', ' ').title()}", None))
+        label_info = LABELS.get(action, (action.replace('_', ' ').title(), None))
         results.append({
             "id": r["id"] if USE_PG else r[0],
             "action": action,
