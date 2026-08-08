@@ -42,7 +42,7 @@ async def get_acopio(request: Request, acopio_id: int) -> dict:
         from db_helpers import get_pg_pool
         pool = await get_pg_pool()
         async with pool.acquire() as conn:
-            a = await conn.fetchrow("SELECT *, (SELECT name FROM customers WHERE id = a.customer_id) as customer_name FROM acopios a WHERE id = $1", acopio_id)
+            a = await conn.fetchrow("SELECT a.*, (SELECT name FROM customers WHERE id = a.customer_id) as customer_name, (SELECT address FROM customers WHERE id = a.customer_id) as customer_address FROM acopios a WHERE id = $1", acopio_id)
             if not a: raise HTTPException(404)
             items = await conn.fetch("SELECT ai.*, p.name as product_name FROM acopio_items ai JOIN products p ON p.id = ai.product_id WHERE ai.acopio_id = $1", acopio_id)
             wdraws = await conn.fetch("SELECT aw.*, (SELECT COUNT(*) FROM acopio_withdrawal_items WHERE withdrawal_id = aw.id) as item_count FROM acopio_withdrawals aw WHERE aw.acopio_id = $1 ORDER BY aw.created_at DESC", acopio_id)
@@ -50,7 +50,7 @@ async def get_acopio(request: Request, acopio_id: int) -> dict:
     else:
         import aiosqlite
         async with aiosqlite.connect(main.DB_PATH) as db:
-            cur_a = await db.execute("SELECT *, (SELECT name FROM customers WHERE id = a.customer_id) as customer_name FROM acopios a WHERE id = ?", (acopio_id,))
+            cur_a = await db.execute("SELECT a.*, (SELECT name FROM customers WHERE id = a.customer_id) as customer_name, (SELECT address FROM customers WHERE id = a.customer_id) as customer_address FROM acopios a WHERE id = ?", (acopio_id,))
             a = await cur_a.fetchone()
             if not a: raise HTTPException(404)
             cur_items = await db.execute("SELECT ai.*, p.name as product_name FROM acopio_items ai JOIN products p ON p.id = ai.product_id WHERE ai.acopio_id = ?", (acopio_id,))
