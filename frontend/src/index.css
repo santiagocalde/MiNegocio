@@ -501,84 +501,87 @@ svg {
 .modal-content {
   background: var(--gradient-card);
   backdrop-filter: blur(20px);
-  padding: 40px;
-  border-radius: 24px;
+  padding: 32px;
+  border-radius: 16px;
   width: 100%;
   max-width: 600px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 25px 50px -12px rgba(30,58,95, 0.7);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-lg);
 }
 .modal-title {
-  font-size: 2.25rem;
+  font-size: 1.6rem;
   font-weight: 800;
   text-align: center;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
   letter-spacing: -0.5px;
+  color: var(--text-primary);
 }
 .modal-amount {
   font-family: var(--font-mono);
-  font-size: 4.5rem;
+  font-size: 3.5rem;
   font-weight: 800;
   text-align: center;
   color: var(--text-primary);
-  margin-bottom: 32px;
-  text-shadow: 0 0 30px rgba(255, 255, 255, 0.1);
+  margin-bottom: 24px;
 }
 .input-group {
-  margin-bottom: 32px;
+  margin-bottom: 24px;
 }
 .input-group label {
   display: block;
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin-bottom: 12px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin-bottom: 8px;
   color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 .input-group input {
   width: 100%;
-  background: rgba(30,58,95, 0.3);
+  background: var(--bg-main);
   border: 2px solid var(--border-color);
   color: var(--text-primary);
-  padding: 24px;
-  border-radius: 16px;
-  font-size: 3rem;
+  padding: 18px;
+  border-radius: 12px;
+  font-size: 2.25rem;
   font-family: var(--font-mono);
   text-align: center;
   outline: none;
-  transition: all 0.3s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 .input-group input:focus {
   border-color: var(--border-focus);
-  box-shadow: 0 0 0 4px rgba(20, 187, 166, 0.2);
+  box-shadow: 0 0 0 4px rgba(20, 187, 166, 0.15);
 }
 .modal-actions {
   display: flex;
-  gap: 16px;
+  gap: 12px;
 }
 .btn-modal-cancel {
   flex: 1;
-  background-color: rgba(255, 255, 255, 0.05);
-  color: var(--text-primary);
-  padding: 24px;
-  font-size: 1.25rem;
+  background-color: var(--bg-card);
+  color: var(--text-secondary);
+  padding: 16px;
+  font-size: 1rem;
   font-weight: 700;
   border: 1px solid var(--border-color);
 }
 .btn-modal-cancel:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: var(--bg-hover);
+  color: var(--text-primary);
 }
 .btn-modal-confirm {
   flex: 2;
   background: var(--gradient-success);
   color: white;
-  padding: 24px;
-  font-size: 1.5rem;
+  padding: 16px;
+  font-size: 1.1rem;
   font-weight: 800;
-  box-shadow: 0 4px 12px rgba(30,58,95, 0.2);
+  box-shadow: var(--shadow-success);
 }
 .btn-modal-confirm:hover {
-  filter: brightness(1.1);
-  box-shadow: 0 6px 16px rgba(30,58,95, 0.3);
+  filter: brightness(1.08);
+  box-shadow: var(--shadow-success);
 }
 
 /* Print Styles — Ticket Térmico 80mm */
