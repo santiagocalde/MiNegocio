@@ -3,11 +3,61 @@ import { usePanelContext } from '../context/PanelContext';
 import { apiGet, apiPost } from '../services/apiClient';
 import ClientePicker from '../components/corralon/ClientePicker';
 
+// ── Comprobante imprimible ────────────────────────────────────
+function imprimirComprobante({ acopio, items, withdrawalType, withdrawalAddress, businessConfig }) {
+  const negocio = businessConfig?.nombre || 'MiNegocio';
+  const fecha = new Date().toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  const hora  = new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+  const tipo  = withdrawalType === 'entrega' ? 'entrega' : 'retiro';
+  const selloColor = tipo === 'entrega' ? '#7c3aed' : '#0891b2';
+  const selloText  = tipo === 'entrega' ? 'ENTREGA A DOMICILIO' : 'RETIRA EN PLANTA';
+  const fmt = (v) => (v ?? 0).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  const lineas = (items || []).filter(it => it.quantity_retirada < it.quantity_total);
+  const total = lineas.reduce((s, it) => s + (it.quantity_total - it.quantity_retirada) * it.unit_price, 0);
+  const win = window.open('', '_blank', 'width=700,height=900');
+  if (!win) return;
+  const rows = lineas.map(it => {
+    const qty = it.quantity_total - it.quantity_retirada;
+    return '<tr><td style="padding:6px 8px;border-bottom:1px solid #e5e7eb">' + it.product_name
+      + '</td><td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:right">' + qty
+      + '</td><td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:right">$' + fmt(it.unit_price)
+      + '</td><td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:right;font-weight:700">$' + fmt(qty * it.unit_price) + '</td></tr>';
+  }).join('');
+  const addrRow = withdrawalAddress
+    ? '<div style="grid-column:1/-1"><div class="lbl">Dirección</div><div style="font-weight:600">' + withdrawalAddress + '</div></div>'
+    : '';
+  win.document.write('<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Acopio #' + (acopio && acopio.id)
+    + '</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:system-ui,sans-serif;font-size:13px;color:#111;padding:32px}'
+    + 'h1{font-size:1.4rem;font-weight:800}table{width:100%;border-collapse:collapse;margin-top:12px}'
+    + 'th{font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:#6b7280;padding:6px 8px;border-bottom:2px solid #111;text-align:left}'
+    + 'th:last-child,td:last-child{text-align:right}.total-row td{padding:10px 8px;font-weight:800;font-size:1.05rem;border-top:2px solid #111}'
+    + '.lbl{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:#6b7280;margin-bottom:2px}'
+    + '.sello-wrap{margin-top:28px;display:flex;justify-content:flex-end}'
+    + '.sello{display:inline-block;border:2.5px solid ' + selloColor + ';border-radius:4px;padding:6px 18px;color:' + selloColor
+    + ';font-size:.9rem;font-weight:900;letter-spacing:.12em;text-transform:uppercase;transform:rotate(-6deg);opacity:.85}'
+    + '@media print{body{padding:16px}}</style></head><body>'
+    + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px">'
+    + '<div><div class="lbl" style="letter-spacing:.1em">Comprobante de acopio</div><h1>' + negocio + '</h1></div>'
+    + '<div style="text-align:right;font-size:.8rem;color:#6b7280"><div>Acopio #' + (acopio && acopio.id) + '</div><div>' + fecha + ' ' + hora + '</div></div></div>'
+    + '<div style="background:#f9fafb;border-radius:6px;padding:12px 16px;margin-bottom:16px;display:grid;grid-template-columns:1fr 1fr;gap:8px">'
+    + '<div><div class="lbl">Cliente</div><div style="font-weight:700">' + ((acopio && acopio.customer_name) || '—') + '</div></div>'
+    + '<div><div class="lbl">Modalidad</div><div style="font-weight:700">' + (tipo === 'entrega' ? 'Entrega a domicilio' : 'Retiro en planta') + '</div></div>'
+    + addrRow + '</div>'
+    + '<table><thead><tr><th>Producto</th><th style="text-align:right">Cantidad</th><th style="text-align:right">Precio unit.</th><th style="text-align:right">Subtotal</th></tr></thead>'
+    + '<tbody>' + rows + '</tbody>'
+    + '<tfoot><tr class="total-row"><td colspan="3">Total</td><td>$' + fmt(total) + '</td></tr></tfoot></table>'
+    + '<div class="sello-wrap"><div class="sello">' + selloText + '</div></div>'
+    + '<div style="margin-top:32px;padding-top:16px;border-top:1px solid #e5e7eb;font-size:.75rem;color:#9ca3af;text-align:center">Documento generado por MiNegocio · ' + fecha + '</div>'
+    + '<script>window.onload=function(){window.print();}<\/script></body></html>');
+  win.document.close();
+}
+
 const formatPesos = (v) => (v ?? 0).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 const fmtDate = (s) => s ? new Date(s).toLocaleDateString('es-AR', { day: 'numeric', month: 'short' }) : '—';
 
 export default function AcopiosModule() {
-  const { addToast } = usePanelContext();
+  const { addToast, backend } = usePanelContext();
+  const businessConfig = backend?.businessConfig;
   const [acopios, setAcopios] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -16,6 +66,7 @@ export default function AcopiosModule() {
   const [withdrawalItems, setWithdrawalItems] = useState({});
   const [withdrawalType, setWithdrawalType] = useState('retiro'); // 'retiro' | 'entrega'
   const [withdrawalAddress, setWithdrawalAddress] = useState('');
+  const [lastWithdrawal, setLastWithdrawal] = useState(null); // para ofrecer imprimir
 
   // Form
   const [formCustomer, setFormCustomer] = useState(null);
@@ -72,11 +123,12 @@ export default function AcopiosModule() {
       items,
       notes: withdrawalType === 'entrega'
         ? `Entrega a domicilio${withdrawalAddress ? ': ' + withdrawalAddress : ''}`
-        : 'Retiro en depósito',
+        : 'Retiro en planta',
     };
     const r = await apiPost(`/acopios/${showWithdrawal}/withdrawals`, body);
     if (r.ok) {
       addToast?.('Registrado correctamente.', 'success');
+      setLastWithdrawal({ acopio: detail?.acopio, items: detail?.items || [], withdrawalType, withdrawalAddress });
       setShowWithdrawal(null);
       setWithdrawalItems({});
       setWithdrawalType('retiro');
@@ -92,6 +144,23 @@ export default function AcopiosModule() {
         <h2 style={{ fontFamily: 'var(--lp-font-display)', fontSize: '1.3rem', fontWeight: 700, color: 'var(--lp-ink)', margin: 0, letterSpacing: '-0.02em' }}>Acopios</h2>
         <button onClick={() => setShowForm(true)} className="lp-btn lp-btn--primary" style={{ padding: '8px 18px', fontSize: '0.85rem' }}>Nuevo acopio</button>
       </div>
+
+      {/* Banner imprimir tras retiro exitoso */}
+      {lastWithdrawal && (
+        <div style={{ flexShrink: 0, background: 'rgba(20,187,166,0.08)', border: '1px solid var(--accent-primary)', borderRadius: 8, padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+          <span style={{ fontSize: '0.87rem', color: 'var(--lp-ink)', fontWeight: 600 }}>
+            Retiro registrado — ¿Imprimís el comprobante?
+          </span>
+          <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+            <button onClick={() => setLastWithdrawal(null)} className="lp-btn lp-btn--ghost" style={{ padding: '6px 12px', fontSize: '0.8rem' }}>No</button>
+            <button className="lp-btn lp-btn--primary" style={{ padding: '6px 14px', fontSize: '0.8rem' }}
+              onClick={() => { imprimirComprobante({ ...lastWithdrawal, businessConfig }); setLastWithdrawal(null); }}>
+              Imprimir
+            </button>
+          </div>
+        </div>
+      )}
+
       <div style={{ flex: 1, overflow: 'auto' }}>
         {loading ? (
           <div style={{ color: 'var(--lp-ink-faint)', textAlign: 'center', padding: 40 }}>Cargando...</div>
@@ -184,8 +253,14 @@ export default function AcopiosModule() {
               <div>
                 {/* Selector retiro / entrega */}
                 <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
-                  {[['retiro', 'Retiro en depósito'], ['entrega', 'Entrega a domicilio']].map(([val, lbl]) => (
-                    <button key={val} onClick={() => setWithdrawalType(val)}
+                  {[['retiro', 'Retiro en planta'], ['entrega', 'Entrega a domicilio']].map(([val, lbl]) => (
+                    <button key={val} onClick={() => {
+                      setWithdrawalType(val);
+                      // Auto-completar dirección del cliente al seleccionar entrega
+                      if (val === 'entrega' && detail.acopio.customer_address && !withdrawalAddress) {
+                        setWithdrawalAddress(detail.acopio.customer_address);
+                      }
+                    }}
                       style={{ flex: 1, padding: '8px 4px', fontSize: '0.8rem', fontWeight: 700, borderRadius: 8, cursor: 'pointer',
                         border: withdrawalType === val ? '2px solid var(--lp-primary)' : '1.5px solid var(--lp-line-strong)',
                         background: withdrawalType === val ? 'rgba(20,187,166,0.12)' : 'transparent',
@@ -196,9 +271,17 @@ export default function AcopiosModule() {
                   ))}
                 </div>
                 {withdrawalType === 'entrega' && (
-                  <input value={withdrawalAddress} onChange={e => setWithdrawalAddress(e.target.value)}
-                    placeholder="Dirección de entrega"
-                    style={{ width: '100%', padding: '7px 10px', background: 'var(--lp-paper-sunken)', border: '1px solid var(--lp-line-strong)', borderRadius: 6, color: 'var(--lp-ink)', fontSize: '0.85rem', outline: 'none', marginBottom: 8 }} />
+                  <div style={{ marginBottom: 8 }}>
+                    <input value={withdrawalAddress} onChange={e => setWithdrawalAddress(e.target.value)}
+                      placeholder="Dirección de entrega"
+                      style={{ width: '100%', padding: '7px 10px', background: 'var(--lp-paper-sunken)', border: '1px solid var(--lp-line-strong)', borderRadius: 6, color: 'var(--lp-ink)', fontSize: '0.85rem', outline: 'none' }} />
+                    {detail.acopio.customer_address && !withdrawalAddress && (
+                      <button onClick={() => setWithdrawalAddress(detail.acopio.customer_address)}
+                        style={{ marginTop: 4, fontSize: '0.73rem', color: 'var(--accent-primary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontWeight: 600 }}>
+                        Usar: {detail.acopio.customer_address}
+                      </button>
+                    )}
+                  </div>
                 )}
                 {/* Cantidades — pre-llenadas con el disponible */}
                 {detail.items.filter(it => it.quantity_retirada < it.quantity_total).map(it => {
@@ -233,6 +316,8 @@ export default function AcopiosModule() {
                     preloaded[it.id] = it.quantity_total - it.quantity_retirada;
                   });
                   setWithdrawalItems(preloaded);
+                  setWithdrawalType('retiro');
+                  setWithdrawalAddress('');
                   setShowWithdrawal(detail.acopio.id);
                 }} className="lp-btn lp-btn--primary" style={{ width: '100%' }}>
                   Registrar retiro / entrega

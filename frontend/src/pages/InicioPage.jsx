@@ -231,8 +231,6 @@ export default function InicioPage() {
       </div>
 
       {currentPlan === 'ia' && <ResumenIA />}
-      {businessType === 'corralon' && <PendientesCobro navigate={navigate} />}
-      <ActividadReciente />
 
       {/* Cuerpo: dos columnas — el libro del día + acciones/stock */}
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.5fr) minmax(0, 1fr)', gap: 18, alignItems: 'start' }}>
@@ -294,6 +292,18 @@ export default function InicioPage() {
             )}
           </div>
         </div>
+      </div>
+
+      {/* Pendientes de cobro — debajo del grid de ventas (solo corralón) */}
+      {businessType === 'corralon' && (
+        <div style={{ marginTop: 18 }}>
+          <PendientesCobro navigate={navigate} />
+        </div>
+      )}
+
+      {/* Actividad reciente — siempre al fondo */}
+      <div style={{ marginTop: 18 }}>
+        <ActividadReciente />
       </div>
     </div>
   );

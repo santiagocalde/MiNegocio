@@ -1,8 +1,23 @@
-import { useState } from 'react';
-import { apiPost } from '../../services/apiClient';
+import { useState, useEffect } from 'react';
+import { apiPost, apiGet } from '../../services/apiClient';
 
 export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, currentOperator, todaySalesTotal, resumenData, countedCash, setCountedCash, closeCajaPin, setCloseCajaPin, calculateCajaDiff, cashRef, addToast, currentTurnId, onTurnClosed }) {
   const [closing, setClosing] = useState(false);
+  const [pendingRemitos, setPendingRemitos] = useState([]);
+  const [postponing, setPostponing] = useState(false);
+
+  const isLogistica = currentOperator?.role === 'logistica';
+  const isAdmin = currentOperator?.role === 'admin';
+
+  // Cargar remitos pendientes para el rol logística (hook antes de cualquier early return)
+  useEffect(() => {
+    if (!isLogistica || !isClosingCaja) return;
+    apiGet('/remitos?status=pending&limit=50')
+      .then(r => r.ok ? r.json() : [])
+      .then(data => setPendingRemitos(Array.isArray(data) ? data : []))
+      .catch(() => setPendingRemitos([]));
+  }, [isLogistica, isClosingCaja]);
+
   if (!isClosingCaja) return null;
 
   const methodRows = [
@@ -13,29 +28,44 @@ export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, curren
     { label: 'Fiado', value: resumenData?.total_fiado || 0 },
   ].filter(m => m.value > 0);
 
-  const isAdmin = currentOperator?.role === 'admin';
+  const handlePostponeAll = async () => {
+    if (pendingRemitos.length === 0) return;
+    setPostponing(true);
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const dateStr = tomorrow.toISOString().slice(0, 10);
+    await Promise.all(pendingRemitos.map(r =>
+      apiPost(`/remitos/${r.id}/status`, { status: 'postponed', scheduled_date: dateStr, operator: currentOperator?.name || 'Sistema' })
+    ));
+    setPendingRemitos([]);
+    setPostponing(false);
+    if (addToast) addToast(`${pendingRemitos.length} pedido(s) pasado(s) a mañana.`, 'success');
+  };
 
   const handleCloseTurn = async () => {
     if (!currentTurnId) {
       if (addToast) addToast('No hay turno activo.', 'error');
       return;
     }
-    if (!countedCash) {
-      if (addToast) addToast('Ingresa cuánto efectivo contaste.', 'error');
-      return;
-    }
-    if (!isAdmin && (!closeCajaPin || closeCajaPin.length < 4)) {
-      if (addToast) addToast('Ingresa tu PIN de 4 digitos.', 'error');
-      return;
+    // Para logística no se pide efectivo ni PIN
+    if (!isLogistica) {
+      if (!countedCash) {
+        if (addToast) addToast('Ingresa cuánto efectivo contaste.', 'error');
+        return;
+      }
+      if (!isAdmin && (!closeCajaPin || closeCajaPin.length < 4)) {
+        if (addToast) addToast('Ingresa tu PIN de 4 digitos.', 'error');
+        return;
+      }
     }
     setClosing(true);
     try {
       const res = await apiPost(`/turns/${currentTurnId}/close`, {
         sales_total: todaySalesTotal || 0,
-        counted_cash: parseFloat(countedCash) || 0,
+        counted_cash: isLogistica ? 0 : (parseFloat(countedCash) || 0),
         operator_id: isAdmin ? null : (currentOperator?.id || null),
-        pin: isAdmin ? undefined : closeCajaPin,
-        notes: calculateCajaDiff() !== 0 ? (calculateCajaDiff() > 0 ? `Sobrante: $${calculateCajaDiff()}` : `Faltante: $${Math.abs(calculateCajaDiff())}`) : 'Caja cerrada sin diferencias.',
+        pin: (isAdmin || isLogistica) ? undefined : closeCajaPin,
+        notes: isLogistica ? 'Cierre de turno logística' : (calculateCajaDiff() !== 0 ? (calculateCajaDiff() > 0 ? `Sobrante: $${calculateCajaDiff()}` : `Faltante: $${Math.abs(calculateCajaDiff())}`) : 'Caja cerrada sin diferencias.'),
       });
       if (res.ok) {
         if (addToast) addToast('Turno cerrado correctamente.', 'success');
@@ -53,6 +83,45 @@ export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, curren
       setClosing(false);
     }
   };
+
+  // ── Vista para rol logística ──────────────────────────────────
+  if (isLogistica) {
+    return (
+      <div className="modal-overlay"><div className="modal-content" style={{ width: '500px' }}>
+        <h2 className="modal-title" style={{ color: 'var(--text-primary)' }}>Cierre de turno — Logística</h2>
+        {pendingRemitos.length > 0 ? (
+          <>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: 12 }}>
+              Hay <strong style={{ color: 'var(--accent-warning)' }}>{pendingRemitos.length} pedido(s) pendiente(s)</strong> para hoy. ¿Los pasás a mañana o los dejás?
+            </p>
+            <div style={{ border: '1px solid var(--border-color)', borderRadius: 8, padding: '8px 0', marginBottom: 16, maxHeight: 180, overflowY: 'auto' }}>
+              {pendingRemitos.map(r => (
+                <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 14px', fontSize: '0.85rem' }}>
+                  <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>#{r.id} {r.customer_name ? '— ' + r.customer_name : ''}</span>
+                  <span style={{ color: 'var(--text-secondary)', fontSize: '0.78rem' }}>{r.address || '—'}</span>
+                </div>
+              ))}
+            </div>
+            <button onClick={handlePostponeAll} disabled={postponing}
+              style={{ width: '100%', padding: '11px', marginBottom: 8, background: 'var(--accent-warning)', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer', fontSize: '0.9rem', opacity: postponing ? 0.6 : 1 }}>
+              {postponing ? 'Pasando...' : `Pasar ${pendingRemitos.length} pedido(s) a mañana`}
+            </button>
+          </>
+        ) : (
+          <div style={{ background: 'rgba(16,185,129,0.1)', padding: 16, borderRadius: 8, marginBottom: 16, textAlign: 'center' }}>
+            <span style={{ color: 'var(--accent-success)', fontWeight: 700 }}>Sin pedidos pendientes para hoy.</span>
+          </div>
+        )}
+        <div className="modal-actions">
+          <button className="btn btn-modal-cancel" onClick={() => setIsClosingCaja(false)} disabled={closing}>Cancelar</button>
+          <button className="btn btn-modal-confirm" onClick={handleCloseTurn} disabled={closing}
+            style={{ background: 'var(--accent-danger)', opacity: closing ? 0.5 : 1 }}>
+            {closing ? 'Cerrando...' : 'Cerrar turno'}
+          </button>
+        </div>
+      </div></div>
+    );
+  }
 
   return (
     <div className="modal-overlay"><div className="modal-content" style={{ width: '500px' }}>

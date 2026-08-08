@@ -14,25 +14,26 @@ const NAV_ITEMS = [
   {
     category: 'OPERACIÓN',
     items: [
-      { label: 'Inicio', path: '/panel/inicio', icon: 'Home', roles: ['admin', 'manager', 'operator'] },
-      { label: 'Punto de Venta', short: 'Vender', path: '/panel/ventas', icon: 'ShoppingCart', roles: ['admin', 'manager', 'operator'] },
+      { label: 'Inicio', path: '/panel/inicio', icon: 'Home', roles: ['admin', 'manager', 'operator', 'vendedor'] },
+      { label: 'Punto de Venta', short: 'Vender', path: '/panel/ventas', icon: 'ShoppingCart', roles: ['admin', 'manager', 'operator', 'vendedor'] },
       { label: 'Compras', path: '/panel/compras', icon: 'Truck', roles: ['admin', 'manager'], minPlan: 'simple', featureKey: 'compras' },
-      { label: 'Fiados', path: '/panel/clientes', icon: 'Book', roles: ['admin', 'manager', 'operator'], featureKey: 'fiados' },
+      { label: 'Fiados', path: '/panel/clientes', icon: 'Book', roles: ['admin', 'manager', 'operator', 'vendedor'], featureKey: 'fiados' },
     ],
   },
   {
     category: 'CATÁLOGO',
     items: [
-      { label: 'Inventario', path: '/panel/inventario', icon: 'Box', roles: ['admin', 'manager'] },
+      { label: 'Inventario', path: '/panel/inventario', icon: 'Box', roles: ['admin', 'manager', 'vendedor'] },
       { label: 'Catálogo Web', short: 'Catálogo', path: '/panel/catalogo-web', icon: 'Edit', roles: ['admin', 'manager'], minPlan: 'pro', featureKey: 'catalogo' },
       { label: 'Proveedores', path: '/panel/proveedores', icon: 'Truck', roles: ['admin', 'manager'], minPlan: 'simple', featureKey: 'proveedores' },
-      { label: 'Etiquetas', path: '/panel/etiquetas', icon: 'Printer', roles: ['admin', 'manager'] },
+      { label: 'Etiquetas', path: '/panel/etiquetas', icon: 'Printer', roles: ['admin', 'manager', 'vendedor'] },
     ],
   },
   {
     category: 'ANÁLISIS',
     roles: ['admin'],
     items: [
+      { label: 'Dashboard', path: '/panel/dashboard', icon: 'Chart' },
       { label: 'Reportes', path: '/panel/reportes', icon: 'Chart' },
       { label: 'Promociones', path: '/panel/promociones', icon: 'Tag', featureKey: 'promociones' },
       { label: 'Sugerencias IA', short: 'IA', path: '/panel/recomendaciones', icon: 'AI', minPlan: 'ia', featureKey: 'recomendaciones' },
@@ -126,20 +127,21 @@ export default function Sidebar({
     // Reorganizar todo el sidebar para estructura de corralón
     const newStructure = [
       {
-        category: 'CAJA',
+        category: 'ADMIN',
         roles: ['admin', 'manager'],
         items: [
-          { label: 'Caja', path: '/panel/inicio', icon: 'Lock' },
-          { label: 'Historial', path: '/panel/auditoria', icon: 'Clipboard', minPlan: 'pro', featureKey: 'auditoria' },
+          { label: 'Dashboard', path: '/panel/dashboard', icon: 'Chart', roles: ['admin'] },
+          { label: 'Caja', path: '/panel/inicio', icon: 'Lock', roles: ['admin', 'manager'] },
+          { label: 'Historial', path: '/panel/auditoria', icon: 'Clipboard', roles: ['admin', 'manager'], minPlan: 'pro', featureKey: 'auditoria' },
         ],
       },
       {
         category: 'VENTAS',
         items: [
-          { label: 'Mostrador', path: '/panel/ventas', icon: 'ShoppingCart', roles: ['admin', 'manager', 'operator'] },
-          { label: 'Presupuestos', path: '/panel/presupuestos', icon: 'Clipboard', roles: ['admin', 'manager'] },
+          { label: 'Mostrador', path: '/panel/ventas', icon: 'ShoppingCart', roles: ['admin', 'manager', 'operator', 'vendedor'] },
+          { label: 'Presupuestos', path: '/panel/presupuestos', icon: 'Clipboard', roles: ['admin', 'manager', 'vendedor'] },
           { label: 'Devoluciones', path: '/panel/devoluciones', icon: 'Edit', roles: ['admin', 'manager'] },
-          { label: 'Acopios', path: '/panel/acopios', icon: 'Box', roles: ['admin', 'manager'] },
+          { label: 'Acopios', path: '/panel/acopios', icon: 'Box', roles: ['admin', 'manager', 'vendedor'] },
         ],
       },
       {
@@ -153,8 +155,8 @@ export default function Sidebar({
       {
         category: 'CLIENTES',
         items: [
-          { label: 'Lista de clientes', path: '/panel/lista-clientes', icon: 'Users', roles: ['admin', 'manager', 'operator'] },
-          { label: 'Cuentas corrientes', path: '/panel/clientes', icon: 'Book', roles: ['admin', 'manager', 'operator'], featureKey: 'fiados' },
+          { label: 'Lista de clientes', path: '/panel/lista-clientes', icon: 'Users', roles: ['admin', 'manager', 'operator', 'vendedor'] },
+          { label: 'Cuentas corrientes', path: '/panel/clientes', icon: 'Book', roles: ['admin', 'manager', 'operator', 'vendedor'], featureKey: 'fiados' },
         ],
       },
       {

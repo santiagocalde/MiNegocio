@@ -401,6 +401,7 @@ from routers.reports import router as reports_router
 from routers.auth import router as auth_router
 from routers.billing import router as billing_router
 from routers.admin import router as admin_router
+from routers.dashboard import router as dashboard_router
 
 app.include_router(operators_router)
 app.include_router(products_router)
@@ -421,6 +422,7 @@ app.include_router(obras_router)
 app.include_router(acopios_router)
 app.include_router(credit_notes_router)
 app.include_router(hojas_de_ruta_router)
+app.include_router(dashboard_router)
 
 # Archivos estáticos — logos subidos por negocios
 import pathlib
