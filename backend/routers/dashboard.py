@@ -40,25 +40,26 @@ async def get_dashboard_summary(request: Request) -> dict:
                 SELECT c.id, c.name, c.balance, c.phone,
                        MAX(ct.timestamp) AS ultimo_movimiento
                 FROM customers c
-                LEFT JOIN customer_transactions ct ON ct.customer_id = c.id
-                WHERE c.balance > 0
+                LEFT JOIN customer_transactions ct ON ct.customer_id = c.id AND ct.business_id = $1
+                WHERE c.business_id = $1 AND c.balance > 0
                 GROUP BY c.id, c.name, c.balance, c.phone
                 HAVING MAX(ct.timestamp) < NOW() - INTERVAL '20 days'
                     OR MAX(ct.timestamp) IS NULL
                 ORDER BY c.balance DESC
                 LIMIT 10
-            """)
+            """, b_id)
 
             # 3. Proveedores con deuda sin actividad en 15+ días
+            # PG purchases usa created_at (no timestamp)
             proveedores = await conn.fetch("""
                 SELECT s.id, s.name, s.debt, s.phone,
-                       MAX(p.timestamp) AS ultima_compra
+                       MAX(p.created_at) AS ultima_compra
                 FROM suppliers s
-                LEFT JOIN purchases p ON p.supplier_id = s.id
+                LEFT JOIN purchases p ON p.supplier_id = s.id AND p.business_id = $1
                 WHERE s.business_id = $1 AND s.debt > 0
                 GROUP BY s.id, s.name, s.debt, s.phone
-                HAVING MAX(p.timestamp) < NOW() - INTERVAL '15 days'
-                    OR MAX(p.timestamp) IS NULL
+                HAVING MAX(p.created_at) < NOW() - INTERVAL '15 days'
+                    OR MAX(p.created_at) IS NULL
                 ORDER BY s.debt DESC
                 LIMIT 8
             """, b_id)
