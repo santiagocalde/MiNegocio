@@ -1038,7 +1038,7 @@ async def admin_live(admin: dict = Depends(verify_superadmin)) -> dict:
                 SELECT COUNT(*) AS ventas_hoy, COALESCE(SUM(total), 0) AS monto_hoy
                 FROM sales
                 WHERE business_id = b.id AND reverted = 0
-                  AND timestamp >= date_trunc('day', now())
+                  AND timestamp >= date_trunc('day', now() AT TIME ZONE 'America/Argentina/Buenos_Aires') AT TIME ZONE 'America/Argentina/Buenos_Aires'
             ) s ON true
             LEFT JOIN LATERAL (
                 SELECT MAX(timestamp) AS last_sale
@@ -1112,10 +1112,12 @@ async def admin_live(admin: dict = Depends(verify_superadmin)) -> dict:
                 turn_con_ventas = (r["turn_ventas"] or 0) > 0
                 turn_phantom = not turn_con_ventas and r["turn_opened_at"] < now - timedelta(hours=24)
 
-            # Online: activo con señal < 15 min, o conexion SSE abierta ahora
+            # Online: activo con senal < 15 min, o conexion SSE activa Y senal < 30 min
+            # (SSE solo no alcanza — evita zombies de conexiones que quedaron colgadas)
             es_activo = r["status"] == "active"
             senal_reciente = last_signal is not None and last_signal >= threshold_15
-            if (es_activo and senal_reciente) or sse:
+            sse_con_senal = sse and last_signal is not None and last_signal >= threshold_30
+            if (es_activo and senal_reciente) or sse_con_senal:
                 online.append({
                     "business_id": biz_id,
                     "name": r["name"],
