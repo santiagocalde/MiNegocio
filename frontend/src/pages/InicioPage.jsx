@@ -96,7 +96,7 @@ function PendientesCobro({ navigate }) {
           <span style={{ fontSize: '1rem' }}>💰</span>
           <h2 className="ledger-title" style={{ fontSize: '1rem', margin: 0 }}>Pendientes de cobro</h2>
         </div>
-        <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#F59E0B', background: 'rgba(245,158,11,0.12)', padding: '3px 10px', borderRadius: 20 }}>
+        <span style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--accent-warning)', background: 'var(--wash-warning)', padding: '3px 10px', borderRadius: 20 }}>
           {total} {total === 1 ? 'item' : 'items'}
         </span>
       </div>

@@ -122,7 +122,7 @@ export default function ChargeModal({
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '12px' }}>
                   <button onClick={() => setPayment(finalTotal.toString())} style={{ flex: '1 0 auto', minHeight: '44px', padding: '8px 12px', background: 'var(--accent-success)', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 800, fontSize: 'var(--fs-body)', cursor: 'pointer' }}>Pago Exacto</button>
                   {[1000, 2000, 5000, 10000, 20000].map(bill => (
-                    <button key={bill} onClick={() => setPayment(p => (parseFloat(p || 0) + bill).toString())} style={{ flex: '1 0 auto', minHeight: '44px', padding: '8px 10px', background: 'rgba(255,255,255,0.06)', color: '#fff', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontWeight: 600, fontSize: 'var(--fs-sm)', cursor: 'pointer', fontFamily: 'var(--font-mono)' }}>
+                    <button key={bill} onClick={() => setPayment(p => (parseFloat(p || 0) + bill).toString())} style={{ flex: '1 0 auto', minHeight: '44px', padding: '8px 10px', background: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '8px', fontWeight: 600, fontSize: 'var(--fs-sm)', cursor: 'pointer', fontFamily: 'var(--font-mono)' }}>
                       +${bill.toLocaleString('es-AR')}
                     </button>
                   ))}

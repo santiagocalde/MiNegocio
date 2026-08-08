@@ -226,7 +226,7 @@ export default function ClientesModule() {
                   {detail.cliente.name}
                 </h3>
                 {detail.cliente.balance > 0 && (
-                  <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#EF4444', background: 'rgba(239,68,68,0.1)', padding: '2px 10px', borderRadius: 20 }}>
+                  <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--accent-danger)', background: 'var(--wash-danger)', padding: '2px 10px', borderRadius: 20 }}>
                     Debe ${formatPesos(detail.cliente.balance)}
                   </span>
                 )}

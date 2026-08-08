@@ -24,7 +24,7 @@ export default function EgresoModal({ showEgreso, setShowEgreso, egresoType, set
             placeholder={egresoType === 'gasto' ? "Ej: Pago de luz..." : "Ej: Retiro para pagar alquiler..."}
             style={{ fontSize: '1.25rem', fontFamily: 'var(--font-main)', padding: '16px' }} />
         </div>
-        <div style={{ background: 'rgba(239,68,68,0.1)', borderLeft: '4px solid #EF4444', padding: '12px 16px', borderRadius: '4px', marginBottom: '24px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}><strong>⚠️ Importante:</strong> Recordá dejar el comprobante físico en la caja.</div>
+        <div style={{ background: 'var(--wash-danger)', borderLeft: '4px solid var(--accent-danger)', padding: '12px 16px', borderRadius: '4px', marginBottom: '24px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}><strong>⚠️ Importante:</strong> Recordá dejar el comprobante físico en la caja.</div>
         <div className="modal-actions">
           <button className="btn btn-modal-cancel" onClick={() => { setShowEgreso(false); setEgresoMonto(''); setEgresoMotivo(''); setEgresoType('gasto'); }}>Cancelar (Esc)</button>
           <button className="btn btn-modal-confirm" style={{ background: 'var(--accent-warning)', color: '#1E3A5F' }} onClick={submitEgreso} disabled={!egresoMonto || !egresoMotivo}>Registrar {egresoType === 'gasto' ? 'Gasto' : 'Retiro'}</button>
