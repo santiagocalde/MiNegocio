@@ -101,7 +101,7 @@ export default function AcopiosModule() {
           <div className="ledger-sheet" style={{ overflow: 'hidden' }}>
             {acopios.map(a => (
               <div key={a.id} className="ledger-row ledger-row--hover" onClick={() => showDetail(a.id)}>
-                <div style={{ minWidth: 0 }}>
+                <div style={{ minWidth: 0, flex: 1 }}>
                   <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.9rem' }}>
                     {a.customer_name || 'Sin cliente'}
                   </div>

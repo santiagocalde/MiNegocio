@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import LogoMercadoPago from '../../assets/images/mercadopago_logo.png';
+import useIsMobile from '../../hooks/useIsMobile';
 
 const Svg = {
-  ArrowRight: () => <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>,
+  ArrowLeft: () => <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>,
 };
 
 export default function CheckoutView({ plan, isYearly, onBack, onComplete }) {
   const [step, setStep] = useState(1);
+  const isMobile = useIsMobile();
   const [usersLimit, setUsersLimit] = useState(2);
   const [needsFactura, setNeedsFactura] = useState(null);
   const [facturasPorMes, setFacturasPorMes] = useState('');
@@ -46,7 +48,7 @@ export default function CheckoutView({ plan, isYearly, onBack, onComplete }) {
           else if (step === 2) setStep(1);
           else onBack();
         }} style={{ background: 'transparent', border: 'none', color: 'var(--lp-text-muted)', fontSize: '1rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8, alignSelf: 'flex-start', marginBottom: 16 }} onMouseEnter={e => e.target.style.color = '#fff'} onMouseLeave={e => e.target.style.color = 'var(--lp-text-muted)'}>
-          <Svg.ArrowRight /> {getBackLabel()}
+          <Svg.ArrowLeft /> {getBackLabel()}
         </button>
         <div className="lp-glass" style={{ padding: step !== 3 ? 40 : 0, borderRadius: 24, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(30,58,95,0.85)', overflow: 'hidden' }}>
           {step === 1 && (
@@ -102,8 +104,8 @@ export default function CheckoutView({ plan, isYearly, onBack, onComplete }) {
           )}
 
           {step === 3 && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', alignItems: 'stretch', animation: 'fadeIn 0.4s ease' }}>
-              <div style={{ padding: '48px 40px', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.2fr 1fr', alignItems: 'stretch', animation: 'fadeIn 0.4s ease' }}>
+              <div style={{ padding: isMobile ? '28px 20px' : '48px 40px', display: 'flex', flexDirection: 'column' }}>
                 <h2 style={{ fontSize: '1.8rem', fontWeight: 800, marginBottom: 8, color: '#fff', letterSpacing: '-0.5px' }}>Tus Datos</h2>
                 <p style={{ color: 'var(--lp-text-muted)', fontSize: '0.9rem', marginBottom: 32 }}>Completá tu info para activar el Plan {plan.name}.</p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -134,7 +136,7 @@ export default function CheckoutView({ plan, isYearly, onBack, onComplete }) {
                   </div>
                 </div>
               </div>
-              <div style={{ background: 'rgba(30,58,95,0.6)', padding: '48px 40px', borderLeft: '1px solid rgba(255,255,255,0.06)', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ background: 'rgba(30,58,95,0.6)', padding: isMobile ? '24px 20px' : '48px 40px', borderLeft: isMobile ? 'none' : '1px solid rgba(255,255,255,0.06)', borderTop: isMobile ? '1px solid rgba(255,255,255,0.06)' : 'none', display: 'flex', flexDirection: 'column' }}>
                 <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#fff', marginBottom: 4, letterSpacing: '-0.5px' }}>Resumen</h3>
                 <p style={{ color: 'var(--lp-text-muted)', fontSize: '0.9rem', marginBottom: 32 }}>El importe que se te cobra hoy.</p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 32, paddingBottom: 24, borderBottom: '1px solid rgba(255,255,255,0.1)' }}>

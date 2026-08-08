@@ -38,24 +38,24 @@ function PlanCard({ plan, isYearly, currentPlan, onSubscribe }) {
       )}
 
       <div style={{ marginBottom: 24 }}>
-        <h3 style={{ fontSize: '1.4rem', fontWeight: 700, marginBottom: 8, color: '#fff' }}>{plan.name}</h3>
-        <p style={{ color: 'rgba(230,255,251,0.6)', fontSize: '0.85rem', lineHeight: 1.5, minHeight: 40 }}>{plan.desc}</p>
+        <h3 style={{ fontSize: '1.4rem', fontWeight: 700, marginBottom: 8, color: 'var(--text-primary)' }}>{plan.name}</h3>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', lineHeight: 1.5, minHeight: 40 }}>{plan.desc}</p>
       </div>
 
       <div style={{ marginBottom: 24, minHeight: 90 }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-          <span style={{ fontSize: '1.4rem', fontWeight: 600, color: 'rgba(230,255,251,0.8)' }}>$</span>
-          <span style={{ fontSize: '2.5rem', fontWeight: 800, color: '#fff', letterSpacing: '-1px' }}>{mainPrice.toLocaleString('es-AR')}</span>
-          <span style={{ fontSize: '0.9rem', color: 'rgba(230,255,251,0.5)' }}>/mes</span>
+          <span style={{ fontSize: '1.4rem', fontWeight: 600, color: 'var(--text-secondary)' }}>$</span>
+          <span style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-1px' }}>{mainPrice.toLocaleString('es-AR')}</span>
+          <span style={{ fontSize: '0.9rem', color: 'var(--text-faint)' }}>/mes</span>
         </div>
 
         {isYearly && plan.monthly > 0 ? (
-          <div style={{ marginTop: 6, fontSize: '0.8rem', color: 'rgba(230,255,251,0.5)' }}>
+          <div style={{ marginTop: 6, fontSize: '0.8rem', color: 'var(--text-faint)' }}>
             Facturado ${totalYearly.toLocaleString('es-AR')} por año.
             {savings > 0 && <span style={{ display: 'block', color: '#10b981', marginTop: 4, fontWeight: 600 }}>Ahorrás ${savings.toLocaleString('es-AR')} anuales</span>}
           </div>
         ) : (
-          <div style={{ marginTop: 6, fontSize: '0.8rem', color: 'rgba(230,255,251,0.5)' }}>
+          <div style={{ marginTop: 6, fontSize: '0.8rem', color: 'var(--text-faint)' }}>
             {plan.monthly > 0 ? 'Facturado mensualmente. Cancelás cuando quieras.' : 'Para siempre.'}
           </div>
         )}
@@ -63,7 +63,7 @@ function PlanCard({ plan, isYearly, currentPlan, onSubscribe }) {
 
       <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 32px 0', display: 'flex', flexDirection: 'column', gap: 14, flex: 1 }}>
         {plan.features.map((f, i) => (
-          <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, fontSize: '0.9rem', color: 'rgba(230,255,251,0.8)' }}>
+          <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
             <div style={{ color: plan.popular ? 'var(--accent-primary)' : 'var(--accent-success)', marginTop: 2 }}>
               <Icons.Check />
             </div>
@@ -176,7 +176,7 @@ export default function PlanPage() {
   };
 
   return (
-    <div style={{ padding: '32px 40px', width: '100%', height: '100%', overflowY: 'auto', boxSizing: 'border-box', background: 'transparent', color: '#fff', fontFamily: 'var(--font-main)' }}>
+    <div style={{ padding: '32px 40px', width: '100%', height: '100%', overflowY: 'auto', boxSizing: 'border-box', background: 'transparent', color: 'var(--text-primary)', fontFamily: 'var(--font-main)' }}>
       {currentPlan === 'trial' && !isTrialExpired && (
         <div style={{ background: 'linear-gradient(135deg, rgba(20,187,166,0.15), rgba(15,138,125,0.1))', border: '1px solid rgba(20,187,166,0.2)', borderRadius: 12, padding: '16px 24px', marginBottom: 32, display: 'flex', alignItems: 'center', gap: 12 }}>
           <span style={{ fontSize: '1.5rem' }}>🎁</span>
@@ -222,7 +222,7 @@ export default function PlanPage() {
       {hasPaidPlan && (
         <div style={{ textAlign: 'center', paddingBottom: 40 }}>
           <button onClick={() => { setShowCancel(true); setCancelDone(false); setCancelReason(''); setCancelDetail(''); setCancelError(''); }}
-            style={{ background: 'none', border: 'none', color: 'rgba(230,255,251,0.4)', fontSize: '0.82rem', cursor: 'pointer', textDecoration: 'underline', fontFamily: 'inherit' }}>
+            style={{ background: 'none', border: 'none', color: 'var(--text-faint)', fontSize: '0.82rem', cursor: 'pointer', textDecoration: 'underline', fontFamily: 'inherit' }}>
             Cancelar suscripción
           </button>
         </div>

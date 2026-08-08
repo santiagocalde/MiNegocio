@@ -75,7 +75,7 @@ export default function CreditNotesModule() {
           <div className="ledger-sheet" style={{ overflow: 'hidden' }}>
             {notes.map(n => (
               <div key={n.id} className="ledger-row ledger-row--hover" onClick={() => showDetail(n.id)}>
-                <div style={{ minWidth: 0 }}>
+                <div style={{ minWidth: 0, flex: 1 }}>
                   <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.9rem' }}>
                     {n.customer_name || 'Sin cliente'}
                   </div>
