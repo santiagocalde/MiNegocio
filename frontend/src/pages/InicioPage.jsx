@@ -235,7 +235,7 @@ export default function InicioPage() {
       {/* Cuerpo: dos columnas — el libro del día + acciones/stock */}
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.5fr) minmax(0, 1fr)', gap: 18, alignItems: 'start' }}>
         {/* Hoja: Movimiento de hoy */}
-        <div className="ledger-sheet">
+        <div className="ledger-sheet" style={{ boxShadow: 'var(--shadow-sm)' }}>
           {/* Cabecera con la cifra protagonista */}
           <div style={{ padding: '20px 22px 18px', borderBottom: '1px solid var(--rule-strong)' }}>
             <div className="ledger-label">Ventas de hoy</div>
@@ -255,7 +255,7 @@ export default function InicioPage() {
         {/* Columna derecha: acción + por agotarse */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
           {/* Acción principal — el único acento sólido */}
-          <div className="ledger-sheet" style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div className="ledger-sheet" style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 12, boxShadow: 'var(--shadow-sm)' }}>
             <div>
               <h2 className="ledger-title" style={{ fontSize: '1.1rem' }}>¿Arrancamos a vender?</h2>
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.86rem', margin: '5px 0 0' }}>Escaneá o buscá un producto. El vuelto se calcula solo.</p>
@@ -268,7 +268,7 @@ export default function InicioPage() {
           </div>
 
           {/* Por agotarse — lista reglada */}
-          <div className="ledger-sheet">
+          <div className="ledger-sheet" style={{ boxShadow: 'var(--shadow-sm)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 18px', borderBottom: '1px solid var(--rule-strong)' }}>
               <h2 className="ledger-title" style={{ fontSize: '1rem' }}>Por agotarse</h2>
               <button

@@ -19,17 +19,24 @@ const fmtDate = (s) => {
 
 function StatCard({ label, value, sub, tone }) {
   return (
-    <div className="ledger-sheet" style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+    <div className="ledger-sheet" style={{
+      padding: '20px 24px',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 6,
+      boxShadow: 'var(--shadow-sm)',
+      minHeight: 96,
+    }}>
       <span className="ledger-label">{label}</span>
       <span style={{
         fontFamily: 'var(--lp-font-display)',
         fontSize: '2.1rem',
         fontWeight: 800,
-        color: tone || 'var(--lp-ink)',
+        color: tone || 'var(--text-primary)',
         letterSpacing: '-0.03em',
         lineHeight: 1,
       }}>{value}</span>
-      {sub && <span style={{ fontSize: '0.78rem', color: 'var(--lp-ink-faint)', marginTop: 2 }}>{sub}</span>}
+      {sub && <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: 2 }}>{sub}</span>}
     </div>
   );
 }
@@ -85,8 +92,9 @@ export default function DashboardModule() {
         </button>
       </div>
 
-      {/* ── Fila de stats ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14, marginBottom: 22 }}>
+      {/* ── Fila de stats — siempre 2 cols en panel, 4 en pantallas anchas ── */}
+      <style>{`.dash-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:22px}@media(min-width:900px){.dash-stats{grid-template-columns:repeat(4,1fr)}}`}</style>
+      <div className="dash-stats">
         <StatCard
           label={`Ventas ${mesNombre}`}
           value={`$${fmt(d.ventas_mes)}`}
@@ -118,7 +126,9 @@ export default function DashboardModule() {
       </div>
 
       {/* ── Dos columnas inferiores ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: 18, alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: 18, alignItems: 'start' }}
+        className="dash-bottom-grid">
+        <style>{`.dash-bottom-grid>div>.ledger-sheet{box-shadow:var(--shadow-sm)}@media(max-width:700px){.dash-bottom-grid{grid-template-columns:1fr!important}}`}</style>
 
         {/* Columna izq */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
