@@ -30,13 +30,17 @@ async def get_config() -> dict:
             b_id = _biz_id()
             row = await conn.fetchrow("SELECT * FROM business_config WHERE business_id = $1", b_id)
             cfg = dict(row) if row else {}
-            # Si no se configuró un nombre en Ajustes, usar el nombre del negocio
-            # cargado en el registro/onboarding (businesses.business_name), así el
-            # panel muestra el nombre real y no "tu negocio".
-            if not cfg.get("nombre"):
-                biz = await conn.fetchrow("SELECT business_name FROM businesses WHERE id = $1", b_id)
-                if biz and biz["business_name"]:
+            # Siempre traemos business_name y business_type de la tabla businesses:
+            # - business_name como fallback si no hay nombre en Ajustes
+            # - business_type para que el frontend lo sincronice en cada F5 sin
+            #   necesidad de cerrar sesión (PanelContext lo escribe en localStorage)
+            biz = await conn.fetchrow(
+                "SELECT business_name, business_type FROM businesses WHERE id = $1", b_id
+            )
+            if biz:
+                if not cfg.get("nombre") and biz["business_name"]:
                     cfg["nombre"] = biz["business_name"]
+                cfg["business_type"] = biz["business_type"] or ""
             return _redact_secrets(cfg)
     else:
         import aiosqlite

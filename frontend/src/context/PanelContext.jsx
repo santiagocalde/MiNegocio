@@ -54,6 +54,22 @@ export function PanelProvider({ children }) {
     return () => clearInterval(interval);
   }, []);
 
+  // Sincroniza business_type desde /api/config en cada carga de página.
+  // El endpoint ya devuelve el campo; acá lo escribimos en el estado y en
+  // localStorage para que el frontend no quede desactualizado sin cerrar sesión.
+  useEffect(() => {
+    const fresh = backend?.businessConfig?.business_type;
+    if (!fresh) return;
+    if (fresh === businessType) return;
+    setBusinessType(fresh);
+    try {
+      const biz = JSON.parse(localStorage.getItem('saas_business') || '{}');
+      biz.business_type = fresh;
+      localStorage.setItem('saas_business', JSON.stringify(biz));
+    } catch { /* noop */ }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [backend?.businessConfig?.business_type]);
+
   useEffect(() => {
     let cancelled = false;
     const timeout = setTimeout(() => {
