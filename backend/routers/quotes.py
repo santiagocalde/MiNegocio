@@ -78,7 +78,8 @@ async def get_quote(quote_id: int) -> dict:
         pool = await get_pg_pool()
         async with pool.acquire() as conn:
             q = await conn.fetchrow(
-                "SELECT * FROM quotes WHERE id = $1 AND business_id = $2", quote_id, b_id
+                "SELECT q.*, c.name as customer_name, c.phone as customer_phone, c.address as customer_address FROM quotes q LEFT JOIN customers c ON c.id = q.customer_id WHERE q.id = $1 AND q.business_id = $2",
+                quote_id, b_id
             )
             if not q:
                 raise HTTPException(404, "Presupuesto no encontrado")
@@ -89,12 +90,15 @@ async def get_quote(quote_id: int) -> dict:
     else:
         import aiosqlite
         async with aiosqlite.connect(main.DB_PATH) as db:
-            cur = await db.execute("SELECT * FROM quotes WHERE id = ?", (quote_id,))
+            cur = await db.execute(
+                "SELECT q.*, c.name as customer_name, c.phone as customer_phone, c.address as customer_address FROM quotes q LEFT JOIN customers c ON c.id = q.customer_id WHERE q.id = ?",
+                (quote_id,)
+            )
             q = await cur.fetchone()
             if not q:
                 raise HTTPException(404, "Presupuesto no encontrado")
-            cur = await db.execute("SELECT qi.*, p.name as product_name, p.code as product_code, p.unit_label FROM quote_items qi JOIN products p ON p.id = qi.product_id WHERE qi.quote_id = ?", (quote_id,))
-            items = [row_to_dict(r, cur.description) for r in await cur.fetchall()]
+            cur2 = await db.execute("SELECT qi.*, p.name as product_name, p.code as product_code, p.unit_label FROM quote_items qi JOIN products p ON p.id = qi.product_id WHERE qi.quote_id = ?", (quote_id,))
+            items = [row_to_dict(r, cur2.description) for r in await cur2.fetchall()]
             return {"quote": row_to_dict(q, cur.description), "items": items}
 
 

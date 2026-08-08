@@ -60,7 +60,7 @@ export default function QuotesModule() {
   const [detail, setDetail] = useState(null);
 
   // Form state
-  const [formCustomer, setFormCustomer] = useState('');
+  const [formCustomer, setFormCustomer] = useState(null); // { id, name, phone, address } | null
   const [formNote, setFormNote] = useState('');
   const [formListType, setFormListType] = useState('a');
   const [formItems, setFormItems] = useState([]);
@@ -123,7 +123,7 @@ export default function QuotesModule() {
   const handleCreate = async () => {
     if (formItems.length === 0) { addToast?.('Agregá al menos un producto.', 'error'); return; }
     const body = {
-      customer_id: formCustomer ? parseInt(formCustomer) : null,
+      customer_id: formCustomer?.id ?? null,
       note: formNote,
       list_type: formListType,
       valid_days: formValidDays,
@@ -135,7 +135,7 @@ export default function QuotesModule() {
     if (res.ok) {
       addToast?.('Presupuesto creado.', 'success');
       setShowForm(false);
-      setFormCustomer(''); setFormNote(''); setFormItems([]); setFormListType('a'); setFormValidDays(15);
+      setFormCustomer(null); setFormNote(''); setFormItems([]); setFormListType('a'); setFormValidDays(15);
       setFormDiscount(''); setFormFormaPago('Contado');
       fetchQuotes();
     } else { addToast?.('Error al crear presupuesto.', 'error'); }
@@ -500,18 +500,17 @@ const handleStatus = async (id, status) => {
       {/* Form modal */}
       {showForm && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(11,19,43,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
-          onMouseDown={e => { if (e.target === e.currentTarget) setShowForm(false); }}>
+          onMouseDown={e => { if (e.target === e.currentTarget) { setShowForm(false); setFormCustomer(null); } }}>
           <div onMouseDown={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 560, maxHeight: '90vh', overflow: 'auto', background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line-strong)', borderRadius: 12, padding: 28, boxShadow: 'var(--lp-shadow-lg)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <h3 style={{ fontFamily: 'var(--lp-font-display)', fontSize: '1.2rem', fontWeight: 700, color: 'var(--lp-ink)', margin: 0 }}>Nuevo presupuesto</h3>
-              <button onClick={() => setShowForm(false)} style={{ background: 'none', border: 'none', color: 'var(--lp-ink-faint)', cursor: 'pointer', fontSize: '1.3rem' }}>✕</button>
+              <button onClick={() => { setShowForm(false); setFormCustomer(null); }} style={{ background: 'none', border: 'none', color: 'var(--lp-ink-faint)', cursor: 'pointer', fontSize: '1.3rem' }}>✕</button>
             </div>
 
             <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
               <div style={{ flex: 1 }}>
                 <label style={{ fontSize: '0.78rem', color: 'var(--lp-ink-faint)', fontWeight: 600, display: 'block', marginBottom: 4 }}>Cliente (opcional)</label>
-                <input value={formCustomer} onChange={e => setFormCustomer(e.target.value)} placeholder="Nombre o ID del cliente"
-                  style={{ width: '100%', padding: '8px 12px', background: 'var(--lp-paper-sunken)', border: '1px solid var(--lp-line-strong)', borderRadius: 6, color: 'var(--lp-ink)', fontSize: '0.9rem', outline: 'none' }} />
+                <ClientePicker selected={formCustomer} onSelect={setFormCustomer} placeholder="Buscar o crear cliente..." />
               </div>
               <div>
                 <label style={{ fontSize: '0.78rem', color: 'var(--lp-ink-faint)', fontWeight: 600, display: 'block', marginBottom: 4 }}>Validez</label>
@@ -660,7 +659,8 @@ const handleStatus = async (id, status) => {
             <div style={{ fontSize: '0.85rem', color: 'var(--lp-ink-faint)', marginBottom: 16 }}>
               <div>Estado: <span style={{ color: STATUS_MAP[detail.quote.status]?.color, fontWeight: 700 }}>{STATUS_MAP[detail.quote.status]?.label}</span></div>
               <div>Creado: {fmtDate(detail.quote.created_at)} · Vence: {fmtDate(detail.quote.expires_at)}</div>
-              {detail.quote.note && <div>Obra: {detail.quote.note}</div>}
+              {detail.quote.customer_name && <div>👤 Cliente: <strong style={{ color: 'var(--lp-ink)' }}>{detail.quote.customer_name}</strong></div>}
+              {detail.quote.note && <div>🏗 Obra: {detail.quote.note}</div>}
             </div>
 
             {/* Items */}
@@ -691,9 +691,9 @@ const handleStatus = async (id, status) => {
               {detail.quote.status === 'approved' && !showToRemito && (
                 <>
                   <button onClick={() => {
-                    setToRemitoAddress(detail.quote.address || '');
-                    setToRemitoCustomer(detail.quote.customer_id ? { id: detail.quote.customer_id, name: detail.quote.customer_name || '', phone: detail.quote.customer_phone || '', address: detail.quote.address || '' } : null);
-                    if (detail.quote.address) setToRemitoAddress(detail.quote.address);
+                    const custAddr = detail.quote.customer_address || '';
+                    setToRemitoAddress(custAddr);
+                    setToRemitoCustomer(detail.quote.customer_id ? { id: detail.quote.customer_id, name: detail.quote.customer_name || '', phone: detail.quote.customer_phone || '', address: custAddr } : null);
                     setToRemitoDriver('');
                     setToRemitoDate(new Date().toISOString().slice(0, 10));
                     setShowToRemito(true);
