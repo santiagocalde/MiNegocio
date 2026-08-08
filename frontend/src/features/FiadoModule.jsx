@@ -22,6 +22,7 @@ export default function FiadoModule() {
   const [expandedClient, setExpandedClient] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [transactionsMap, setTransactionsMap] = useState({});
+  const [loadingTransactions, setLoadingTransactions] = useState(new Set());
   const [abonoModal, setAbonoModal] = useState(null); // {id, name, balance}
   const [abonoAmount, setAbonoAmount] = useState('');
   const [newClientModal, setNewClientModal] = useState(false);
@@ -58,6 +59,7 @@ export default function FiadoModule() {
 
   const loadTransactions = async (customerId) => {
     if (transactionsMap[customerId]) return;
+    setLoadingTransactions(prev => new Set(prev).add(customerId));
     try {
       const res = await apiGet(`/customers/${customerId}/transactions`);
       if (res.ok) {
@@ -66,8 +68,12 @@ export default function FiadoModule() {
       }
     } catch (e) {
       console.error(`Fiados: no se pudieron cargar las transacciones del cliente ${customerId}:`, e);
-      addToast?.('No se pudo cargar el detalle del cliente.', 'error');
     }
+    setLoadingTransactions(prev => {
+      const next = new Set(prev);
+      next.delete(customerId);
+      return next;
+    });
   };
 
   const handleExpand = (c) => {
@@ -306,7 +312,9 @@ export default function FiadoModule() {
                     </thead>
                     <tbody>
                       {transactions.length === 0 ? (
-                        <tr><td colSpan="3" style={{ padding: '16px 24px', textAlign: 'center', color: 'var(--text-secondary)' }}>Cargando movimientos...</td></tr>
+                        <tr><td colSpan="3" style={{ padding: '16px 24px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                          {loadingTransactions.has(c.id) ? 'Cargando movimientos...' : 'Sin movimientos registrados'}
+                        </td></tr>
                       ) : (
                         transactions.map(t => (
                           <tr key={t.id} style={{ borderBottom: '1px solid var(--rule)' }}>

@@ -412,6 +412,7 @@ ${stopRows}
         is_fiado: cobrarMethod === 'fiado',
         fiado_name: cobrarMethod === 'fiado' ? (detail.remito.customer_name || '') : undefined,
         total: montoNum,
+        payment: montoNum,
         items: items.map(({ _lineTotal: _, ...rest }) => rest),
         source_remito_id: detail.remito.id,
       };

@@ -62,8 +62,8 @@ export default function AcopiosModule() {
   const handleWithdrawal = async () => {
     if (!showWithdrawal) return;
     const items = Object.entries(withdrawalItems)
-      .filter(([, q]) => parseFloat(q) > 0)
-      .map(([k, q]) => ({ acopio_item_id: parseInt(k), quantity: parseFloat(q) }));
+      .map(([k, q]) => ({ acopio_item_id: parseInt(k), quantity: parseFloat(q) || 0 }))
+      .filter(item => item.quantity > 0);
     if (items.length === 0) {
       addToast?.('Ingresá al menos una cantidad antes de confirmar.', 'error');
       return;
