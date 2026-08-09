@@ -30,6 +30,12 @@ const NAV_ITEMS = [
     ],
   },
   {
+    category: 'CLIENTES',
+    items: [
+      { label: 'Lista de clientes', path: '/panel/lista-clientes', icon: 'Users', roles: ['admin', 'manager', 'operator', 'vendedor'] },
+    ],
+  },
+  {
     category: 'ANÁLISIS',
     roles: ['admin'],
     items: [
