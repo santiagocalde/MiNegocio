@@ -33,7 +33,7 @@ const NAV_ITEMS = [
     category: 'ANÁLISIS',
     roles: ['admin'],
     items: [
-      { label: 'Dashboard', path: '/panel/dashboard', icon: 'Chart' },
+      { label: 'Dashboard', path: '/panel/dashboard', icon: 'Chart', minPlan: 'pro' },
       { label: 'Reportes', path: '/panel/reportes', icon: 'Chart' },
       { label: 'Promociones', path: '/panel/promociones', icon: 'Tag', featureKey: 'promociones' },
       { label: 'Sugerencias IA', short: 'IA', path: '/panel/recomendaciones', icon: 'AI', minPlan: 'ia', featureKey: 'recomendaciones' },
