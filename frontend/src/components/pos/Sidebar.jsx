@@ -221,7 +221,9 @@ export default function Sidebar({
           return (
             <React.Fragment key={section.category}>
               <div className="nav-section-label">{section.category}</div>
-              {items.map((item) => {
+              {items
+                .filter((item) => !item.minPlan || PLAN_WEIGHT[currentPlan] >= PLAN_WEIGHT[item.minPlan])
+                .map((item) => {
                 const isLocked = item.minPlan && PLAN_WEIGHT[currentPlan] < PLAN_WEIGHT[item.minPlan];
                 return (
                   <div
