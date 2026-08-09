@@ -4,7 +4,7 @@ import { Icons } from '../components/ui/Icons';
 import { apiPost, apiGet } from '../services/apiClient';
 
 const FALLBACK_PLANS = [
-  { id: 'simple', name: 'Simple', monthly: 19999, yearly: 180000, desc: 'Todo lo necesario para arrancar.', popular: false, features: ['Hasta 3.500 productos', 'Clientes y ventas', 'Soporta cortes de internet', 'Cuentas corrientes', 'Manejo de proveedores', 'Lector laser e impresoras', 'Hasta 2 usuarios'], cta: 'Adquirir' },
+  { id: 'simple', name: 'Simple', monthly: 19999, yearly: 180000, desc: 'Todo lo necesario para arrancar.', popular: false, features: ['Punto de venta con lector de barras', 'Dashboard con ventas del dia', 'El vuelto se calcula solo', 'Funciona sin internet', 'Control de stock automatico', 'Cuentas corrientes (fiados)', 'Hasta 3.500 productos', 'Hasta 2 usuarios'], cta: 'Adquirir' },
   { id: 'pro', name: 'Pro', monthly: 29999, yearly: 270000, desc: 'El plan más elegido por los kioscos.', popular: true, features: ['Todo lo de Simple', 'Catálogo web con QR (tu tienda online)', 'Reportes de ventas y ganancias', 'Análisis de rentabilidad por producto', 'Hasta 7.000 productos', 'Hasta 5 usuarios'], cta: 'Adquirir' },
   { id: 'ia', name: 'IA', monthly: 39999, yearly: 360000, desc: 'Tu negocio con inteligencia artificial.', popular: false, features: ['Todo lo de Pro', 'Escáner de facturas con IA', 'Resumen diario del negocio con IA', 'Asesor de precios y reposición con IA', 'Cobranza de fiados por WhatsApp con IA', 'Hasta 10.000 productos'], cta: 'Adquirir' },
 ];

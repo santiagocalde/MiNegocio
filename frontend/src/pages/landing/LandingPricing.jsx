@@ -8,7 +8,7 @@ const Svg = {
 };
 
 const FALLBACK_PLANS = [
-  { id: 'simple', name: 'Básico', monthly: 19999, yearly: 180000, desc: 'Arrancá a vender hoy.', popular: false, features: ['Vendé desde cualquier dispositivo', 'Stock siempre actualizado', 'Llevá la cuenta de quién te debe', 'Lector de códigos de barras', 'Imprimí tickets profesionales', 'Hasta 2 usuarios'], cta: 'Adquirir' },
+  { id: 'simple', name: 'Básico', monthly: 19999, yearly: 180000, desc: 'Arrancá a vender hoy.', popular: false, features: ['Punto de venta con lector de barras', 'Dashboard con ventas del día', 'El vuelto se calcula solo', 'Funciona sin internet', 'Control de stock automático', 'Cuentas corrientes (fiados)', 'Hasta 2 usuarios'], cta: 'Adquirir' },
   { id: 'pro', name: 'Pro', monthly: 29999, yearly: 270000, desc: 'El plan más completo.', popular: true, features: ['Todo lo de Básico', 'Presupuestos para tus clientes', 'Historial de ventas por cliente', 'Tu catálogo online con QR', 'Reportes de lo que vendés y ganás', 'Análisis de qué productos te convienen', 'Registro de compras a proveedores', 'Hasta 5 usuarios'], cta: 'Adquirir' },
   { id: 'ia', name: 'IA', monthly: 39999, yearly: 360000, desc: 'Inteligencia artificial para tu negocio.', popular: false, features: ['Todo lo de Pro', 'Escáner de facturas con IA', 'Resumen diario del negocio con IA', 'Asesor de precios y reposición con IA', 'Cobranza de fiados por WhatsApp con IA', 'Pedidos por adelantado con entregas parciales', 'Hasta 7 usuarios'], cta: 'Adquirir' },
 ];
