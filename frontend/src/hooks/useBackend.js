@@ -1,5 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { apiGet, apiPost, SERVER_URL } from '../services/apiClient';
+
+const PRODUCTS_STALE_MS = 60_000; // re-fetch on focus solo si pasaron >60s desde el último
 
 export default function useBackend(currentOperator, currentTurnId, currentSucursalId, addToast) {
   const [productsDB, setProductsDB] = useState([]);
@@ -46,12 +48,23 @@ export default function useBackend(currentOperator, currentTurnId, currentSucurs
   const [duplicateCodeMatches, setDuplicateCodeMatches] = useState([]);
   const [customers, setCustomers] = useState([]);
 
+  // Registra cuándo fue el último fetch para throttlear el focus handler.
+  const lastProductFetchTs = useRef(0);
+
   const fetchProductsDB = useCallback(() => {
+    lastProductFetchTs.current = Date.now();
     apiGet(`/products?limit=5000&sucursal_id=${currentSucursalId}`)
       .then(r => r.json())
       .then(data => setProductsDB(Array.isArray(data) ? data : []))
       .catch(() => {});
   }, [currentSucursalId]);
+
+  // Solo re-fetcha en focus si los datos tienen más de 60s de antigüedad.
+  // Eventos SSE y acciones explícitas (venta, stock edit) siguen usando fetchProductsDB directo.
+  const fetchProductsDBIfStale = useCallback(() => {
+    if (Date.now() - lastProductFetchTs.current < PRODUCTS_STALE_MS) return;
+    fetchProductsDB();
+  }, [fetchProductsDB]);
 
   // eslint-disable-next-line no-unused-vars
   const _notifyTabs = useCallback((msg) => {
@@ -257,15 +270,15 @@ export default function useBackend(currentOperator, currentTurnId, currentSucurs
         }
       };
     }
-    const handleFocus = () => { fetchProductsDB(); };
-    window.addEventListener('focus', handleFocus);
+    // Focus: throttleado — no recarga si los datos son frescos (<60s)
+    window.addEventListener('focus', fetchProductsDBIfStale);
 
     return () => {
       if (evtSource) { try { evtSource.abort(); } catch { /* noop */ } }
       if (bc) bc.close();
-      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('focus', fetchProductsDBIfStale);
     };
-  }, [fetchProductsDB, currentSucursalId]);
+  }, [fetchProductsDB, fetchProductsDBIfStale, currentSucursalId]);
 
   useEffect(() => {
     const checkRealHealth = async () => {
