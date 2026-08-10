@@ -132,6 +132,7 @@ export default function PanelLayout() {
         pendingSync={backend.pendingSync}
         setShowPendingModal={backend.setShowPendingModal}
         todaySalesTotal={backend.todaySalesTotal}
+        totalEgresos={backend.totalEgresos}
         setShowResumen={backend.setShowResumen}
         setShowEgreso={backend.setShowEgreso}
         setIsClosingCaja={closeTurn.setIsClosingCaja}

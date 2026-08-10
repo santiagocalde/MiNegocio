@@ -86,12 +86,13 @@ const ICON_MAP = {
 
 export default function Sidebar({
   currentOperator, pendingSync, setShowPendingModal,
-  todaySalesTotal, setShowResumen, setShowEgreso, setIsClosingCaja, currentTurnId, turnOpenedAt, initialCash
+  todaySalesTotal, totalEgresos, setShowResumen, setShowEgreso, setIsClosingCaja, currentTurnId, turnOpenedAt, initialCash
 }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { currentPlan, businessType } = usePanelContext();
   const currentPath = location.pathname;
+  const [cajaExpanded, setCajaExpanded] = React.useState(true);
   const isMobile = useIsMobile();
   // En mobile el sidebar arranca como riel de íconos (retraído); el usuario
   // puede expandirlo con el botón. En desktop queda expandido como siempre.
@@ -256,41 +257,57 @@ export default function Sidebar({
       </nav>
 
       <div className="sidebar-footer" style={{ padding: '10px', borderTop: '1px solid var(--border-color)', background: 'var(--gradient-card)', backdropFilter: 'blur(8px)', marginTop: 'auto' }}>
-        <div className="sidebar-caja-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+        {/* Header desplegable */}
+        <div className="sidebar-caja-header" onClick={() => setCajaExpanded(p => !p)}
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: cajaExpanded ? '6px' : '0', cursor: 'pointer', userSelect: 'none' }}>
           <span style={{ fontSize: '0.8rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-primary)' }}>
             <Icons.Lock style={{ width: 14, height: 14 }} /> Mi Caja
+            <span style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', marginLeft: 2 }}>{cajaExpanded ? '▲' : '▼'}</span>
           </span>
-          {currentTurnId ? (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
-              <span style={{ background: 'var(--gradient-primary)', color: 'white', padding: '2px 6px', borderRadius: '6px', fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Abierta</span>
-              {turnOpenedAt && (() => {
-                {/* eslint-disable-next-line react-hooks/purity */}
-                const hours = Math.max(0, (Date.now() - new Date(turnOpenedAt).getTime()) / 3600000);
-                const h = Math.floor(hours);
-                const m = Math.floor((hours - h) * 60);
-                return (
-                  <span style={{ color: 'var(--text-secondary)', fontSize: '0.65rem', fontWeight: 500 }}>
-                    {h > 0 ? `${h}h ${m}m` : `${m}m`}
-                  </span>
-                );
-              })()}
-            </div>
-          ) : (
-            <span style={{ background: 'rgba(239, 68, 68, 0.2)', color: 'var(--accent-danger)', padding: '2px 6px', borderRadius: '6px', fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Cerrada</span>
-          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            {currentTurnId ? (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
+                <span style={{ background: 'var(--gradient-primary)', color: 'white', padding: '2px 6px', borderRadius: '6px', fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Abierta</span>
+                {turnOpenedAt && (() => {
+                  const hours = Math.max(0, (Date.now() - new Date(turnOpenedAt).getTime()) / 3600000);
+                  const h = Math.floor(hours); const m = Math.floor((hours - h) * 60);
+                  return <span style={{ color: 'var(--text-secondary)', fontSize: '0.65rem' }}>{h > 0 ? `${h}h ${m}m` : `${m}m`}</span>;
+                })()}
+              </div>
+            ) : (
+              <span style={{ background: 'rgba(239,68,68,0.2)', color: 'var(--accent-danger)', padding: '2px 6px', borderRadius: '6px', fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase' }}>Cerrada</span>
+            )}
+          </div>
         </div>
 
-        <div className="sidebar-caja-info" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+        {cajaExpanded && (
+        <div className="sidebar-caja-info" style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '6px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 700 }}>
             <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>Vendido hoy</span>
             <span style={{ color: 'var(--accent-success)', fontSize: '1.1rem', fontFamily: 'var(--font-mono)', fontWeight: 800 }}>
               ${(todaySalesTotal || 0).toLocaleString('es-AR')}
             </span>
           </div>
-          {initialCash > 0 && (
+          {totalEgresos > 0 && (
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 700 }}>
-              <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>Caja inicial</span>
-              <span style={{ color: 'var(--text-secondary)', fontSize: 'var(--fs-sm)', fontFamily: 'var(--font-mono)', fontWeight: 600 }}>
+              <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>Retirado</span>
+              <span style={{ color: 'var(--accent-danger)', fontSize: 'var(--fs-sm)', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>
+                −${(totalEgresos || 0).toLocaleString('es-AR')}
+              </span>
+            </div>
+          )}
+          {currentTurnId && (
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 700, paddingTop: '4px', borderTop: '1px solid var(--border-color)' }}>
+              <span style={{ color: 'var(--text-primary)', fontSize: '0.75rem', fontWeight: 800 }}>EFT en caja</span>
+              <span style={{ color: 'var(--accent-primary)', fontSize: 'var(--fs-sm)', fontFamily: 'var(--font-mono)', fontWeight: 800 }}>
+                ${((initialCash || 0) + (todaySalesTotal || 0) - (totalEgresos || 0)).toLocaleString('es-AR')}
+              </span>
+            </div>
+          )}
+          {initialCash > 0 && (
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ color: 'var(--text-secondary)', fontSize: '0.7rem' }}>Caja inicial</span>
+              <span style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', fontFamily: 'var(--font-mono)' }}>
                 ${(initialCash || 0).toLocaleString('es-AR')}
               </span>
             </div>
@@ -301,11 +318,12 @@ export default function Sidebar({
           </div>
           {pendingSync > 0 && (
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 700 }}>
-              <span style={{ color: 'var(--accent-warning)', fontSize: '0.85rem', cursor: 'pointer' }} onClick={() => setShowPendingModal(true)}>Pendientes</span>
+              <span style={{ color: 'var(--accent-warning)', fontSize: '0.85rem', cursor: 'pointer' }} onClick={e => { e.stopPropagation(); setShowPendingModal(true); }}>Pendientes</span>
               <span style={{ color: 'var(--accent-warning)', fontWeight: 800, fontSize: '0.85rem' }}>{pendingSync}</span>
             </div>
           )}
         </div>
+        )}
 
         <div data-tour="sidebar-bottom" style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '10px' }}>
           <Tooltip text="Registrar salida de efectivo" block>

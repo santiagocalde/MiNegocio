@@ -11,6 +11,7 @@ export default function useBackend(currentOperator, currentTurnId, currentSucurs
   const [backendLastOk, setBackendLastOk] = useState(null);
   const [pendingSync, setPendingSync] = useState(0);
   const [todaySalesTotal, setTodaySalesTotal] = useState(0);
+  const [totalEgresos, setTotalEgresos] = useState(0);
   const [operators, setOperators] = useState([]);
   const [sucursales, setSucursales] = useState([]);
   const [businessConfig, setBusinessConfig] = useState({});
@@ -151,12 +152,14 @@ export default function useBackend(currentOperator, currentTurnId, currentSucurs
       if (res.ok) {
         addToast(`✅ ${egresoType === 'gasto' ? 'Gasto' : 'Retiro'} registrado`, 'success');
         setShowEgreso(false);
+        const monto = parseFloat(egresoMonto) || 0;
+        setTotalEgresos(prev => prev + monto);
         setEgresoMonto('');
         setEgresoMotivo('');
         setEgresoType('gasto');
       } else {
         const err = await res.json().catch(() => ({}));
-        addToast(err.detail || 'Error', 'error');
+        addToast(err.detail || 'Error al registrar egreso', 'error');
       }
     } catch { addToast('Error de conexión', 'error'); }
   }, [egresoMonto, egresoMotivo, egresoType, currentTurnId, currentOperator, addToast]);
@@ -360,6 +363,7 @@ export default function useBackend(currentOperator, currentTurnId, currentSucurs
     backendLastOk, setBackendLastOk,
     pendingSync, setPendingSync,
     todaySalesTotal, setTodaySalesTotal,
+    totalEgresos, setTotalEgresos,
     operators, setOperators,
     sucursales, setSucursales,
     businessConfig, setBusinessConfig,
