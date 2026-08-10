@@ -86,5 +86,6 @@ async function request(method, path, body) {
 export function apiGet(path) { return request('GET', path); }
 export function apiPost(path, body) { return request('POST', path, body); }
 export function apiPut(path, body) { return request('PUT', path, body); }
+export function apiPatch(path, body) { return request('PATCH', path, body); }
 export function apiDelete(path) { return request('DELETE', path); }
 export { SERVER_URL };

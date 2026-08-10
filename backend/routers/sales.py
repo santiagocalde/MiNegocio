@@ -891,6 +891,42 @@ async def create_customer(name: str = Body(...), phone: Optional[str] = Body(Non
             return {"id": cid, "name": name.strip(), "phone": phone, "balance": debt}
 
 
+@router.patch("/api/customers/{customer_id}", summary="Actualizar datos de un cliente")
+@limiter.limit("30/minute")
+async def update_customer(request: Request, customer_id: int, body: dict = Body(...)) -> dict:
+    """Actualiza campos opcionales del cliente (address, phone, name). Solo pisa los campos que vienen."""
+    from main import USE_PG, row_to_dict; import main
+    b_id = _biz_id()
+    allowed = {"address", "phone", "name", "email", "dni_cuit"}
+    updates = {k: v for k, v in body.items() if k in allowed and v is not None}
+    if not updates:
+        raise HTTPException(400, detail="Sin campos para actualizar")
+    if USE_PG:
+        from db_helpers import get_pg_pool
+        pool = await get_pg_pool()
+        async with pool.acquire() as conn:
+            sets = ", ".join(f"{k} = ${i+2}" for i, k in enumerate(updates))
+            vals = list(updates.values())
+            row = await conn.fetchrow(
+                f"UPDATE customers SET {sets} WHERE id = $1 AND business_id = ${len(vals)+2} RETURNING id",
+                customer_id, *vals, b_id
+            )
+            if not row:
+                raise HTTPException(404, detail="Cliente no encontrado")
+            return {"ok": True}
+    else:
+        import aiosqlite
+        async with aiosqlite.connect(main.DB_PATH) as db:
+            sets = ", ".join(f"{k} = ?" for k in updates)
+            vals = list(updates.values())
+            await db.execute(
+                f"UPDATE customers SET {sets} WHERE id = ?",
+                (*vals, customer_id)
+            )
+            await db.commit()
+        return {"ok": True}
+
+
 @router.get("/api/customers/{customer_id}/obras", summary="Obras de un cliente")
 async def customer_obras(customer_id: int) -> list:
     from main import USE_PG, row_to_dict; import main

@@ -7,6 +7,7 @@ import AIScannerModal from './purchases/AIScannerModal';
 import PurchaseDetailModal from './purchases/PurchaseDetailModal';
 import PurchasesHistory from './purchases/PurchasesHistory';
 import NewInvoiceForm from './purchases/NewInvoiceForm';
+import PedidoProveedorTab from './purchases/PedidoProveedorTab';
 
 const PLAN_WEIGHT = { trial: 1, simple: 1, pro: 2, ia: 3 };
 
@@ -15,7 +16,7 @@ export default function PurchasesModule() {
   const globalProductsDB = backend.productsDB;
   const onProductsUpdated = backend.fetchProductsDB;
   const currentTurnId = auth.currentTurnId;
-  const [activeTab, setActiveTab] = useState('history'); // history | pending | new_invoice
+  const [activeTab, setActiveTab] = useState('history'); // history | pending | pedido | new_invoice
   // F6: pedidos pendientes
   const [pendingPurchases, setPendingPurchases] = useState([]);
   const [loadingPending, setLoadingPending] = useState(false);
@@ -217,9 +218,9 @@ export default function PurchasesModule() {
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
           {/* Tab pills */}
-          {(activeTab === 'history' || activeTab === 'pending') && (
+          {(activeTab === 'history' || activeTab === 'pending' || activeTab === 'pedido') && (
             <div style={{ display: 'flex', gap: 4, background: 'var(--surface-veil)', borderRadius: 8, padding: 3 }}>
-              {[['history','Historial'],['pending','⏳ Pendientes']].map(([key, lbl]) => (
+              {[['history','Historial'],['pending','⏳ Pendientes'],['pedido','📋 Hacer pedido']].map(([key, lbl]) => (
                 <button key={key} onClick={() => setActiveTab(key)}
                   style={{ padding: '7px 14px', borderRadius: 6, border: 'none', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s',
                     background: activeTab === key ? 'var(--sheet)' : 'transparent',
@@ -235,7 +236,7 @@ export default function PurchasesModule() {
               ))}
             </div>
           )}
-          {activeTab === 'history' && (
+          {(activeTab === 'history' || activeTab === 'pedido') && (
             <>
               <button onClick={() => setActiveTab('new_invoice')} style={{ background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '10px 16px', borderRadius: 'var(--radius-sm)', fontSize: '0.92rem', fontWeight: 700, cursor: 'pointer', height: '44px', transition: 'border-color 0.15s' }}
                 onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--accent-primary)'}
@@ -301,6 +302,11 @@ export default function PurchasesModule() {
             </div>
           )}
         </div>
+      )}
+
+      {/* ── TAB: HACER PEDIDO A PROVEEDOR ── */}
+      {activeTab === 'pedido' && (
+        <PedidoProveedorTab addToast={addToast} />
       )}
 
       {activeTab === 'history' && (

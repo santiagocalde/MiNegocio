@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { usePanelContext } from '../context/PanelContext';
-import { apiGet, apiPost } from '../services/apiClient';
+import { apiGet, apiPost, apiPatch } from '../services/apiClient';
 import ClientePicker from '../components/corralon/ClientePicker';
 
 // ── Comprobante imprimible ────────────────────────────────────
@@ -81,11 +81,16 @@ export default function AcopiosModule() {
   const [cobrarAmount, setCobrarAmount] = useState('');
   const [cobrarSaving, setCobrarSaving] = useState(false);
 
-  // Form
+  // Form — nuevo acopio
   const [formCustomer, setFormCustomer] = useState(null);
+  const [formAddress, setFormAddress]   = useState('');     // dirección editable
+  const [savingAddress, setSavingAddress] = useState(false);
   const [formItems, setFormItems] = useState([]);
   const [productSearch, setProductSearch] = useState('');
   const [searchResults, setSearchResults] = useState([]);
+  // Cobro al crear
+  const [formCobraAhora, setFormCobraAhora] = useState(false);
+  const [formCobraMethod, setFormCobraMethod] = useState('efectivo');
 
   const fetch = useCallback(async () => {
     setLoading(true);
@@ -164,13 +169,48 @@ export default function AcopiosModule() {
 
   const handleCreate = async () => {
     if (!formCustomer) { addToast?.('Seleccioná un cliente.', 'error'); return; }
-    if (formItems.length === 0) return;
+    if (formItems.length === 0) { addToast?.('Agregá al menos un producto.', 'error'); return; }
+
+    // Si el usuario ingresó/modificó una dirección que el cliente no tenía, la guardamos
+    const addressChanged = formAddress.trim() && formAddress.trim() !== (formCustomer.address || '').trim();
+    if (addressChanged) {
+      setSavingAddress(true);
+      try {
+        await apiPatch(`/customers/${formCustomer.id}`, { address: formAddress.trim() });
+      } catch {}
+      setSavingAddress(false);
+    }
+
     const r = await apiPost('/acopios', {
       customer_id: formCustomer.id,
       items: formItems.map(i => ({ product_id: i.product_id, quantity: i.quantity, unit_price: i.unit_price })),
     });
-    if (r.ok) { addToast?.('Acopio creado.', 'success'); setShowForm(false); setFormCustomer(null); setFormItems([]); fetch(); }
-    else addToast?.('Error.', 'error');
+
+    if (!r.ok) { addToast?.('Error al crear el acopio.', 'error'); return; }
+
+    const data = await r.json();
+    const acopioId = data.id;
+
+    // Cobrar en el mismo momento si el usuario lo eligió
+    if (formCobraAhora && acopioId) {
+      const total = formItems.reduce((s, it) => s + (it.unit_price || 0) * (it.quantity || 1), 0);
+      try {
+        await apiPost(`/acopios/${acopioId}/cobrar`, {
+          method: formCobraMethod,
+          amount: total,
+          operator: 'Sistema',
+        });
+      } catch {}
+    }
+
+    addToast?.(formCobraAhora ? 'Acopio creado y cobro registrado.' : 'Acopio creado.', 'success');
+    setShowForm(false);
+    setFormCustomer(null);
+    setFormAddress('');
+    setFormItems([]);
+    setFormCobraAhora(false);
+    setFormCobraMethod('efectivo');
+    fetch();
   };
 
   const showDetail = async (id) => {
@@ -419,30 +459,112 @@ export default function AcopiosModule() {
       {showForm && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(11,19,43,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} onMouseDown={e => { if (e.target === e.currentTarget) { setShowForm(false); setFormCustomer(null); } }}>
           <div onMouseDown={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 500, maxHeight: '90vh', overflow: 'auto', background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line-strong)', borderRadius: 12, padding: 24, boxShadow: 'var(--lp-shadow-lg)' }}>
-            <h3 style={{ fontFamily: 'var(--lp-font-display)', fontSize: '1.1rem', fontWeight: 700, color: 'var(--lp-ink)', margin: '0 0 16px' }}>Nuevo acopio</h3>
-            <div style={{ marginBottom: 12 }}>
-              <label style={{ fontSize: '0.75rem', color: 'var(--lp-ink-faint)', fontWeight: 600, display: 'block', marginBottom: 4 }}>Cliente *</label>
-              <ClientePicker selected={formCustomer} onSelect={setFormCustomer} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <h3 style={{ fontFamily: 'var(--lp-font-display)', fontSize: '1.1rem', fontWeight: 700, color: 'var(--lp-ink)', margin: 0 }}>Nuevo acopio</h3>
+              <button onClick={() => { setShowForm(false); setFormCustomer(null); setFormAddress(''); setFormItems([]); setFormCobraAhora(false); }} style={{ background: 'none', border: 'none', color: 'var(--lp-ink-faint)', cursor: 'pointer', fontSize: '1.3rem' }}>✕</button>
             </div>
-            <input value={productSearch} onChange={e => handleSearch(e.target.value)} placeholder="Buscar producto..." style={{ width: '100%', padding: '8px', background: 'var(--lp-paper-sunken)', border: '1px solid var(--lp-line-strong)', borderRadius: 6, color: 'var(--lp-ink)', marginBottom: 8, outline: 'none' }} />
+
+            {/* Cliente */}
+            <div style={{ marginBottom: 10 }}>
+              <label style={{ fontSize: '0.72rem', color: 'var(--lp-ink-faint)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 5 }}>Cliente *</label>
+              <ClientePicker selected={formCustomer} onSelect={c => {
+                setFormCustomer(c);
+                setFormAddress(c?.address || '');
+              }} />
+            </div>
+
+            {/* Dirección — visible siempre que haya cliente seleccionado */}
+            {formCustomer && (
+              <div style={{ marginBottom: 12 }}>
+                <label style={{ fontSize: '0.72rem', color: 'var(--lp-ink-faint)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 5 }}>
+                  Dirección de entrega
+                  {!formCustomer.address && <span style={{ marginLeft: 6, color: 'var(--lp-amber)', fontWeight: 600, textTransform: 'none', fontSize: '0.7rem' }}>sin dirección guardada</span>}
+                </label>
+                <input value={formAddress} onChange={e => setFormAddress(e.target.value)}
+                  placeholder="Ej: Av. Mitre 1234 e/ Roca y San Martín"
+                  style={{ width: '100%', padding: '8px 10px', background: 'var(--lp-paper-sunken)', border: formAddress.trim() ? '1px solid var(--lp-primary)' : '1px solid var(--lp-line-strong)', borderRadius: 6, color: 'var(--lp-ink)', fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box' }} />
+                {formAddress.trim() && formAddress.trim() !== (formCustomer.address || '').trim() && (
+                  <div style={{ fontSize: '0.7rem', color: 'var(--lp-primary)', marginTop: 3 }}>
+                    {savingAddress ? 'Guardando...' : '✎ Se guardará en el perfil del cliente al crear'}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Buscador de productos */}
+            <div style={{ marginBottom: 4 }}>
+              <label style={{ fontSize: '0.72rem', color: 'var(--lp-ink-faint)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 5 }}>Productos</label>
+              <input value={productSearch} onChange={e => handleSearch(e.target.value)}
+                placeholder="Buscar producto..."
+                style={{ width: '100%', padding: '8px 10px', background: 'var(--lp-paper-sunken)', border: '1px solid var(--lp-line-strong)', borderRadius: 6, color: 'var(--lp-ink)', outline: 'none', boxSizing: 'border-box', fontSize: '0.85rem' }} />
+            </div>
             {searchResults.length > 0 && (
               <div style={{ marginBottom: 8, maxHeight: 120, overflow: 'auto', border: '1px solid var(--lp-line)', borderRadius: 6 }}>
                 {searchResults.map(p => (
-                  <div key={p.id} onClick={() => addFormItem(p)} style={{ padding: '6px 10px', cursor: 'pointer', fontSize: '0.82rem', borderBottom: '1px solid var(--lp-line)', color: 'var(--lp-ink)' }} onMouseEnter={e => e.currentTarget.style.background = 'var(--lp-paper-sunken)'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>{p.name} · ${formatPesos(p.price)}</div>
+                  <div key={p.id} onClick={() => addFormItem(p)}
+                    style={{ padding: '6px 10px', cursor: 'pointer', fontSize: '0.82rem', borderBottom: '1px solid var(--lp-line)', color: 'var(--lp-ink)' }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'var(--lp-paper-sunken)'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                    {p.name} · ${formatPesos(p.price)}
+                  </div>
                 ))}
               </div>
             )}
-            {formItems.map((it, i) => (
-              <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '3px 0', fontSize: '0.82rem', color: 'var(--lp-ink)' }}>
-                <span style={{ flex: 1 }}>{it.product_name}</span>
-                <input type="number" value={it.quantity} onChange={e => setFormItems(prev => prev.map((x, idx) => idx === i ? { ...x, quantity: Math.max(1, parseFloat(e.target.value) || 1) } : x))} style={{ width: 60, padding: '4px 8px', background: 'var(--lp-paper-sunken)', border: '1px solid var(--lp-line-strong)', borderRadius: 4, color: 'var(--lp-ink)', textAlign: 'center', outline: 'none' }} />
-                <button onClick={() => setFormItems(prev => prev.filter((_, idx) => idx !== i))} style={{ background: 'none', border: 'none', color: 'var(--lp-red)', cursor: 'pointer' }}>✕</button>
+
+            {/* Lista de ítems + total */}
+            {formItems.length > 0 && (
+              <div style={{ marginBottom: 12 }}>
+                {formItems.map((it, i) => (
+                  <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '4px 0', fontSize: '0.82rem', color: 'var(--lp-ink)', borderBottom: '1px solid var(--lp-line)' }}>
+                    <span style={{ flex: 1, fontWeight: 600 }}>{it.product_name}</span>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--lp-ink-faint)', fontFamily: 'var(--lp-font-mono)' }}>${formatPesos(it.unit_price)}</span>
+                    <input type="number" value={it.quantity}
+                      onChange={e => setFormItems(prev => prev.map((x, idx) => idx === i ? { ...x, quantity: Math.max(1, parseFloat(e.target.value) || 1) } : x))}
+                      style={{ width: 56, padding: '4px 6px', background: 'var(--lp-paper-sunken)', border: '1px solid var(--lp-line-strong)', borderRadius: 4, color: 'var(--lp-ink)', textAlign: 'center', outline: 'none' }} />
+                    <button onClick={() => setFormItems(prev => prev.filter((_, idx) => idx !== i))}
+                      style={{ background: 'none', border: 'none', color: 'var(--lp-red)', cursor: 'pointer', fontSize: '1rem' }}>✕</button>
+                  </div>
+                ))}
+                {/* Total */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderTop: '2px solid var(--lp-line-strong)', marginTop: 2 }}>
+                  <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--lp-ink-faint)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Total</span>
+                  <span style={{ fontFamily: 'var(--lp-font-mono)', fontWeight: 800, fontSize: '1.1rem', color: 'var(--lp-ink)' }}>
+                    ${formatPesos(formItems.reduce((s, it) => s + (it.unit_price || 0) * (it.quantity || 1), 0))}
+                  </span>
+                </div>
               </div>
-            ))}
-            <button onClick={handleCreate} disabled={!formCustomer || formItems.length === 0} className="lp-btn lp-btn--primary" style={{ width: '100%', padding: '12px', marginTop: 12, opacity: (!formCustomer || formItems.length === 0) ? 0.5 : 1 }}>
-              Crear acopio (descuenta stock)
+            )}
+
+            {/* Cobrar ahora */}
+            {formItems.length > 0 && (
+              <div style={{ marginBottom: 14, padding: '12px 14px', background: formCobraAhora ? 'rgba(16,185,129,0.08)' : 'var(--lp-paper-sunken)', border: `1px solid ${formCobraAhora ? 'var(--lp-green)' : 'var(--lp-line-strong)'}`, borderRadius: 8, transition: 'all 0.15s' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
+                  <input type="checkbox" checked={formCobraAhora} onChange={e => setFormCobraAhora(e.target.checked)}
+                    style={{ width: 18, height: 18, accentColor: 'var(--lp-green)', cursor: 'pointer' }} />
+                  <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--lp-ink)' }}>💰 Cobrar ahora</span>
+                </label>
+                {formCobraAhora && (
+                  <div style={{ marginTop: 10, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    {[['efectivo','Efectivo'],['tarjeta','Tarjeta'],['transferencia','Transf.'],['cc','Cta. Cte.']].map(([val, lbl]) => (
+                      <button key={val} onClick={() => setFormCobraMethod(val)}
+                        style={{ padding: '5px 12px', fontSize: '0.78rem', fontWeight: 700, borderRadius: 20, cursor: 'pointer', transition: 'all 0.15s',
+                          border: formCobraMethod === val ? '2px solid var(--lp-green)' : '1.5px solid var(--lp-line-strong)',
+                          background: formCobraMethod === val ? 'rgba(16,185,129,0.15)' : 'transparent',
+                          color: formCobraMethod === val ? 'var(--lp-green)' : 'var(--lp-ink-faint)' }}>
+                        {lbl}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            <button onClick={handleCreate} disabled={!formCustomer || formItems.length === 0}
+              className="lp-btn lp-btn--primary"
+              style={{ width: '100%', padding: '12px', marginTop: 4, opacity: (!formCustomer || formItems.length === 0) ? 0.5 : 1 }}>
+              {formCobraAhora ? '✓ Crear acopio y registrar cobro' : 'Crear acopio (descuenta stock)'}
             </button>
-            <button onClick={() => { setShowForm(false); setFormCustomer(null); }} className="lp-btn lp-btn--ghost" style={{ width: '100%', marginTop: 8 }}>Cancelar</button>
+            <button onClick={() => { setShowForm(false); setFormCustomer(null); setFormAddress(''); setFormItems([]); setFormCobraAhora(false); }} className="lp-btn lp-btn--ghost" style={{ width: '100%', marginTop: 8 }}>Cancelar</button>
           </div>
         </div>
       )}
