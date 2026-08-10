@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { usePanelContext } from '../context/PanelContext';
-import { apiGet, apiPut } from '../services/apiClient';
+import { apiGet, apiPut, apiPost } from '../services/apiClient';
 import FeatureGate from '../components/ui/FeatureGate';
 
 const Icons = {
@@ -75,7 +75,7 @@ export default function CatalogoModule() {
 
   const handleSave = async () => {
     try {
-      const res = await apiPut('/config', {
+      const res = await apiPost('/config', {
         nombre: storeName,
         subtitulo,
         direccion,
@@ -104,7 +104,7 @@ export default function CatalogoModule() {
     setIsActive(newVal);
     setSaving(true);
     try {
-      const res = await apiPut('/config', {
+      const res = await apiPost('/config', {
         nombre: storeName,
         subtitulo,
         direccion,

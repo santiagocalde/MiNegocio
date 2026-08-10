@@ -100,6 +100,7 @@ async def public_catalogo(request: Request, slug: str = Query("")) -> dict:
         }
 
 
+@router.put("/api/config", summary="Actualizar configuracion del negocio")
 @router.post("/api/config", summary="Actualizar configuracion del negocio")
 async def update_config(request: Request, data: dict) -> dict:
     iva_rate_raw = data.get("iva_rate")
