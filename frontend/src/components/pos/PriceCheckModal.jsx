@@ -71,7 +71,11 @@ function PriceCheckModal({ showPriceCheck, setShowPriceCheck, priceCheckQuery, s
             ))
           )}
         </div>
-        <div className="modal-actions" style={{ marginTop: '16px' }}>
+        <div className="modal-actions" style={{ marginTop: '16px', display: 'flex', gap: '8px' }}>
+          <button className="btn btn-modal-cancel" onClick={() => { setPriceCheckQuery(''); setPriceCheckResults([]); }}
+            style={{ background: 'var(--bg-hover)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '10px 16px', borderRadius: '8px', fontSize: '0.95rem', fontWeight: 600, cursor: 'pointer' }}>
+            Otra consulta
+          </button>
           <button className="btn btn-modal-confirm" onClick={closeModal}>Cerrar</button>
         </div>
       </div>
