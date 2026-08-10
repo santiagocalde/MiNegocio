@@ -69,8 +69,11 @@ export default function AcopiosModule() {
   const [lastWithdrawal, setLastWithdrawal] = useState(null); // para ofrecer imprimir
   const [activeTab, setActiveTab] = useState('acopios'); // 'acopios' | 'despachos'
   const [despachos, setDespachos] = useState([]);
-  const [despachosFecha, setDespachosFecha] = useState(new Date().toISOString().slice(0, 10));
+  const [despachosFecha, setDespachosFecha] = useState(''); // '' = últimos 30 días; 'YYYY-MM-DD' = día exacto
   const [despachosLoading, setDespachosLoading] = useState(false);
+  const [rescheduleModal, setRescheduleModal] = useState(null); // { wid, customerName }
+  const [rescheduleDate, setRescheduleDate] = useState('');
+  const [rescheduling, setRescheduling] = useState(false);
 
   // Form
   const [formCustomer, setFormCustomer] = useState(null);
@@ -92,6 +95,27 @@ export default function AcopiosModule() {
     } catch {}
     setDespachosLoading(false);
   }, []);
+
+  const handleReschedule = async () => {
+    if (!rescheduleModal || !rescheduleDate) return;
+    setRescheduling(true);
+    try {
+      const r = await apiPost(`/acopios/withdrawals/${rescheduleModal.wid}/reschedule`, { new_date: rescheduleDate });
+      if (r.ok) {
+        addToast?.('Entrega reprogramada.', 'success');
+        setDespachos(prev => prev.map(d =>
+          d.withdrawal_id === rescheduleModal.wid
+            ? { ...d, status: 'rescheduled', rescheduled_date: rescheduleDate }
+            : d
+        ));
+        setRescheduleModal(null);
+        setRescheduleDate('');
+      } else {
+        addToast?.('Error al reprogramar.', 'error');
+      }
+    } catch { addToast?.('Error al reprogramar.', 'error'); }
+    setRescheduling(false);
+  };
 
   useEffect(() => { fetch(); }, [fetch]);
   useEffect(() => {
@@ -173,8 +197,22 @@ export default function AcopiosModule() {
           <button onClick={() => setShowForm(true)} className="lp-btn lp-btn--primary" style={{ padding: '8px 18px', fontSize: '0.85rem' }}>Nuevo acopio</button>
         )}
         {activeTab === 'despachos' && (
-          <input type="date" value={despachosFecha} onChange={e => setDespachosFecha(e.target.value)}
-            style={{ padding: '7px 12px', background: 'var(--lp-paper-sunken)', border: '1px solid var(--lp-line-strong)', borderRadius: 6, color: 'var(--lp-ink)', fontSize: '0.82rem', outline: 'none' }} />
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+            <input type="date" value={despachosFecha} onChange={e => setDespachosFecha(e.target.value)}
+              style={{ padding: '7px 12px', background: 'var(--lp-paper-sunken)', border: '1px solid var(--lp-line-strong)', borderRadius: 6, color: 'var(--lp-ink)', fontSize: '0.82rem', outline: 'none' }} />
+            {despachosFecha && (
+              <button onClick={() => setDespachosFecha('')} title="Ver últimos 30 días"
+                style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid var(--lp-line-strong)', background: 'transparent', color: 'var(--lp-ink-faint)', fontSize: '0.75rem', cursor: 'pointer' }}>
+                × todos
+              </button>
+            )}
+            {!despachosFecha && (
+              <button onClick={() => setDespachosFecha(new Date().toISOString().slice(0, 10))} title="Solo hoy"
+                style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid var(--lp-line-strong)', background: 'transparent', color: 'var(--lp-primary)', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}>
+                Hoy
+              </button>
+            )}
+          </div>
         )}
       </div>
 
@@ -222,52 +260,116 @@ export default function AcopiosModule() {
           )
         )}
 
-        {/* === TAB DESPACHOS DEL DÍA === */}
-        {activeTab === 'despachos' && (
-          despachosLoading ? (
+        {/* === TAB DESPACHOS === */}
+        {activeTab === 'despachos' && (() => {
+          if (despachosLoading) return (
             <div style={{ color: 'var(--lp-ink-faint)', textAlign: 'center', padding: 40 }}>Cargando despachos...</div>
-          ) : despachos.length === 0 ? (
+          );
+          if (despachos.length === 0) return (
             <div style={{ color: 'var(--lp-ink-faint)', textAlign: 'center', padding: 40, fontSize: '0.9rem' }}>
               <div style={{ fontSize: '2rem', marginBottom: 12 }}>🚚</div>
-              Sin despachos registrados para esta fecha.
+              Sin despachos registrados{despachosFecha ? ' para esta fecha' : ' en los últimos 30 días'}.
             </div>
-          ) : (
+          );
+
+          // Agrupar por fecha
+          const groups = {};
+          despachos.forEach(d => {
+            const raw = d.created_at ? new Date(d.created_at) : null;
+            const key = raw
+              ? raw.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })
+              : 'Sin fecha';
+            if (!groups[key]) groups[key] = [];
+            groups[key].push(d);
+          });
+
+          return (
             <div className="ledger-sheet" style={{ overflow: 'hidden' }}>
-              {despachos.map(d => {
-                // Extraer la dirección del campo notes: "Entrega a domicilio: <dirección>"
-                const notesAddr = d.notes?.replace(/^Entrega a domicilio[:\s]*/i, '').trim() || '';
-                const displayAddr = notesAddr || d.customer_address || '—';
-                const hora = d.created_at ? new Date(d.created_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }) : '—';
-                return (
-                  <div key={d.withdrawal_id} style={{ padding: '14px 20px', borderBottom: '1px solid var(--lp-line)', display: 'flex', gap: 16, alignItems: 'flex-start' }}>
-                    <div style={{ fontSize: '0.75rem', fontFamily: 'var(--font-mono)', color: 'var(--lp-ink-faint)', fontWeight: 700, width: 40, flexShrink: 0, paddingTop: 2 }}>{hora}</div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 700, color: 'var(--lp-ink)', fontSize: '0.9rem' }}>{d.customer_name || 'Sin cliente'}</div>
-                      <div style={{ fontSize: '0.78rem', color: 'var(--lp-primary)', fontWeight: 600, marginTop: 2 }}>📍 {displayAddr}</div>
-                      {d.items_summary && (
-                        <div style={{ fontSize: '0.75rem', color: 'var(--lp-ink-faint)', marginTop: 4 }}>{d.items_summary}</div>
-                      )}
-                      {d.driver && (
-                        <div style={{ fontSize: '0.73rem', color: 'var(--lp-ink-faint)', marginTop: 2 }}>Chofer: {d.driver}</div>
-                      )}
-                    </div>
-                    <button
-                      onClick={() => {
-                        // Imprimir comprobante del despacho
-                        showDetail(d.acopio_id);
-                      }}
-                      className="lp-btn lp-btn--ghost"
-                      style={{ fontSize: '0.75rem', padding: '5px 10px', flexShrink: 0 }}
-                      title="Ver acopio para imprimir comprobante"
-                    >
-                      Ver
-                    </button>
+              {Object.entries(groups).map(([dateLabel, rows]) => (
+                <div key={dateLabel}>
+                  {/* Separador de fecha */}
+                  <div style={{
+                    padding: '10px 20px 6px',
+                    fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.08em',
+                    textTransform: 'uppercase', color: 'var(--lp-primary)',
+                    background: 'var(--lp-paper-sunken)',
+                    borderBottom: '1px solid var(--lp-line)',
+                    position: 'sticky', top: 0, zIndex: 1,
+                  }}>
+                    {dateLabel}
+                    <span style={{ marginLeft: 8, fontWeight: 400, opacity: 0.7 }}>
+                      {rows.length} entrega{rows.length !== 1 ? 's' : ''}
+                    </span>
                   </div>
-                );
-              })}
+
+                  {rows.map(d => {
+                    const isRescheduled = d.status === 'rescheduled';
+                    const notesAddr = d.notes?.replace(/^Entrega a domicilio[:\s]*/i, '').trim() || '';
+                    const displayAddr = notesAddr || d.customer_address || '—';
+                    const hora = d.created_at
+                      ? new Date(d.created_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })
+                      : '—';
+
+                    // Formato humano para la fecha de reprogramación
+                    const fmtRescheduled = d.rescheduled_date
+                      ? new Date(d.rescheduled_date + 'T12:00:00').toLocaleDateString('es-AR', { day: 'numeric', month: 'long' })
+                      : null;
+
+                    return (
+                      <div key={d.withdrawal_id} style={{
+                        padding: '13px 20px',
+                        borderBottom: '1px solid var(--lp-line)',
+                        display: 'flex', gap: 14, alignItems: 'flex-start',
+                        opacity: isRescheduled ? 0.45 : 1,
+                        background: isRescheduled ? 'var(--lp-paper-sunken)' : 'transparent',
+                      }}>
+                        <div style={{ fontSize: '0.75rem', fontFamily: 'var(--font-mono)', color: 'var(--lp-ink-faint)', fontWeight: 700, width: 38, flexShrink: 0, paddingTop: 3 }}>{hora}</div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                            <span style={{ fontWeight: 700, color: 'var(--lp-ink)', fontSize: '0.9rem' }}>
+                              {d.customer_name || 'Sin cliente'}
+                            </span>
+                            {isRescheduled && (
+                              <span style={{ fontSize: '0.68rem', fontWeight: 800, padding: '2px 8px', borderRadius: 20, background: 'rgba(107,114,128,0.15)', color: 'var(--lp-ink-faint)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                                Reprogramado{fmtRescheduled ? ` → ${fmtRescheduled}` : ''}
+                              </span>
+                            )}
+                          </div>
+                          <div style={{ fontSize: '0.78rem', color: isRescheduled ? 'var(--lp-ink-faint)' : 'var(--lp-primary)', fontWeight: 600, marginTop: 2 }}>
+                            📍 {displayAddr}
+                          </div>
+                          {d.items_summary && (
+                            <div style={{ fontSize: '0.74rem', color: 'var(--lp-ink-faint)', marginTop: 3 }}>{d.items_summary}</div>
+                          )}
+                          {d.driver && (
+                            <div style={{ fontSize: '0.72rem', color: 'var(--lp-ink-faint)', marginTop: 2 }}>Chofer: {d.driver}</div>
+                          )}
+                        </div>
+                        {!isRescheduled && (
+                          <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                            <button onClick={() => showDetail(d.acopio_id)}
+                              className="lp-btn lp-btn--ghost"
+                              style={{ fontSize: '0.75rem', padding: '5px 10px' }}
+                              title="Ver acopio">
+                              Ver
+                            </button>
+                            <button
+                              onClick={() => { setRescheduleModal({ wid: d.withdrawal_id, customerName: d.customer_name }); setRescheduleDate(''); }}
+                              className="lp-btn lp-btn--ghost"
+                              style={{ fontSize: '0.75rem', padding: '5px 10px', color: 'var(--lp-amber)' }}
+                              title="Reprogramar entrega">
+                              ↻
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
             </div>
-          )
-        )}
+          );
+        })()}
       </div>
 
       {/* Form modal */}
@@ -298,6 +400,41 @@ export default function AcopiosModule() {
               Crear acopio (descuenta stock)
             </button>
             <button onClick={() => { setShowForm(false); setFormCustomer(null); }} className="lp-btn lp-btn--ghost" style={{ width: '100%', marginTop: 8 }}>Cancelar</button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Reprogramar entrega */}
+      {rescheduleModal && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1100, background: 'rgba(11,19,43,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+          onMouseDown={e => { if (e.target === e.currentTarget) { setRescheduleModal(null); setRescheduleDate(''); } }}>
+          <div onMouseDown={e => e.stopPropagation()}
+            style={{ width: '100%', maxWidth: 360, background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line-strong)', borderRadius: 12, padding: 24, boxShadow: 'var(--lp-shadow-lg)' }}>
+            <h3 style={{ fontFamily: 'var(--lp-font-display)', fontSize: '1rem', fontWeight: 700, color: 'var(--lp-ink)', margin: '0 0 6px' }}>
+              Reprogramar entrega
+            </h3>
+            <div style={{ fontSize: '0.82rem', color: 'var(--lp-ink-faint)', marginBottom: 16 }}>
+              {rescheduleModal.customerName || 'Sin cliente'}
+            </div>
+            <label style={{ fontSize: '0.75rem', color: 'var(--lp-ink-faint)', fontWeight: 600, display: 'block', marginBottom: 6 }}>
+              Nueva fecha de entrega
+            </label>
+            <input type="date" value={rescheduleDate} onChange={e => setRescheduleDate(e.target.value)}
+              min={new Date().toISOString().slice(0, 10)}
+              style={{ width: '100%', padding: '9px 12px', background: 'var(--lp-paper-sunken)', border: '1px solid var(--lp-line-strong)', borderRadius: 6, color: 'var(--lp-ink)', fontSize: '0.88rem', outline: 'none', marginBottom: 16 }} />
+            <div style={{ fontSize: '0.75rem', color: 'var(--lp-amber)', marginBottom: 16, lineHeight: 1.4 }}>
+              La entrega original quedará marcada como <strong>Reprogramada</strong> (gris). La nueva entrega se registrará cuando se confirme en el acopio.
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={() => { setRescheduleModal(null); setRescheduleDate(''); }}
+                className="lp-btn lp-btn--ghost" style={{ flex: 1 }}>
+                Cancelar
+              </button>
+              <button onClick={handleReschedule} disabled={!rescheduleDate || rescheduling}
+                className="lp-btn lp-btn--primary" style={{ flex: 2, opacity: (!rescheduleDate || rescheduling) ? 0.5 : 1 }}>
+                {rescheduling ? 'Guardando…' : 'Confirmar reprogramación'}
+              </button>
+            </div>
           </div>
         </div>
       )}

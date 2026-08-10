@@ -34,16 +34,25 @@ async def list_acopios(request: Request, status: Optional[str] = Query(None)) ->
             cur = await db.execute(f"SELECT a.*, c.name as customer_name FROM acopios a LEFT JOIN customers c ON c.id = a.customer_id {w} ORDER BY a.created_at DESC", tuple(params))
             return [row_to_dict(r, cur.description) for r in await cur.fetchall()]
 
-@router.get("/api/acopios/despachos", summary="Despachos del dia (entregas a domicilio)")
+@router.get("/api/acopios/despachos", summary="Despachos (entregas a domicilio, últimos 30 días o por fecha exacta)")
 @limiter.limit("30/minute")
 async def list_despachos(request: Request, fecha: Optional[str] = Query(None)) -> list:
-    """Retorna las entregas a domicilio del dia (o de la fecha indicada como YYYY-MM-DD)."""
+    """
+    Sin fecha → últimos 30 días (para agrupar por fecha en el frontend).
+    Con fecha=YYYY-MM-DD → solo ese día.
+    Incluye los reprogramados (status='rescheduled') para mostrarlos en gris.
+    """
     from main import USE_PG, row_to_dict; import main; b_id = _biz_id()
     if USE_PG:
         from db_helpers import get_pg_pool
         pool = await get_pg_pool()
         async with pool.acquire() as conn:
-            target = fecha or "CURRENT_DATE"
+            if fecha:
+                where_date = "aw.created_at::date = $2::date"
+                params = [b_id, fecha]
+            else:
+                where_date = "aw.created_at::date >= (CURRENT_DATE - INTERVAL '30 days')"
+                params = [b_id]
             rows = await conn.fetch(f"""
                 SELECT
                     aw.id AS withdrawal_id,
@@ -51,7 +60,9 @@ async def list_despachos(request: Request, fecha: Optional[str] = Query(None)) -
                     aw.notes,
                     aw.driver,
                     aw.created_at,
-                    c.name  AS customer_name,
+                    COALESCE(aw.status, 'completed') AS status,
+                    aw.rescheduled_date,
+                    c.name    AS customer_name,
                     c.address AS customer_address,
                     (SELECT string_agg(p.name || ' x' || awi.quantity::text, ', ')
                      FROM acopio_withdrawal_items awi
@@ -61,15 +72,20 @@ async def list_despachos(request: Request, fecha: Optional[str] = Query(None)) -
                 FROM acopio_withdrawals aw
                 JOIN acopios a ON a.id = aw.acopio_id AND a.business_id = $1
                 LEFT JOIN customers c ON c.id = a.customer_id
-                WHERE aw.created_at::date = {target if fecha is None else "$2"}::date
+                WHERE {where_date}
                   AND aw.notes ILIKE 'Entrega%%'
                 ORDER BY aw.created_at DESC
-            """, *([b_id] if fecha is None else [b_id, fecha]))
+            """, *params)
             return [dict(r) for r in rows]
     else:
         import aiosqlite
         async with aiosqlite.connect(main.DB_PATH) as db:
-            date_filter = fecha if fecha else "date('now','localtime')"
+            if fecha:
+                where_date = "date(aw.created_at) = ?"
+                params = (fecha,)
+            else:
+                where_date = "date(aw.created_at) >= date('now', '-30 days', 'localtime')"
+                params = ()
             cur = await db.execute(f"""
                 SELECT
                     aw.id AS withdrawal_id,
@@ -77,7 +93,9 @@ async def list_despachos(request: Request, fecha: Optional[str] = Query(None)) -
                     aw.notes,
                     aw.driver,
                     aw.created_at,
-                    c.name  AS customer_name,
+                    COALESCE(aw.status, 'completed') AS status,
+                    aw.rescheduled_date,
+                    c.name    AS customer_name,
                     c.address AS customer_address,
                     (SELECT GROUP_CONCAT(p.name || ' x' || awi.quantity, ', ')
                      FROM acopio_withdrawal_items awi
@@ -87,10 +105,10 @@ async def list_despachos(request: Request, fecha: Optional[str] = Query(None)) -
                 FROM acopio_withdrawals aw
                 JOIN acopios a ON a.id = aw.acopio_id
                 LEFT JOIN customers c ON c.id = a.customer_id
-                WHERE date(aw.created_at) = {date_filter if not fecha else '?'}
+                WHERE {where_date}
                   AND aw.notes LIKE 'Entrega%%'
                 ORDER BY aw.created_at DESC
-            """, () if not fecha else (fecha,))
+            """, params)
             return [row_to_dict(r, cur.description) for r in await cur.fetchall()]
 
 
@@ -152,6 +170,41 @@ async def create_acopio(request: Request, body: dict = Body(...)) -> dict:
             )
             await db.commit()
         return {"id": aid, "success": True}
+
+@router.post("/api/acopios/withdrawals/{wid}/reschedule", summary="Reprogramar entrega a otra fecha")
+@limiter.limit("20/minute")
+async def reschedule_withdrawal(request: Request, wid: int, body: dict = Body(...)) -> dict:
+    """Marca una entrega como reprogramada y guarda la nueva fecha propuesta."""
+    new_date = body.get("new_date")
+    if not new_date:
+        raise HTTPException(400, detail="new_date requerido (YYYY-MM-DD)")
+    from main import USE_PG; import main; b_id = _biz_id()
+    if USE_PG:
+        from db_helpers import get_pg_pool
+        pool = await get_pg_pool()
+        async with pool.acquire() as conn:
+            result = await conn.execute(
+                """UPDATE acopio_withdrawals aw
+                   SET status = 'rescheduled', rescheduled_date = $2
+                   FROM acopios a
+                   WHERE aw.id = $1 AND aw.acopio_id = a.id AND a.business_id = $3""",
+                wid, new_date, b_id
+            )
+            if result == "UPDATE 0":
+                raise HTTPException(404)
+    else:
+        import aiosqlite
+        async with aiosqlite.connect(main.DB_PATH) as db:
+            cur = await db.execute(
+                """UPDATE acopio_withdrawals SET status = 'rescheduled', rescheduled_date = ?
+                   WHERE id = ? AND acopio_id IN (SELECT id FROM acopios WHERE id = acopio_id)""",
+                (new_date, wid)
+            )
+            await db.commit()
+            if cur.rowcount == 0:
+                raise HTTPException(404)
+    return {"ok": True}
+
 
 @router.post("/api/acopios/{acopio_id}/withdrawals", summary="Registrar retiro parcial")
 @limiter.limit("30/minute")

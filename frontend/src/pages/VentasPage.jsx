@@ -54,6 +54,16 @@ export default function VentasPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cart.cart.length]);
 
+  // Auto-print al confirmar venta cuando autoPrint está activo
+  const lastPrintedRef = useRef(null);
+  useEffect(() => {
+    if (sales.lastSale && sales.lastSale !== lastPrintedRef.current && cart.autoPrint) {
+      lastPrintedRef.current = sales.lastSale;
+      const t = setTimeout(() => window.print(), 350);
+      return () => clearTimeout(t);
+    }
+  }, [sales.lastSale, cart.autoPrint]);
+
   useEffect(() => {
     if (!backend.mpIntentId || backend.mpPaymentStatus === 'approved') return;
     const checkStatus = async () => {

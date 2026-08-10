@@ -484,7 +484,11 @@ async def init_db(DB_PATH: str, logger) -> None:
         await add_column_if_not_exists(db, "sales", "fiado_name", "TEXT", default="''")
         await add_column_if_not_exists(db, "businesses", "max_users", "INTEGER", default="2")
         await add_column_if_not_exists(db, "turns", "initial_cash", "REAL", default="0")
-            
+
+        # Reprogramación de entregas en acopios
+        await add_column_if_not_exists(db, "acopio_withdrawals", "status", "TEXT", default="'completed'")
+        await add_column_if_not_exists(db, "acopio_withdrawals", "rescheduled_date", "TEXT")
+
         await db.commit()
 
         # Punto 55: Creación de índices para performance
