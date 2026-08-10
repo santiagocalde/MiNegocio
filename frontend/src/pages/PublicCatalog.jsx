@@ -173,34 +173,31 @@ export default function PublicCatalog() {
           </div>
         </header>
 
-        {/* CATEGORY BAR — sticky, horizontal scroll */}
+        {/* CATEGORY BAR — dropdown para muchas categorías */}
         {categories.length > 1 && (
           <div className="catalog-catbar" style={{ background: 'var(--bg-card)', borderBottom: '1px solid var(--border-color)', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
-            <div style={{ maxWidth: '1200px', width: '100%', margin: '0 auto', position: 'relative' }}>
-              <div className="catalog-cats-scroll" style={{ display: 'flex', gap: '8px', overflowX: 'auto', padding: '14px 24px', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-                <button
-                  onClick={() => setActiveCategory('')}
-                  className={activeCategory === '' ? 'cat-chip cat-chip-active' : 'cat-chip'}>
-                  <span>Todos</span>
-                  <span className="cat-count">{products.length}</span>
-                </button>
+            <div style={{ maxWidth: '1200px', width: '100%', margin: '0 auto', padding: '12px 24px' }}>
+              <select
+                value={activeCategory}
+                onChange={e => setActiveCategory(e.target.value)}
+                style={{
+                  width: '100%', padding: '12px 16px',
+                  background: 'var(--cat-chip-bg)', border: '1.5px solid var(--border-color)',
+                  borderRadius: '12px', color: 'var(--text-primary)',
+                  fontSize: '0.95rem', fontWeight: 600, outline: 'none',
+                  cursor: 'pointer', appearance: 'auto',
+                }}>
+                <option value="">Todas las categorías ({products.length})</option>
                 {categories.map(c => {
                   const count = products.filter(p => (p.category_name || p.category || 'General') === c).length;
                   return (
-                    <button
-                      key={c}
-                      onClick={() => setActiveCategory(activeCategory === c ? '' : c)}
-                      className={activeCategory === c ? 'cat-chip cat-chip-active' : 'cat-chip'}>
-                      <span>{c}</span>
-                      <span className="cat-count">{count}</span>
-                    </button>
+                    <option key={c} value={c}>{c} ({count})</option>
                   );
                 })}
-              </div>
+              </select>
             </div>
           </div>
         )}
-
       </div>{/* end sticky top */}
 
       {/* SEARCH */}
