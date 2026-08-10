@@ -35,6 +35,7 @@ const FALLBACK_PLANS = [
     popular: true,
     features: [
       'Todo lo del plan Simple',
+      'Exportación a Excel de ventas y productos',
       'Reportes de ventas, ganancias y rentabilidad',
       'Dashboard ejecutivo: deudores, proveedores y top productos',
       'Catálogo web con QR (tu tienda online)',

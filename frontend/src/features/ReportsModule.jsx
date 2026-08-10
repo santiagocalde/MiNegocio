@@ -36,7 +36,7 @@ export default function ReportsModule() {
 
   const { sorted: sortedSales, toggleSort, SortIcon } = useSortable(filteredSales, 'created_at');
 
-  const canAccessIA = currentPlan === 'ia' || (currentPlan === 'trial' && !isTrialExpired);
+  const canExport = currentPlan === 'pro' || currentPlan === 'ia' || (currentPlan === 'trial' && !isTrialExpired);
   const isPaid = currentPlan === 'pro' || currentPlan === 'ia';
   const showGate = currentPlan === 'trial' && isTrialExpired && !isPaid;
 
@@ -237,7 +237,7 @@ export default function ReportsModule() {
         </div>
       )}
 
-      {canAccessIA ? (
+      {canExport ? (
         <div style={{ display: 'flex', gap: '12px', marginBottom: isMobile ? '12px' : '24px', flexWrap: 'wrap' }}>
           <a href={`${serverUrl}/reports/sales?desde=${dateFrom}&hasta=${dateTo}${sucursalId ? `&sucursal_id=${sucursalId}` : ''}`}
             style={{ background: 'var(--accent-primary)', color: 'white', border: 'none', padding: '12px 24px', borderRadius: '12px', fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
@@ -254,9 +254,7 @@ export default function ReportsModule() {
         <div style={{ marginBottom: '24px', background: 'rgba(20,187,166,0.08)', border: '1px solid rgba(20,187,166,0.15)', borderRadius: 10, padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 10 }}>
           <span style={{ fontSize: '1.2rem', color: 'var(--accent-primary)' }}><Icons.Sparkles /></span>
           <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', flex: 1 }}>
-            {currentPlan === 'pro'
-              ? 'Actualizá a plan IA para exportar a Excel y acceder a reportes avanzados.'
-              : 'Exportación a Excel disponible en plan IA.'}
+            Exportación a Excel disponible en plan Pro.
           </span>
           <a href="/panel/plan" style={{ background: 'var(--accent-primary)', color: 'var(--sheet)', textDecoration: 'none', padding: '6px 16px', borderRadius: 6, fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.15s' }}>Ver Planes</a>
         </div>
