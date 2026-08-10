@@ -141,12 +141,21 @@ export default function StockModule() {
 
   const handleBarcodeScan = useCallback((code) => {
     if (!code) return;
+    // Si el prompt de códigos extra está abierto, inyectar el scan ahí
+    if (promptState.isOpen && promptState.text) {
+      setPromptState(prev => ({
+        ...prev,
+        value: prev.value ? prev.value + ', ' + code : code,
+      }));
+      addToast('Código escaneado: ' + code, 'success');
+      return;
+    }
     if (scanTarget === 'code') {
       setNewProduct(prev => ({ ...prev, code }));
       addToast('Código escaneado: ' + code, 'success');
     }
     setScanTarget(null);
-  }, [scanTarget, addToast]);
+  }, [scanTarget, promptState, addToast]);
 
   const handleCreateCategory = async () => {
     if(!newCategoryName.trim()) return;
