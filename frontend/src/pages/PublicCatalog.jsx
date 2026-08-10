@@ -110,40 +110,73 @@ export default function PublicCatalog() {
   return (
     <div className={`catalog-page theme-${theme}`} data-theme={theme} style={{ minHeight: '100vh', background: 'var(--bg-main)', color: 'var(--text-primary)', fontFamily: 'var(--font-main)', paddingBottom: '100px' }}>
 
-      {/* HEADER */}
-      <header className="catalog-header" style={{ background: 'var(--bg-card)', padding: '24px', position: 'sticky', top: 0, zIndex: 10, borderBottom: '1px solid var(--border-color)', boxShadow: '0 4px 20px rgba(0,0,0,0.2)' }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', minWidth: 0 }}>
-            <div className="catalog-logo" style={{ width: '48px', height: '48px', background: 'var(--gradient-primary)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', boxShadow: '0 4px 12px var(--cat-glow)', flexShrink: 0 }}>
-              <Icons.Store />
+      {/* STICKY TOP: header + category bar */}
+      <div style={{ position: 'sticky', top: 0, zIndex: 10 }}>
+
+        {/* HEADER */}
+        <header className="catalog-header" style={{ background: 'var(--bg-card)', padding: '24px', borderBottom: categories.length > 1 ? 'none' : '1px solid var(--border-color)', boxShadow: categories.length > 1 ? 'none' : '0 4px 20px rgba(0,0,0,0.2)' }}>
+          <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', minWidth: 0 }}>
+              <div className="catalog-logo" style={{ width: '48px', height: '48px', background: 'var(--gradient-primary)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', boxShadow: '0 4px 12px var(--cat-glow)', flexShrink: 0 }}>
+                <Icons.Store />
+              </div>
+              <div style={{ minWidth: 0 }}>
+                <h1 className="catalog-title" style={{ fontSize: '1.5rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {storeName}
+                </h1>
+                <p style={{ color: 'var(--accent-primary)', fontSize: '0.85rem', margin: '4px 0 0 0', fontWeight: 600 }}>{subtitulo || 'Catálogo Online · Precios al día'}</p>
+                {direccion && (
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', margin: '4px 0 0 0', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <Icons.MapPin /> {direccion}
+                  </p>
+                )}
+              </div>
             </div>
-            <div style={{ minWidth: 0 }}>
-              <h1 className="catalog-title" style={{ fontSize: '1.5rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {storeName}
-              </h1>
-              <p style={{ color: 'var(--accent-primary)', fontSize: '0.85rem', margin: '4px 0 0 0', fontWeight: 600 }}>{subtitulo || 'Catálogo Online · Precios al día'}</p>
-              {direccion && (
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', margin: '4px 0 0 0', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <Icons.MapPin /> {direccion}
-                </p>
-              )}
+
+            <button onClick={() => setIsCartOpen(true)} style={{ background: 'var(--cat-chip-bg)', border: '1px solid var(--border-color)', padding: '12px 20px', borderRadius: '12px', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', transition: 'all 0.15s', position: 'relative', flexShrink: 0 }} onMouseEnter={e=>e.currentTarget.style.background='var(--cat-chip-hover)'} onMouseLeave={e=>e.currentTarget.style.background='var(--cat-chip-bg)'}>
+               <Icons.ShoppingCart />
+               <span className="cart-total" style={{ fontWeight: 800 }}>{formatPrice(cartTotal)}</span>
+               {cart.length > 0 && (
+                 <span style={{ position: 'absolute', top: '-8px', right: '-8px', background: 'var(--accent-danger)', color: 'white', fontSize: '0.75rem', fontWeight: 800, width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%' }}>
+                   {cart.reduce((a,c) => a + c.qty, 0)}
+                 </span>
+               )}
+            </button>
+          </div>
+        </header>
+
+        {/* CATEGORY BAR — sticky, horizontal scroll */}
+        {categories.length > 1 && (
+          <div className="catalog-catbar" style={{ background: 'var(--bg-card)', borderBottom: '1px solid var(--border-color)', boxShadow: '0 4px 20px rgba(0,0,0,0.2)' }}>
+            <div style={{ maxWidth: '1200px', margin: '0 auto', position: 'relative' }}>
+              <div className="catalog-cats-scroll" style={{ display: 'flex', gap: '8px', overflowX: 'auto', padding: '14px 24px', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                <button
+                  onClick={() => setActiveCategory('')}
+                  className={activeCategory === '' ? 'cat-chip cat-chip-active' : 'cat-chip'}>
+                  <span>Todos</span>
+                  <span className="cat-count">{products.length}</span>
+                </button>
+                {categories.map(c => {
+                  const count = products.filter(p => (p.category_name || p.category || 'General') === c).length;
+                  return (
+                    <button
+                      key={c}
+                      onClick={() => setActiveCategory(activeCategory === c ? '' : c)}
+                      className={activeCategory === c ? 'cat-chip cat-chip-active' : 'cat-chip'}>
+                      <span>{c}</span>
+                      <span className="cat-count">{count}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
+        )}
 
-          <button onClick={() => setIsCartOpen(true)} style={{ background: 'var(--cat-chip-bg)', border: '1px solid var(--border-color)', padding: '12px 20px', borderRadius: '12px', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', transition: 'all 0.15s', position: 'relative', flexShrink: 0 }} onMouseEnter={e=>e.target.style.background='var(--cat-chip-hover)'} onMouseLeave={e=>e.target.style.background='var(--cat-chip-bg)'}>
-             <Icons.ShoppingCart />
-             <span className="cart-total" style={{ fontWeight: 800 }}>{formatPrice(cartTotal)}</span>
-             {cart.length > 0 && (
-               <span style={{ position: 'absolute', top: '-8px', right: '-8px', background: 'var(--accent-danger)', color: 'white', fontSize: '0.75rem', fontWeight: 800, width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%' }}>
-                 {cart.reduce((a,c) => a + c.qty, 0)}
-               </span>
-             )}
-          </button>
-        </div>
-      </header>
+      </div>{/* end sticky top */}
 
       {/* SEARCH */}
-      <div className="catalog-search" style={{ maxWidth: '1200px', margin: '32px auto 0', padding: '0 24px' }}>
+      <div className="catalog-search" style={{ maxWidth: '1200px', margin: '28px auto 0', padding: '0 24px' }}>
         <div style={{ position: 'relative' }}>
           <span style={{ position: 'absolute', left: '20px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }}><Icons.Search /></span>
           <input
@@ -151,26 +184,9 @@ export default function PublicCatalog() {
             placeholder="Buscar productos..."
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
-            style={{ width: '100%', background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '20px 20px 20px 56px', borderRadius: '16px', fontSize: '1.1rem', outline: 'none', boxShadow: '0 8px 32px rgba(0,0,0,0.1)' }}
+            style={{ width: '100%', background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '18px 18px 18px 56px', borderRadius: '16px', fontSize: '1.05rem', outline: 'none', boxShadow: '0 4px 16px rgba(0,0,0,0.1)' }}
           />
         </div>
-        {categories.length > 1 && (
-          <div className="catalog-cats" style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '20px' }}>
-            <button
-              onClick={() => setActiveCategory('')}
-              style={{ padding: '10px 18px', borderRadius: '999px', fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s', border: activeCategory === '' ? '1px solid var(--accent-primary)' : '1px solid var(--border-color)', background: activeCategory === '' ? 'var(--cat-accent-soft)' : 'var(--cat-chip-bg)', color: activeCategory === '' ? 'var(--accent-primary)' : 'var(--text-secondary)' }}>
-              Todos
-            </button>
-            {categories.map(c => (
-              <button
-                key={c}
-                onClick={() => setActiveCategory(activeCategory === c ? '' : c)}
-                style={{ padding: '10px 18px', borderRadius: '999px', fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s', border: activeCategory === c ? '1px solid var(--accent-primary)' : '1px solid var(--border-color)', background: activeCategory === c ? 'var(--cat-accent-soft)' : 'var(--cat-chip-bg)', color: activeCategory === c ? 'var(--accent-primary)' : 'var(--text-secondary)' }}>
-                {c}
-              </button>
-            ))}
-          </div>
-        )}
       </div>
 
       {/* PRODUCTS */}
@@ -381,6 +397,46 @@ export default function PublicCatalog() {
           --cat-overlay: rgba(13, 29, 55, 0.55);
           --cat-glow: rgba(20, 187, 166, 0.3);
         }
+        /* ===== Category chips ===== */
+        .cat-chip {
+          display: inline-flex;
+          align-items: center;
+          gap: 7px;
+          padding: 10px 18px;
+          border-radius: 999px;
+          font-size: 0.95rem;
+          font-weight: 700;
+          cursor: pointer;
+          transition: all 0.15s;
+          white-space: nowrap;
+          flex-shrink: 0;
+          border: 1.5px solid var(--border-color);
+          background: var(--cat-chip-bg);
+          color: var(--text-secondary);
+        }
+        .cat-chip:hover {
+          background: var(--cat-chip-hover);
+          color: var(--text-primary);
+        }
+        .cat-chip-active {
+          border-color: var(--accent-primary) !important;
+          background: var(--cat-accent-soft) !important;
+          color: var(--accent-primary) !important;
+        }
+        .cat-count {
+          background: rgba(255,255,255,0.08);
+          padding: 2px 7px;
+          border-radius: 999px;
+          font-size: 0.78rem;
+          font-weight: 800;
+          min-width: 22px;
+          text-align: center;
+        }
+        .cat-chip-active .cat-count {
+          background: var(--cat-accent-border);
+        }
+        /* hide scrollbar on category strip */
+        .catalog-cats-scroll::-webkit-scrollbar { display: none; }
         @keyframes slideIn {
           from { transform: translateX(100%); }
           to { transform: translateX(0); }
@@ -390,6 +446,8 @@ export default function PublicCatalog() {
           .catalog-logo { width: 40px !important; height: 40px !important; }
           .catalog-title { font-size: 1.15rem !important; }
           .cart-total { font-size: 0.8rem !important; }
+          .catalog-catbar .catalog-cats-scroll { padding: 12px 16px !important; }
+          .cat-chip { padding: 9px 14px !important; font-size: 0.88rem !important; }
           .catalog-search, .catalog-main, .catalog-footer { padding-left: 16px !important; padding-right: 16px !important; }
           .catalog-search { margin-top: 20px !important; }
           .catalog-main { margin-top: 20px !important; }

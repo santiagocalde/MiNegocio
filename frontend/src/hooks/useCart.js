@@ -112,6 +112,10 @@ export default function useCart(productsDB, ivaRate, playBeep) {
     setCart(prev => prev.map(item => item.id === id ? { ...item, qty: val } : item));
   }, []);
 
+  const setItemPrice = useCallback((id, newPrice) => {
+    setCart(prev => prev.map(item => item.id === id ? { ...item, price: Math.round(newPrice) } : item));
+  }, []);
+
   const removeItem = useCallback((id) => {
     setCart(prev => prev.filter(item => item.id !== id));
   }, []);
@@ -178,6 +182,7 @@ export default function useCart(productsDB, ivaRate, playBeep) {
     handleRepeatSale,
     updateQty,
     setItemQty,
+    setItemPrice,
     removeItem,
     clearCart,
     rawTotal, total, subtotal, iva, discount, effectiveTotal,

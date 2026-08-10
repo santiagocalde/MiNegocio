@@ -85,6 +85,8 @@ export default function VentasPage() {
           <div data-tour="cart-panel" style={{ flex: '1 1 auto', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
           <CartPanel cart={cart.cart} total={cart.total} adjustedTotal={cart.adjustedTotal}
             updateQty={cart.updateQty} setItemQty={cart.setItemQty} removeItem={cart.removeItem}
+            setItemPrice={cart.setItemPrice}
+            canEditPrice={['admin','gerente','supervisor'].includes(auth.currentOperator?.role)}
             listType={cart.listType} setListType={cart.setListType} businessType={businessType} />
           </div>
         </div>
