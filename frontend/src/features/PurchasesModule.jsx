@@ -12,7 +12,7 @@ import PedidoProveedorTab from './purchases/PedidoProveedorTab';
 const PLAN_WEIGHT = { trial: 1, simple: 1, pro: 2, ia: 3 };
 
 export default function PurchasesModule() {
-  const { backend, addToast, auth, currentPlan } = usePanelContext();
+  const { backend, addToast, auth, currentPlan, businessType } = usePanelContext();
   const globalProductsDB = backend.productsDB;
   const onProductsUpdated = backend.fetchProductsDB;
   const currentTurnId = auth.currentTurnId;
@@ -220,7 +220,7 @@ export default function PurchasesModule() {
           {/* Tab pills */}
           {(activeTab === 'history' || activeTab === 'pending' || activeTab === 'pedido') && (
             <div style={{ display: 'flex', gap: 4, background: 'var(--surface-veil)', borderRadius: 8, padding: 3 }}>
-              {[['history','Historial'],['pending','⏳ Pendientes'],['pedido','📋 Hacer pedido']].map(([key, lbl]) => (
+              {[['history','Historial'],['pending','⏳ Pendientes'],...(businessType === 'corralon' ? [['pedido','📋 Hacer pedido']] : [])].map(([key, lbl]) => (
                 <button key={key} onClick={() => setActiveTab(key)}
                   style={{ padding: '7px 14px', borderRadius: 6, border: 'none', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s',
                     background: activeTab === key ? 'var(--sheet)' : 'transparent',

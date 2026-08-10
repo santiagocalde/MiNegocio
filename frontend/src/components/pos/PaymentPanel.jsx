@@ -1,6 +1,6 @@
 import React from 'react';
 import { Icons } from '../ui/Icons';
-import { apiPut } from '../../services/apiClient';
+import { apiPost } from '../../services/apiClient';
 import { formatMoney } from '../../utils/format';
 import useIsMobile from '../../hooks/useIsMobile';
 
@@ -26,7 +26,7 @@ export default function PaymentPanel({
     const updated = { ...businessConfig, iva_rate: nuevoIva };
     setBusinessConfig?.(updated); // recalcula al instante
     try {
-      await apiPut('/config', updated);
+      await apiPost('/config', updated);
       try { new BroadcastChannel('minegocio-sync').postMessage('config-changed'); } catch { /* noop */ }
       addToast(nuevoIva === '0' ? 'IVA desactivado: precios finales sin discriminar' : `IVA configurado en ${nuevoIva}%`, 'success');
     } catch {
