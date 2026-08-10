@@ -264,17 +264,23 @@ async def import_products_csv(request: Request, csv_text: str = Body(..., media_
             def _num(v, default=0):
                 try:
                     s = str(v).replace('$', '').strip()
-                    # Formato argentino: 1.500,50 -> los puntos son separadores de miles, la coma es decimal
+                    # Formato argentino: 1.500,50 -> puntos=miles, coma=decimal
                     if ',' in s and '.' in s:
                         s = s.replace('.', '').replace(',', '.')
                     elif ',' in s:
-                        # Podría ser "1500,50" (coma decimal) o "1,500" (miles). Si hay 3+ dígitos
-                        # después de la coma asumimos que es separador de miles.
+                        # "1500,50" (coma decimal) vs "1,500" (miles sin decimal)
+                        # Si hay 1-2 dígitos después de la última coma => decimal
                         parts = s.rsplit(',', 1)
                         if len(parts) == 2 and len(parts[1]) <= 2:
                             s = s.replace(',', '.')
                         else:
                             s = s.replace(',', '')
+                    elif '.' in s:
+                        # Solo punto: "1.200" (miles, 3 dígitos) vs "800.25" (decimal, 2 dígitos)
+                        parts = s.rsplit('.', 1)
+                        if len(parts) == 2 and len(parts[1]) == 3 and len(parts[0]) <= 3:
+                            # Ej: "1.200" -> 1200 (miles), no "12.200.50" ni decimal
+                            s = s.replace('.', '')
                     return float(s or default)
                 except: return default
 
