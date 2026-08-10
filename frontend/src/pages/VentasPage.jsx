@@ -50,7 +50,7 @@ export default function VentasPage() {
         operator: auth.currentOperator?.name || 'Sistema',
         items: cart.cart.map(it => ({
           product_id: it.id,
-          quantity: it.quantity,
+          quantity: it.qty || it.quantity || 1,
           unit_price: it.price || 0,
         })),
       });
@@ -252,8 +252,8 @@ export default function VentasPage() {
               <div style={{ fontWeight: 700, marginBottom: 6, color: 'rgba(255,255,255,0.9)' }}>Ítems del carrito:</div>
               {cart.cart.map((it, i) => (
                 <div key={i} style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span>{it.name} × {it.quantity}</span>
-                  <span style={{ fontFamily: 'var(--lp-font-mono, monospace)' }}>${((it.price || 0) * it.quantity).toLocaleString('es-AR')}</span>
+                  <span>{it.name} × {it.qty || it.quantity || 1}</span>
+                  <span style={{ fontFamily: 'var(--lp-font-mono, monospace)' }}>${Number((it.price || 0) * (it.qty || it.quantity || 1)).toLocaleString('es-AR')}</span>
                 </div>
               ))}
             </div>
