@@ -194,6 +194,65 @@ async def update_quote_status(quote_id: int, body: dict = Body(...)) -> dict:
             return {"success": True}
 
 
+# ── UPDATE (editar presupuesto borrador) ─────────────────────
+
+@router.put("/api/quotes/{quote_id}", summary="Editar presupuesto")
+async def update_quote(quote_id: int, body: dict = Body(...)) -> dict:
+    from main import USE_PG
+    import main
+    b_id = _biz_id()
+    items = body.get("items", [])
+    if not items:
+        raise HTTPException(400, detail="El presupuesto debe tener al menos un item")
+    valid_days = int(body.get("valid_days", 15))
+    expires_at = _now() + timedelta(days=valid_days)
+    discount_pct = float(body.get("discount_pct", 0) or 0)
+    forma_pago = body.get("forma_pago", "Contado") or "Contado"
+
+    if USE_PG:
+        from db_helpers import get_pg_pool
+        pool = await get_pg_pool()
+        async with pool.acquire() as conn:
+            async with conn.transaction():
+                row = await conn.fetchrow("SELECT id FROM quotes WHERE id=$1 AND business_id=$2", quote_id, b_id)
+                if not row:
+                    raise HTTPException(404, detail="Presupuesto no encontrado")
+                await conn.execute("""
+                    UPDATE quotes SET customer_id=$1, list_type=$2, note=$3, valid_days=$4,
+                    expires_at=$5, discount_pct=$6, forma_pago=$7
+                    WHERE id=$8 AND business_id=$9
+                """, body.get("customer_id"), body.get("list_type", "a"),
+                    body.get("note", ""), valid_days, expires_at, discount_pct, forma_pago,
+                    quote_id, b_id)
+                await conn.execute("DELETE FROM quote_items WHERE quote_id=$1", quote_id)
+                for it in items:
+                    await conn.execute("""
+                        INSERT INTO quote_items (quote_id, product_id, quantity, unit_price)
+                        VALUES ($1,$2,$3,$4)
+                    """, quote_id, it.get("product_id"), it.get("quantity", 1), it.get("unit_price", 0))
+        return {"success": True}
+    else:
+        import aiosqlite
+        async with aiosqlite.connect(main.DB_PATH) as db:
+            cur = await db.execute("SELECT id FROM quotes WHERE id=?", (quote_id,))
+            if not await cur.fetchone():
+                raise HTTPException(404, detail="Presupuesto no encontrado")
+            await db.execute("""
+                UPDATE quotes SET customer_id=?, list_type=?, note=?, valid_days=?,
+                expires_at=?, discount_pct=?, forma_pago=?
+                WHERE id=?
+            """, (body.get("customer_id"), body.get("list_type", "a"),
+                  body.get("note", ""), valid_days, expires_at, discount_pct, forma_pago, quote_id))
+            await db.execute("DELETE FROM quote_items WHERE quote_id=?", (quote_id,))
+            for it in items:
+                await db.execute("""
+                    INSERT INTO quote_items (quote_id, product_id, quantity, unit_price)
+                    VALUES (?,?,?,?)
+                """, (quote_id, it.get("product_id"), it.get("quantity", 1), it.get("unit_price", 0)))
+            await db.commit()
+        return {"success": True}
+
+
 # ── DELETE ────────────────────────────────────────────────────
 
 @router.delete("/api/quotes/{quote_id}", summary="Eliminar presupuesto")

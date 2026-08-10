@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { usePanelContext } from '../context/PanelContext';
-import { apiGet, apiPost, apiDelete } from '../services/apiClient';
+import { apiGet, apiPost, apiPut, apiDelete } from '../services/apiClient';
 import ClientePicker from '../components/corralon/ClientePicker';
 
 const STATUS_MAP = {
@@ -57,6 +57,7 @@ export default function QuotesModule() {
   const [quotes, setQuotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState(null); // null = nuevo, número = editar
   const [detail, setDetail] = useState(null);
 
   // Form state
@@ -121,6 +122,30 @@ export default function QuotesModule() {
 
   const totalQuote = formItems.reduce((sum, it) => sum + (it.quantity * it.unit_price), 0);
 
+  const resetForm = () => {
+    setFormCustomer(null); setFormNote(''); setFormItems([]); setFormListType('a');
+    setFormValidDays(15); setFormDiscount(''); setFormFormaPago('Contado');
+    setProductSearch(''); setSearchResults([]); setProductQty('1'); setProductPrice('');
+    setEditingId(null);
+  };
+
+  const openEditForm = async (q) => {
+    const res = await apiGet(`/quotes/${q.id}`);
+    if (!res.ok) { addToast?.('Error al cargar presupuesto.', 'error'); return; }
+    const data = await res.json();
+    const quote = data.quote;
+    setEditingId(quote.id);
+    setFormCustomer(quote.customer_id ? { id: quote.customer_id, name: quote.customer_name || '', phone: quote.customer_phone || '', address: quote.customer_address || '' } : null);
+    setFormNote(quote.note || '');
+    setFormListType(quote.list_type || 'a');
+    setFormValidDays(quote.valid_days || 15);
+    setFormDiscount(quote.discount_pct ? String(quote.discount_pct) : '');
+    setFormFormaPago(quote.forma_pago || 'Contado');
+    setFormItems(data.items.map(it => ({ product_id: it.product_id, product_name: it.product_name, quantity: it.quantity, unit_price: it.unit_price })));
+    setDetail(null);
+    setShowForm(true);
+  };
+
   const handleCreate = async () => {
     if (formItems.length === 0) { addToast?.('Agregá al menos un producto.', 'error'); return; }
     const body = {
@@ -132,14 +157,15 @@ export default function QuotesModule() {
       forma_pago: formFormaPago || 'Contado',
       items: formItems.map(i => ({ product_id: i.product_id, quantity: i.quantity, unit_price: i.unit_price })),
     };
-    const res = await apiPost('/quotes', body);
+    const res = editingId
+      ? await apiPut(`/quotes/${editingId}`, body)
+      : await apiPost('/quotes', body);
     if (res.ok) {
-      addToast?.('Presupuesto creado.', 'success');
+      addToast?.(editingId ? 'Presupuesto actualizado.' : 'Presupuesto creado.', 'success');
       setShowForm(false);
-      setFormCustomer(null); setFormNote(''); setFormItems([]); setFormListType('a'); setFormValidDays(15);
-      setFormDiscount(''); setFormFormaPago('Contado');
+      resetForm();
       fetchQuotes();
-    } else { addToast?.('Error al crear presupuesto.', 'error'); }
+    } else { addToast?.(editingId ? 'Error al actualizar.' : 'Error al crear presupuesto.', 'error'); }
   };
 
 const handleStatus = async (id, status) => {
@@ -531,11 +557,13 @@ const handleStatus = async (id, status) => {
       {/* Form modal */}
       {showForm && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(11,19,43,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
-          onMouseDown={e => { if (e.target === e.currentTarget) { setShowForm(false); setFormCustomer(null); } }}>
+          onMouseDown={e => { if (e.target === e.currentTarget) { setShowForm(false); resetForm(); } }}>
           <div onMouseDown={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 560, maxHeight: '90vh', overflow: 'auto', background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line-strong)', borderRadius: 12, padding: 28, boxShadow: 'var(--lp-shadow-lg)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <h3 style={{ fontFamily: 'var(--lp-font-display)', fontSize: '1.2rem', fontWeight: 700, color: 'var(--lp-ink)', margin: 0 }}>Nuevo presupuesto</h3>
-              <button onClick={() => { setShowForm(false); setFormCustomer(null); }} style={{ background: 'none', border: 'none', color: 'var(--lp-ink-faint)', cursor: 'pointer', fontSize: '1.3rem' }}>✕</button>
+              <h3 style={{ fontFamily: 'var(--lp-font-display)', fontSize: '1.2rem', fontWeight: 700, color: 'var(--lp-ink)', margin: 0 }}>
+                {editingId ? `Editar presupuesto #${editingId}` : 'Nuevo presupuesto'}
+              </h3>
+              <button onClick={() => { setShowForm(false); resetForm(); }} style={{ background: 'none', border: 'none', color: 'var(--lp-ink-faint)', cursor: 'pointer', fontSize: '1.3rem' }}>✕</button>
             </div>
 
             <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
@@ -601,10 +629,22 @@ const handleStatus = async (id, status) => {
               </div>
             </div>
 
-            {/* Product search */}
+            {/* Product search + qty/precio */}
             <div style={{ marginBottom: 12 }}>
-              <input value={productSearch} onChange={e => handleSearch(e.target.value)} placeholder="Buscar producto... (escribí 2+ letras)"
-                style={{ width: '100%', padding: '8px 12px', background: 'var(--lp-paper-sunken)', border: '1px solid var(--lp-line-strong)', borderRadius: 6, color: 'var(--lp-ink)', fontSize: '0.9rem', outline: 'none' }} />
+              <div style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
+                <input value={productSearch} onChange={e => handleSearch(e.target.value)} placeholder="Buscar producto... (escribí 2+ letras)"
+                  style={{ flex: 1, padding: '8px 12px', background: 'var(--lp-paper-sunken)', border: '1px solid var(--lp-line-strong)', borderRadius: 6, color: 'var(--lp-ink)', fontSize: '0.9rem', outline: 'none' }} />
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  <label style={{ fontSize: '0.68rem', color: 'var(--lp-ink-faint)', fontWeight: 600, marginBottom: 2 }}>Cant.</label>
+                  <input type="number" min="0.001" step="any" value={productQty} onChange={e => setProductQty(e.target.value)}
+                    style={{ width: 70, padding: '8px 8px', background: 'var(--lp-paper-sunken)', border: '1px solid var(--lp-line-strong)', borderRadius: 6, color: 'var(--lp-ink)', fontSize: '0.9rem', outline: 'none', fontFamily: 'var(--lp-font-mono)', textAlign: 'right' }} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  <label style={{ fontSize: '0.68rem', color: 'var(--lp-ink-faint)', fontWeight: 600, marginBottom: 2 }}>Precio</label>
+                  <input type="number" min="0" step="any" value={productPrice} onChange={e => setProductPrice(e.target.value)} placeholder="auto"
+                    style={{ width: 90, padding: '8px 8px', background: 'var(--lp-paper-sunken)', border: '1px solid var(--lp-line-strong)', borderRadius: 6, color: 'var(--lp-ink)', fontSize: '0.9rem', outline: 'none', fontFamily: 'var(--lp-font-mono)', textAlign: 'right' }} />
+                </div>
+              </div>
               {searchResults.length > 0 && (
                 <div style={{ marginTop: 4, maxHeight: 150, overflow: 'auto', background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line)', borderRadius: 6 }}>
                   {searchResults.map(p => {
@@ -634,13 +674,20 @@ const handleStatus = async (id, status) => {
             {/* Items added */}
             {formItems.length > 0 && (
               <div style={{ marginBottom: 16, borderTop: '1px solid var(--lp-line)', paddingTop: 12 }}>
+                {/* header */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 70px 90px auto', gap: 6, padding: '0 0 4px', fontSize: '0.68rem', fontWeight: 700, color: 'var(--lp-ink-faint)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  <span>Producto</span><span style={{ textAlign: 'right' }}>Cant.</span><span style={{ textAlign: 'right' }}>P. Unit.</span><span />
+                </div>
                 {formItems.map((it, i) => (
-                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0', fontSize: '0.85rem', color: 'var(--lp-ink)' }}>
-                    <span>{it.product_name} × {it.quantity}</span>
-                    <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                      <span style={{ fontFamily: 'var(--lp-font-mono)' }}>${formatPesos(it.unit_price * it.quantity)}</span>
-                      <button onClick={() => removeItem(i)} style={{ background: 'none', border: 'none', color: 'var(--lp-red)', cursor: 'pointer', fontSize: '0.8rem' }}>✕</button>
-                    </div>
+                  <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 70px 90px auto', gap: 6, alignItems: 'center', padding: '3px 0', fontSize: '0.85rem', color: 'var(--lp-ink)' }}>
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{it.product_name}</span>
+                    <input type="number" min="0.001" step="any" value={it.quantity}
+                      onChange={e => setFormItems(prev => prev.map((x, idx) => idx === i ? { ...x, quantity: parseFloat(e.target.value) || 1 } : x))}
+                      style={{ padding: '4px 6px', background: 'var(--lp-paper-sunken)', border: '1px solid var(--lp-line-strong)', borderRadius: 4, color: 'var(--lp-ink)', fontSize: '0.85rem', fontFamily: 'var(--lp-font-mono)', textAlign: 'right', outline: 'none', width: '100%' }} />
+                    <input type="number" min="0" step="any" value={it.unit_price}
+                      onChange={e => setFormItems(prev => prev.map((x, idx) => idx === i ? { ...x, unit_price: parseFloat(e.target.value) || 0 } : x))}
+                      style={{ padding: '4px 6px', background: 'var(--lp-paper-sunken)', border: '1px solid var(--lp-line-strong)', borderRadius: 4, color: 'var(--lp-ink)', fontSize: '0.85rem', fontFamily: 'var(--lp-font-mono)', textAlign: 'right', outline: 'none', width: '100%' }} />
+                    <button onClick={() => removeItem(i)} style={{ background: 'none', border: 'none', color: 'var(--lp-red)', cursor: 'pointer', fontSize: '0.9rem', padding: '0 4px' }}>✕</button>
                   </div>
                 ))}
                 {(() => {
@@ -671,7 +718,7 @@ const handleStatus = async (id, status) => {
 
             <button onClick={handleCreate} disabled={formItems.length === 0} className="lp-btn lp-btn--primary"
               style={{ width: '100%', padding: '14px', fontSize: '1rem', opacity: formItems.length === 0 ? 0.5 : 1 }}>
-              Crear presupuesto
+              {editingId ? 'Guardar cambios' : 'Crear presupuesto'}
             </button>
           </div>
         </div>
@@ -791,6 +838,7 @@ const handleStatus = async (id, status) => {
               {['draft', 'sent'].includes(detail.quote.status) && (
                 <button onClick={() => handleStatus(detail.quote.id, 'rejected')} className="lp-btn lp-btn--ghost" style={{ flex: 1, fontSize: '0.85rem', color: 'var(--lp-red)' }}>Rechazar</button>
               )}
+              <button onClick={() => openEditForm(detail.quote)} className="lp-btn lp-btn--ghost" style={{ fontSize: '0.85rem' }}>✏️ Editar</button>
               <button onClick={handleShareWhatsApp} className="lp-btn lp-btn--ghost" style={{ fontSize: '0.85rem', color: '#25D366' }}>WhatsApp</button>
               <button onClick={handlePrint} className="lp-btn lp-btn--ghost" style={{ fontSize: '0.85rem' }}>Imprimir</button>
               <button onClick={() => { handleDelete(detail.quote.id); setDetail(null); setShowToRemito(false); }} className="lp-btn lp-btn--ghost" style={{ fontSize: '0.85rem', color: 'var(--lp-red)' }}>Eliminar</button>
