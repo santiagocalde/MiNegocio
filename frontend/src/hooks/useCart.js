@@ -120,7 +120,10 @@ export default function useCart(productsDB, ivaRate, playBeep) {
     setCart(prev => prev.filter(item => item.id !== id));
   }, []);
 
+  const [lastSaleItems, setLastSaleItems] = useState([]);
+
   const clearCart = useCallback(() => {
+    setLastSaleItems([...cart]);
     setCart([]);
     setPayment('');
     setPaymentMethod('efectivo');
@@ -185,6 +188,7 @@ export default function useCart(productsDB, ivaRate, playBeep) {
     setItemPrice,
     removeItem,
     clearCart,
+    lastSaleItems,
     rawTotal, total, subtotal, iva, discount, effectiveTotal,
     change, ivaRate,
   };
