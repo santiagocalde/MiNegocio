@@ -39,8 +39,8 @@ export default function CartPanel({ cart, total, adjustedTotal, updateQty, setIt
     setEditingDiscountVal('');
   };
 
-  const roundPrice = (item) => {
-    if (setItemPrice) setItemPrice(item.id, Math.round(item.price / 10) * 10);
+  const roundPrice = (item, to = 10) => {
+    if (setItemPrice) setItemPrice(item.id, Math.round(item.price / to) * to);
   };
 
   return (
@@ -132,12 +132,17 @@ export default function CartPanel({ cart, total, adjustedTotal, updateQty, setIt
                       >%</button>
                     )}
 
-                    {/* Redondear al 10 más cercano */}
+                    {/* Redondear */}
                     <button
-                      onClick={() => roundPrice(item)}
+                      onClick={() => roundPrice(item, 10)}
                       title="Redondear al múltiplo de 10 más cercano"
                       style={{ background: 'var(--surface-veil)', border: '1px solid var(--border-color)', borderRadius: '4px', padding: '2px 6px', fontSize: '0.70rem', fontWeight: 700, color: 'var(--text-secondary)', cursor: 'pointer', lineHeight: 1, whiteSpace: 'nowrap' }}
-                    >Red</button>
+                    >10</button>
+                    <button
+                      onClick={() => roundPrice(item, 100)}
+                      title="Redondear al múltiplo de 100 más cercano"
+                      style={{ background: 'var(--surface-veil)', border: '1px solid var(--border-color)', borderRadius: '4px', padding: '2px 6px', fontSize: '0.70rem', fontWeight: 700, color: 'var(--text-secondary)', cursor: 'pointer', lineHeight: 1, whiteSpace: 'nowrap' }}
+                    >100</button>
 
                     {/* Badge de stock */}
                     {!item.is_virtual && (() => {
