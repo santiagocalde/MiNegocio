@@ -81,6 +81,7 @@ export default function QuotesModule() {
   const [toRemitoDriver, setToRemitoDriver]   = useState('');
   const [toRemitoDate, setToRemitoDate]       = useState(() => new Date().toISOString().slice(0, 10));
   const [toRemitoLoading, setToRemitoLoading] = useState(false);
+  const [creatingAcopio, setCreatingAcopio] = useState(false);
 
   const fetchQuotes = useCallback(async () => {
     setLoading(true);
@@ -145,6 +146,36 @@ const handleStatus = async (id, status) => {
     const res = await apiPost(`/quotes/${id}/status`, { status });
     if (res.ok) { addToast?.(`Estado: ${STATUS_MAP[status]?.label || status}.`, 'success'); fetchQuotes(); }
     else { addToast?.('Error al cambiar estado.', 'error'); }
+  };
+
+  // Crear acopio directo desde un presupuesto aprobado
+  const handleCreateAcopio = async () => {
+    if (!detail || creatingAcopio) return;
+    if (!detail.quote.customer_id) {
+      addToast?.('El presupuesto necesita un cliente para crear un acopio.', 'error'); return;
+    }
+    setCreatingAcopio(true);
+    try {
+      const res = await apiPost('/acopios', {
+        customer_id: detail.quote.customer_id,
+        quote_id: detail.quote.id,
+        items: detail.items.map(it => ({
+          product_id: it.product_id,
+          quantity: it.quantity,
+          unit_price: it.unit_price,
+        })),
+      });
+      if (res.ok) {
+        addToast?.('✅ Acopio creado. Podés ver las entregas en Acopios.', 'success');
+        // Marcar el presupuesto como entregado (en proceso)
+        await apiPost(`/quotes/${detail.quote.id}/status`, { status: 'delivered' });
+        fetchQuotes();
+        setDetail(null);
+      } else {
+        addToast?.('Error al crear el acopio. Reintentá.', 'error');
+      }
+    } catch { addToast?.('Sin conexión.', 'error'); }
+    setCreatingAcopio(false);
   };
 
   const handleShareWhatsApp = () => {
@@ -690,17 +721,31 @@ const handleStatus = async (id, status) => {
               )}
               {detail.quote.status === 'approved' && !showToRemito && (
                 <>
-                  <button onClick={() => {
-                    const custAddr = detail.quote.customer_address || '';
-                    setToRemitoAddress(custAddr);
-                    setToRemitoCustomer(detail.quote.customer_id ? { id: detail.quote.customer_id, name: detail.quote.customer_name || '', phone: detail.quote.customer_phone || '', address: custAddr } : null);
-                    setToRemitoDriver('');
-                    setToRemitoDate(new Date().toISOString().slice(0, 10));
-                    setShowToRemito(true);
-                  }} className="lp-btn lp-btn--primary" style={{ flex: 2, fontSize: '0.85rem', fontWeight: 800 }}>
-                    Crear Nota de pedido
-                  </button>
-                  <button onClick={() => handleStatus(detail.quote.id, 'delivered')} className="lp-btn lp-btn--ghost" style={{ flex: 1, fontSize: '0.82rem' }}>Entregado sin remito</button>
+                  {/* Dos opciones principales: nota de pedido (entrega total) o acopio (entregas parciales) */}
+                  <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <div style={{ fontSize: '0.73rem', fontWeight: 700, color: 'var(--lp-ink-faint)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+                      Presupuesto aprobado — ¿Cómo continúa?
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      <button onClick={() => {
+                        const custAddr = detail.quote.customer_address || '';
+                        setToRemitoAddress(custAddr);
+                        setToRemitoCustomer(detail.quote.customer_id ? { id: detail.quote.customer_id, name: detail.quote.customer_name || '', phone: detail.quote.customer_phone || '', address: custAddr } : null);
+                        setToRemitoDriver('');
+                        setToRemitoDate(new Date().toISOString().slice(0, 10));
+                        setShowToRemito(true);
+                      }} className="lp-btn lp-btn--primary" style={{ flex: 1, fontSize: '0.82rem', fontWeight: 800 }}>
+                        📋 Nota de pedido
+                        <div style={{ fontSize: '0.68rem', fontWeight: 400, opacity: 0.8 }}>Entrega total de una vez</div>
+                      </button>
+                      <button onClick={handleCreateAcopio} disabled={creatingAcopio || !detail.quote.customer_id} className="lp-btn lp-btn--primary"
+                        style={{ flex: 1, fontSize: '0.82rem', fontWeight: 800, background: 'rgba(20,187,166,0.15)', color: 'var(--lp-primary)', border: '1.5px solid var(--lp-primary)', opacity: creatingAcopio ? 0.6 : 1 }}>
+                        📦 Crear Acopio
+                        <div style={{ fontSize: '0.68rem', fontWeight: 400, opacity: 0.8 }}>Entregas parciales</div>
+                      </button>
+                    </div>
+                    <button onClick={() => handleStatus(detail.quote.id, 'delivered')} className="lp-btn lp-btn--ghost" style={{ fontSize: '0.82rem' }}>Entregado sin remito</button>
+                  </div>
                 </>
               )}
               {detail.quote.status === 'approved' && showToRemito && (

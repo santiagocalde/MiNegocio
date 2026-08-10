@@ -143,8 +143,8 @@ export default function useBackend(currentOperator, currentTurnId, currentSucurs
     try {
       const res = await apiPost('/egresos', {
         turn_id: currentTurnId,
-        amount: parseFloat(egresoMonto),
-        reason: egresoMotivo,
+        monto: parseFloat(egresoMonto),
+        motivo: egresoMotivo,
         type: egresoType,
         operator: currentOperator?.name || 'Sistema',
       });

@@ -34,6 +34,66 @@ async def list_acopios(request: Request, status: Optional[str] = Query(None)) ->
             cur = await db.execute(f"SELECT a.*, c.name as customer_name FROM acopios a LEFT JOIN customers c ON c.id = a.customer_id {w} ORDER BY a.created_at DESC", tuple(params))
             return [row_to_dict(r, cur.description) for r in await cur.fetchall()]
 
+@router.get("/api/acopios/despachos", summary="Despachos del dia (entregas a domicilio)")
+@limiter.limit("30/minute")
+async def list_despachos(request: Request, fecha: Optional[str] = Query(None)) -> list:
+    """Retorna las entregas a domicilio del dia (o de la fecha indicada como YYYY-MM-DD)."""
+    from main import USE_PG, row_to_dict; import main; b_id = _biz_id()
+    if USE_PG:
+        from db_helpers import get_pg_pool
+        pool = await get_pg_pool()
+        async with pool.acquire() as conn:
+            target = fecha or "CURRENT_DATE"
+            rows = await conn.fetch(f"""
+                SELECT
+                    aw.id AS withdrawal_id,
+                    aw.acopio_id,
+                    aw.notes,
+                    aw.driver,
+                    aw.created_at,
+                    c.name  AS customer_name,
+                    c.address AS customer_address,
+                    (SELECT string_agg(p.name || ' x' || awi.quantity::text, ', ')
+                     FROM acopio_withdrawal_items awi
+                     JOIN acopio_items ai ON ai.id = awi.acopio_item_id
+                     JOIN products p      ON p.id  = ai.product_id
+                     WHERE awi.withdrawal_id = aw.id) AS items_summary
+                FROM acopio_withdrawals aw
+                JOIN acopios a ON a.id = aw.acopio_id AND a.business_id = $1
+                LEFT JOIN customers c ON c.id = a.customer_id
+                WHERE aw.created_at::date = {target if fecha is None else "$2"}::date
+                  AND aw.notes ILIKE 'Entrega%%'
+                ORDER BY aw.created_at DESC
+            """, *([b_id] if fecha is None else [b_id, fecha]))
+            return [dict(r) for r in rows]
+    else:
+        import aiosqlite
+        async with aiosqlite.connect(main.DB_PATH) as db:
+            date_filter = fecha if fecha else "date('now','localtime')"
+            cur = await db.execute(f"""
+                SELECT
+                    aw.id AS withdrawal_id,
+                    aw.acopio_id,
+                    aw.notes,
+                    aw.driver,
+                    aw.created_at,
+                    c.name  AS customer_name,
+                    c.address AS customer_address,
+                    (SELECT GROUP_CONCAT(p.name || ' x' || awi.quantity, ', ')
+                     FROM acopio_withdrawal_items awi
+                     JOIN acopio_items ai ON ai.id = awi.acopio_item_id
+                     JOIN products p      ON p.id  = ai.product_id
+                     WHERE awi.withdrawal_id = aw.id) AS items_summary
+                FROM acopio_withdrawals aw
+                JOIN acopios a ON a.id = aw.acopio_id
+                LEFT JOIN customers c ON c.id = a.customer_id
+                WHERE date(aw.created_at) = {date_filter if not fecha else '?'}
+                  AND aw.notes LIKE 'Entrega%%'
+                ORDER BY aw.created_at DESC
+            """, () if not fecha else (fecha,))
+            return [row_to_dict(r, cur.description) for r in await cur.fetchall()]
+
+
 @router.get("/api/acopios/{acopio_id}", summary="Detalle de acopio")
 @limiter.limit("30/minute")
 async def get_acopio(request: Request, acopio_id: int) -> dict:

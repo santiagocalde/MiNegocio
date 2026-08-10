@@ -12,8 +12,8 @@ export default function Sello({ text, variant = 'pagado', size = 'md' }) {
     pagado:    { border: '#16a34a', color: '#16a34a', bg: 'rgba(22,163,74,0.08)' },
     pendiente: { border: '#d97706', color: '#d97706', bg: 'rgba(217,119,6,0.08)' },
     cc:        { border: '#2563eb', color: '#2563eb', bg: 'rgba(37,99,235,0.08)' },
-    entrega:   { border: '#7c3aed', color: '#7c3aed', bg: 'rgba(124,58,237,0.08)' },
-    retiro:    { border: '#0891b2', color: '#0891b2', bg: 'rgba(8,145,178,0.08)' },
+    entrega:   { border: '#D97706', color: '#92400E', bg: 'rgba(217,119,6,0.10)' },
+    retiro:    { border: '#D97706', color: '#92400E', bg: 'rgba(217,119,6,0.10)' },
   };
   const c = colors[variant] || colors.pagado;
   const fontSize = size === 'sm' ? '0.68rem' : '0.9rem';

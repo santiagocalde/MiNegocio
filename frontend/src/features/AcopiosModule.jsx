@@ -9,7 +9,7 @@ function imprimirComprobante({ acopio, items, withdrawalType, withdrawalAddress,
   const fecha = new Date().toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
   const hora  = new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
   const tipo  = withdrawalType === 'entrega' ? 'entrega' : 'retiro';
-  const selloColor = tipo === 'entrega' ? '#7c3aed' : '#0891b2';
+  const selloColor = '#D97706'; // amarillo/ámbar — visible en B&W como trazo de borde
   const selloText  = tipo === 'entrega' ? 'ENTREGA A DOMICILIO' : 'RETIRA EN PLANTA';
   const fmt = (v) => (v ?? 0).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
   const lineas = (items || []).filter(it => it.quantity_retirada < it.quantity_total);
@@ -67,6 +67,10 @@ export default function AcopiosModule() {
   const [withdrawalType, setWithdrawalType] = useState('retiro'); // 'retiro' | 'entrega'
   const [withdrawalAddress, setWithdrawalAddress] = useState('');
   const [lastWithdrawal, setLastWithdrawal] = useState(null); // para ofrecer imprimir
+  const [activeTab, setActiveTab] = useState('acopios'); // 'acopios' | 'despachos'
+  const [despachos, setDespachos] = useState([]);
+  const [despachosFecha, setDespachosFecha] = useState(new Date().toISOString().slice(0, 10));
+  const [despachosLoading, setDespachosLoading] = useState(false);
 
   // Form
   const [formCustomer, setFormCustomer] = useState(null);
@@ -80,7 +84,19 @@ export default function AcopiosModule() {
     setLoading(false);
   }, []);
 
+  const fetchDespachos = useCallback(async (fecha) => {
+    setDespachosLoading(true);
+    try {
+      const r = await apiGet(`/acopios/despachos${fecha ? `?fecha=${fecha}` : ''}`);
+      if (r.ok) setDespachos(await r.json());
+    } catch {}
+    setDespachosLoading(false);
+  }, []);
+
   useEffect(() => { fetch(); }, [fetch]);
+  useEffect(() => {
+    if (activeTab === 'despachos') fetchDespachos(despachosFecha);
+  }, [activeTab, despachosFecha, fetchDespachos]);
 
   const handleSearch = async (q) => {
     setProductSearch(q);
@@ -140,9 +156,26 @@ export default function AcopiosModule() {
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', gap: '10px', overflow: 'hidden', padding: '12px 20px' }}>
+      {/* Header con tabs */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
-        <h2 style={{ fontFamily: 'var(--lp-font-display)', fontSize: '1.3rem', fontWeight: 700, color: 'var(--lp-ink)', margin: 0, letterSpacing: '-0.02em' }}>Acopios</h2>
-        <button onClick={() => setShowForm(true)} className="lp-btn lp-btn--primary" style={{ padding: '8px 18px', fontSize: '0.85rem' }}>Nuevo acopio</button>
+        <div style={{ display: 'flex', gap: 4, background: 'var(--lp-paper-sunken)', borderRadius: 8, padding: 3 }}>
+          {[['acopios', '📦 Acopios'], ['despachos', '🚚 Despachos del día']].map(([key, label]) => (
+            <button key={key} onClick={() => setActiveTab(key)}
+              style={{ padding: '7px 16px', borderRadius: 6, border: 'none', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s',
+                background: activeTab === key ? 'var(--lp-paper-raised)' : 'transparent',
+                color: activeTab === key ? 'var(--lp-ink)' : 'var(--lp-ink-faint)',
+                boxShadow: activeTab === key ? 'var(--lp-shadow-sm)' : 'none' }}>
+              {label}
+            </button>
+          ))}
+        </div>
+        {activeTab === 'acopios' && (
+          <button onClick={() => setShowForm(true)} className="lp-btn lp-btn--primary" style={{ padding: '8px 18px', fontSize: '0.85rem' }}>Nuevo acopio</button>
+        )}
+        {activeTab === 'despachos' && (
+          <input type="date" value={despachosFecha} onChange={e => setDespachosFecha(e.target.value)}
+            style={{ padding: '7px 12px', background: 'var(--lp-paper-sunken)', border: '1px solid var(--lp-line-strong)', borderRadius: 6, color: 'var(--lp-ink)', fontSize: '0.82rem', outline: 'none' }} />
+        )}
       </div>
 
       {/* Banner imprimir tras retiro exitoso */}
@@ -162,28 +195,78 @@ export default function AcopiosModule() {
       )}
 
       <div style={{ flex: 1, overflow: 'auto' }}>
-        {loading ? (
-          <div style={{ color: 'var(--lp-ink-faint)', textAlign: 'center', padding: 40 }}>Cargando...</div>
-        ) : acopios.length === 0 ? (
-          <div style={{ color: 'var(--lp-ink-faint)', textAlign: 'center', padding: 40 }}>No hay acopios activos.</div>
-        ) : (
-          <div className="ledger-sheet" style={{ overflow: 'hidden' }}>
-            {acopios.map(a => (
-              <div key={a.id} className="ledger-row ledger-row--hover" onClick={() => showDetail(a.id)}>
-                <div style={{ minWidth: 0, flex: 1 }}>
-                  <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.9rem' }}>
-                    {a.customer_name || 'Sin cliente'}
+        {/* === TAB ACOPIOS === */}
+        {activeTab === 'acopios' && (
+          loading ? (
+            <div style={{ color: 'var(--lp-ink-faint)', textAlign: 'center', padding: 40 }}>Cargando...</div>
+          ) : acopios.length === 0 ? (
+            <div style={{ color: 'var(--lp-ink-faint)', textAlign: 'center', padding: 40 }}>No hay acopios activos.</div>
+          ) : (
+            <div className="ledger-sheet" style={{ overflow: 'hidden' }}>
+              {acopios.map(a => (
+                <div key={a.id} className="ledger-row ledger-row--hover" onClick={() => showDetail(a.id)}>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.9rem' }}>
+                      {a.customer_name || 'Sin cliente'}
+                    </div>
+                    <div className="ledger-label" style={{ marginTop: 2 }}>
+                      Acopio #{a.id} · {fmtDate(a.created_at)}
+                    </div>
                   </div>
-                  <div className="ledger-label" style={{ marginTop: 2 }}>
-                    Acopio #{a.id} · {fmtDate(a.created_at)}
-                  </div>
+                  <span style={{ fontSize: '0.72rem', fontWeight: 700, padding: '3px 10px', borderRadius: 20, color: 'var(--lp-amber)', background: 'rgba(245,158,11,0.12)', flexShrink: 0 }}>
+                    Activo
+                  </span>
                 </div>
-                <span style={{ fontSize: '0.72rem', fontWeight: 700, padding: '3px 10px', borderRadius: 20, color: 'var(--lp-amber)', background: 'rgba(245,158,11,0.12)', flexShrink: 0 }}>
-                  Activo
-                </span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )
+        )}
+
+        {/* === TAB DESPACHOS DEL DÍA === */}
+        {activeTab === 'despachos' && (
+          despachosLoading ? (
+            <div style={{ color: 'var(--lp-ink-faint)', textAlign: 'center', padding: 40 }}>Cargando despachos...</div>
+          ) : despachos.length === 0 ? (
+            <div style={{ color: 'var(--lp-ink-faint)', textAlign: 'center', padding: 40, fontSize: '0.9rem' }}>
+              <div style={{ fontSize: '2rem', marginBottom: 12 }}>🚚</div>
+              Sin despachos registrados para esta fecha.
+            </div>
+          ) : (
+            <div className="ledger-sheet" style={{ overflow: 'hidden' }}>
+              {despachos.map(d => {
+                // Extraer la dirección del campo notes: "Entrega a domicilio: <dirección>"
+                const notesAddr = d.notes?.replace(/^Entrega a domicilio[:\s]*/i, '').trim() || '';
+                const displayAddr = notesAddr || d.customer_address || '—';
+                const hora = d.created_at ? new Date(d.created_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }) : '—';
+                return (
+                  <div key={d.withdrawal_id} style={{ padding: '14px 20px', borderBottom: '1px solid var(--lp-line)', display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+                    <div style={{ fontSize: '0.75rem', fontFamily: 'var(--font-mono)', color: 'var(--lp-ink-faint)', fontWeight: 700, width: 40, flexShrink: 0, paddingTop: 2 }}>{hora}</div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 700, color: 'var(--lp-ink)', fontSize: '0.9rem' }}>{d.customer_name || 'Sin cliente'}</div>
+                      <div style={{ fontSize: '0.78rem', color: 'var(--lp-primary)', fontWeight: 600, marginTop: 2 }}>📍 {displayAddr}</div>
+                      {d.items_summary && (
+                        <div style={{ fontSize: '0.75rem', color: 'var(--lp-ink-faint)', marginTop: 4 }}>{d.items_summary}</div>
+                      )}
+                      {d.driver && (
+                        <div style={{ fontSize: '0.73rem', color: 'var(--lp-ink-faint)', marginTop: 2 }}>Chofer: {d.driver}</div>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => {
+                        // Imprimir comprobante del despacho
+                        showDetail(d.acopio_id);
+                      }}
+                      className="lp-btn lp-btn--ghost"
+                      style={{ fontSize: '0.75rem', padding: '5px 10px', flexShrink: 0 }}
+                      title="Ver acopio para imprimir comprobante"
+                    >
+                      Ver
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )
         )}
       </div>
 

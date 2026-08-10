@@ -18,6 +18,7 @@ export default function AuditModule() {
   const [filterType, setFilterType] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+  const [expandedId, setExpandedId] = useState(null);
 
   const fetchMovements = async () => {
     if (isLocked) {
@@ -191,35 +192,68 @@ export default function AuditModule() {
 
         <div style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {filtered.map(m => (
-              <div key={m.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-main)', padding: '16px 24px', borderRadius: '12px', border: '1px solid var(--border-color)', transition: 'transform 0.2s' }} onMouseEnter={e => e.currentTarget.style.transform='translateX(4px)'} onMouseLeave={e => e.currentTarget.style.transform='none'}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '24px', flex: 1 }}>
-                  <div style={{ width: '130px', flexShrink: 0 }}>
-                    <span style={{ padding: '6px 12px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', ...getBadgeStyle(m.movement_type, m.tone) }}>
-                      {translateType(m.movement_type)}
-                    </span>
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '1.05rem', marginBottom: '4px' }}>
-                      {m.product_name}
+            {filtered.map(m => {
+              const isExpanded = expandedId === m.id;
+              const clickable = m.movement_type === 'egreso';
+              return (
+              <div key={m.id} style={{ borderRadius: '12px', border: '1px solid var(--border-color)', overflow: 'hidden', transition: 'transform 0.2s' }} onMouseEnter={e => e.currentTarget.style.transform='translateX(4px)'} onMouseLeave={e => e.currentTarget.style.transform='none'}>
+                <div
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-main)', padding: '16px 24px', cursor: clickable ? 'pointer' : 'default' }}
+                  onClick={() => clickable && setExpandedId(isExpanded ? null : m.id)}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '24px', flex: 1 }}>
+                    <div style={{ width: '130px', flexShrink: 0 }}>
+                      <span style={{ padding: '6px 12px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', ...getBadgeStyle(m.movement_type, m.tone) }}>
+                        {translateType(m.movement_type)}
+                      </span>
                     </div>
-                    <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                      {m.timestamp ? new Date(m.timestamp).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' }) : '---'}{m.operator && m.operator !== 'Sistema' ? ` • ${m.operator}` : ''}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '1.05rem', marginBottom: '4px' }}>
+                        {m.product_name}
+                      </div>
+                      <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                        {m.timestamp ? new Date(m.timestamp).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' }) : '---'}{m.operator && m.operator !== 'Sistema' ? ` • ${m.operator}` : ''}
+                      </div>
+                    </div>
+                    <div style={{ flex: 1, color: 'var(--text-secondary)', fontSize: '0.85rem', padding: '0 16px', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {m.reason || ''}
                     </div>
                   </div>
-                  <div style={{ flex: 1, color: 'var(--text-secondary)', fontSize: '0.85rem', padding: '0 16px', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {m.reason || ''}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
+                    <div style={{ width: '120px', textAlign: 'right' }}>
+                      {m.movement_type !== 'event' && (
+                        <span style={{ fontSize: '1.2rem', fontWeight: 800, fontFamily: 'var(--font-mono)', color: m.movement_type === 'entrada' ? 'var(--accent-success)' : (m.movement_type === 'salida' || m.movement_type === 'egreso' ? 'var(--accent-danger)' : 'var(--text-primary)') }}>
+                          {m.movement_type === 'price_change' ? '—' : (m.movement_type === 'entrada' ? `+${m.quantity ?? 0}` : (m.movement_type === 'egreso' ? (m.quantity != null ? `-$${Number(m.quantity).toLocaleString('es-AR')}` : '—') : `-${m.quantity ?? 0}`))}
+                        </span>
+                      )}
+                    </div>
+                    {clickable && (
+                      <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', transition: 'transform 0.15s', display: 'inline-block', transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
+                    )}
                   </div>
                 </div>
-                <div style={{ width: '120px', textAlign: 'right', flexShrink: 0 }}>
-                  {m.movement_type !== 'event' && (
-                    <span style={{ fontSize: '1.2rem', fontWeight: 800, fontFamily: 'var(--font-mono)', color: m.movement_type === 'entrada' ? 'var(--accent-success)' : (m.movement_type === 'salida' || m.movement_type === 'egreso' ? 'var(--accent-danger)' : 'var(--text-primary)') }}>
-                      {m.movement_type === 'price_change' ? '—' : (m.movement_type === 'entrada' ? `+${m.quantity}` : (m.movement_type === 'egreso' ? `-$${m.quantity?.toLocaleString('es-AR')}` : `-${m.quantity}`))}
-                    </span>
-                  )}
-                </div>
+                {/* Detalle expandido para egresos */}
+                {isExpanded && m.movement_type === 'egreso' && (
+                  <div style={{ background: 'rgba(245,158,11,0.06)', borderTop: '1px solid var(--border-color)', padding: '14px 24px 14px 174px', display: 'flex', gap: '32px', flexWrap: 'wrap' }}>
+                    <div>
+                      <div style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-secondary)', marginBottom: 4 }}>Monto retirado</div>
+                      <div style={{ fontSize: '1.35rem', fontWeight: 800, fontFamily: 'var(--font-mono)', color: 'var(--accent-warning)' }}>
+                        {m.quantity != null ? `$${Number(m.quantity).toLocaleString('es-AR')}` : '—'}
+                      </div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-secondary)', marginBottom: 4 }}>Motivo</div>
+                      <div style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-primary)' }}>{m.reason || '—'}</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-secondary)', marginBottom: 4 }}>Operador</div>
+                      <div style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-primary)' }}>{m.operator || '—'}</div>
+                    </div>
+                  </div>
+                )}
               </div>
-            ))}
+              );
+            })}
             {filtered.length === 0 && !loading && (
               <div style={{ textAlign: 'center', padding: '64px', color: 'var(--text-secondary)' }}>No hay movimientos registrados.</div>
             )}

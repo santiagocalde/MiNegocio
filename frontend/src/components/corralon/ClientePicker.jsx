@@ -21,10 +21,12 @@ export default function ClientePicker({ selected, onSelect, placeholder = 'Busca
   const [customers, setCustomers] = useState([]);
   const [search, setSearch]       = useState('');
   const [open, setOpen]           = useState(false);
-  const [showNew, setShowNew]     = useState(false);
-  const [newName, setNewName]     = useState('');
-  const [newPhone, setNewPhone]   = useState('');
-  const [saving, setSaving]       = useState(false);
+  const [showNew, setShowNew]      = useState(false);
+  const [newName, setNewName]      = useState('');
+  const [newPhone, setNewPhone]    = useState('');
+  const [newAddress, setNewAddress] = useState('');
+  const [newBetween, setNewBetween] = useState('');
+  const [saving, setSaving]        = useState(false);
   const ref = useRef();
 
   // Carga lista completa una sola vez por montaje
@@ -61,6 +63,8 @@ export default function ClientePicker({ selected, onSelect, placeholder = 'Busca
   const startNew = () => {
     setNewName(search);
     setNewPhone('');
+    setNewAddress('');
+    setNewBetween('');
     setShowNew(true);
   };
 
@@ -68,10 +72,17 @@ export default function ClientePicker({ selected, onSelect, placeholder = 'Busca
     if (!newName.trim()) return;
     setSaving(true);
     try {
-      const res = await apiPost('/customers', { name: newName.trim(), phone: newPhone.trim() || null });
+      // Combinar domicilio y entre calles en el campo address
+      const addressParts = [newAddress.trim(), newBetween.trim() ? `entre ${newBetween.trim()}` : ''].filter(Boolean);
+      const fullAddress = addressParts.join(' — ') || null;
+      const res = await apiPost('/customers', {
+        name: newName.trim(),
+        phone: newPhone.trim() || null,
+        address: fullAddress,
+      });
       if (res.ok) {
         const data = await res.json();
-        const nc = { id: data.id, name: data.name || newName.trim(), phone: newPhone.trim() || null, address: '' };
+        const nc = { id: data.id, name: data.name || newName.trim(), phone: newPhone.trim() || null, address: fullAddress || '' };
         setCustomers(prev => [nc, ...prev]);
         pick(nc);
       }
@@ -136,7 +147,17 @@ export default function ClientePicker({ selected, onSelect, placeholder = 'Busca
                   />
                   <input
                     value={newPhone} onChange={e => setNewPhone(e.target.value)}
-                    placeholder="Teléfono (opcional)"
+                    placeholder="Celular (opcional)"
+                    style={{ ...IS, marginBottom: 7 }}
+                  />
+                  <input
+                    value={newAddress} onChange={e => setNewAddress(e.target.value)}
+                    placeholder="Domicilio (opcional)"
+                    style={{ ...IS, marginBottom: 7 }}
+                  />
+                  <input
+                    value={newBetween} onChange={e => setNewBetween(e.target.value)}
+                    placeholder="Entre calles (opcional)"
                     style={{ ...IS, marginBottom: 10 }}
                   />
                   <div style={{ display: 'flex', gap: 7 }}>
