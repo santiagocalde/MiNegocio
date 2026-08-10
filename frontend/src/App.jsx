@@ -11,7 +11,6 @@ import './App.css';
 // Atribución first-touch: registrar el canal de origen al cargar la app.
 captureSource();
 
-const CargaCorralonPage = lazy(() => import('./pages/CargaCorralonPage'));
 const InicioPage = lazy(() => import('./pages/InicioPage'));
 const VentasPage = lazy(() => import('./pages/VentasPage'));
 const PlanPage = lazy(() => import('./pages/PlanPage'));
@@ -105,7 +104,6 @@ function App() {
     <Route path="/t/:slug" element={<PanelSuspense><PublicCatalog /></PanelSuspense>} />
         <Route path="/preview" element={<PanelSuspense><PreviewPage /></PanelSuspense>} />
         <Route path="/terminos" element={<PanelSuspense><TermsPage /></PanelSuspense>} />
-        <Route path="/carga-corralon" element={<PanelSuspense><CargaCorralonPage /></PanelSuspense>} />
         <Route path="/privacidad" element={<PanelSuspense><PrivacyPage /></PanelSuspense>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
