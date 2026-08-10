@@ -399,6 +399,7 @@ ${stopRows}
           : (montoNum / detail.items.length);
         return {
           product_id: i.product_id,
+          product_name: i.product_name || '',
           quantity: i.quantity || 1,
           unit_price: calcTotal > 0 ? (i.unit_price || 0) : montoNum / detail.items.length,
           discount_amount: 0,
