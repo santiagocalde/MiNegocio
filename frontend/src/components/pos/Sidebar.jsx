@@ -322,34 +322,37 @@ export default function Sidebar({
               <span style={{ color: 'var(--accent-warning)', fontWeight: 800, fontSize: '0.85rem' }}>{pendingSync}</span>
             </div>
           )}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 700 }}>
+            <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>Operador</span>
+            <span style={{ color: 'var(--text-primary)', fontWeight: 800, fontSize: 'var(--fs-sm)' }}>{currentOperator?.name || 'Invitado'}</span>
+          </div>
+          <div data-tour="sidebar-bottom" style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '10px' }}>
+            <Tooltip text="Registrar salida de efectivo" block>
+              <button onClick={() => setShowEgreso(true)} title="Registrar Egreso" style={{ width: '100%', background: 'rgba(245, 158, 11, 0.1)', border: '1px solid var(--border-color)', color: 'var(--accent-warning)', padding: '6px 10px', borderRadius: '8px', fontWeight: 700, cursor: 'pointer', fontSize: '0.75rem', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                <Icons.DollarSign style={{ width: 14, height: 14 }} /> <span className="btn-label">Egreso</span>
+              </button>
+            </Tooltip>
+            <Tooltip text="Ver ventas del día" block>
+              <button onClick={() => setShowResumen(true)} title="Resumen del Día" style={{ width: '100%', background: 'rgba(20,187,166, 0.1)', border: '1px solid var(--border-color)', color: 'var(--accent-primary)', padding: '6px 10px', borderRadius: '8px', fontWeight: 700, cursor: 'pointer', fontSize: '0.75rem', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                <Icons.Chart style={{ width: 14, height: 14 }} /> <span className="btn-label">Resumen</span>
+              </button>
+            </Tooltip>
+            {currentTurnId ? (
+              <Tooltip text="F2 - Cerrar turno y cuadrar caja" block>
+                <button onClick={() => setIsClosingCaja(true)} title="Cerrar Turno" style={{ width: '100%', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid var(--border-color)', color: 'var(--accent-danger)', padding: '6px 10px', borderRadius: '8px', fontWeight: 700, cursor: 'pointer', fontSize: '0.75rem', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                  <Icons.Lock style={{ width: 14, height: 14 }} /> <span className="btn-label">Cerrar</span>
+                </button>
+              </Tooltip>
+            ) : (
+              <Tooltip text="Abrir caja para vender" block>
+                <button onClick={() => { localStorage.setItem('minegocio_onboarding_pending', 'true'); window.location.reload(); }} title="Abrir Caja" style={{ width: '100%', background: 'var(--gradient-primary)', border: 'none', color: 'white', padding: '8px 10px', borderRadius: '8px', fontWeight: 800, cursor: 'pointer', fontSize: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', boxShadow: '0 4px 12px rgba(20, 187, 166, 0.3)' }}>
+                  <Icons.Lock style={{ width: 14, height: 14 }} /> <span className="btn-label">Abrir Caja</span>
+                </button>
+              </Tooltip>
+            )}
+          </div>
         </div>
         )}
-
-        <div data-tour="sidebar-bottom" style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '10px' }}>
-          <Tooltip text="Registrar salida de efectivo" block>
-            <button onClick={() => setShowEgreso(true)} title="Registrar Egreso" style={{ width: '100%', background: 'rgba(245, 158, 11, 0.1)', border: '1px solid var(--border-color)', color: 'var(--accent-warning)', padding: '6px 10px', borderRadius: '8px', fontWeight: 700, cursor: 'pointer', fontSize: '0.75rem', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-              <Icons.DollarSign style={{ width: 14, height: 14 }} /> <span className="btn-label">Egreso</span>
-            </button>
-          </Tooltip>
-          <Tooltip text="Ver ventas del día" block>
-            <button onClick={() => setShowResumen(true)} title="Resumen del Día" style={{ width: '100%', background: 'rgba(20,187,166, 0.1)', border: '1px solid var(--border-color)', color: 'var(--accent-primary)', padding: '6px 10px', borderRadius: '8px', fontWeight: 700, cursor: 'pointer', fontSize: '0.75rem', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-              <Icons.Chart style={{ width: 14, height: 14 }} /> <span className="btn-label">Resumen</span>
-            </button>
-          </Tooltip>
-          {currentTurnId ? (
-            <Tooltip text="F2 - Cerrar turno y cuadrar caja" block>
-              <button onClick={() => setIsClosingCaja(true)} title="Cerrar Turno" style={{ width: '100%', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid var(--border-color)', color: 'var(--accent-danger)', padding: '6px 10px', borderRadius: '8px', fontWeight: 700, cursor: 'pointer', fontSize: '0.75rem', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-                <Icons.Lock style={{ width: 14, height: 14 }} /> <span className="btn-label">Cerrar</span>
-              </button>
-            </Tooltip>
-          ) : (
-            <Tooltip text="Abrir caja para vender" block>
-              <button onClick={() => { localStorage.setItem('minegocio_onboarding_pending', 'true'); window.location.reload(); }} title="Abrir Caja" style={{ width: '100%', background: 'var(--gradient-primary)', border: 'none', color: 'white', padding: '8px 10px', borderRadius: '8px', fontWeight: 800, cursor: 'pointer', fontSize: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', boxShadow: '0 4px 12px rgba(20, 187, 166, 0.3)' }}>
-                <Icons.Lock style={{ width: 14, height: 14 }} /> <span className="btn-label">Abrir Caja</span>
-              </button>
-            </Tooltip>
-          )}
-        </div>
 
         {/* Toggle de tema claro/oscuro */}
         <div style={{ marginTop: 8 }}>
