@@ -136,8 +136,8 @@ export default function CartPanel({ cart, total, adjustedTotal, updateQty, setIt
                     <button
                       onClick={() => roundPrice(item)}
                       title="Redondear al múltiplo de 10 más cercano"
-                      style={{ background: 'var(--surface-veil)', border: '1px solid var(--border-color)', borderRadius: '4px', padding: '2px 5px', fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-secondary)', cursor: 'pointer', lineHeight: 1 }}
-                    >≈</button>
+                      style={{ background: 'var(--surface-veil)', border: '1px solid var(--border-color)', borderRadius: '4px', padding: '2px 6px', fontSize: '0.70rem', fontWeight: 700, color: 'var(--text-secondary)', cursor: 'pointer', lineHeight: 1, whiteSpace: 'nowrap' }}
+                    >Red</button>
 
                     {/* Badge de stock */}
                     {!item.is_virtual && (() => {
