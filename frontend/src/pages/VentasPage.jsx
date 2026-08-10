@@ -133,7 +133,7 @@ export default function VentasPage() {
           <CartPanel cart={cart.cart} total={cart.total} adjustedTotal={cart.adjustedTotal}
             updateQty={cart.updateQty} setItemQty={cart.setItemQty} removeItem={cart.removeItem}
             setItemPrice={cart.setItemPrice}
-            canEditPrice={['admin','gerente','supervisor'].includes(auth.currentOperator?.role)}
+            canEditPrice={true}
             listType={cart.listType} setListType={cart.setListType} businessType={businessType} />
           </div>
           {/* F7: botón pedido de envío (solo cuando hay items en el carrito) */}

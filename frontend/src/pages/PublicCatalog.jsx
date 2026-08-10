@@ -89,9 +89,37 @@ export default function PublicCatalog() {
   const searched = products.filter(p => (p.name || '').toLowerCase().includes(searchTerm.toLowerCase()));
   const categories = [...new Set(products.map(p => p.category_name || p.category || 'General'))].sort();
   const shown = searched.filter(p => !activeCategory || (p.category_name || p.category || 'General') === activeCategory);
-  const grouped = categories
-    .filter(c => shown.some(p => (p.category_name || p.category || 'General') === c))
-    .map(c => ({ name: c, items: shown.filter(p => (p.category_name || p.category || 'General') === c) }));
+  // Grilla: con categoría seleccionada → sin agrupar (vista filtrada). Sin categoría → agrupado por categoría.
+  const useGroups = !activeCategory;
+  const grouped = useGroups
+    ? categories
+        .filter(c => shown.some(p => (p.category_name || p.category || 'General') === c))
+        .map(c => ({ name: c, items: shown.filter(p => (p.category_name || p.category || 'General') === c) }))
+    : [];
+
+  const renderProductCard = (p) => {
+    const av = AVAILABILITY[p.availability] || AVAILABILITY.hay;
+    const out = p.availability === 'agotado';
+    return (
+      <div key={p.id} className="product-card" style={{ background: 'var(--bg-card)', borderRadius: '16px', border: '1px solid var(--border-color)', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', transition: 'transform 0.2s, box-shadow 0.2s', opacity: out ? 0.72 : 1 }} onMouseEnter={e=>{ if(!out){e.currentTarget.style.transform='translateY(-4px)'; e.currentTarget.style.boxShadow='0 12px 24px rgba(0,0,0,0.2)'} }} onMouseLeave={e=>{e.currentTarget.style.transform='none'; e.currentTarget.style.boxShadow='none'}}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+          {activeCategory ? (
+            <span style={{ background: 'var(--cat-chip-bg)', color: 'var(--text-secondary)', padding: '4px 8px', borderRadius: '6px', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase' }}>{p.category_name || p.category || 'General'}</span>
+          ) : (
+            <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: 'var(--accent-primary)', opacity: 0.7 }}></span>
+          )}
+          <span style={{ background: av.bg, color: av.color, padding: '4px 8px', borderRadius: '6px', fontSize: '0.72rem', fontWeight: 800, whiteSpace: 'nowrap' }}>{av.label}</span>
+        </div>
+        <div>
+          <h3 style={{ margin: '0 0 8px 0', fontSize: '1.18rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.3 }}>{p.name}</h3>
+          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: out ? 'var(--text-secondary)' : 'var(--accent-primary)', fontFamily: 'var(--font-mono)' }}>{formatPrice(p.price)}</div>
+        </div>
+        <button onClick={() => addToCart(p)} disabled={out} style={{ width: '100%', padding: '12px', background: out ? 'var(--cat-chip-bg)' : 'var(--cat-accent-soft)', color: out ? 'var(--text-secondary)' : 'var(--accent-primary)', border: out ? '1px solid var(--border-color)' : '1px solid var(--cat-accent-border)', borderRadius: '8px', fontSize: '0.95rem', fontWeight: 800, cursor: out ? 'not-allowed' : 'pointer', transition: 'all 0.15s', marginTop: 'auto' }} onMouseEnter={e=>{ if(!out){e.target.style.background='var(--gradient-primary)'; e.target.style.color='white'} }} onMouseLeave={e=>{ if(!out){e.target.style.background='var(--cat-accent-soft)'; e.target.style.color='var(--accent-primary)'} }}>
+          {out ? 'Agotado' : 'Agregar al Pedido'}
+        </button>
+      </div>
+    );
+  };
 
   const sendWhatsAppOrder = () => {
     const numero = (whatsapp || '').replace(/[^0-9]/g, '');
@@ -114,7 +142,7 @@ export default function PublicCatalog() {
       <div style={{ position: 'sticky', top: 0, zIndex: 10 }}>
 
         {/* HEADER */}
-        <header className="catalog-header" style={{ background: 'var(--bg-card)', padding: '24px', borderBottom: categories.length > 1 ? 'none' : '1px solid var(--border-color)', boxShadow: categories.length > 1 ? 'none' : '0 4px 20px rgba(0,0,0,0.2)' }}>
+        <header className="catalog-header" style={{ background: 'var(--bg-card)', padding: '24px', borderBottom: '1px solid var(--border-color)', boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}>
           <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px', minWidth: 0 }}>
               <div className="catalog-logo" style={{ width: '48px', height: '48px', background: 'var(--gradient-primary)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', boxShadow: '0 4px 12px var(--cat-glow)', flexShrink: 0 }}>
@@ -147,7 +175,7 @@ export default function PublicCatalog() {
 
         {/* CATEGORY BAR — sticky, horizontal scroll */}
         {categories.length > 1 && (
-          <div className="catalog-catbar" style={{ background: 'var(--bg-card)', borderBottom: '1px solid var(--border-color)', boxShadow: '0 4px 20px rgba(0,0,0,0.2)' }}>
+          <div className="catalog-catbar" style={{ background: 'var(--bg-card)', borderBottom: '1px solid var(--border-color)', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
             <div style={{ maxWidth: '1200px', margin: '0 auto', position: 'relative' }}>
               <div className="catalog-cats-scroll" style={{ display: 'flex', gap: '8px', overflowX: 'auto', padding: '14px 24px', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
                 <button
@@ -199,43 +227,21 @@ export default function PublicCatalog() {
            <div style={{ textAlign: 'center', padding: '64px', color: 'var(--text-secondary)', background: 'var(--bg-card)', borderRadius: '16px', border: '1px solid var(--border-color)' }}>No se encontraron productos.</div>
         ) : (
           <div className="catalog-groups" style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
-            {grouped.map(group => (
+            {useGroups ? grouped.map(group => (
               <section key={group.name}>
-                {!activeCategory && (
-                  <h2 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 20px 0', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    {group.name}
-                    <span style={{ background: 'var(--cat-chip-bg)', color: 'var(--text-secondary)', padding: '3px 10px', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 700 }}>{group.items.length}</span>
-                  </h2>
-                )}
+                <h2 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 20px 0', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  {group.name}
+                  <span style={{ background: 'var(--cat-chip-bg)', color: 'var(--text-secondary)', padding: '3px 10px', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 700 }}>{group.items.length}</span>
+                </h2>
                 <div className="catalog-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '24px' }}>
-                  {group.items.map(p => {
-                    const av = AVAILABILITY[p.availability] || AVAILABILITY.hay;
-                    const out = p.availability === 'agotado';
-                    return (
-                      <div key={p.id} className="product-card" style={{ background: 'var(--bg-card)', borderRadius: '16px', border: '1px solid var(--border-color)', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', transition: 'transform 0.2s, box-shadow 0.2s', opacity: out ? 0.72 : 1 }} onMouseEnter={e=>{ if(!out){e.currentTarget.style.transform='translateY(-4px)'; e.currentTarget.style.boxShadow='0 12px 24px rgba(0,0,0,0.2)'} }} onMouseLeave={e=>{e.currentTarget.style.transform='none'; e.currentTarget.style.boxShadow='none'}}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
-                          {activeCategory ? (
-                            <span style={{ background: 'var(--cat-chip-bg)', color: 'var(--text-secondary)', padding: '4px 8px', borderRadius: '6px', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase' }}>{p.category_name || p.category || 'General'}</span>
-                          ) : (
-                            <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: 'var(--accent-primary)', opacity: 0.7 }}></span>
-                          )}
-                          <span style={{ background: av.bg, color: av.color, padding: '4px 8px', borderRadius: '6px', fontSize: '0.72rem', fontWeight: 800, whiteSpace: 'nowrap' }}>{av.label}</span>
-                        </div>
-
-                        <div>
-                          <h3 style={{ margin: '0 0 8px 0', fontSize: '1.18rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.3 }}>{p.name}</h3>
-                          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: out ? 'var(--text-secondary)' : 'var(--accent-primary)', fontFamily: 'var(--font-mono)' }}>{formatPrice(p.price)}</div>
-                        </div>
-
-                        <button onClick={() => addToCart(p)} disabled={out} style={{ width: '100%', padding: '12px', background: out ? 'var(--cat-chip-bg)' : 'var(--cat-accent-soft)', color: out ? 'var(--text-secondary)' : 'var(--accent-primary)', border: out ? '1px solid var(--border-color)' : '1px solid var(--cat-accent-border)', borderRadius: '8px', fontSize: '0.95rem', fontWeight: 800, cursor: out ? 'not-allowed' : 'pointer', transition: 'all 0.15s', marginTop: 'auto' }} onMouseEnter={e=>{ if(!out){e.target.style.background='var(--gradient-primary)'; e.target.style.color='white'} }} onMouseLeave={e=>{ if(!out){e.target.style.background='var(--cat-accent-soft)'; e.target.style.color='var(--accent-primary)'} }}>
-                          {out ? 'Agotado' : 'Agregar al Pedido'}
-                        </button>
-                      </div>
-                    );
-                  })}
+                  {group.items.map(p => renderProductCard(p))}
                 </div>
               </section>
-            ))}
+            )) : (
+              <div className="catalog-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '24px' }}>
+                {shown.map(p => renderProductCard(p))}
+              </div>
+            )}
           </div>
         )}
       </main>
