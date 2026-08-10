@@ -228,7 +228,10 @@ async def create_acopio(request: Request, body: dict = Body(...)) -> dict:
 @router.post("/api/acopios/withdrawals/{wid}/reschedule", summary="Reprogramar entrega a otra fecha")
 @limiter.limit("20/minute")
 async def reschedule_withdrawal(request: Request, wid: int, body: dict = Body(...)) -> dict:
-    """Marca una entrega como reprogramada y guarda la nueva fecha propuesta."""
+    """
+    Marca la entrega original como 'rescheduled' (queda en gris en su fecha)
+    y crea una copia con created_at = new_date y status = 'scheduled'.
+    """
     new_date = body.get("new_date")
     if not new_date:
         raise HTTPException(400, detail="new_date requerido (YYYY-MM-DD)")
@@ -237,27 +240,77 @@ async def reschedule_withdrawal(request: Request, wid: int, body: dict = Body(..
         from db_helpers import get_pg_pool
         pool = await get_pg_pool()
         async with pool.acquire() as conn:
-            result = await conn.execute(
-                """UPDATE acopio_withdrawals aw
-                   SET status = 'rescheduled', rescheduled_date = $2
-                   FROM acopios a
-                   WHERE aw.id = $1 AND aw.acopio_id = a.id AND a.business_id = $3""",
-                wid, new_date, b_id
-            )
-            if result == "UPDATE 0":
-                raise HTTPException(404)
+            async with conn.transaction():
+                # 1. Marcar original como reprogramado
+                result = await conn.execute(
+                    """UPDATE acopio_withdrawals aw
+                       SET status = 'rescheduled', rescheduled_date = $2
+                       FROM acopios a
+                       WHERE aw.id = $1 AND aw.acopio_id = a.id AND a.business_id = $3""",
+                    wid, new_date, b_id
+                )
+                if result == "UPDATE 0":
+                    raise HTTPException(404)
+                # 2. Leer datos originales
+                orig = await conn.fetchrow(
+                    "SELECT acopio_id, driver, notes FROM acopio_withdrawals WHERE id = $1", wid
+                )
+                # 3. Crear copia con nueva fecha y status='scheduled'
+                new_wid = await conn.fetchval(
+                    """INSERT INTO acopio_withdrawals (acopio_id, driver, notes, status, created_at)
+                       VALUES ($1, $2, $3, 'scheduled', $4::date)
+                       RETURNING id""",
+                    orig["acopio_id"], orig["driver"], orig["notes"], new_date
+                )
+                # 4. Copiar items
+                await conn.execute(
+                    """INSERT INTO acopio_withdrawal_items (withdrawal_id, acopio_item_id, quantity)
+                       SELECT $1, acopio_item_id, quantity
+                       FROM acopio_withdrawal_items WHERE withdrawal_id = $2""",
+                    new_wid, wid
+                )
     else:
         import aiosqlite
         async with aiosqlite.connect(main.DB_PATH) as db:
+            await db.execute("BEGIN IMMEDIATE")
+            # 1. Marcar original
             cur = await db.execute(
                 """UPDATE acopio_withdrawals SET status = 'rescheduled', rescheduled_date = ?
-                   WHERE id = ? AND acopio_id IN (SELECT id FROM acopios WHERE id = acopio_id)""",
+                   WHERE id = ? AND acopio_id IN (
+                       SELECT id FROM acopios WHERE id = acopio_id AND business_id = (
+                           SELECT id FROM businesses LIMIT 1))""",
                 (new_date, wid)
             )
-            await db.commit()
             if cur.rowcount == 0:
-                raise HTTPException(404)
-    return {"ok": True}
+                # fallback sin business_id check en SQLite local
+                cur2 = await db.execute(
+                    "UPDATE acopio_withdrawals SET status = 'rescheduled', rescheduled_date = ? WHERE id = ?",
+                    (new_date, wid)
+                )
+                if cur2.rowcount == 0:
+                    raise HTTPException(404)
+            # 2. Leer datos originales
+            row = await db.execute(
+                "SELECT acopio_id, driver, notes FROM acopio_withdrawals WHERE id = ?", (wid,)
+            )
+            orig = await row.fetchone()
+            # 3. Crear copia con nueva fecha
+            new_ts = new_date + " 08:00:00"
+            c = await db.execute(
+                """INSERT INTO acopio_withdrawals (acopio_id, driver, notes, status, created_at)
+                   VALUES (?, ?, ?, 'scheduled', ?)""",
+                (orig[0], orig[1], orig[2], new_ts)
+            )
+            new_wid = c.lastrowid
+            # 4. Copiar items
+            await db.execute(
+                """INSERT INTO acopio_withdrawal_items (withdrawal_id, acopio_item_id, quantity)
+                   SELECT ?, acopio_item_id, quantity
+                   FROM acopio_withdrawal_items WHERE withdrawal_id = ?""",
+                (new_wid, wid)
+            )
+            await db.commit()
+    return {"ok": True, "new_withdrawal_id": new_wid}
 
 
 @router.post("/api/acopios/{acopio_id}/withdrawals", summary="Registrar retiro parcial")
