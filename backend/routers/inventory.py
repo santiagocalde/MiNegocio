@@ -341,9 +341,14 @@ async def pay_supplier(supplier_id: int, body: dict) -> dict:
                 return {"success": True, "new_debt": new_debt}
 
 
-@router.post("/api/purchases", summary="Crear compra")
+@router.post("/api/purchases", summary="Crear compra (confirmed o pending)")
 async def create_purchase(request: Request, body: dict) -> dict:
+    """
+    status='confirmed' (default) → actualiza stock, deuda de proveedor y caja.
+    status='pending'             → solo guarda el pedido; no toca stock ni deuda.
+    """
     b_id = _biz_id()
+    is_pending = (body.get("status") or "confirmed") == "pending"
     if USE_PG:
         auth = request.headers.get("Authorization")
         if auth and auth.startswith("Bearer "):
@@ -355,22 +360,19 @@ async def create_purchase(request: Request, body: dict) -> dict:
             async with conn.transaction():
                 cost = sum((i.get("unit_cost", 0) or 0) * (i.get("quantity", 0) or 0) for i in body.get("items", []))
                 row = await conn.fetchrow(
-                    "INSERT INTO purchases (business_id, supplier_id, invoice_number, total_cost, operator) VALUES ($1,$2,$3,$4,$5) RETURNING id",
-                    b_id, body.get("supplier_id"), body.get("invoice_number"), round(cost, 2), body.get("operator", "Sistema")
+                    "INSERT INTO purchases (business_id, supplier_id, invoice_number, total_cost, operator, status) VALUES ($1,$2,$3,$4,$5,$6) RETURNING id",
+                    b_id, body.get("supplier_id"), body.get("invoice_number"),
+                    round(cost, 2), body.get("operator", "Sistema"),
+                    "pending" if is_pending else "confirmed"
                 )
-                # Increment supplier debt if not paid from register
-                if not body.get("paid_from_register"):
-                    await conn.execute(
-                        "UPDATE suppliers SET debt = COALESCE(debt, 0) + $1 WHERE id = $2",
-                        round(cost, 2), body.get("supplier_id")
-                    )
                 purchase_id = row["id"]
                 for item in body.get("items", []):
                     await conn.execute(
                         "INSERT INTO purchase_items (business_id, purchase_id, product_id, product_name, quantity, unit_cost) VALUES ($1,$2,$3,$4,$5,$6)",
-                        b_id, purchase_id, item.get("product_id"), item.get("product_name"), item.get("quantity"), item.get("unit_cost")
+                        b_id, purchase_id, item.get("product_id"), item.get("product_name"),
+                        item.get("quantity"), item.get("unit_cost", 0)
                     )
-                    if item.get("product_id"):
+                    if not is_pending and item.get("product_id"):
                         qty = item.get("quantity", 0)
                         cost_val = item.get("unit_cost", 0)
                         await conn.execute(
@@ -383,47 +385,44 @@ async def create_purchase(request: Request, body: dict) -> dict:
                             f"Compra #{purchase_id} — {item.get('product_name', '')}",
                             body.get("operator", "Sistema"),
                         )
-                if body.get("paid_from_register"):
-                    # El egreso debe atarse al turno abierto para que el cierre de caja
-                    # lo reste del efectivo esperado (si no, da faltante falso).
-                    turn_id = body.get("turn_id")
-                    if not turn_id:
-                        turn_id = await conn.fetchval(
-                            "SELECT id FROM turns WHERE closed_at IS NULL AND business_id = $1 ORDER BY id DESC LIMIT 1",
-                            b_id
+                if not is_pending:
+                    if not body.get("paid_from_register"):
+                        await conn.execute(
+                            "UPDATE suppliers SET debt = COALESCE(debt, 0) + $1 WHERE id = $2",
+                            round(cost, 2), body.get("supplier_id")
                         )
-                    await conn.execute(
-                        "INSERT INTO egresos_caja (business_id, turn_id, monto, motivo, type, operator) VALUES ($1,$2,$3,$4,$5,$6)",
-                        b_id, turn_id, round(cost, 2), f"Compra #{purchase_id}", "pago_proveedor", body.get("operator", "Sistema")
-                    )
+                    elif body.get("paid_from_register"):
+                        turn_id = body.get("turn_id") or await conn.fetchval(
+                            "SELECT id FROM turns WHERE closed_at IS NULL AND business_id = $1 ORDER BY id DESC LIMIT 1", b_id
+                        )
+                        await conn.execute(
+                            "INSERT INTO egresos_caja (business_id, turn_id, monto, motivo, type, operator) VALUES ($1,$2,$3,$4,$5,$6)",
+                            b_id, turn_id, round(cost, 2), f"Compra #{purchase_id}", "pago_proveedor", body.get("operator", "Sistema")
+                        )
                 await conn.execute(
                     "INSERT INTO audit_log (business_id, action, operator, details) VALUES ($1,$2,$3,$4)",
                     b_id, "compra_created", body.get("operator", "Sistema"),
-                    f"Compra #{purchase_id} — ${round(cost, 2)}",
+                    f"Compra #{purchase_id} ({'PENDIENTE' if is_pending else 'confirmada'}) — ${round(cost, 2)}",
                 )
-                return {"id": purchase_id, "total_cost": round(cost, 2)}
+                return {"id": purchase_id, "total_cost": round(cost, 2), "status": "pending" if is_pending else "confirmed"}
     else:
         async with main.db_write_lock:
             async with aiosqlite.connect(main.DB_PATH) as db:
                 await db.execute("BEGIN IMMEDIATE")
                 cost = sum((i.get("unit_cost", 0) or 0) * (i.get("quantity", 0) or 0) for i in body.get("items", []))
                 cur = await db.execute(
-                    "INSERT INTO purchases (supplier_id, invoice_number, total_cost, operator) VALUES (?,?,?,?)",
-                    (body.get("supplier_id"), body.get("invoice_number"), round(cost, 2), body.get("operator", "Sistema"))
+                    "INSERT INTO purchases (supplier_id, invoice_number, total_cost, operator, status) VALUES (?,?,?,?,?)",
+                    (body.get("supplier_id"), body.get("invoice_number"), round(cost, 2),
+                     body.get("operator", "Sistema"), "pending" if is_pending else "confirmed")
                 )
-                # Increment supplier debt if not paid from register
-                if not body.get("paid_from_register"):
-                    await db.execute(
-                        "UPDATE suppliers SET debt = COALESCE(debt, 0) + ? WHERE id = ?",
-                        (round(cost, 2), body.get("supplier_id"))
-                    )
                 purchase_id = cur.lastrowid
                 for item in body.get("items", []):
                     await db.execute(
                         "INSERT INTO purchase_items (purchase_id, product_id, product_name, quantity, unit_cost) VALUES (?,?,?,?,?)",
-                        (purchase_id, item.get("product_id"), item.get("product_name"), item.get("quantity"), item.get("unit_cost"))
+                        (purchase_id, item.get("product_id"), item.get("product_name"),
+                         item.get("quantity"), item.get("unit_cost", 0))
                     )
-                    if item.get("product_id"):
+                    if not is_pending and item.get("product_id"):
                         qty = item.get("quantity", 0)
                         await db.execute(
                             "UPDATE products SET stock = stock + ?, cost_price = ?, updated_at = datetime('now','localtime') WHERE id = ?",
@@ -435,22 +434,132 @@ async def create_purchase(request: Request, body: dict) -> dict:
                              f"Compra #{purchase_id} — {item.get('product_name', '')}",
                              body.get("operator", "Sistema")),
                         )
-                if body.get("paid_from_register"):
-                    turn_id = body.get("turn_id")
-                    if not turn_id:
+                if not is_pending:
+                    if not body.get("paid_from_register"):
+                        await db.execute(
+                            "UPDATE suppliers SET debt = COALESCE(debt, 0) + ? WHERE id = ?",
+                            (round(cost, 2), body.get("supplier_id"))
+                        )
+                    elif body.get("paid_from_register"):
                         curt = await db.execute("SELECT id FROM turns WHERE closed_at IS NULL ORDER BY id DESC LIMIT 1")
                         rowt = await curt.fetchone()
-                        turn_id = rowt[0] if rowt else None
+                        turn_id = body.get("turn_id") or (rowt[0] if rowt else None)
+                        await db.execute(
+                            "INSERT INTO egresos_caja (turn_id, monto, motivo, type, operator) VALUES (?,?,?,?,?)",
+                            (turn_id, round(cost, 2), f"Compra #{purchase_id}", "pago_proveedor", body.get("operator", "Sistema"))
+                        )
+                await db.execute(
+                    "INSERT INTO audit_log (action, operator, details) VALUES (?,?,?)",
+                    ("compra_created", body.get("operator", "Sistema"),
+                     f"Compra #{purchase_id} ({'PENDIENTE' if is_pending else 'confirmada'}) — ${round(cost, 2)}"),
+                )
+                await db.commit()
+                return {"id": purchase_id, "total_cost": round(cost, 2), "status": "pending" if is_pending else "confirmed"}
+
+
+@router.post("/api/purchases/{purchase_id}/confirm", summary="Confirmar entrada de pedido pendiente")
+async def confirm_purchase(request: Request, purchase_id: int, body: dict) -> dict:
+    """
+    Confirma la entrada de un pedido pendiente.
+    Actualiza stock, costo unitario de cada item y deuda del proveedor.
+    body.items: [{product_id, quantity, unit_cost}, ...]  — permite ajustar cantidades/costos.
+    """
+    b_id = _biz_id()
+    operator = body.get("operator", "Sistema")
+    if USE_PG:
+        from db_helpers import get_pg_pool
+        pool = await get_pg_pool()
+        async with pool.acquire() as conn:
+            row = await conn.fetchrow(
+                "SELECT id, status, supplier_id, total_cost FROM purchases WHERE id = $1 AND business_id = $2",
+                purchase_id, b_id
+            )
+            if not row: raise HTTPException(404)
+            if row["status"] == "confirmed": raise HTTPException(400, detail="Esta compra ya fue confirmada")
+            async with conn.transaction():
+                # Actualizar items (pueden venir precios reales)
+                items = body.get("items", [])
+                total = 0.0
+                for it in items:
+                    qty  = float(it.get("quantity") or 0)
+                    cost = float(it.get("unit_cost") or 0)
+                    pid  = it.get("product_id")
+                    total += qty * cost
+                    await conn.execute(
+                        "UPDATE purchase_items SET quantity = $1, unit_cost = $2 WHERE purchase_id = $3 AND product_id = $4",
+                        qty, cost, purchase_id, pid
+                    )
+                    if pid:
+                        await conn.execute(
+                            "UPDATE products SET stock = stock + $1, cost_price = $2, updated_at = now() WHERE id = $3 AND business_id = $4",
+                            qty, cost, pid, b_id
+                        )
+                        await conn.execute(
+                            "INSERT INTO stock_movements (business_id, product_id, movement_type, quantity, reason, operator) VALUES ($1,$2,'entrada',$3,$4,$5)",
+                            b_id, pid, qty, f"Pedido confirmado #{purchase_id}", operator
+                        )
+                # Actualizar total y marcar confirmed
+                await conn.execute(
+                    "UPDATE purchases SET status = 'confirmed', total_cost = $1 WHERE id = $2 AND business_id = $3",
+                    round(total, 2), purchase_id, b_id
+                )
+                # Incrementar deuda del proveedor
+                if row["supplier_id"]:
+                    await conn.execute(
+                        "UPDATE suppliers SET debt = COALESCE(debt, 0) + $1 WHERE id = $2",
+                        round(total, 2), row["supplier_id"]
+                    )
+                await conn.execute(
+                    "INSERT INTO audit_log (business_id, action, operator, details) VALUES ($1,$2,$3,$4)",
+                    b_id, "compra_confirmed", operator,
+                    f"Pedido #{purchase_id} confirmado — ${round(total, 2)}"
+                )
+            return {"ok": True, "total_cost": round(total, 2)}
+    else:
+        async with main.db_write_lock:
+            async with aiosqlite.connect(main.DB_PATH) as db:
+                await db.execute("BEGIN IMMEDIATE")
+                cur = await db.execute(
+                    "SELECT id, status, supplier_id, total_cost FROM purchases WHERE id = ?", (purchase_id,)
+                )
+                row = await cur.fetchone()
+                if not row: raise HTTPException(404)
+                if row[1] == "confirmed": raise HTTPException(400, detail="Esta compra ya fue confirmada")
+                items = body.get("items", [])
+                total = 0.0
+                for it in items:
+                    qty  = float(it.get("quantity") or 0)
+                    cost = float(it.get("unit_cost") or 0)
+                    pid  = it.get("product_id")
+                    total += qty * cost
                     await db.execute(
-                        "INSERT INTO egresos_caja (turn_id, monto, motivo, type, operator) VALUES (?,?,?,?,?)",
-                        (turn_id, round(cost, 2), f"Compra #{purchase_id}", "pago_proveedor", body.get("operator", "Sistema"))
+                        "UPDATE purchase_items SET quantity = ?, unit_cost = ? WHERE purchase_id = ? AND product_id = ?",
+                        (qty, cost, purchase_id, pid)
+                    )
+                    if pid:
+                        await db.execute(
+                            "UPDATE products SET stock = stock + ?, cost_price = ?, updated_at = datetime('now','localtime') WHERE id = ?",
+                            (qty, cost, pid)
+                        )
+                        await db.execute(
+                            "INSERT INTO stock_movements (product_id, movement_type, quantity, reason, operator) VALUES (?,?,?,?,?)",
+                            (pid, "entrada", qty, f"Pedido confirmado #{purchase_id}", operator)
+                        )
+                await db.execute(
+                    "UPDATE purchases SET status = 'confirmed', total_cost = ? WHERE id = ?",
+                    (round(total, 2), purchase_id)
+                )
+                if row[2]:  # supplier_id
+                    await db.execute(
+                        "UPDATE suppliers SET debt = COALESCE(debt, 0) + ? WHERE id = ?",
+                        (round(total, 2), row[2])
                     )
                 await db.execute(
                     "INSERT INTO audit_log (action, operator, details) VALUES (?,?,?)",
-                    ("compra_created", body.get("operator", "Sistema"), f"Compra #{purchase_id} — ${round(cost, 2)}"),
+                    ("compra_confirmed", operator, f"Pedido #{purchase_id} confirmado — ${round(total, 2)}")
                 )
                 await db.commit()
-                return {"id": purchase_id, "total_cost": round(cost, 2)}
+        return {"ok": True, "total_cost": round(total, 2)}
 
 
 @router.get("/api/purchases", summary="Listar compras")

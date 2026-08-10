@@ -1,10 +1,11 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import useIsMobile from '../hooks/useIsMobile';
 import useCart from '../hooks/useCart';
 import useSales from '../hooks/useSales';
 import usePromotions from '../hooks/usePromotions';
 import { usePanelContext } from '../context/PanelContext';
-import { apiGet } from '../services/apiClient';
+import { apiGet, apiPost } from '../services/apiClient';
+import ClientePicker from '../components/corralon/ClientePicker';
 import TopBar from '../components/pos/TopBar';
 import SearchBar from '../components/pos/SearchBar';
 import CartPanel from '../components/pos/CartPanel';
@@ -30,6 +31,42 @@ export default function VentasPage() {
   const searchRef = useRef(null);
   const paymentRef = useRef(null);
   const fiadoRef = useRef(null);
+
+  // F7: pedido de envío desde mostrador
+  const [showShipModal, setShowShipModal] = useState(false);
+  const [shipClient, setShipClient] = useState(null);
+  const [shipDate, setShipDate] = useState('');
+  const [shipSaving, setShipSaving] = useState(false);
+
+  const handleCreateShipOrder = async () => {
+    if (!shipClient) { addToast('Seleccioná un cliente.', 'error'); return; }
+    if (cart.cart.length === 0) { addToast('El carrito está vacío.', 'error'); return; }
+    setShipSaving(true);
+    try {
+      const r = await apiPost('/remitos', {
+        customer_id: shipClient.id,
+        address: shipClient.address || '',
+        scheduled_date: shipDate || new Date().toISOString().slice(0, 10),
+        operator: auth.currentOperator?.name || 'Sistema',
+        items: cart.cart.map(it => ({
+          product_id: it.id,
+          quantity: it.quantity,
+          unit_price: it.price || 0,
+        })),
+      });
+      if (r.ok) {
+        const data = await r.json();
+        addToast(`Pedido de envío #${data.id} creado. Aparece en Remitos.`, 'success');
+        setShowShipModal(false);
+        setShipClient(null);
+        setShipDate('');
+        cart.clearCart();
+      } else {
+        addToast('No se pudo crear el pedido de envío.', 'error');
+      }
+    } catch { addToast('Error de conexión.', 'error'); }
+    setShipSaving(false);
+  };
 
   const sales = useSales(
     cart.cart, cart.effectiveTotal, cart.payment, cart.paymentMethod,
@@ -99,6 +136,13 @@ export default function VentasPage() {
             canEditPrice={['admin','gerente','supervisor'].includes(auth.currentOperator?.role)}
             listType={cart.listType} setListType={cart.setListType} businessType={businessType} />
           </div>
+          {/* F7: botón pedido de envío (solo cuando hay items en el carrito) */}
+          {cart.cart.length > 0 && !isMobile && (
+            <button onClick={() => setShowShipModal(true)}
+              style={{ flexShrink: 0, width: '100%', padding: '8px 16px', background: 'transparent', border: '1px dashed rgba(20,187,166,0.5)', borderRadius: 8, color: 'var(--accent-primary, #14BBA6)', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer', marginTop: 4 }}>
+              📦 Crear pedido de envío
+            </button>
+          )}
         </div>
         <div data-tour="payment-panel" style={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
         <PaymentPanel cart={cart.cart} total={cart.total} adjustedTotal={cart.adjustedTotal}
@@ -191,6 +235,61 @@ export default function VentasPage() {
         <TicketPrint cart={sales.lastSale.cart} total={sales.lastSale.total} payment={sales.lastSale.payment}
           change={sales.lastSale.change} operator={auth.currentOperator?.name} ticketNumber={sales.ticketNumber}
           config={backend.businessConfig} isClosingShift={false} tipoFactura={sales.lastSale.tipoFactura} afip={sales.lastSale.afip} paymentMethod={sales.lastSale.paymentMethod || cart.paymentMethod} />
+      )}
+
+      {/* F7: Modal pedido de envío */}
+      {showShipModal && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 2000, background: 'rgba(11,19,43,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+          onMouseDown={e => { if (e.target === e.currentTarget) setShowShipModal(false); }}>
+          <div onMouseDown={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 480, background: 'var(--lp-paper-raised, #0d1b38)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 14, padding: 24, boxShadow: '0 24px 64px rgba(0,0,0,0.4)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
+              <h3 style={{ margin: 0, fontWeight: 800, fontSize: '1.05rem', color: 'var(--lp-ink, #e8eaf0)' }}>📦 Pedido de envío</h3>
+              <button onClick={() => setShowShipModal(false)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: '1.3rem' }}>✕</button>
+            </div>
+
+            {/* Productos del carrito (resumen) */}
+            <div style={{ marginBottom: 14, padding: '10px 14px', background: 'rgba(255,255,255,0.04)', borderRadius: 8, fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)' }}>
+              <div style={{ fontWeight: 700, marginBottom: 6, color: 'rgba(255,255,255,0.9)' }}>Ítems del carrito:</div>
+              {cart.cart.map((it, i) => (
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span>{it.name} × {it.quantity}</span>
+                  <span style={{ fontFamily: 'var(--lp-font-mono, monospace)' }}>${((it.price || 0) * it.quantity).toLocaleString('es-AR')}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Cliente */}
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>
+                Cliente destinatario
+              </label>
+              <ClientePicker selected={shipClient} onSelect={setShipClient} />
+              {shipClient?.address && (
+                <div style={{ marginTop: 6, fontSize: '0.78rem', color: 'rgba(20,187,166,0.9)' }}>📍 {shipClient.address}</div>
+              )}
+            </div>
+
+            {/* Fecha programada */}
+            <div style={{ marginBottom: 18 }}>
+              <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>
+                Fecha de entrega (opcional)
+              </label>
+              <input type="date" value={shipDate} onChange={e => setShipDate(e.target.value)}
+                min={new Date().toISOString().slice(0, 10)}
+                style={{ padding: '9px 12px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, color: 'var(--lp-ink, #e8eaf0)', fontSize: '0.9rem', outline: 'none', width: '100%', boxSizing: 'border-box' }} />
+            </div>
+
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={() => setShowShipModal(false)} style={{ flex: 1, padding: '10px 16px', background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 8, color: 'rgba(255,255,255,0.6)', fontWeight: 700, cursor: 'pointer' }}>
+                Cancelar
+              </button>
+              <button onClick={handleCreateShipOrder} disabled={!shipClient || shipSaving}
+                style={{ flex: 2, padding: '10px 16px', background: shipClient ? '#14BBA6' : 'rgba(20,187,166,0.2)', border: 'none', borderRadius: 8, color: shipClient ? '#fff' : 'rgba(20,187,166,0.5)', fontWeight: 800, cursor: shipClient ? 'pointer' : 'default', fontSize: '0.95rem' }}>
+                {shipSaving ? 'Creando...' : '📦 Crear pedido de envío'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );

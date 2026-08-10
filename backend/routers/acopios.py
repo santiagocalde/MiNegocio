@@ -136,6 +136,60 @@ async def get_acopio(request: Request, acopio_id: int) -> dict:
             cur_wdraws = await db.execute("SELECT aw.*, (SELECT COUNT(*) FROM acopio_withdrawal_items WHERE withdrawal_id = aw.id) as item_count FROM acopio_withdrawals aw WHERE aw.acopio_id = ? ORDER BY aw.created_at DESC", (acopio_id,))
             return {"acopio": row_to_dict(a, cur_a.description), "items": items, "withdrawals": [row_to_dict(w, cur_wdraws.description) for w in await cur_wdraws.fetchall()]}
 
+@router.post("/api/acopios/{acopio_id}/cobrar", summary="Registrar cobro de un acopio")
+@limiter.limit("20/minute")
+async def cobrar_acopio(request: Request, acopio_id: int, body: dict = Body(...)) -> dict:
+    """
+    Registra el pago de un acopio.
+    method: 'efectivo' | 'tarjeta' | 'transferencia' | 'cc'
+    Para efectivo/tarjeta/transferencia: payment_status = 'paid'
+    Para cc (cuenta corriente): payment_status = 'cc'
+    """
+    from main import USE_PG, row_to_dict; import main; b_id = _biz_id()
+    method = (body.get("method") or "efectivo").lower()
+    amount  = float(body.get("amount") or 0)
+    operator = body.get("operator", "Sistema")
+    payment_status = "cc" if method == "cc" else "paid"
+
+    if USE_PG:
+        from db_helpers import get_pg_pool
+        pool = await get_pg_pool()
+        async with pool.acquire() as conn:
+            row = await conn.fetchrow(
+                "SELECT id FROM acopios WHERE id = $1 AND business_id = $2", acopio_id, b_id
+            )
+            if not row: raise HTTPException(404)
+            await conn.execute(
+                """UPDATE acopios
+                   SET payment_status = $1, payment_method = $2, paid_amount = $3, paid_at = now()
+                   WHERE id = $4 AND business_id = $5""",
+                payment_status, method, amount, acopio_id, b_id
+            )
+            await conn.execute(
+                "INSERT INTO audit_log (business_id, action, operator, details) VALUES ($1,$2,$3,$4)",
+                b_id, "acopio_cobrado", operator,
+                f"Acopio #{acopio_id} cobrado via {method} — ${amount:,.2f}"
+            )
+    else:
+        import aiosqlite
+        async with aiosqlite.connect(main.DB_PATH) as db:
+            cur = await db.execute("SELECT id FROM acopios WHERE id = ?", (acopio_id,))
+            if not await cur.fetchone(): raise HTTPException(404)
+            await db.execute(
+                """UPDATE acopios
+                   SET payment_status = ?, payment_method = ?, paid_amount = ?,
+                       paid_at = datetime('now','localtime')
+                   WHERE id = ?""",
+                (payment_status, method, amount, acopio_id)
+            )
+            await db.execute(
+                "INSERT INTO audit_log (action, operator, details) VALUES (?,?,?)",
+                ("acopio_cobrado", operator, f"Acopio #{acopio_id} cobrado via {method} — ${amount:,.2f}")
+            )
+            await db.commit()
+    return {"ok": True, "payment_status": payment_status}
+
+
 @router.post("/api/acopios", summary="Crear acopio")
 @limiter.limit("30/minute")
 async def create_acopio(request: Request, body: dict = Body(...)) -> dict:

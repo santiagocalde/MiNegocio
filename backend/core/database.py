@@ -489,6 +489,15 @@ async def init_db(DB_PATH: str, logger) -> None:
         await add_column_if_not_exists(db, "acopio_withdrawals", "status", "TEXT", default="'completed'")
         await add_column_if_not_exists(db, "acopio_withdrawals", "rescheduled_date", "TEXT")
 
+        # F5: Cobro de acopios
+        await add_column_if_not_exists(db, "acopios", "payment_status", "TEXT", default="'pending'")
+        await add_column_if_not_exists(db, "acopios", "payment_method", "TEXT")
+        await add_column_if_not_exists(db, "acopios", "paid_at", "TEXT")
+        await add_column_if_not_exists(db, "acopios", "paid_amount", "REAL", default="0")
+
+        # F6: Pedido a proveedor como compra pendiente
+        await add_column_if_not_exists(db, "purchases", "status", "TEXT", default="'confirmed'")
+
         await db.commit()
 
         # Punto 55: Creación de índices para performance

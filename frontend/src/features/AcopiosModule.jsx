@@ -75,6 +75,12 @@ export default function AcopiosModule() {
   const [rescheduleDate, setRescheduleDate] = useState('');
   const [rescheduling, setRescheduling] = useState(false);
 
+  // F5: cobrar acopio
+  const [cobrarModal, setCobrarModal] = useState(null); // {id, customerName, total}
+  const [cobrarMethod, setCobrarMethod] = useState('efectivo');
+  const [cobrarAmount, setCobrarAmount] = useState('');
+  const [cobrarSaving, setCobrarSaving] = useState(false);
+
   // Form
   const [formCustomer, setFormCustomer] = useState(null);
   const [formItems, setFormItems] = useState([]);
@@ -115,6 +121,28 @@ export default function AcopiosModule() {
       }
     } catch { addToast?.('Error al reprogramar.', 'error'); }
     setRescheduling(false);
+  };
+
+  const handleCobrar = async () => {
+    if (!cobrarModal) return;
+    setCobrarSaving(true);
+    try {
+      const r = await apiPost(`/acopios/${cobrarModal.id}/cobrar`, {
+        method: cobrarMethod,
+        amount: parseFloat(cobrarAmount) || cobrarModal.total,
+        operator: 'Sistema',
+      });
+      if (r.ok) {
+        addToast?.('Cobro registrado.', 'success');
+        setCobrarModal(null);
+        setCobrarAmount('');
+        setCobrarMethod('efectivo');
+        fetch();
+      } else {
+        addToast?.('Error al registrar cobro.', 'error');
+      }
+    } catch { addToast?.('Error al registrar cobro.', 'error'); }
+    setCobrarSaving(false);
   };
 
   useEffect(() => { fetch(); }, [fetch]);
@@ -241,7 +269,14 @@ export default function AcopiosModule() {
             <div style={{ color: 'var(--lp-ink-faint)', textAlign: 'center', padding: 40 }}>No hay acopios activos.</div>
           ) : (
             <div className="ledger-sheet" style={{ overflow: 'hidden' }}>
-              {acopios.map(a => (
+              {acopios.map(a => {
+                const ps = a.payment_status;
+                const payBadge = ps === 'paid'
+                  ? { label: '✓ Cobrado', color: 'var(--lp-green)', bg: 'rgba(16,185,129,0.12)' }
+                  : ps === 'cc'
+                  ? { label: 'En CC', color: 'var(--lp-primary)', bg: 'rgba(20,187,166,0.12)' }
+                  : null;
+                return (
                 <div key={a.id} className="ledger-row ledger-row--hover" onClick={() => showDetail(a.id)}>
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.9rem' }}>
@@ -251,11 +286,19 @@ export default function AcopiosModule() {
                       Acopio #{a.id} · {fmtDate(a.created_at)}
                     </div>
                   </div>
-                  <span style={{ fontSize: '0.72rem', fontWeight: 700, padding: '3px 10px', borderRadius: 20, color: 'var(--lp-amber)', background: 'rgba(245,158,11,0.12)', flexShrink: 0 }}>
-                    Activo
-                  </span>
+                  <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
+                    {payBadge && (
+                      <span style={{ fontSize: '0.7rem', fontWeight: 700, padding: '3px 8px', borderRadius: 20, color: payBadge.color, background: payBadge.bg }}>
+                        {payBadge.label}
+                      </span>
+                    )}
+                    <span style={{ fontSize: '0.72rem', fontWeight: 700, padding: '3px 10px', borderRadius: 20, color: 'var(--lp-amber)', background: 'rgba(245,158,11,0.12)' }}>
+                      Activo
+                    </span>
+                  </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           )
         )}
@@ -469,6 +512,26 @@ export default function AcopiosModule() {
                 );
               })}
             </div>
+            {/* Cobro */}
+            {(() => {
+              const ps = detail.acopio.payment_status;
+              const isPaid = ps === 'paid' || ps === 'cc';
+              const total = (detail.items || []).reduce((s, it) => s + (it.unit_price || 0) * (it.quantity_total || 0), 0);
+              return !isPaid && detail.acopio.status === 'active' ? (
+                <button
+                  onClick={e => { e.stopPropagation(); setCobrarModal({ id: detail.acopio.id, customerName: detail.acopio.customer_name, total }); setCobrarAmount(String(total)); setCobrarMethod('efectivo'); }}
+                  className="lp-btn lp-btn--ghost"
+                  style={{ width: '100%', marginBottom: 8, color: 'var(--lp-green)', borderColor: 'var(--lp-green)' }}>
+                  💰 Cobrar acopio
+                </button>
+              ) : isPaid ? (
+                <div style={{ fontSize: '0.8rem', color: ps === 'paid' ? 'var(--lp-green)' : 'var(--lp-primary)', fontWeight: 700, marginBottom: 8, textAlign: 'center' }}>
+                  {ps === 'paid' ? '✓ Cobrado' : '✓ Registrado en cuenta corriente'}
+                  {detail.acopio.paid_amount > 0 && ` — $${formatPesos(detail.acopio.paid_amount)}`}
+                </div>
+              ) : null;
+            })()}
+
             {showWithdrawal === detail.acopio.id ? (
               <div>
                 {/* Selector retiro / entrega */}
@@ -544,6 +607,66 @@ export default function AcopiosModule() {
                 </button>
               )
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Modal: cobrar acopio (F5) */}
+      {cobrarModal && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1100, background: 'rgba(11,19,43,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+          onMouseDown={e => { if (e.target === e.currentTarget) setCobrarModal(null); }}>
+          <div onMouseDown={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 380, background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line-strong)', borderRadius: 12, padding: 24, boxShadow: 'var(--lp-shadow-lg)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
+              <h3 style={{ fontFamily: 'var(--lp-font-display)', fontSize: '1rem', fontWeight: 700, color: 'var(--lp-ink)', margin: 0 }}>
+                💰 Cobrar acopio
+              </h3>
+              <button onClick={() => setCobrarModal(null)} style={{ background: 'none', border: 'none', color: 'var(--lp-ink-faint)', cursor: 'pointer', fontSize: '1.2rem' }}>✕</button>
+            </div>
+            {cobrarModal.customerName && (
+              <div style={{ fontSize: '0.82rem', color: 'var(--lp-ink-faint)', marginBottom: 12 }}>
+                Cliente: <strong style={{ color: 'var(--lp-ink)' }}>{cobrarModal.customerName}</strong>
+              </div>
+            )}
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--lp-ink-faint)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>
+                Forma de cobro
+              </label>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {[['efectivo','Efectivo'],['tarjeta','Tarjeta'],['transferencia','Transferencia'],['cc','Cuenta corriente']].map(([val, lbl]) => (
+                  <button key={val} onClick={() => setCobrarMethod(val)}
+                    style={{ padding: '6px 12px', fontSize: '0.8rem', fontWeight: 700, borderRadius: 8, cursor: 'pointer', transition: 'all 0.15s',
+                      border: cobrarMethod === val ? '2px solid var(--lp-primary)' : '1.5px solid var(--lp-line-strong)',
+                      background: cobrarMethod === val ? 'rgba(20,187,166,0.12)' : 'transparent',
+                      color: cobrarMethod === val ? 'var(--lp-primary)' : 'var(--lp-ink-faint)' }}>
+                    {lbl}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div style={{ marginBottom: 18 }}>
+              <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--lp-ink-faint)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>
+                Monto cobrado
+              </label>
+              <input type="number" value={cobrarAmount} onChange={e => setCobrarAmount(e.target.value)} min={0} step={1}
+                style={{ width: '100%', padding: '9px 12px', background: 'var(--lp-paper-sunken)', border: '1px solid var(--lp-line-strong)', borderRadius: 8, color: 'var(--lp-ink)', fontSize: '1.1rem', fontFamily: 'var(--lp-font-mono)', outline: 'none', boxSizing: 'border-box' }} />
+              {cobrarModal.total > 0 && (
+                <div style={{ fontSize: '0.72rem', color: 'var(--lp-ink-faint)', marginTop: 4 }}>
+                  Total del acopio: ${formatPesos(cobrarModal.total)}
+                  {parseFloat(cobrarAmount) !== cobrarModal.total && (
+                    <button onClick={() => setCobrarAmount(String(cobrarModal.total))}
+                      style={{ marginLeft: 8, fontSize: '0.72rem', color: 'var(--lp-primary)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700, padding: 0 }}>
+                      Usar total
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={() => setCobrarModal(null)} className="lp-btn lp-btn--ghost" style={{ flex: 1 }}>Cancelar</button>
+              <button onClick={handleCobrar} disabled={cobrarSaving} className="lp-btn lp-btn--primary" style={{ flex: 2, background: 'var(--lp-green)', borderColor: 'var(--lp-green)' }}>
+                {cobrarSaving ? 'Guardando...' : cobrarMethod === 'cc' ? 'Pasar a cuenta corriente' : 'Confirmar cobro'}
+              </button>
+            </div>
           </div>
         </div>
       )}
