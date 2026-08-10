@@ -175,8 +175,8 @@ export default function PublicCatalog() {
 
         {/* CATEGORY BAR — sticky, horizontal scroll */}
         {categories.length > 1 && (
-          <div className="catalog-catbar" style={{ background: 'var(--bg-card)', borderBottom: '1px solid var(--border-color)', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
-            <div style={{ maxWidth: '1200px', margin: '0 auto', position: 'relative' }}>
+          <div className="catalog-catbar" style={{ background: 'var(--bg-card)', borderBottom: '1px solid var(--border-color)', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
+            <div style={{ maxWidth: '1200px', width: '100%', margin: '0 auto', position: 'relative' }}>
               <div className="catalog-cats-scroll" style={{ display: 'flex', gap: '8px', overflowX: 'auto', padding: '14px 24px', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
                 <button
                   onClick={() => setActiveCategory('')}
