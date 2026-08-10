@@ -75,7 +75,9 @@ export default function RemitosModule() {
       if (isDespacho) url += '&fecha=' + new Date().toISOString().slice(0, 10);
       const res = await apiGet(url);
       if (res.ok) {
-        const data = await res.json();
+        let data = await res.json();
+        // Despacho del día: solo pendientes / en camino / postergados
+        if (isDespacho) data = data.filter(r => ['pending','en_camino','postponed'].includes(r.status));
         data.sort((a, b) => (STATUS_ORDER[a.status] ?? 9) - (STATUS_ORDER[b.status] ?? 9));
         setNotas(data);
       }
