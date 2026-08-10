@@ -14,7 +14,8 @@ function PriceCheckModal({ showPriceCheck, setShowPriceCheck, priceCheckQuery, s
     const filtered = productsDB?.filter(p => {
       const n = p.name?.toLowerCase() || '';
       const c = p.code?.toLowerCase() || '';
-      return qWords.every(w => n.includes(w) || c.includes(w));
+      const cat = p.category_name?.toLowerCase() || '';
+      return qWords.every(w => n.includes(w) || c.includes(w) || cat.includes(w));
     }) || [];
     setPriceCheckResults(filtered.slice(0, 30));
   }, [priceCheckQuery, showPriceCheck, productsDB, setPriceCheckResults]);
