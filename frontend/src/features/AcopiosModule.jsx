@@ -52,6 +52,59 @@ function imprimirComprobante({ acopio, items, withdrawalType, withdrawalAddress,
   win.document.close();
 }
 
+// ── Impresión de nota de pedido desde Despachos ────────────────
+function handlePrintRemito(data) {
+  const cfg = JSON.parse(localStorage.getItem('minegocio_config') || '{}');
+  const biz = JSON.parse(localStorage.getItem('saas_business') || '{}');
+  const bizName = biz.business_name || cfg.nombre || 'Corralón';
+  const nota = data.remito || data;
+  const items = data.items || [];
+  const fmt = (v) => (v ?? 0).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  const fmtDateRN = (s) => s ? new Date(s).toLocaleDateString('es-AR', { day: 'numeric', month: 'short' }) : '—';
+
+  const total = items.reduce((s, i) => s + Number(i.unit_price || 0) * Number(i.quantity || 0), 0);
+  const itemRows = items.map(it => {
+    const qty = Number(it.quantity || 0);
+    const cantFmt = qty % 1 === 0 ? qty.toFixed(0) : qty.toLocaleString('es-AR', { maximumFractionDigits: 3 });
+    const price = Number(it.unit_price || 0);
+    return '<tr>'
+      + '<td style="padding:7px 10px;text-align:center;border-bottom:1px solid #eee">' + cantFmt + '</td>'
+      + '<td style="padding:7px 10px;border-bottom:1px solid #eee">' + (it.product_name || '') + '</td>'
+      + '<td style="padding:7px 10px;text-align:right;border-bottom:1px solid #eee;font-family:monospace">$' + fmt(price) + '</td>'
+      + '<td style="padding:7px 10px;text-align:right;border-bottom:1px solid #eee;font-family:monospace">$' + fmt(qty * price) + '</td>'
+      + '</tr>';
+  }).join('');
+
+  const html = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Nota de Pedido N° ' + nota.id + '</title>'
+    + '<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;font-size:12px;color:#111;padding:24px;max-width:800px;margin:auto}'
+    + '.header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #111;padding-bottom:14px;margin-bottom:16px}'
+    + '.biz-name{font-size:18px;font-weight:800}.doc-title{font-size:20px;font-weight:900;text-align:right}'
+    + '.meta{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:16px;padding:12px;background:#f7f7f7;border-radius:6px}'
+    + '.meta-item label{display:block;font-size:9px;text-transform:uppercase;letter-spacing:.5px;color:#777;font-weight:700;margin-bottom:2px}'
+    + '.meta-item span{font-size:13px;font-weight:600}'
+    + 'table{width:100%;border-collapse:collapse;margin-bottom:8px}'
+    + 'th{background:#111;color:#fff;padding:8px 10px;font-size:11px;text-align:left}'
+    + 'th:last-child,th:nth-last-child(2){text-align:right}'
+    + '.total-row td{font-weight:800;font-size:14px;border-top:2px solid #111;padding:10px;background:#f0f0f0}'
+    + '@media print{body{padding:10px}}'
+    + '</style></head><body>'
+    + '<div class="header"><div><div class="biz-name">' + bizName + '</div></div>'
+    + '<div><div class="doc-title">NOTA DE PEDIDO</div><div class="doc-title" style="font-size:28px">N° ' + nota.id + '</div>'
+    + '<div style="font-size:11px;color:#555;text-align:right">' + fmtDateRN(nota.scheduled_date || nota.created_at) + '</div></div></div>'
+    + '<div class="meta">'
+    + (nota.address ? '<div class="meta-item"><label>Direccion</label><span>' + nota.address + '</span></div>' : '')
+    + (nota.customer_name ? '<div class="meta-item"><label>Cliente</label><span>' + nota.customer_name + '</span></div>' : '')
+    + (nota.driver ? '<div class="meta-item"><label>Chofer</label><span>' + nota.driver + '</span></div>' : '')
+    + '</div>'
+    + '<table><thead><tr><th style="width:60px;text-align:center">Cant.</th><th>Producto</th><th style="width:110px">Precio</th><th style="width:110px">Total</th></tr></thead>'
+    + '<tbody>' + itemRows
+    + '<tr class="total-row"><td colspan="3" style="text-align:right">TOTAL</td><td style="text-align:right;font-family:monospace">$' + fmt(total) + '</td></tr></tbody></table>'
+    + '<script>window.onload=function(){window.print()}<\/script></body></html>';
+
+  const w = window.open('', '_blank', 'width=860,height=680');
+  if (w) { w.document.write(html); w.document.close(); }
+}
+
 const formatPesos = (v) => (v ?? 0).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 const fmtDate = (s) => s ? new Date(s).toLocaleDateString('es-AR', { day: 'numeric', month: 'short' }) : '—';
 
@@ -101,8 +154,34 @@ export default function AcopiosModule() {
   const fetchDespachos = useCallback(async (fecha) => {
     setDespachosLoading(true);
     try {
-      const r = await apiGet(`/acopios/despachos${fecha ? `?fecha=${fecha}` : ''}`);
-      if (r.ok) setDespachos(await r.json());
+      const dateParam = fecha ? `?fecha=${fecha}` : '';
+      const [rAcopios, rRemitos] = await Promise.all([
+        apiGet(`/acopios/despachos${dateParam}`),
+        apiGet(`/remitos${fecha ? '?fecha=' + fecha : ''}`),
+      ]);
+
+      const acopiosData = rAcopios.ok ? (await rAcopios.json()) : [];
+      const remitosData = rRemitos.ok ? (await rRemitos.json()) : [];
+
+      // Mapear remitos al formato de despachos
+      const remitosMapped = (Array.isArray(remitosData) ? remitosData : []).map(r => ({
+        withdrawal_id: `r-${r.id}`,
+        acopio_id: null,
+        is_remito: true,
+        remito_id: r.id,
+        customer_name: r.customer_name || 'Sin cliente',
+        customer_address: r.address || '',
+        notes: '',
+        driver: r.driver || '',
+        items_summary: 'Nota de pedido N° ' + r.id,
+        created_at: r.created_at || r.scheduled_date,
+        status: r.status === 'postponed' ? 'rescheduled' : r.status,
+        rescheduled_date: r.status === 'postponed' ? r.scheduled_date : null,
+      }));
+
+      const merged = [...acopiosData, ...remitosMapped];
+      merged.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+      setDespachos(merged);
     } catch {}
     setDespachosLoading(false);
   }, []);
@@ -430,19 +509,46 @@ export default function AcopiosModule() {
                         </div>
                         {!isRescheduled && (
                           <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                            <button onClick={() => showDetail(d.acopio_id)}
+                            {!d.is_remito && (
+                              <button onClick={() => showDetail(d.acopio_id)}
+                                className="lp-btn lp-btn--ghost"
+                                style={{ fontSize: '0.75rem', padding: '5px 10px' }}
+                                title="Ver acopio">
+                                Ver
+                              </button>
+                            )}
+                            <button onClick={async () => {
+                              if (d.is_remito) {
+                                // Imprimir nota de pedido
+                                const r = await apiGet(`/remitos/${d.remito_id}`);
+                                if (r.ok) {
+                                  const data = await r.json();
+                                  handlePrintRemito(data);
+                                }
+                              } else {
+                                // Imprimir comprobante de despacho
+                                const r = await apiGet(`/acopios/${d.acopio_id}`);
+                                if (r.ok) {
+                                  const data = await r.json();
+                                  const tipo = d.notes?.toLowerCase().includes('entrega') ? 'entrega' : 'retiro';
+                                  imprimirComprobante({ acopio: data.acopio, items: data.items, withdrawalType: tipo, withdrawalAddress: d.customer_address || '', businessConfig });
+                                }
+                              }
+                            }}
                               className="lp-btn lp-btn--ghost"
                               style={{ fontSize: '0.75rem', padding: '5px 10px' }}
-                              title="Ver acopio">
-                              Ver
+                              title="Imprimir comprobante">
+                              🖨️
                             </button>
-                            <button
-                              onClick={() => { setRescheduleModal({ wid: d.withdrawal_id, customerName: d.customer_name }); setRescheduleDate(''); }}
-                              className="lp-btn lp-btn--ghost"
-                              style={{ fontSize: '0.75rem', padding: '5px 10px', color: 'var(--lp-amber)' }}
-                              title="Reprogramar entrega">
-                              ↻
-                            </button>
+                            {!d.is_remito && (
+                              <button
+                                onClick={() => { setRescheduleModal({ wid: d.withdrawal_id, customerName: d.customer_name }); setRescheduleDate(''); }}
+                                className="lp-btn lp-btn--ghost"
+                                style={{ fontSize: '0.75rem', padding: '5px 10px', color: 'var(--lp-amber)' }}
+                                title="Reprogramar entrega">
+                                ↻
+                              </button>
+                            )}
                           </div>
                         )}
                       </div>
