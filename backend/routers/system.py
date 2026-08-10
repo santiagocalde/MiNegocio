@@ -424,6 +424,9 @@ async def activity_feed(request: Request, limit: int = Query(50)) -> list:
         # Compras / stock
         "compra_created":            ("Compra",             "accent-success"),
         "stock_adjusted":            ("Ajuste de stock",    None),
+        # Caja
+        "egreso_gasto":              ("Gasto",              "accent-danger"),
+        "egreso_retiro":             ("Retiro del dueño",   "accent-warning"),
     }
 
     if USE_PG:

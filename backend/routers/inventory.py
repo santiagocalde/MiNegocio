@@ -217,16 +217,33 @@ async def create_egreso(body: dict) -> dict:
         from db_helpers import get_pg_pool
         pool = await get_pg_pool()
         async with pool.acquire() as conn:
+            monto = body.get("monto")
+            motivo = body.get("motivo") or ""
+            tipo = body.get("type", "gasto")
+            operador = body.get("operator", "Sistema")
             await conn.execute(
                 "INSERT INTO egresos_caja (business_id, turn_id, monto, motivo, type, operator) VALUES ($1,$2,$3,$4,$5,$6)",
-                b_id, body.get("turn_id"), body.get("monto"), body.get("motivo"), body.get("type", "gasto"), body.get("operator", "Sistema")
+                b_id, body.get("turn_id"), monto, motivo, tipo, operador
+            )
+            await conn.execute(
+                "INSERT INTO audit_log (business_id, action, operator, details) VALUES ($1,$2,$3,$4)",
+                b_id, "egreso_" + tipo, operador,
+                f"{'Gasto' if tipo == 'gasto' else 'Retiro del dueño'} — ${float(monto or 0):.0f} ({motivo})"
             )
             return {"success": True}
     else:
         async with aiosqlite.connect(main.DB_PATH) as db:
+            monto = body.get("monto")
+            motivo = body.get("motivo") or ""
+            tipo = body.get("type", "gasto")
+            operador = body.get("operator", "Sistema")
             await db.execute(
                 "INSERT INTO egresos_caja (turn_id, monto, motivo, type, operator) VALUES (?,?,?,?,?)",
-                (body.get("turn_id"), body.get("monto"), body.get("motivo"), body.get("type", "gasto"), body.get("operator", "Sistema"))
+                (body.get("turn_id"), monto, motivo, tipo, operador)
+            )
+            await db.execute(
+                "INSERT INTO audit_log (action, operator, details) VALUES (?,?,?)",
+                ("egreso_" + tipo, operador, f"{'Gasto' if tipo == 'gasto' else 'Retiro del dueño'} — ${float(monto or 0):.0f} ({motivo})")
             )
             await db.commit()
             return {"success": True}
