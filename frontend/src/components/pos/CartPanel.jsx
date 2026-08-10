@@ -53,7 +53,7 @@ export default function CartPanel({ cart, total, adjustedTotal, updateQty, setIt
               {cart.length} {cart.length === 1 ? 'artículo' : 'artículos'}
             </span>
           )}
-          {businessType === 'corralon' && setListType && (
+          {setListType && (
             <div style={{ display: 'flex', borderRadius: 5, overflow: 'hidden', border: '1px solid var(--rule-strong)', fontSize: '0.70rem', fontWeight: 600 }}>
               <button onClick={() => setListType('a')} style={{ padding: '3px 9px', border: 'none', cursor: 'pointer',
                 background: listType === 'a' ? 'var(--lp-primary)' : 'transparent',
