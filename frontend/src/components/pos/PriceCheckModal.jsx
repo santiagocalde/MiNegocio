@@ -1,6 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
+import CameraBarcodeScanner from '../ui/CameraBarcodeScanner';
 
 function PriceCheckModal({ showPriceCheck, setShowPriceCheck, priceCheckQuery, setPriceCheckQuery, priceCheckResults, setPriceCheckResults, productsDB, onAddToCart }) {
+  const [showScanner, setShowScanner] = useState(false);
+
   React.useEffect(() => {
     if (!showPriceCheck || !priceCheckQuery.trim()) {
       setPriceCheckResults([]);
@@ -26,7 +29,19 @@ function PriceCheckModal({ showPriceCheck, setShowPriceCheck, priceCheckQuery, s
         <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
           <input type="text" value={priceCheckQuery} onChange={e => setPriceCheckQuery(e.target.value)}
             placeholder="Buscá por nombre o código..." autoFocus style={{ flex: 1, background: 'var(--bg-main)', border: '2px solid var(--border-focus)', color: 'var(--text-primary)', padding: '12px', borderRadius: '8px', fontSize: '1.1rem', outline: 'none' }} />
+          <button onClick={() => setShowScanner(true)} title="Escanear con cámara"
+            style={{ background: 'var(--bg-hover)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', cursor: 'pointer', padding: '8px 12px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}
+            onMouseEnter={e => { e.currentTarget.style.color = 'var(--accent-primary)'; e.currentTarget.style.background = 'var(--wash-primary)'; }}
+            onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.background = 'var(--bg-hover)'; }}>
+            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          </button>
         </div>
+        {showScanner && (
+          <CameraBarcodeScanner
+            onScan={(code) => { setPriceCheckQuery(code); setShowScanner(false); }}
+            onClose={() => setShowScanner(false)}
+          />
+        )}
         <div style={{ flex: 1, overflowY: 'auto' }}>
           {priceCheckResults.length === 0 ? (
             <p style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '24px' }}>
