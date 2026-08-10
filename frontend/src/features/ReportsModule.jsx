@@ -288,7 +288,7 @@ export default function ReportsModule() {
                     <thead style={{ position: 'sticky', top: 0, background: 'var(--bg-main)', zIndex: 1 }}>
                       <tr style={{ color: 'var(--text-primary)', fontSize: '0.85rem', fontWeight: 700, borderBottom: '1px solid var(--border-color)' }}>
                         <th style={{ padding: '16px', cursor: 'pointer' }} onClick={() => toggleSort('id')}>ID<SortIcon columnKey="id" /></th>
-                        <th style={{ padding: '16px', cursor: 'pointer' }} onClick={() => toggleSort('created_at')}>Fecha<SortIcon columnKey="created_at" /></th>
+                        <th style={{ padding: '16px', cursor: 'pointer' }} onClick={() => toggleSort('timestamp')}>Fecha<SortIcon columnKey="timestamp" /></th>
                         <th style={{ padding: '16px', cursor: 'pointer' }} onClick={() => toggleSort('operator')}>Usuario<SortIcon columnKey="operator" /></th>
                         <th style={{ padding: '16px' }}>Productos</th>
                         <th style={{ padding: '16px', cursor: 'pointer' }} onClick={() => toggleSort('payment_method')}>Metodo de Pago<SortIcon columnKey="payment_method" /></th>
@@ -299,7 +299,7 @@ export default function ReportsModule() {
                       {sortedSales.map((sale) => (
                         <tr key={sale.id} style={{ borderBottom: '1px solid var(--rule)', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background='var(--surface-veil)'} onMouseLeave={e => e.currentTarget.style.background='transparent'}>
                           <td style={{ padding: '16px', fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>{(sale.id ?? '').toString().padStart(8, '0') || '---'}</td>
-                          <td style={{ padding: '16px', fontSize: '0.85rem' }}>{sale.created_at ? new Date(sale.created_at).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' }) : '---'}</td>
+                          <td style={{ padding: '16px', fontSize: '0.85rem' }}>{sale.timestamp ? new Date(sale.timestamp).toLocaleString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '---'}</td>
                           <td style={{ padding: '16px', fontSize: '0.85rem' }}>{sale.operator}</td>
                           <td style={{ padding: '16px', fontSize: '0.85rem', color: 'var(--text-secondary)', maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                             {sale.items?.map(i => `${i.product_name} x${i.quantity}`).join(', ') || 'Varios'}
