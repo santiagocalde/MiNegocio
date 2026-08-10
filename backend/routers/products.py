@@ -262,7 +262,20 @@ async def import_products_csv(request: Request, csv_text: str = Body(..., media_
                 continue
 
             def _num(v, default=0):
-                try: return float(str(v).replace(',', '.').replace('$', '').strip() or default)
+                try:
+                    s = str(v).replace('$', '').strip()
+                    # Formato argentino: 1.500,50 -> los puntos son separadores de miles, la coma es decimal
+                    if ',' in s and '.' in s:
+                        s = s.replace('.', '').replace(',', '.')
+                    elif ',' in s:
+                        # Podría ser "1500,50" (coma decimal) o "1,500" (miles). Si hay 3+ dígitos
+                        # después de la coma asumimos que es separador de miles.
+                        parts = s.rsplit(',', 1)
+                        if len(parts) == 2 and len(parts[1]) <= 2:
+                            s = s.replace(',', '.')
+                        else:
+                            s = s.replace(',', '')
+                    return float(s or default)
                 except: return default
 
             price      = _num(_get(row, 'price'), 0)
