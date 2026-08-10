@@ -136,8 +136,8 @@ export default function VentasPage() {
             canEditPrice={true}
             listType={cart.listType} setListType={cart.setListType} businessType={businessType} />
           </div>
-          {/* F7: botón pedido de envío (solo cuando hay items en el carrito) */}
-          {cart.cart.length > 0 && !isMobile && (
+          {/* F7: botón pedido de envío (solo corralón, cuando hay items en el carrito) */}
+          {businessType === 'corralon' && cart.cart.length > 0 && !isMobile && (
             <button onClick={() => setShowShipModal(true)}
               style={{ flexShrink: 0, width: '100%', padding: '8px 16px', background: 'transparent', border: '1px dashed rgba(20,187,166,0.5)', borderRadius: 8, color: 'var(--accent-primary, #14BBA6)', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer', marginTop: 4 }}>
               📦 Crear pedido de envío
