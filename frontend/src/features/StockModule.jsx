@@ -664,6 +664,44 @@ export default function StockModule() {
                         });
                       }} className="stock-act" style={{ background: 'transparent', color: 'var(--text-primary)', border: '1px solid var(--border-color)', padding: '6px 12px', borderRadius: 'var(--radius-sm)', fontSize: '0.82rem', cursor: 'pointer', fontWeight: 700, whiteSpace: 'nowrap' }}>$ Precio</button>
                       <button onClick={() => {
+                        const cfg = JSON.parse(localStorage.getItem('minegocio_config') || '{}');
+                        const lbB = cfg.price_list_b_name || 'Lista B';
+                        setPromptState({
+                          isOpen: true,
+                          title: `${lbB} para ${p.name} (actual: ${p.price_b ? '$' + p.price_b : 'sin cargar'})`,
+                          value: p.price_b ?? '',
+                          onConfirm: async (val) => {
+                            setPromptState(prev => ({...prev, isOpen: false}));
+                            if (val !== null && val !== '' && !isNaN(val) && parseFloat(val) >= 0) {
+                              try {
+                                const res = await apiPut(`/products/${p.id}`, { price_b: parseFloat(val) });
+                                if (res.ok) { addToast?.(`${lbB} de ${p.name} actualizado.`, 'success'); fetchProducts(); if (onProductsUpdated) onProductsUpdated(); }
+                                else addToast?.('No se pudo actualizar.', 'error');
+                              } catch { addToast?.('Sin internet.', 'error'); }
+                            }
+                          }
+                        });
+                      }} className="stock-act" style={{ background: 'transparent', color: 'var(--accent-warning)', border: '1px solid rgba(245,158,11,0.3)', padding: '6px 12px', borderRadius: 'var(--radius-sm)', fontSize: '0.78rem', cursor: 'pointer', fontWeight: 700, whiteSpace: 'nowrap' }}>$ B</button>
+                      <button onClick={() => {
+                        const cfg = JSON.parse(localStorage.getItem('minegocio_config') || '{}');
+                        const lbC = cfg.price_list_c_name || 'Lista C';
+                        setPromptState({
+                          isOpen: true,
+                          title: `${lbC} para ${p.name} (actual: ${p.price_c ? '$' + p.price_c : 'sin cargar'})`,
+                          value: p.price_c ?? '',
+                          onConfirm: async (val) => {
+                            setPromptState(prev => ({...prev, isOpen: false}));
+                            if (val !== null && val !== '' && !isNaN(val) && parseFloat(val) >= 0) {
+                              try {
+                                const res = await apiPut(`/products/${p.id}`, { price_c: parseFloat(val) });
+                                if (res.ok) { addToast?.(`${lbC} de ${p.name} actualizado.`, 'success'); fetchProducts(); if (onProductsUpdated) onProductsUpdated(); }
+                                else addToast?.('No se pudo actualizar.', 'error');
+                              } catch { addToast?.('Sin internet.', 'error'); }
+                            }
+                          }
+                        });
+                      }} className="stock-act" style={{ background: 'transparent', color: 'var(--accent-primary)', border: '1px solid rgba(20,187,166,0.3)', padding: '6px 12px', borderRadius: 'var(--radius-sm)', fontSize: '0.78rem', cursor: 'pointer', fontWeight: 700, whiteSpace: 'nowrap' }}>$ C</button>
+                      <button onClick={() => {
                         setPromptState({
                           isOpen: true,
                           title: `Nuevo stock para ${p.name} (actual: ${p.stock})`,
