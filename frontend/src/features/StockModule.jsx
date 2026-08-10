@@ -1114,7 +1114,7 @@ export default function StockModule() {
               onChange={e => setPromptState({...promptState, value: e.target.value})} 
               autoFocus
               onKeyDown={e => {
-                if (e.key === 'Enter') promptState.onConfirm(promptState.value);
+                if (e.key === 'Enter') promptState.onConfirm(e.target.value);
                 if (e.key === 'Escape') setPromptState({...promptState, isOpen: false});
               }}
               style={{ width: '100%', padding: '12px 16px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '8px', marginBottom: '24px', outline: 'none', boxSizing: 'border-box', fontSize: '1.2rem', fontWeight: 800, textAlign: promptState.text ? 'left' : 'center' }} 
