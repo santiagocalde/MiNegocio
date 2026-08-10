@@ -128,6 +128,8 @@ export default function StockModule() {
   const [promptState, setPromptState] = useState({ isOpen: false, title: '', value: '', onConfirm: null });
   const [showScanner, setShowScanner] = useState(false);
   const [scanTarget, setScanTarget] = useState(null); // 'code' when scanning for product code
+  const [importResult, setImportResult] = useState(null); // resultado de la última importación CSV
+  const [showCsvHelp, setShowCsvHelp] = useState(false);
   const lastScanRef = useRef({ code: '', time: 0 });
 
   const isDuplicateScan = useCallback((code) => {
@@ -307,7 +309,7 @@ export default function StockModule() {
   const handleImportCsv = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    if (addToast) addToast(`Importando ${file.name}...`, 'info');
+    if (addToast) addToast(`Importando ${file.name}…`, 'info');
     try {
       const text = await file.text();
       const token = localStorage.getItem('saas_token');
@@ -318,16 +320,39 @@ export default function StockModule() {
       });
       const data = await res.json();
       if (res.ok) {
-        if (addToast) addToast(`${data.imported} productos importados exitosamente.`, 'success');
+        setImportResult(data);
+        if (data.imported > 0) {
+          if (addToast) addToast(`✅ ${data.imported} productos importados correctamente.`, 'success');
+        }
+        if (data.errors?.length > 0 && data.imported === 0) {
+          if (addToast) addToast(`No se importó ningún producto. Revisá el formato del CSV.`, 'error');
+        } else if (data.errors?.length > 0) {
+          if (addToast) addToast(`${data.imported} importados, ${data.errors.length} con error.`, 'info');
+        }
         fetchProducts();
         if (onProductsUpdated) onProductsUpdated();
       } else {
-        if (addToast) addToast(data.detail || 'No se pudo importar el archivo. Revisá el formato e intentá de nuevo.', 'error');
+        setImportResult({ error: data.detail || 'Error al importar' });
+        if (addToast) addToast(data.detail || 'No se pudo importar. Tocá "?" para ver el formato correcto.', 'error');
       }
     } catch {
       if (addToast) addToast('Sin internet. No se pudo importar el archivo.', 'error');
     }
     e.target.value = '';
+  };
+
+  // Descarga una plantilla CSV de ejemplo
+  const downloadCsvTemplate = () => {
+    const rows = [
+      ['codigo', 'nombre', 'precio', 'costo', 'stock', 'stock_minimo', 'categoria', 'unidad'],
+      ['7790001', 'Ejemplo Producto A', '1500', '900', '20', '5', 'Bebidas', 'unidad'],
+      ['7790002', 'Ejemplo Producto B', '800', '450', '50', '10', 'Almacén', 'kg'],
+    ];
+    const csv = rows.map(r => r.join(',')).join('\n');
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'plantilla_productos.csv';
+    a.click(); URL.revokeObjectURL(url);
   };
 
   const fetchProducts = async (q = '') => {
@@ -443,10 +468,16 @@ export default function StockModule() {
               onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border-color)'}>
               <Icons.Chart /> Aumento masivo
             </button>
-            <input type="file" ref={fileInputRef} accept=".csv" style={{ display: 'none' }} onChange={handleImportCsv} />
-            <button onClick={() => fileInputRef.current?.click()} style={{ background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '10px 15px', borderRadius: 'var(--radius-sm)', fontSize: '0.92rem', fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}>
-              <Icons.Download /> Importar CSV
-            </button>
+            <input type="file" ref={fileInputRef} accept=".csv,.txt,.tsv" style={{ display: 'none' }} onChange={handleImportCsv} />
+            <div style={{ display: 'inline-flex', gap: 0 }}>
+              <button onClick={() => fileInputRef.current?.click()} style={{ background: 'transparent', border: '1px solid var(--border-color)', borderRight: 'none', color: 'var(--text-primary)', padding: '10px 15px', borderRadius: 'var(--radius-sm) 0 0 var(--radius-sm)', fontSize: '0.92rem', fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}>
+                <Icons.Download /> Importar CSV
+              </button>
+              <button onClick={() => setShowCsvHelp(true)} title="Ver formato esperado y descargar plantilla"
+                style={{ background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', padding: '10px 11px', borderRadius: '0 var(--radius-sm) var(--radius-sm) 0', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}>
+                ?
+              </button>
+            </div>
         </div>
       </div>
 
@@ -949,6 +980,118 @@ export default function StockModule() {
       )}
       {showScanner && (
         <CameraBarcodeScanner onScan={handleBarcodeScan} onClose={() => { setShowScanner(false); setScanTarget(null); }} />
+      )}
+
+      {/* Modal: Ayuda formato CSV */}
+      {showCsvHelp && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(30,58,95,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1200, padding: 20 }}
+          onClick={e => { if (e.target === e.currentTarget) setShowCsvHelp(false); }}>
+          <div style={{ background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: 16, padding: 28, width: '100%', maxWidth: 480, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 40px rgba(0,0,0,0.5)', boxSizing: 'border-box' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <h3 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '1.1rem', fontWeight: 800 }}>Formato del CSV</h3>
+              <button onClick={() => setShowCsvHelp(false)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1.3rem' }}>✕</button>
+            </div>
+
+            <p style={{ margin: '0 0 16px', color: 'var(--text-secondary)', fontSize: '0.88rem', lineHeight: 1.5 }}>
+              El archivo puede estar separado por <b>coma</b>, <b>punto y coma</b> o <b>tab</b>. Acepta nombres de columna en español o inglés:
+            </p>
+
+            <div style={{ background: 'var(--bg-card)', borderRadius: 8, padding: 14, marginBottom: 16, overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem', fontFamily: 'monospace' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+                    <th style={{ textAlign: 'left', padding: '4px 8px', color: 'var(--accent-primary)', fontWeight: 800 }}>Columna (español)</th>
+                    <th style={{ textAlign: 'left', padding: '4px 8px', color: 'var(--text-secondary)', fontWeight: 600 }}>También acepta</th>
+                    <th style={{ textAlign: 'left', padding: '4px 8px', color: 'var(--text-secondary)', fontWeight: 600 }}>Req.</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    ['codigo', 'code, sku, barcode, ean', 'No*'],
+                    ['nombre', 'name, descripcion, articulo', 'Sí'],
+                    ['precio', 'price, precio_venta, pvp', 'No'],
+                    ['costo', 'cost_price, precio_costo', 'No'],
+                    ['stock', 'cantidad, existencia', 'No'],
+                    ['stock_minimo', 'min_stock, minimo', 'No'],
+                    ['categoria', 'category, rubro, familia', 'No'],
+                    ['unidad', 'unit_label, medida, um', 'No'],
+                  ].map(([col, alt, req]) => (
+                    <tr key={col} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                      <td style={{ padding: '5px 8px', color: 'var(--text-primary)', fontWeight: 700 }}>{col}</td>
+                      <td style={{ padding: '5px 8px', color: 'var(--text-secondary)' }}>{alt}</td>
+                      <td style={{ padding: '5px 8px', color: req === 'Sí' ? 'var(--accent-danger)' : 'var(--text-secondary)' }}>{req}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <p style={{ margin: '0 0 4px', color: 'var(--text-secondary)', fontSize: '0.78rem' }}>
+              * Si no hay <b>codigo</b>, se genera uno automático. Al re-importar, el código se usa para actualizar el producto existente.
+            </p>
+            <p style={{ margin: '0 0 20px', color: 'var(--text-secondary)', fontSize: '0.78rem' }}>
+              Los precios pueden incluir <b>$</b> y usar <b>coma</b> como decimal (ej: <code>1.500,50</code> o <code>1500.50</code>).
+            </p>
+
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={downloadCsvTemplate}
+                style={{ flex: 1, padding: '10px', borderRadius: 8, border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--accent-primary)', fontWeight: 700, cursor: 'pointer', fontSize: '0.88rem' }}>
+                ⬇ Descargar plantilla
+              </button>
+              <button onClick={() => { setShowCsvHelp(false); fileInputRef.current?.click(); }}
+                style={{ flex: 1, padding: '10px', borderRadius: 8, border: 'none', background: 'var(--accent-primary)', color: '#0B132B', fontWeight: 800, cursor: 'pointer', fontSize: '0.88rem' }}>
+                Subir archivo CSV
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Resultado de importación */}
+      {importResult && importResult.errors?.length > 0 && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(30,58,95,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1200, padding: 20 }}
+          onClick={e => { if (e.target === e.currentTarget) setImportResult(null); }}>
+          <div style={{ background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: 16, padding: 24, width: '100%', maxWidth: 440, maxHeight: '80vh', overflowY: 'auto', boxSizing: 'border-box' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <h3 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '1rem', fontWeight: 800 }}>
+                Resultado de importación
+              </h3>
+              <button onClick={() => setImportResult(null)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1.3rem' }}>✕</button>
+            </div>
+            {importResult.imported > 0 && (
+              <div style={{ padding: '10px 14px', background: 'rgba(20,187,166,0.08)', border: '1px solid var(--accent-primary)', borderRadius: 8, marginBottom: 14, fontSize: '0.9rem', color: 'var(--accent-primary)', fontWeight: 700 }}>
+                ✅ {importResult.imported} producto{importResult.imported !== 1 ? 's' : ''} importado{importResult.imported !== 1 ? 's' : ''}
+                {importResult.categories_created?.length > 0 && ` · ${importResult.categories_created.length} categoría${importResult.categories_created.length !== 1 ? 's' : ''} nueva${importResult.categories_created.length !== 1 ? 's' : ''}`}
+              </div>
+            )}
+            {importResult.errors?.length > 0 && (
+              <>
+                <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--accent-danger)', marginBottom: 8 }}>
+                  ⚠️ {importResult.errors.length} fila{importResult.errors.length !== 1 ? 's' : ''} con error:
+                </div>
+                <div style={{ background: 'var(--bg-card)', borderRadius: 8, padding: '10px 12px', maxHeight: 220, overflowY: 'auto' }}>
+                  {importResult.errors.slice(0, 20).map((err, i) => (
+                    <div key={i} style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', padding: '3px 0', borderBottom: i < importResult.errors.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
+                      {err}
+                    </div>
+                  ))}
+                  {importResult.errors.length > 20 && (
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', padding: '6px 0', fontStyle: 'italic' }}>
+                      … y {importResult.errors.length - 20} más
+                    </div>
+                  )}
+                </div>
+                <p style={{ margin: '12px 0 0', fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                  Tocá el botón <b>?</b> junto a "Importar CSV" para ver el formato correcto o descargar una plantilla.
+                </p>
+              </>
+            )}
+            <button onClick={() => setImportResult(null)}
+              style={{ marginTop: 16, width: '100%', padding: '10px', borderRadius: 8, border: 'none', background: 'var(--accent-primary)', color: '#0B132B', fontWeight: 800, cursor: 'pointer' }}>
+              Entendido
+            </button>
+          </div>
+        </div>
       )}
       {promptState.isOpen && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(30,58,95,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100 }}>

@@ -196,31 +196,86 @@ async def price_suggestions(threshold_pct: float = Query(15.0), category_id: Opt
 async def import_products_csv(request: Request, csv_text: str = Body(..., media_type="text/plain")) -> dict:
     import csv, io
     b_id = _biz_id()
-    text = csv_text
-    delimiter = ',' if ',' in text.split('\n')[0] else ';'
+
+    # Quitar BOM UTF-8 que Excel agrega
+    text = csv_text.lstrip('﻿').strip()
+    if not text:
+        raise HTTPException(400, detail="Archivo CSV vacío")
+
+    # Autodetectar separador: coma, punto y coma, o tab
+    first_line = text.split('\n')[0]
+    if '\t' in first_line:
+        delimiter = '\t'
+    elif ';' in first_line:
+        delimiter = ';'
+    else:
+        delimiter = ','
+
     reader = csv.DictReader(io.StringIO(text), delimiter=delimiter)
     rows = list(reader)
     if not rows:
-        raise HTTPException(400, detail="Archivo CSV vacio")
+        raise HTTPException(400, detail="Archivo CSV vacío o sin datos después del encabezado")
+
+    # Alias de columnas — acepta español e inglés
+    _ALIASES = {
+        'code':       ['code', 'codigo', 'cod', 'barcode', 'ean', 'sku', 'código'],
+        'name':       ['name', 'nombre', 'descripcion', 'descripción', 'articulo', 'artículo', 'producto'],
+        'price':      ['price', 'precio', 'precio_venta', 'pvp', 'p_venta'],
+        'cost_price': ['cost_price', 'costo', 'precio_costo', 'p_costo', 'costo_unitario'],
+        'stock':      ['stock', 'cantidad', 'existencia', 'stock_actual', 'qty'],
+        'min_stock':  ['min_stock', 'stock_minimo', 'stock_mínimo', 'minimo', 'mínimo', 'min'],
+        'pack_size':  ['pack_size', 'bulto', 'presentacion', 'presentación', 'unidades_por_bulto'],
+        'iva':        ['iva', 'alicuota', 'alícuota', 'tasa_iva'],
+        'categoria':  ['categoria', 'categoría', 'category', 'rubro', 'familia', 'seccion', 'sección'],
+        'unit_label': ['unit_label', 'unidad', 'medida', 'unidad_medida', 'um'],
+        'extra_codes':['codigos_extra', 'extra_codes', 'codigos_alternativos', 'otros_codigos'],
+    }
+
+    def _get(row: dict, field: str, default=''):
+        """Busca un campo por sus aliases, case-insensitive."""
+        row_lower = {k.lower().strip(): v for k, v in row.items()}
+        for alias in _ALIASES.get(field, [field]):
+            if alias in row_lower:
+                return row_lower[alias]
+        return default
 
     await _check_product_limit(request, len(rows))
+
+    # Informar columnas disponibles en la cabecera (para debug)
+    available_cols = list(rows[0].keys()) if rows else []
 
     parsed = []
     errors = []
     for i, row in enumerate(rows):
         try:
-            code = row.get('code', '').strip()
-            name = row.get('name', '').strip()
-            if not code or not name: errors.append(f"Fila {i+2}: code y name requeridos"); continue
-            price = float(row.get('price', 0))
-            cost_price = float(row.get('cost_price', 0))
-            stock = int(float(row.get('stock', 0)))
-            min_stock = int(float(row.get('min_stock', 5)))
-            pack_size = int(float(row.get('pack_size', 1) or 1))
-            iva = (row.get('iva', '21%') or '21%').strip()
-            categoria = (row.get('categoria') or row.get('category') or '').strip()
-            extra = _parse_extra_codes(row.get('codigos_extra') or row.get('extra_codes'), code)
-            parsed.append((code, name, price, cost_price, stock, min_stock, iva, categoria, pack_size, extra))
+            code = _get(row, 'code').strip()
+            name = _get(row, 'name').strip()
+            if not code and not name:
+                errors.append(f"Fila {i+2}: sin código ni nombre (columnas encontradas: {', '.join(available_cols[:6])})")
+                continue
+            # Si no hay code, generar uno a partir del nombre
+            if not code:
+                import uuid as _uuid
+                code = f"IMP-{_uuid.uuid4().hex[:8].upper()}"
+            if not name:
+                errors.append(f"Fila {i+2}: nombre vacío (código: {code})")
+                continue
+
+            def _num(v, default=0):
+                try: return float(str(v).replace(',', '.').replace('$', '').strip() or default)
+                except: return default
+
+            price      = _num(_get(row, 'price'), 0)
+            cost_price = _num(_get(row, 'cost_price'), 0)
+            stock      = int(_num(_get(row, 'stock'), 0))
+            min_stock  = int(_num(_get(row, 'min_stock'), 5))
+            pack_size  = int(_num(_get(row, 'pack_size', '1'), 1)) or 1
+            iva        = (_get(row, 'iva') or '21%').strip()
+            if iva and '%' not in iva: iva += '%'
+            categoria  = _get(row, 'categoria').strip()
+            unit_label = _get(row, 'unit_label').strip() or 'unidad'
+            extra      = _parse_extra_codes(_get(row, 'extra_codes') or None, code)
+            parsed.append((code, name, price, cost_price, stock, min_stock, iva, categoria, pack_size, unit_label, extra))
         except Exception as e:
             errors.append(f"Fila {i+2}: {str(e)}")
 
@@ -232,7 +287,7 @@ async def import_products_csv(request: Request, csv_text: str = Body(..., media_
             pool = await get_pg_pool()
             async with pool.acquire() as conn:
                 async with conn.transaction():
-                    for code, name, price, cost, stock, min_stock, iva, categoria, pack_size, extra in parsed:
+                    for code, name, price, cost, stock, min_stock, iva, categoria, pack_size, unit_label, extra in parsed:
                         cat_id = None
                         if categoria:
                             cat_id = await conn.fetchval(
@@ -246,13 +301,13 @@ async def import_products_csv(request: Request, csv_text: str = Body(..., media_
                         if existing:
                             pid = existing["id"]
                             await conn.execute(
-                                "UPDATE products SET name=$1, price=$2, cost_price=$3, stock=$4, min_stock=$5, pack_size=$6, iva=$7, category_id=$8, updated_at=now() WHERE code=$9 AND business_id=$10",
-                                name, price, cost, stock, min_stock, pack_size, iva, cat_id, code, b_id
+                                "UPDATE products SET name=$1, price=$2, cost_price=$3, stock=$4, min_stock=$5, pack_size=$6, iva=$7, category_id=$8, unit_label=$9, updated_at=now() WHERE code=$10 AND business_id=$11",
+                                name, price, cost, stock, min_stock, pack_size, iva, cat_id, unit_label, code, b_id
                             )
                         else:
                             pid = await conn.fetchval(
-                                "INSERT INTO products (business_id, code, name, price, cost_price, stock, min_stock, pack_size, iva, category_id) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id",
-                                b_id, code, name, price, cost, stock, min_stock, pack_size, iva, cat_id
+                                "INSERT INTO products (business_id, code, name, price, cost_price, stock, min_stock, pack_size, iva, category_id, unit_label) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id",
+                                b_id, code, name, price, cost, stock, min_stock, pack_size, iva, cat_id, unit_label
                             )
                         if extra:
                             await conn.execute("DELETE FROM product_barcodes WHERE product_id = $1", pid)
@@ -264,13 +319,13 @@ async def import_products_csv(request: Request, csv_text: str = Body(..., media_
         else:
             async with aiosqlite.connect(main.DB_PATH) as db:
                 await db.execute("BEGIN IMMEDIATE")
-                for code, name, price, cost, stock, min_stock, iva, categoria, pack_size, extra in parsed:
+                for code, name, price, cost, stock, min_stock, iva, categoria, pack_size, unit_label, extra in parsed:
                     cat_id = None
                     if categoria:
                         cur = await db.execute("SELECT id FROM categories WHERE name = ?", (categoria,))
-                        row = await cur.fetchone()
-                        if row:
-                            cat_id = row[0]
+                        row_cat = await cur.fetchone()
+                        if row_cat:
+                            cat_id = row_cat[0]
                         else:
                             cur = await db.execute("INSERT INTO categories (name) VALUES (?)", (categoria,))
                             cat_id = cur.lastrowid
@@ -280,13 +335,13 @@ async def import_products_csv(request: Request, csv_text: str = Body(..., media_
                     if prow:
                         pid = prow[0]
                         await db.execute(
-                            "UPDATE products SET name=?, price=?, cost_price=?, stock=?, min_stock=?, pack_size=?, iva=?, category_id=?, updated_at=datetime('now','localtime') WHERE code=?",
-                            (name, price, cost, stock, min_stock, pack_size, iva, cat_id, code)
+                            "UPDATE products SET name=?, price=?, cost_price=?, stock=?, min_stock=?, pack_size=?, iva=?, category_id=?, unit_label=?, updated_at=datetime('now','localtime') WHERE code=?",
+                            (name, price, cost, stock, min_stock, pack_size, iva, cat_id, unit_label, code)
                         )
                     else:
                         cur = await db.execute(
-                            "INSERT INTO products (code, name, price, cost_price, stock, min_stock, pack_size, iva, category_id) VALUES (?,?,?,?,?,?,?,?,?)",
-                            (code, name, price, cost, stock, min_stock, pack_size, iva, cat_id)
+                            "INSERT INTO products (code, name, price, cost_price, stock, min_stock, pack_size, iva, category_id, unit_label) VALUES (?,?,?,?,?,?,?,?,?,?)",
+                            (code, name, price, cost, stock, min_stock, pack_size, iva, cat_id, unit_label)
                         )
                         pid = cur.lastrowid
                     if extra:
@@ -297,7 +352,13 @@ async def import_products_csv(request: Request, csv_text: str = Body(..., media_
                         )
                     imported += 1
                 await db.commit()
-    return {"imported": imported, "errors": errors, "categories_created": categories_created, "total_rows": len(rows)}
+    return {
+        "imported": imported,
+        "errors": errors,
+        "categories_created": categories_created,
+        "total_rows": len(rows),
+        "header_detected": available_cols,
+    }
 
 
 @router.post("/api/products", status_code=201, summary="Crear producto")
