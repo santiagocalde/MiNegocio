@@ -56,7 +56,7 @@ export default function PanelLayout() {
       setShowInitialCaja(true);
       localStorage.removeItem('minegocio_onboarding_pending');
     }
-  }, []);
+  }, [auth.isAuthenticated]);
 
   const handleCajaSubmit = async (e) => {
     e.preventDefault();
