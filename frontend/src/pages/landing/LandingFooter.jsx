@@ -33,8 +33,21 @@ export default function LandingFooter({ navigate, setShowContactModal, handleDog
       title: 'Por rubro',
       links: [
         { label: 'Kioscos y almacenes', href: '/software-kiosco/' },
+        { label: 'Vinerias', href: '/software-vineria/' },
+        { label: 'Almacenes', href: '/software-almacen/' },
         { label: 'Ferreterias', href: '/software-ferreteria/' },
+        { label: 'Dieteticas', href: '/software-dietetica/' },
         { label: 'Corralones de materiales', href: '/software-corralon-materiales/' },
+      ],
+    },
+    {
+      title: 'Por ciudad',
+      links: [
+        { label: 'Buenos Aires', href: '/pos-buenos-aires/' },
+        { label: 'Rosario', href: '/pos-rosario/' },
+        { label: 'Cordoba', href: '/pos-cordoba/' },
+        { label: 'Mar del Plata', href: '/pos-mar-del-plata/' },
+        { label: 'Mendoza', href: '/pos-mendoza/' },
       ],
     },
     {

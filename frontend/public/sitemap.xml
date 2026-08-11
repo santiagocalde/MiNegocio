@@ -2,87 +2,87 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:xhtml="http://www.w3.org/1999/xhtml">
 
-  <url><loc>https://mi-negocio.app/</loc><lastmod>2026-08-06</lastmod><changefreq>weekly</changefreq><priority>1.0</priority></url>
-  <url><loc>https://mi-negocio.app/funcionalidades/</loc><lastmod>2026-08-06</lastmod><changefreq>monthly</changefreq><priority>0.9</priority></url>
-  <url><loc>https://mi-negocio.app/precios/</loc><lastmod>2026-08-06</lastmod><changefreq>monthly</changefreq><priority>0.9</priority></url>
-  <url><loc>https://mi-negocio.app/blog/</loc><lastmod>2026-08-06</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://mi-negocio.app/soporte/</loc><lastmod>2026-08-06</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://mi-negocio.app/nosotros/</loc><lastmod>2026-08-06</lastmod><changefreq>monthly</changefreq><priority>0.5</priority></url>
-  <url><loc>https://mi-negocio.app/contacto/</loc><lastmod>2026-08-06</lastmod><changefreq>monthly</changefreq><priority>0.5</priority></url>
-  <url><loc>https://mi-negocio.app/privacidad/</loc><lastmod>2026-08-06</lastmod><changefreq>monthly</changefreq><priority>0.3</priority></url>
-  <url><loc>https://mi-negocio.app/terminos/</loc><lastmod>2026-08-06</lastmod><changefreq>monthly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://mi-negocio.app/</loc><lastmod>2026-08-11</lastmod><changefreq>weekly</changefreq><priority>1.0</priority></url>
+  <url><loc>https://mi-negocio.app/funcionalidades/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://mi-negocio.app/precios/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://mi-negocio.app/blog/</loc><lastmod>2026-08-11</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://mi-negocio.app/soporte/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://mi-negocio.app/nosotros/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://mi-negocio.app/contacto/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://mi-negocio.app/privacidad/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://mi-negocio.app/terminos/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.3</priority></url>
 
   <!-- ETAPA 1: Ciudades -->
-  <url><loc>https://mi-negocio.app/pos-buenos-aires/</loc><lastmod>2026-08-06</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://mi-negocio.app/pos-rosario/</loc><lastmod>2026-08-06</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://mi-negocio.app/pos-cordoba/</loc><lastmod>2026-08-06</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://mi-negocio.app/pos-mar-del-plata/</loc><lastmod>2026-08-06</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://mi-negocio.app/pos-mendoza/</loc><lastmod>2026-08-06</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://mi-negocio.app/pos-buenos-aires/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://mi-negocio.app/pos-rosario/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://mi-negocio.app/pos-cordoba/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://mi-negocio.app/pos-mar-del-plata/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://mi-negocio.app/pos-mendoza/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
 
   <!-- ETAPA 2: Rubros -->
-  <url><loc>https://mi-negocio.app/software-kiosco/</loc><lastmod>2026-08-06</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://mi-negocio.app/software-almacen/</loc><lastmod>2026-08-06</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://mi-negocio.app/software-vineria/</loc><lastmod>2026-08-06</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://mi-negocio.app/software-dietetica/</loc><lastmod>2026-08-06</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://mi-negocio.app/software-ferreteria/</loc><lastmod>2026-08-06</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://mi-negocio.app/software-kiosco/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://mi-negocio.app/software-almacen/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://mi-negocio.app/software-vineria/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://mi-negocio.app/software-dietetica/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://mi-negocio.app/software-ferreteria/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
 
   <!-- ETAPA 3: Comparativa -->
-  <url><loc>https://mi-negocio.app/comparar-sistemas-para-kioscos/</loc><lastmod>2026-08-06</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://mi-negocio.app/comparar-sistemas-para-kioscos/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
 
   <!-- Feature pages -->
-  <url><loc>https://mi-negocio.app/pos-sin-internet/</loc><lastmod>2026-08-06</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://mi-negocio.app/sistema-fiados/</loc><lastmod>2026-08-06</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://mi-negocio.app/pos-sin-internet/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://mi-negocio.app/sistema-fiados/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
 
   <!-- Blog posts -->
-  <url><loc>https://mi-negocio.app/blog/app-kiosco-5-cosas-necesita-negocio/</loc><lastmod>2026-08-06</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://mi-negocio.app/blog/cierre-caja-digital-vs-cuaderno/</loc><lastmod>2026-08-06</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://mi-negocio.app/blog/controlar-fiados-digital-kiosco/</loc><lastmod>2026-08-06</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://mi-negocio.app/blog/controlar-stock-kiosco-sin-internet/</loc><lastmod>2026-08-06</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://mi-negocio.app/blog/escanear-codigo-barras-celular-kiosco/</loc><lastmod>2026-08-06</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://mi-negocio.app/blog/factura-electronica-kiosco-guia-2026/</loc><lastmod>2026-08-06</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://mi-negocio.app/blog/pos-kioscos-argentina-que-tiene-que-tener/</loc><lastmod>2026-08-06</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://mi-negocio.app/blog/sistema-fiados-almacen-no-perder-plata/</loc><lastmod>2026-08-06</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://mi-negocio.app/blog/app-kiosco-5-cosas-necesita-negocio/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://mi-negocio.app/blog/cierre-caja-digital-vs-cuaderno/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://mi-negocio.app/blog/controlar-fiados-digital-kiosco/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://mi-negocio.app/blog/controlar-stock-kiosco-sin-internet/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://mi-negocio.app/blog/escanear-codigo-barras-celular-kiosco/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://mi-negocio.app/blog/factura-electronica-kiosco-guia-2026/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://mi-negocio.app/blog/pos-kioscos-argentina-que-tiene-que-tener/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://mi-negocio.app/blog/sistema-fiados-almacen-no-perder-plata/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
 
   <!-- Glosario -->
-  <url><loc>https://mi-negocio.app/glosario/</loc><lastmod>2026-07-31</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://mi-negocio.app/glosario/arca/</loc><lastmod>2026-07-31</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://mi-negocio.app/glosario/arqueo-de-caja/</loc><lastmod>2026-07-31</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://mi-negocio.app/glosario/catalogo-web/</loc><lastmod>2026-07-31</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://mi-negocio.app/glosario/cierre-de-caja/</loc><lastmod>2026-07-31</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://mi-negocio.app/glosario/codigo-de-barras/</loc><lastmod>2026-07-31</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://mi-negocio.app/glosario/control-de-stock/</loc><lastmod>2026-07-31</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://mi-negocio.app/glosario/cuenta-corriente/</loc><lastmod>2026-07-31</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://mi-negocio.app/glosario/factura-electronica/</loc><lastmod>2026-07-31</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://mi-negocio.app/glosario/fiado/</loc><lastmod>2026-07-31</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://mi-negocio.app/glosario/inventario/</loc><lastmod>2026-07-31</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://mi-negocio.app/glosario/lista-de-precios/</loc><lastmod>2026-07-31</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://mi-negocio.app/glosario/margen-de-ganancia/</loc><lastmod>2026-07-31</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://mi-negocio.app/glosario/monotributo/</loc><lastmod>2026-07-31</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://mi-negocio.app/glosario/multi-negocio/</loc><lastmod>2026-07-31</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://mi-negocio.app/glosario/pos-offline/</loc><lastmod>2026-07-31</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://mi-negocio.app/glosario/punto-de-venta/</loc><lastmod>2026-07-31</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://mi-negocio.app/glosario/sistema-pos/</loc><lastmod>2026-07-31</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://mi-negocio.app/glosario/software-gestion/</loc><lastmod>2026-07-31</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://mi-negocio.app/glosario/ticket-de-venta/</loc><lastmod>2026-07-31</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://mi-negocio.app/glosario/</loc><lastmod>2026-08-11</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://mi-negocio.app/glosario/arca/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://mi-negocio.app/glosario/arqueo-de-caja/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://mi-negocio.app/glosario/catalogo-web/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://mi-negocio.app/glosario/cierre-de-caja/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://mi-negocio.app/glosario/codigo-de-barras/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://mi-negocio.app/glosario/control-de-stock/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://mi-negocio.app/glosario/cuenta-corriente/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://mi-negocio.app/glosario/factura-electronica/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://mi-negocio.app/glosario/fiado/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://mi-negocio.app/glosario/inventario/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://mi-negocio.app/glosario/lista-de-precios/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://mi-negocio.app/glosario/margen-de-ganancia/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://mi-negocio.app/glosario/monotributo/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://mi-negocio.app/glosario/multi-negocio/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://mi-negocio.app/glosario/pos-offline/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://mi-negocio.app/glosario/punto-de-venta/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://mi-negocio.app/glosario/sistema-pos/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://mi-negocio.app/glosario/software-gestion/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://mi-negocio.app/glosario/ticket-de-venta/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
 
   <!-- ETAPA 4: Corralón - Rubro -->
-  <url><loc>https://mi-negocio.app/software-corralon-materiales/</loc><lastmod>2026-08-07</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://mi-negocio.app/software-corralon-materiales/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
 
   <!-- ETAPA 5: Corralón - Ciudades -->
-  <url><loc>https://mi-negocio.app/software-corralon-buenos-aires/</loc><lastmod>2026-08-07</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://mi-negocio.app/software-corralon-rosario/</loc><lastmod>2026-08-07</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://mi-negocio.app/software-corralon-cordoba/</loc><lastmod>2026-08-07</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://mi-negocio.app/software-corralon-mendoza/</loc><lastmod>2026-08-07</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://mi-negocio.app/software-corralon-mar-del-plata/</loc><lastmod>2026-08-07</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://mi-negocio.app/software-corralon-buenos-aires/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://mi-negocio.app/software-corralon-rosario/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://mi-negocio.app/software-corralon-cordoba/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://mi-negocio.app/software-corralon-mendoza/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://mi-negocio.app/software-corralon-mar-del-plata/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
 
   <!-- ETAPA 6: Corralón - Features -->
-  <url><loc>https://mi-negocio.app/sistema-presupuestos-corralon/</loc><lastmod>2026-08-07</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://mi-negocio.app/software-control-obras/</loc><lastmod>2026-08-07</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://mi-negocio.app/hojas-de-ruta-reparto-materiales/</loc><lastmod>2026-08-07</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://mi-negocio.app/sistema-gestion-acopios/</loc><lastmod>2026-08-07</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://mi-negocio.app/sistema-presupuestos-corralon/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://mi-negocio.app/software-control-obras/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://mi-negocio.app/hojas-de-ruta-reparto-materiales/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://mi-negocio.app/sistema-gestion-acopios/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
 
   <!-- ETAPA 7: Corralón - Comparativa -->
-  <url><loc>https://mi-negocio.app/comparar-sistemas-para-corralones/</loc><lastmod>2026-08-07</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://mi-negocio.app/comparar-sistemas-para-corralones/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
 
 
 <url><loc>https://mi-negocio.app/software-vineria-buenos-aires/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
