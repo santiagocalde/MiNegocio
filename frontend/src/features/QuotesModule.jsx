@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { usePanelContext } from '../context/PanelContext';
 import { apiGet, apiPost, apiPut, apiDelete } from '../services/apiClient';
 import ClientePicker from '../components/corralon/ClientePicker';
+import CatalogModal from '../components/pos/CatalogModal';
 
 const STATUS_MAP = {
   draft:     { label: 'Borrador',  color: 'var(--lp-ink-faint)' },
@@ -75,6 +76,16 @@ export default function QuotesModule() {
   const [searchResults, setSearchResults] = useState([]);
   const [productQty, setProductQty] = useState('1');
   const [productPrice, setProductPrice] = useState('');
+  const [showCatalog, setShowCatalog] = useState(false);
+  const [catalogProducts, setCatalogProducts] = useState([]);
+
+  const openCatalog = async () => {
+    if (catalogProducts.length === 0) {
+      const res = await apiGet('/products?limit=5000');
+      if (res.ok) { const data = await res.json(); setCatalogProducts(data || []); }
+    }
+    setShowCatalog(true);
+  };
 
   // Convertir presupuesto → Nota de pedido
   const [showToRemito, setShowToRemito]       = useState(false);
@@ -666,6 +677,10 @@ const handleStatus = async (id, status) => {
               <div style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
                 <input value={productSearch} onChange={e => handleSearch(e.target.value)} placeholder="Buscar producto... (escribí 2+ letras)"
                   style={{ flex: 1, padding: '8px 12px', background: 'var(--lp-paper-sunken)', border: '1px solid var(--lp-line-strong)', borderRadius: 6, color: 'var(--lp-ink)', fontSize: '0.9rem', outline: 'none' }} />
+                <button onClick={openCatalog} title="Ver catálogo por categoría" style={{ padding: '8px 12px', background: 'var(--lp-paper-sunken)', border: '1px solid var(--lp-line-strong)', borderRadius: 6, color: 'var(--lp-ink)', fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+                  Catálogo
+                </button>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                   <label style={{ fontSize: '0.68rem', color: 'var(--lp-ink-faint)', fontWeight: 600, marginBottom: 2 }}>Cant.</label>
                   <input type="number" min="0.001" step="any" value={productQty} onChange={e => setProductQty(e.target.value)}
@@ -877,6 +892,16 @@ const handleStatus = async (id, status) => {
             </div>
           </div>
         </div>
+      )}
+
+      {showCatalog && (
+        <CatalogModal
+          products={catalogProducts}
+          onSelect={p => { addItem(p); }}
+          onClose={() => setShowCatalog(false)}
+          getPrice={p => getListPrice(p, formListType)}
+          title="Catálogo — elegí un producto"
+        />
       )}
     </div>
   );

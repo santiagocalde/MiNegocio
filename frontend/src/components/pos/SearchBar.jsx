@@ -2,6 +2,7 @@ import { useMemo, useState, useRef, useCallback } from 'react';
 import { Icons } from '../ui/Icons';
 import AddAmountModal from './AddAmountModal';
 import CameraBarcodeScanner from '../ui/CameraBarcodeScanner';
+import CatalogModal from './CatalogModal';
 import useIsMobile from '../../hooks/useIsMobile';
 import { findProductByAnyCode } from '../../utils/productLookup';
 
@@ -11,6 +12,7 @@ export default function SearchBar({
 }) {
   const [showAddAmountModal, setShowAddAmountModal] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
+  const [showCatalog, setShowCatalog] = useState(false);
   const isMobile = useIsMobile();
   const lastScanRef = useRef({ code: '', time: 0 });
 
@@ -74,6 +76,10 @@ export default function SearchBar({
         )}
 
         <div style={{ display: 'flex', gap: '8px' }}>
+          <button onClick={() => setShowCatalog(true)} title="Ver catálogo por categoría" style={{ background: 'var(--bg-hover)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', padding: '8px 12px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '6px' }} onMouseEnter={e => e.currentTarget.style.background='var(--surface-veil)'} onMouseLeave={e => e.currentTarget.style.background='var(--bg-hover)'}>
+            <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+            {isMobile ? 'Catálogo' : 'Ver catálogo'}
+          </button>
           <button onClick={() => setShowPriceCheck(true)} title="Consultar Precio" style={{ background: 'var(--bg-hover)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', padding: '8px 12px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '6px' }} onMouseEnter={e => e.currentTarget.style.background='var(--surface-veil)'} onMouseLeave={e => e.currentTarget.style.background='var(--bg-hover)'}>
             <Icons.Search style={{ width: 15, height: 15 }} />{isMobile ? 'Precio' : 'Consultar Precio'}
           </button>
@@ -174,6 +180,14 @@ export default function SearchBar({
       </div>
       {showScanner && (
         <CameraBarcodeScanner onScan={handleBarcodeScan} onClose={() => setShowScanner(false)} />
+      )}
+      {showCatalog && (
+        <CatalogModal
+          products={productsDB}
+          onSelect={p => { handleQuickAdd(p.code, p.name, getPrice(p)); searchRef.current?.focus(); }}
+          onClose={() => setShowCatalog(false)}
+          getPrice={getPrice}
+        />
       )}
       <AddAmountModal show={showAddAmountModal} setShow={setShowAddAmountModal} handleQuickAdd={handleQuickAdd} />
     </div>
