@@ -26,6 +26,19 @@ export default function SearchBar({
     return (map[listType] || p.price) || 0;
   };
 
+  const playErrorBeep = useCallback(() => {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type = 'square'; osc.frequency.value = 220;
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+      osc.start(); osc.stop(ctx.currentTime + 0.25);
+    } catch {}
+  }, []);
+
   const handleBarcodeScan = useCallback((code) => {
     if (!code || !productsDB) return;
     setSearch(code);
@@ -36,9 +49,12 @@ export default function SearchBar({
       setSearch('');
       searchRef.current?.focus();
     } else {
-      setSearch(code);
+      // Código no encontrado: seleccionar texto, beep de error, toast largo
+      setTimeout(() => searchRef.current?.select(), 0);
+      playErrorBeep();
+      addToast(`Código no encontrado: ${code}`, 'warning', 3500);
     }
-  }, [productsDB, handleQuickAdd, setSearch, searchRef, addToast, listType]);
+  }, [productsDB, handleQuickAdd, setSearch, searchRef, addToast, listType, playErrorBeep]);
   const autocomplete = useMemo(() => {
     if (!search.trim() || !productsDB) return [];
     return productsDB

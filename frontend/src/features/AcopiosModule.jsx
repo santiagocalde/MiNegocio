@@ -327,39 +327,11 @@ export default function AcopiosModule() {
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', gap: '10px', overflow: 'hidden', padding: '12px 20px' }}>
-      {/* Header con tabs */}
+      {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
-        <div style={{ display: 'flex', gap: 4, background: 'var(--lp-paper-sunken)', borderRadius: 8, padding: 3 }}>
-          {[['acopios', '📦 Acopios'], ['despachos', '🚚 Despachos del día']].map(([key, label]) => (
-            <button key={key} onClick={() => setActiveTab(key)}
-              style={{ padding: '7px 16px', borderRadius: 6, border: 'none', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s',
-                background: activeTab === key ? 'var(--lp-paper-raised)' : 'transparent',
-                color: activeTab === key ? 'var(--lp-ink)' : 'var(--lp-ink-faint)',
-                boxShadow: activeTab === key ? 'var(--lp-shadow-sm)' : 'none' }}>
-              {label}
-            </button>
-          ))}
-        </div>
+        <h2 style={{ fontFamily: 'var(--lp-font-display)', fontSize: '1.3rem', fontWeight: 700, color: 'var(--lp-ink)', margin: 0, letterSpacing: '-0.02em' }}>📦 Acopios</h2>
         {activeTab === 'acopios' && (
           <button onClick={() => setShowForm(true)} className="lp-btn lp-btn--primary" style={{ padding: '8px 18px', fontSize: '0.85rem' }}>Nuevo acopio</button>
-        )}
-        {activeTab === 'despachos' && (
-          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-            <input type="date" value={despachosFecha} onChange={e => setDespachosFecha(e.target.value)}
-              style={{ padding: '7px 12px', background: 'var(--lp-paper-sunken)', border: '1px solid var(--lp-line-strong)', borderRadius: 6, color: 'var(--lp-ink)', fontSize: '0.82rem', outline: 'none' }} />
-            {despachosFecha && (
-              <button onClick={() => setDespachosFecha('')} title="Ver últimos 30 días"
-                style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid var(--lp-line-strong)', background: 'transparent', color: 'var(--lp-ink-faint)', fontSize: '0.75rem', cursor: 'pointer' }}>
-                × todos
-              </button>
-            )}
-            {!despachosFecha && (
-              <button onClick={() => setDespachosFecha(new Date().toISOString().slice(0, 10))} title="Solo hoy"
-                style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid var(--lp-line-strong)', background: 'transparent', color: 'var(--lp-primary)', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}>
-                Hoy
-              </button>
-            )}
-          </div>
         )}
       </div>
 
@@ -422,143 +394,6 @@ export default function AcopiosModule() {
           )
         )}
 
-        {/* === TAB DESPACHOS === */}
-        {activeTab === 'despachos' && (() => {
-          if (despachosLoading) return (
-            <div style={{ color: 'var(--lp-ink-faint)', textAlign: 'center', padding: 40 }}>Cargando despachos...</div>
-          );
-          if (despachos.length === 0) return (
-            <div style={{ color: 'var(--lp-ink-faint)', textAlign: 'center', padding: 40, fontSize: '0.9rem' }}>
-              <div style={{ fontSize: '2rem', marginBottom: 12 }}>🚚</div>
-              Sin despachos registrados{despachosFecha ? ' para esta fecha' : ' en los últimos 30 días'}.
-            </div>
-          );
-
-          // Agrupar por fecha
-          const groups = {};
-          despachos.forEach(d => {
-            const raw = d.created_at ? new Date(d.created_at) : null;
-            const key = raw
-              ? raw.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })
-              : 'Sin fecha';
-            if (!groups[key]) groups[key] = [];
-            groups[key].push(d);
-          });
-
-          return (
-            <div className="ledger-sheet" style={{ overflow: 'hidden' }}>
-              {Object.entries(groups).map(([dateLabel, rows]) => (
-                <div key={dateLabel}>
-                  {/* Separador de fecha */}
-                  <div style={{
-                    padding: '10px 20px 6px',
-                    fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.08em',
-                    textTransform: 'uppercase', color: 'var(--lp-primary)',
-                    background: 'var(--lp-paper-sunken)',
-                    borderBottom: '1px solid var(--lp-line)',
-                    position: 'sticky', top: 0, zIndex: 1,
-                  }}>
-                    {dateLabel}
-                    <span style={{ marginLeft: 8, fontWeight: 400, opacity: 0.7 }}>
-                      {rows.length} entrega{rows.length !== 1 ? 's' : ''}
-                    </span>
-                  </div>
-
-                  {rows.map(d => {
-                    const isRescheduled = d.status === 'rescheduled';
-                    const notesAddr = d.notes?.replace(/^Entrega a domicilio[:\s]*/i, '').trim() || '';
-                    const displayAddr = notesAddr || d.customer_address || '—';
-                    const hora = d.created_at
-                      ? new Date(d.created_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })
-                      : '—';
-
-                    // Formato humano para la fecha de reprogramación
-                    const fmtRescheduled = d.rescheduled_date
-                      ? new Date(d.rescheduled_date + 'T12:00:00').toLocaleDateString('es-AR', { day: 'numeric', month: 'long' })
-                      : null;
-
-                    return (
-                      <div key={d.withdrawal_id} style={{
-                        padding: '13px 20px',
-                        borderBottom: '1px solid var(--lp-line)',
-                        display: 'flex', gap: 14, alignItems: 'flex-start',
-                        opacity: isRescheduled ? 0.45 : 1,
-                        background: isRescheduled ? 'var(--lp-paper-sunken)' : 'transparent',
-                      }}>
-                        <div style={{ fontSize: '0.75rem', fontFamily: 'var(--font-mono)', color: 'var(--lp-ink-faint)', fontWeight: 700, width: 38, flexShrink: 0, paddingTop: 3 }}>{hora}</div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                            <span style={{ fontWeight: 700, color: 'var(--lp-ink)', fontSize: '0.9rem' }}>
-                              {d.customer_name || 'Sin cliente'}
-                            </span>
-                            {isRescheduled && (
-                              <span style={{ fontSize: '0.68rem', fontWeight: 800, padding: '2px 8px', borderRadius: 20, background: 'rgba(107,114,128,0.15)', color: 'var(--lp-ink-faint)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-                                Reprogramado{fmtRescheduled ? ` → ${fmtRescheduled}` : ''}
-                              </span>
-                            )}
-                          </div>
-                          <div style={{ fontSize: '0.78rem', color: isRescheduled ? 'var(--lp-ink-faint)' : 'var(--lp-primary)', fontWeight: 600, marginTop: 2 }}>
-                            📍 {displayAddr}
-                          </div>
-                          {d.items_summary && (
-                            <div style={{ fontSize: '0.74rem', color: 'var(--lp-ink-faint)', marginTop: 3 }}>{d.items_summary}</div>
-                          )}
-                          {d.driver && (
-                            <div style={{ fontSize: '0.72rem', color: 'var(--lp-ink-faint)', marginTop: 2 }}>Chofer: {d.driver}</div>
-                          )}
-                        </div>
-                        {!isRescheduled && (
-                          <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                            {!d.is_remito && (
-                              <button onClick={() => showDetail(d.acopio_id)}
-                                className="lp-btn lp-btn--ghost"
-                                style={{ fontSize: '0.75rem', padding: '5px 10px' }}
-                                title="Ver acopio">
-                                Ver
-                              </button>
-                            )}
-                            <button onClick={async () => {
-                              if (d.is_remito) {
-                                // Imprimir nota de pedido
-                                const r = await apiGet(`/remitos/${d.remito_id}`);
-                                if (r.ok) {
-                                  const data = await r.json();
-                                  handlePrintRemito(data);
-                                }
-                              } else {
-                                // Imprimir comprobante de despacho
-                                const r = await apiGet(`/acopios/${d.acopio_id}`);
-                                if (r.ok) {
-                                  const data = await r.json();
-                                  const tipo = d.notes?.toLowerCase().includes('entrega') ? 'entrega' : 'retiro';
-                                  imprimirComprobante({ acopio: data.acopio, items: data.items, withdrawalType: tipo, withdrawalAddress: d.customer_address || '', businessConfig });
-                                }
-                              }
-                            }}
-                              className="lp-btn lp-btn--ghost"
-                              style={{ fontSize: '0.75rem', padding: '5px 10px' }}
-                              title="Imprimir comprobante">
-                              🖨️
-                            </button>
-                            {!d.is_remito && (
-                              <button
-                                onClick={() => { setRescheduleModal({ wid: d.withdrawal_id, customerName: d.customer_name }); setRescheduleDate(''); }}
-                                className="lp-btn lp-btn--ghost"
-                                style={{ fontSize: '0.75rem', padding: '5px 10px', color: 'var(--lp-amber)' }}
-                                title="Reprogramar entrega">
-                                ↻
-                              </button>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              ))}
-            </div>
-          );
-        })()}
       </div>
 
       {/* Form modal */}

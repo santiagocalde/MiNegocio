@@ -156,25 +156,41 @@ async def cobrar_acopio(request: Request, acopio_id: int, body: dict = Body(...)
         pool = await get_pg_pool()
         async with pool.acquire() as conn:
             row = await conn.fetchrow(
-                "SELECT id FROM acopios WHERE id = $1 AND business_id = $2", acopio_id, b_id
+                "SELECT id, customer_id, paid_amount FROM acopios WHERE id = $1 AND business_id = $2", acopio_id, b_id
             )
             if not row: raise HTTPException(404)
-            await conn.execute(
-                """UPDATE acopios
-                   SET payment_status = $1, payment_method = $2, paid_amount = $3, paid_at = now()
-                   WHERE id = $4 AND business_id = $5""",
-                payment_status, method, amount, acopio_id, b_id
-            )
-            await conn.execute(
-                "INSERT INTO audit_log (business_id, action, operator, details) VALUES ($1,$2,$3,$4)",
-                b_id, "acopio_cobrado", operator,
-                f"Acopio #{acopio_id} cobrado via {method} — ${amount:,.2f}"
-            )
+            async with conn.transaction():
+                await conn.execute(
+                    """UPDATE acopios
+                       SET payment_status = $1, payment_method = $2, paid_amount = $3, paid_at = now()
+                       WHERE id = $4 AND business_id = $5""",
+                    payment_status, method, amount, acopio_id, b_id
+                )
+                # CC: registrar deuda en cuenta corriente del cliente
+                if method == "cc" and row["customer_id"] and amount > 0:
+                    cust_id = row["customer_id"]
+                    await conn.execute(
+                        "UPDATE customers SET balance = balance + $1 WHERE id = $2 AND business_id = $3",
+                        amount, cust_id, b_id
+                    )
+                    await conn.execute(
+                        """INSERT INTO customer_transactions
+                           (business_id, customer_id, amount, type, description, operator)
+                           VALUES ($1,$2,$3,'sale',$4,$5)""",
+                        b_id, cust_id, amount, f"Acopio #{acopio_id} — CC", operator
+                    )
+                await conn.execute(
+                    "INSERT INTO audit_log (business_id, action, operator, details) VALUES ($1,$2,$3,$4)",
+                    b_id, "acopio_cobrado", operator,
+                    f"Acopio #{acopio_id} cobrado via {method} — ${amount:,.2f}"
+                )
     else:
         import aiosqlite
         async with aiosqlite.connect(main.DB_PATH) as db:
-            cur = await db.execute("SELECT id FROM acopios WHERE id = ?", (acopio_id,))
-            if not await cur.fetchone(): raise HTTPException(404)
+            cur = await db.execute("SELECT id, customer_id FROM acopios WHERE id = ?", (acopio_id,))
+            acopio_row = await cur.fetchone()
+            if not acopio_row: raise HTTPException(404)
+            await db.execute("BEGIN IMMEDIATE")
             await db.execute(
                 """UPDATE acopios
                    SET payment_status = ?, payment_method = ?, paid_amount = ?,
@@ -182,6 +198,18 @@ async def cobrar_acopio(request: Request, acopio_id: int, body: dict = Body(...)
                    WHERE id = ?""",
                 (payment_status, method, amount, acopio_id)
             )
+            # CC: registrar deuda en cuenta corriente del cliente
+            if method == "cc" and acopio_row[1] and amount > 0:
+                cust_id = acopio_row[1]
+                await db.execute(
+                    "UPDATE customers SET balance = balance + ? WHERE id = ?", (amount, cust_id)
+                )
+                await db.execute(
+                    """INSERT INTO customer_transactions
+                       (customer_id, amount, type, description, operator)
+                       VALUES (?,?,'sale',?,?)""",
+                    (cust_id, amount, f"Acopio #{acopio_id} — CC", operator)
+                )
             await db.execute(
                 "INSERT INTO audit_log (action, operator, details) VALUES (?,?,?)",
                 ("acopio_cobrado", operator, f"Acopio #{acopio_id} cobrado via {method} — ${amount:,.2f}")

@@ -194,7 +194,8 @@ export default function AuditModule() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {filtered.map(m => {
               const isExpanded = expandedId === m.id;
-              const clickable = m.movement_type === 'egreso';
+              const detail = m.reason || m.details || null;
+              const clickable = !!detail;
               return (
               <div key={m.id} style={{ borderRadius: '12px', border: '1px solid var(--border-color)', overflow: 'hidden', transition: 'transform 0.2s' }} onMouseEnter={e => e.currentTarget.style.transform='translateX(4px)'} onMouseLeave={e => e.currentTarget.style.transform='none'}>
                 <div
@@ -232,18 +233,22 @@ export default function AuditModule() {
                     )}
                   </div>
                 </div>
-                {/* Detalle expandido para egresos */}
-                {isExpanded && m.movement_type === 'egreso' && (
-                  <div style={{ background: 'rgba(245,158,11,0.06)', borderTop: '1px solid var(--border-color)', padding: '14px 24px 14px 174px', display: 'flex', gap: '32px', flexWrap: 'wrap' }}>
-                    <div>
-                      <div style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-secondary)', marginBottom: 4 }}>Monto retirado</div>
-                      <div style={{ fontSize: '1.35rem', fontWeight: 800, fontFamily: 'var(--font-mono)', color: 'var(--accent-warning)' }}>
-                        {m.quantity != null ? `$${Number(m.quantity).toLocaleString('es-AR')}` : '—'}
+                {/* Detalle expandido — cualquier tipo con datos */}
+                {isExpanded && detail && (
+                  <div style={{ background: m.movement_type === 'egreso' ? 'rgba(245,158,11,0.06)' : 'rgba(20,187,166,0.04)', borderTop: '1px solid var(--border-color)', padding: '14px 24px 14px 174px', display: 'flex', gap: '32px', flexWrap: 'wrap' }}>
+                    {m.movement_type === 'egreso' && (
+                      <div>
+                        <div style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-secondary)', marginBottom: 4 }}>Monto retirado</div>
+                        <div style={{ fontSize: '1.35rem', fontWeight: 800, fontFamily: 'var(--font-mono)', color: 'var(--accent-warning)' }}>
+                          {m.quantity != null ? `$${Number(m.quantity).toLocaleString('es-AR')}` : '—'}
+                        </div>
                       </div>
-                    </div>
+                    )}
                     <div>
-                      <div style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-secondary)', marginBottom: 4 }}>Motivo</div>
-                      <div style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-primary)' }}>{m.reason || '—'}</div>
+                      <div style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-secondary)', marginBottom: 4 }}>
+                        {m.movement_type === 'egreso' ? 'Motivo' : 'Detalle'}
+                      </div>
+                      <div style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-primary)', maxWidth: 480, wordBreak: 'break-word' }}>{detail}</div>
                     </div>
                     <div>
                       <div style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-secondary)', marginBottom: 4 }}>Operador</div>

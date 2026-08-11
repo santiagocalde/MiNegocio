@@ -136,14 +136,14 @@ export default function VentasPage() {
             canEditPrice={true}
             listType={cart.listType} setListType={cart.setListType} businessType={businessType} />
           </div>
-          {/* F7: botón pedido de envío post-venta (corralón, carrito vacío tras venta) */}
-          {businessType === 'corralon' && !isMobile && cart.cart.length === 0 && cart.lastSaleItems?.length > 0 && !showShipModal && (
-            <button onClick={() => setShowShipModal(true)}
-              style={{ flexShrink: 0, width: '100%', padding: '8px 16px', background: 'transparent', border: '1px dashed rgba(20,187,166,0.5)', borderRadius: 8, color: 'var(--accent-primary, #14BBA6)', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer', marginTop: 4 }}>
-              📦 Crear pedido de envío con última venta
-            </button>
-          )}
         </div>
+        {/* F7: botón pedido de envío post-venta (corralón, al lado del cobro, tras procesar venta) */}
+        {businessType === 'corralon' && !isMobile && cart.lastSaleItems?.length > 0 && !showShipModal && (
+          <button onClick={() => setShowShipModal(true)}
+            style={{ flexShrink: 0, padding: '10px 16px', background: 'rgba(20,187,166,0.1)', border: '1.5px solid rgba(20,187,166,0.5)', borderRadius: 8, color: 'var(--accent-primary, #14BBA6)', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer', marginBottom: 6, width: '100%' }}>
+            📦 Crear pedido de envío con la última venta
+          </button>
+        )}
         <div data-tour="payment-panel" style={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
         <PaymentPanel cart={cart.cart} total={cart.total} adjustedTotal={cart.adjustedTotal}
           effectiveTotal={cart.effectiveTotal} subtotal={cart.subtotal} iva={cart.iva}

@@ -56,6 +56,7 @@ export default function QuotesModule() {
   const { addToast } = usePanelContext();
   const [quotes, setQuotes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('all'); // all | draft | sent | approved | delivered | rejected
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null); // null = nuevo, número = editar
   const [detail, setDetail] = useState(null);
@@ -518,17 +519,48 @@ const handleStatus = async (id, status) => {
         <button onClick={() => setShowForm(true)} className="lp-btn lp-btn--primary" style={{ padding: '8px 20px', fontSize: '0.9rem' }}>Nuevo presupuesto</button>
       </div>
 
+      {/* Tabs de estado */}
+      {(() => {
+        const TABS = [
+          { key: 'all', label: 'Todos' },
+          { key: 'draft', label: 'Borrador' },
+          { key: 'sent', label: 'Enviado' },
+          { key: 'approved', label: 'Aprobado' },
+          { key: 'delivered', label: 'Entregado' },
+          { key: 'rejected', label: 'Rechazado' },
+        ];
+        const counts = {};
+        quotes.forEach(q => { counts[q.status] = (counts[q.status] || 0) + 1; });
+        return (
+          <div style={{ display: 'flex', gap: 4, flexShrink: 0, overflowX: 'auto', paddingBottom: 4 }}>
+            {TABS.map(t => {
+              const cnt = t.key === 'all' ? quotes.length : (counts[t.key] || 0);
+              const active = activeTab === t.key;
+              return (
+                <button key={t.key} onClick={() => setActiveTab(t.key)} style={{
+                  padding: '6px 14px', borderRadius: 20, fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap', border: 'none', flexShrink: 0,
+                  background: active ? 'var(--lp-primary)' : 'var(--lp-paper-sunken)',
+                  color: active ? 'white' : 'var(--lp-ink-faint)',
+                }}>
+                  {t.label}{cnt > 0 && !active ? ` (${cnt})` : ''}
+                </button>
+              );
+            })}
+          </div>
+        );
+      })()}
+
       {/* Lista */}
       <div style={{ flex: 1, overflow: 'auto' }}>
         {loading ? (
           <div style={{ color: 'var(--lp-ink-faint)', textAlign: 'center', padding: 40 }}>Cargando...</div>
-        ) : quotes.length === 0 ? (
+        ) : quotes.filter(q => activeTab === 'all' || q.status === activeTab).length === 0 ? (
           <div style={{ color: 'var(--lp-ink-faint)', textAlign: 'center', padding: 40 }}>
-            No hay presupuestos todavía.<br/>Creá el primero con el botón "Nuevo presupuesto".
+            {quotes.length === 0 ? <>No hay presupuestos todavía.<br/>Creá el primero con el botón "Nuevo presupuesto".</> : 'No hay presupuestos en este estado.'}
           </div>
         ) : (
           <div className="ledger-sheet" style={{ overflow: 'hidden' }}>
-            {quotes.map(q => {
+            {quotes.filter(q => activeTab === 'all' || q.status === activeTab).map(q => {
               let listLabel = 'Lista A';
               try {
                 const cfg = JSON.parse(localStorage.getItem('minegocio_config') || '{}');
