@@ -61,6 +61,9 @@ export default function CartPanel({ cart, total, adjustedTotal, updateQty, setIt
               <button onClick={() => setListType('b')} style={{ padding: '3px 9px', border: 'none', cursor: 'pointer',
                 background: listType === 'b' ? 'var(--lp-primary)' : 'transparent',
                 color: listType === 'b' ? '#fff' : 'var(--lp-ink-faint)', transition: 'all 0.15s' }}>B</button>
+              <button onClick={() => setListType('c')} style={{ padding: '3px 9px', border: 'none', cursor: 'pointer',
+                background: listType === 'c' ? 'var(--lp-primary)' : 'transparent',
+                color: listType === 'c' ? '#fff' : 'var(--lp-ink-faint)', transition: 'all 0.15s' }}>C</button>
             </div>
           )}
         </div>

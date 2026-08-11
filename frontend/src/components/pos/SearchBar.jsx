@@ -21,7 +21,10 @@ export default function SearchBar({
     return false;
   }, []);
 
-  const getPrice = (p) => (listType === 'b' ? p.price_b || p.price : p.price) || 0;
+  const getPrice = (p) => {
+    const map = { a: p.price, b: p.price_b, c: p.price_c, d: p.price_d, e: p.price_e };
+    return (map[listType] || p.price) || 0;
+  };
 
   const handleBarcodeScan = useCallback((code) => {
     if (!code || !productsDB) return;
@@ -145,7 +148,7 @@ export default function SearchBar({
               >
                 <span style={{ fontWeight: 600 }}>{p.name}</span>
                 <div style={{ display: 'flex', gap: '16px', color: 'var(--text-secondary)' }}>
-                  <span>${(listType === 'b' ? p.price_b || p.price : p.price)}</span>
+                  <span>${getPrice(p)}</span>
                   <span style={{ color: p.stock > 0 ? 'var(--accent-success)' : 'var(--accent-danger)' }}>Stock: {p.stock}</span>
                 </div>
               </button>
