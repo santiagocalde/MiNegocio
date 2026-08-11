@@ -211,7 +211,7 @@ async def revert_sale(sale_id: int, body: dict = Body(default={}), operator: str
 
 
 @router.post("/api/egresos", summary="Registrar egreso")
-async def create_egreso(request: Request, body: dict = Body(...)) -> dict:
+async def create_egreso(body: dict = Body(...)) -> dict:
     b_id = _biz_id()
     if USE_PG:
         from db_helpers import get_pg_pool
