@@ -219,21 +219,36 @@ export default function PurchasesModule() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
           {/* Tab pills */}
           {(activeTab === 'history' || activeTab === 'pending' || activeTab === 'pedido') && (
-            <div style={{ display: 'flex', gap: 4, background: 'var(--surface-veil)', borderRadius: 8, padding: 3 }}>
-              {[['history','Historial'],...(businessType === 'corralon' ? [['pending','⏳ Pendientes'],['pedido','📋 Hacer pedido']] : [])].map(([key, lbl]) => (
-                <button key={key} onClick={() => setActiveTab(key)}
-                  style={{ padding: '7px 14px', borderRadius: 6, border: 'none', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s',
-                    background: activeTab === key ? 'var(--sheet)' : 'transparent',
-                    color: activeTab === key ? 'var(--text-primary)' : 'var(--text-secondary)',
-                    boxShadow: activeTab === key ? '0 1px 4px rgba(0,0,0,0.12)' : 'none' }}>
-                  {lbl}
-                  {key === 'pending' && pendingPurchases.length > 0 && (
-                    <span style={{ marginLeft: 5, background: 'var(--accent-primary)', color: '#fff', borderRadius: 10, padding: '1px 6px', fontSize: '0.7rem' }}>
-                      {pendingPurchases.length}
-                    </span>
-                  )}
-                </button>
-              ))}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {/* Tabs de historial */}
+              <div style={{ display: 'flex', gap: 4, background: 'var(--surface-veil)', borderRadius: 8, padding: 3 }}>
+                {[['history', 'Facturas recibidas'], ...(businessType === 'corralon' ? [['pending', 'Por llegar']] : [])].map(([key, lbl]) => (
+                  <button key={key} onClick={() => setActiveTab(key)}
+                    style={{ padding: '7px 14px', borderRadius: 6, border: 'none', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s',
+                      background: activeTab === key ? 'var(--sheet)' : 'transparent',
+                      color: activeTab === key ? 'var(--text-primary)' : 'var(--text-secondary)',
+                      boxShadow: activeTab === key ? '0 1px 4px rgba(0,0,0,0.12)' : 'none' }}>
+                    {lbl}
+                    {key === 'pending' && pendingPurchases.length > 0 && (
+                      <span style={{ marginLeft: 5, background: 'var(--accent-primary)', color: '#fff', borderRadius: 10, padding: '1px 6px', fontSize: '0.7rem' }}>
+                        {pendingPurchases.length}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+              {/* Separador + botón de acción distinto */}
+              {businessType === 'corralon' && (
+                <>
+                  <div style={{ width: 1, height: 28, background: 'var(--border-color)' }} />
+                  <button onClick={() => setActiveTab('pedido')}
+                    style={{ padding: '7px 14px', borderRadius: 6, border: 'none', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s',
+                      background: activeTab === 'pedido' ? 'rgba(20,187,166,0.15)' : 'transparent',
+                      color: activeTab === 'pedido' ? 'var(--accent-primary)' : 'var(--text-secondary)' }}>
+                    📋 Pedir a proveedor
+                  </button>
+                </>
+              )}
             </div>
           )}
           {(activeTab === 'history' || activeTab === 'pedido') && (

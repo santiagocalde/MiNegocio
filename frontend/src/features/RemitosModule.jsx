@@ -41,7 +41,10 @@ function Checkbox({ checked, onChange }) {
 export default function RemitosModule() {
   const { addToast, auth } = usePanelContext();
   const location = useLocation();
-  const isDespacho = new URLSearchParams(location.search).get('filter') === 'today';
+  // Soporta ambos: tab interno Y URL legacy ?filter=today (para deep-links desde sidebar viejo)
+  const urlIsDespacho = new URLSearchParams(location.search).get('filter') === 'today';
+  const [activeTab, setActiveTab] = useState(() => urlIsDespacho ? 'despacho' : 'notas');
+  const isDespacho = activeTab === 'despacho';
 
   const [notas, setNotas]           = useState([]);
   const [loading, setLoading]       = useState(true);
@@ -464,17 +467,23 @@ ${stopRows}
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', gap: 10, overflow: 'hidden', padding: '12px 20px' }}>
 
-      {/* ── Header ── */}
+      {/* ── Header con tabs ── */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0, gap: 10 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <h2 style={{ fontFamily: 'var(--lp-font-display)', fontSize: '1.3rem', fontWeight: 700, color: 'var(--lp-ink)', margin: 0, letterSpacing: '-0.02em' }}>
-            {title}
-          </h2>
-          {isDespacho && (
-            <span style={{ fontSize: '0.75rem', background: 'rgba(59,130,246,0.12)', color: '#3B82F6', padding: '2px 10px', borderRadius: 20, fontWeight: 700 }}>
-              {new Date().toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'short' })}
-            </span>
-          )}
+        <div style={{ display: 'flex', gap: 4, background: 'var(--lp-paper-sunken)', borderRadius: 8, padding: 3 }}>
+          {[['notas', '📋 Notas de pedido'], ['despacho', '🚚 Despacho del día']].map(([key, label]) => (
+            <button key={key} onClick={() => { setActiveTab(key); setSelected(new Set()); }}
+              style={{ padding: '7px 16px', borderRadius: 6, border: 'none', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s',
+                background: activeTab === key ? 'var(--lp-paper-raised)' : 'transparent',
+                color: activeTab === key ? 'var(--lp-ink)' : 'var(--lp-ink-faint)',
+                boxShadow: activeTab === key ? 'var(--lp-shadow-sm)' : 'none' }}>
+              {label}
+              {key === 'despacho' && (
+                <span style={{ marginLeft: 6, fontSize: '0.68rem', color: activeTab === key ? '#3B82F6' : 'var(--lp-ink-faint)', fontWeight: 800 }}>
+                  {new Date().toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })}
+                </span>
+              )}
+            </button>
+          ))}
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           {isDespacho && notas.length > 0 && (
@@ -483,7 +492,7 @@ ${stopRows}
               ☑ Seleccionar pendientes
             </button>
           )}
-          {!isLogistica && (
+          {!isDespacho && !isLogistica && (
             <button onClick={() => setShowForm(true)} className="lp-btn lp-btn--primary" style={{ padding: '8px 18px', fontSize: '0.85rem' }}>
               + Nueva nota
             </button>

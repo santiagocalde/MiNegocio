@@ -155,8 +155,7 @@ export default function Sidebar({
         category: 'LOGÍSTICA',
         roles: ['admin', 'manager', 'logistica'],
         items: [
-          { label: 'Notas de pedido', path: '/panel/remitos', icon: 'Truck', roles: ['admin', 'manager'] },
-          { label: 'Despacho del día', path: '/panel/remitos?filter=today', icon: 'Clock', roles: ['admin', 'manager', 'logistica'] },
+          { label: 'Notas de pedido', path: '/panel/remitos', icon: 'Truck', roles: ['admin', 'manager', 'logistica'] },
         ],
       },
       {

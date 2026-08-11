@@ -120,10 +120,6 @@ export default function AcopiosModule() {
   const [withdrawalType, setWithdrawalType] = useState('retiro'); // 'retiro' | 'entrega'
   const [withdrawalAddress, setWithdrawalAddress] = useState('');
   const [lastWithdrawal, setLastWithdrawal] = useState(null); // para ofrecer imprimir
-  const [activeTab, setActiveTab] = useState('acopios'); // 'acopios' | 'despachos'
-  const [despachos, setDespachos] = useState([]);
-  const [despachosFecha, setDespachosFecha] = useState(''); // '' = últimos 30 días; 'YYYY-MM-DD' = día exacto
-  const [despachosLoading, setDespachosLoading] = useState(false);
   const [rescheduleModal, setRescheduleModal] = useState(null); // { wid, customerName }
   const [rescheduleDate, setRescheduleDate] = useState('');
   const [rescheduling, setRescheduling] = useState(false);
@@ -151,40 +147,6 @@ export default function AcopiosModule() {
     setLoading(false);
   }, []);
 
-  const fetchDespachos = useCallback(async (fecha) => {
-    setDespachosLoading(true);
-    try {
-      const dateParam = fecha ? `?fecha=${fecha}` : '';
-      const [rAcopios, rRemitos] = await Promise.all([
-        apiGet(`/acopios/despachos${dateParam}`),
-        apiGet(`/remitos${fecha ? '?fecha=' + fecha : ''}`),
-      ]);
-
-      const acopiosData = rAcopios.ok ? (await rAcopios.json()) : [];
-      const remitosData = rRemitos.ok ? (await rRemitos.json()) : [];
-
-      // Mapear remitos al formato de despachos
-      const remitosMapped = (Array.isArray(remitosData) ? remitosData : []).map(r => ({
-        withdrawal_id: `r-${r.id}`,
-        acopio_id: null,
-        is_remito: true,
-        remito_id: r.id,
-        customer_name: r.customer_name || 'Sin cliente',
-        customer_address: r.address || '',
-        notes: '',
-        driver: r.driver || '',
-        items_summary: 'Nota de pedido N° ' + r.id,
-        created_at: r.created_at || r.scheduled_date,
-        status: r.status === 'postponed' ? 'rescheduled' : r.status,
-        rescheduled_date: r.status === 'postponed' ? r.scheduled_date : null,
-      }));
-
-      const merged = [...acopiosData, ...remitosMapped];
-      merged.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
-      setDespachos(merged);
-    } catch {}
-    setDespachosLoading(false);
-  }, []);
 
   const handleReschedule = async () => {
     if (!rescheduleModal || !rescheduleDate) return;
@@ -193,11 +155,6 @@ export default function AcopiosModule() {
       const r = await apiPost(`/acopios/withdrawals/${rescheduleModal.wid}/reschedule`, { new_date: rescheduleDate });
       if (r.ok) {
         addToast?.('Entrega reprogramada.', 'success');
-        setDespachos(prev => prev.map(d =>
-          d.withdrawal_id === rescheduleModal.wid
-            ? { ...d, status: 'rescheduled', rescheduled_date: rescheduleDate }
-            : d
-        ));
         setRescheduleModal(null);
         setRescheduleDate('');
       } else {
@@ -230,9 +187,6 @@ export default function AcopiosModule() {
   };
 
   useEffect(() => { fetch(); }, [fetch]);
-  useEffect(() => {
-    if (activeTab === 'despachos') fetchDespachos(despachosFecha);
-  }, [activeTab, despachosFecha, fetchDespachos]);
 
   const handleSearch = async (q) => {
     setProductSearch(q);
@@ -330,9 +284,7 @@ export default function AcopiosModule() {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
         <h2 style={{ fontFamily: 'var(--lp-font-display)', fontSize: '1.3rem', fontWeight: 700, color: 'var(--lp-ink)', margin: 0, letterSpacing: '-0.02em' }}>📦 Acopios</h2>
-        {activeTab === 'acopios' && (
-          <button onClick={() => setShowForm(true)} className="lp-btn lp-btn--primary" style={{ padding: '8px 18px', fontSize: '0.85rem' }}>Nuevo acopio</button>
-        )}
+        <button onClick={() => setShowForm(true)} className="lp-btn lp-btn--primary" style={{ padding: '8px 18px', fontSize: '0.85rem' }}>Nuevo acopio</button>
       </div>
 
       {/* Banner imprimir tras retiro exitoso */}
@@ -352,9 +304,7 @@ export default function AcopiosModule() {
       )}
 
       <div style={{ flex: 1, overflow: 'auto' }}>
-        {/* === TAB ACOPIOS === */}
-        {activeTab === 'acopios' && (
-          loading ? (
+        {loading ? (
             <div style={{ color: 'var(--lp-ink-faint)', textAlign: 'center', padding: 40 }}>Cargando...</div>
           ) : acopios.length === 0 ? (
             <div style={{ color: 'var(--lp-ink-faint)', textAlign: 'center', padding: 40 }}>No hay acopios activos.</div>
@@ -391,7 +341,6 @@ export default function AcopiosModule() {
                 );
               })}
             </div>
-          )
         )}
 
       </div>
