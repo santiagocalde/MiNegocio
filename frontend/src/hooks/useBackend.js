@@ -158,8 +158,10 @@ export default function useBackend(currentOperator, currentTurnId, currentSucurs
         setEgresoMotivo('');
         setEgresoType('gasto');
       } else {
-        const err = await res.json().catch(() => ({}));
-        addToast(err.detail || 'Error al registrar egreso', 'error');
+        const text = await res.text().catch(() => '');
+        let detail = text;
+        try { detail = JSON.parse(text).detail || detail; } catch {}
+        addToast(detail || `Error ${res.status} al registrar egreso`, 'error');
       }
     } catch { addToast('Error de conexión', 'error'); }
   }, [egresoMonto, egresoMotivo, egresoType, currentTurnId, currentOperator, addToast]);
