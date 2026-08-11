@@ -221,9 +221,12 @@ async def create_egreso(body: dict = Body(...)) -> dict:
             motivo = body.get("motivo") or ""
             tipo = body.get("type", "gasto")
             operador = body.get("operator", "Sistema")
+            turn_id = body.get("turn_id")
+            try: turn_id = int(turn_id) if turn_id is not None else None
+            except (ValueError, TypeError): turn_id = None
             await conn.execute(
                 "INSERT INTO egresos_caja (business_id, turn_id, monto, motivo, type, operator) VALUES ($1,$2,$3,$4,$5,$6)",
-                b_id, body.get("turn_id"), monto, motivo, tipo, operador
+                b_id, turn_id, monto, motivo, tipo, operador
             )
             await conn.execute(
                 "INSERT INTO audit_log (business_id, action, operator, details) VALUES ($1,$2,$3,$4)",
@@ -237,9 +240,12 @@ async def create_egreso(body: dict = Body(...)) -> dict:
             motivo = body.get("motivo") or ""
             tipo = body.get("type", "gasto")
             operador = body.get("operator", "Sistema")
+            turn_id = body.get("turn_id")
+            try: turn_id = int(turn_id) if turn_id is not None else None
+            except (ValueError, TypeError): turn_id = None
             await db.execute(
                 "INSERT INTO egresos_caja (turn_id, monto, motivo, type, operator) VALUES (?,?,?,?,?)",
-                (body.get("turn_id"), monto, motivo, tipo, operador)
+                (turn_id, monto, motivo, tipo, operador)
             )
             await db.execute(
                 "INSERT INTO audit_log (action, operator, details) VALUES (?,?,?)",
