@@ -126,12 +126,16 @@ async def ganancias_report(desde: Optional[str] = None, hasta: Optional[str] = N
             egreso_where = " AND ".join(egreso_clauses)
 
             rows = await conn.fetch(f"""
-                SELECT date_trunc('month', s.timestamp)::date as mes,
-                       COALESCE(SUM(s.total), 0) as ingresos,
-                       COALESCE(SUM(COALESCE(si.unit_cost, 0) * si.quantity), 0) as costo
-                FROM sales s
-                LEFT JOIN sale_items si ON si.sale_id = s.id
-                WHERE {sale_where}
+                SELECT mes, COALESCE(SUM(ingresos), 0) as ingresos, COALESCE(SUM(costo), 0) as costo
+                FROM (
+                    SELECT date_trunc('month', s.timestamp)::date as mes,
+                           s.total as ingresos,
+                           COALESCE(SUM(COALESCE(si.unit_cost, 0) * si.quantity), 0) as costo
+                    FROM sales s
+                    LEFT JOIN sale_items si ON si.sale_id = s.id
+                    WHERE {sale_where}
+                    GROUP BY s.id
+                ) sq
                 GROUP BY 1
             """, *params)
 
@@ -167,12 +171,16 @@ async def ganancias_report(desde: Optional[str] = None, hasta: Optional[str] = N
             egr_where = sale_where.replace("s.timestamp", "e.timestamp")
 
             cur = await db.execute(f"""
-                SELECT strftime('%Y-%m', s.timestamp) as mes,
-                       COALESCE(SUM(s.total), 0) as ingresos,
-                       COALESCE(SUM(COALESCE(si.unit_cost, 0) * si.quantity), 0) as costo
-                FROM sales s
-                LEFT JOIN sale_items si ON si.sale_id = s.id
-                {sale_where}
+                SELECT mes, COALESCE(SUM(ingresos), 0) as ingresos, COALESCE(SUM(costo), 0) as costo
+                FROM (
+                    SELECT strftime('%Y-%m', s.timestamp) as mes,
+                           s.total as ingresos,
+                           COALESCE(SUM(COALESCE(si.unit_cost, 0) * si.quantity), 0) as costo
+                    FROM sales s
+                    LEFT JOIN sale_items si ON si.sale_id = s.id
+                    {sale_where}
+                    GROUP BY s.id
+                ) sq
                 GROUP BY 1
             """, tuple(params))
             rows = [row_to_dict(r, cur.description) for r in await cur.fetchall()]
