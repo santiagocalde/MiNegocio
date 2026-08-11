@@ -78,29 +78,33 @@ export default function LandingNav({
             <button className="lp-nav-link">
               Info <Svg.ChevronRight />
             </button>
-            <div id="info-dropdown" style={{ opacity: 0, pointerEvents: 'none', transform: 'translateX(-50%) translateY(-10px)', transition: 'all 0.2s', position: 'absolute', top: '100%', left: '50%', background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line)', borderRadius: 14, padding: 8, display: 'flex', flexDirection: 'column', minWidth: 240, boxShadow: 'var(--lp-shadow-md)' }}>
-              <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--lp-ink-faint)', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '6px 12px 2px' }}>Empresa</div>
-              <a onClick={(e) => { e.preventDefault(); navigate('/nosotros'); }} className="lp-dropdown-item">Sobre Nosotros</a>
-              <a onClick={(e) => { e.preventDefault(); navigate('/soporte'); }} className="lp-dropdown-item">Soporte</a>
-              <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--lp-ink-faint)', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '10px 12px 2px' }}>Recursos</div>
-              <a href="/blog/" className="lp-dropdown-item">Blog</a>
-              <a href="/glosario/" className="lp-dropdown-item">Glosario</a>
-              <a href="/pos-sin-internet/" className="lp-dropdown-item">Sistema sin internet</a>
-              <a href="/sistema-fiados/" className="lp-dropdown-item">Control de fiados</a>
-              <a href="/comparar-sistemas-para-kioscos/" className="lp-dropdown-item">Comparar sistemas</a>
-              <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--lp-ink-faint)', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '10px 12px 2px' }}>Por rubro</div>
-              <a href="/software-kiosco/" className="lp-dropdown-item">Kioscos y almacenes</a>
-              <a href="/software-vineria/" className="lp-dropdown-item">Vinerias</a>
-              <a href="/software-almacen/" className="lp-dropdown-item">Almacenes</a>
-              <a href="/software-ferreteria/" className="lp-dropdown-item">Ferreterias</a>
-              <a href="/software-dietetica/" className="lp-dropdown-item">Dieteticas</a>
-              <a href="/software-corralon-materiales/" className="lp-dropdown-item" style={{ fontWeight: 700, color: 'var(--lp-primary)' }}>Corralones de materiales</a>
-              <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--lp-ink-faint)', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '10px 12px 2px' }}>Ciudades</div>
-              <a href="/pos-buenos-aires/" className="lp-dropdown-item">Buenos Aires</a>
-              <a href="/pos-rosario/" className="lp-dropdown-item">Rosario</a>
-              <a href="/pos-cordoba/" className="lp-dropdown-item">C??rdoba</a>
-              <a href="/pos-mar-del-plata/" className="lp-dropdown-item">Mar del Plata</a>
-              <a href="/pos-mendoza/" className="lp-dropdown-item">Mendoza</a>
+            <div id="info-dropdown" style={{ opacity: 0, pointerEvents: 'none', transform: 'translateX(-50%) translateY(-10px)', transition: 'all 0.2s', position: 'absolute', top: '100%', left: '50%', background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line)', borderRadius: 14, padding: 10, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 24px', width: 520, maxWidth: '90vw', boxShadow: 'var(--lp-shadow-md)' }}>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--lp-ink-faint)', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '6px 12px 2px' }}>Recursos</div>
+                <a href="/blog/" className="lp-dropdown-item">Blog</a>
+                <a href="/glosario/" className="lp-dropdown-item">Glosario</a>
+                <a href="/pos-sin-internet/" className="lp-dropdown-item">Sistema sin internet</a>
+                <a href="/sistema-fiados/" className="lp-dropdown-item">Control de fiados</a>
+                <a href="/comparar-sistemas-para-kioscos/" className="lp-dropdown-item">Comparar sistemas</a>
+                <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--lp-ink-faint)', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '10px 12px 2px' }}>Empresa</div>
+                <a onClick={(e) => { e.preventDefault(); navigate('/nosotros'); }} className="lp-dropdown-item">Sobre Nosotros</a>
+                <a onClick={(e) => { e.preventDefault(); navigate('/soporte'); }} className="lp-dropdown-item">Soporte</a>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--lp-ink-faint)', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '6px 12px 2px' }}>Por rubro</div>
+                <a href="/software-kiosco/" className="lp-dropdown-item">Kioscos y almacenes</a>
+                <a href="/software-vineria/" className="lp-dropdown-item">Vinerias</a>
+                <a href="/software-almacen/" className="lp-dropdown-item">Almacenes</a>
+                <a href="/software-ferreteria/" className="lp-dropdown-item">Ferreterias</a>
+                <a href="/software-dietetica/" className="lp-dropdown-item">Dieteticas</a>
+                <a href="/software-corralon-materiales/" className="lp-dropdown-item" style={{ fontWeight: 700, color: 'var(--lp-primary)' }}>Corralones de materiales</a>
+                <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--lp-ink-faint)', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '10px 12px 2px' }}>Ciudades</div>
+                <a href="/pos-buenos-aires/" className="lp-dropdown-item">Buenos Aires</a>
+                <a href="/pos-rosario/" className="lp-dropdown-item">Rosario</a>
+                <a href="/pos-cordoba/" className="lp-dropdown-item">Córdoba</a>
+                <a href="/pos-mar-del-plata/" className="lp-dropdown-item">Mar del Plata</a>
+                <a href="/pos-mendoza/" className="lp-dropdown-item">Mendoza</a>
+              </div>
             </div>
           </div>
         </div>
