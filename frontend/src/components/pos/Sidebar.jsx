@@ -86,7 +86,7 @@ const ICON_MAP = {
 
 export default function Sidebar({
   currentOperator, pendingSync, setShowPendingModal,
-  todaySalesTotal, totalEgresos, setShowResumen, setShowEgreso, setIsClosingCaja, currentTurnId, turnOpenedAt, initialCash
+  todaySalesTotal, cashSalesTotal, totalEgresos, setShowResumen, setShowEgreso, setIsClosingCaja, currentTurnId, turnOpenedAt, initialCash
 }) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -300,7 +300,7 @@ export default function Sidebar({
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 700, paddingTop: '4px', borderTop: '1px solid var(--border-color)' }}>
               <span style={{ color: 'var(--text-primary)', fontSize: '0.75rem', fontWeight: 800 }}>EFT en caja</span>
               <span style={{ color: 'var(--accent-primary)', fontSize: 'var(--fs-sm)', fontFamily: 'var(--font-mono)', fontWeight: 800 }}>
-                ${((initialCash || 0) + (todaySalesTotal || 0) - (totalEgresos || 0)).toLocaleString('es-AR')}
+                ${((initialCash || 0) + (cashSalesTotal || 0) - (totalEgresos || 0)).toLocaleString('es-AR')}
               </span>
             </div>
           )}

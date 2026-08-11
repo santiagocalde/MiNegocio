@@ -11,6 +11,7 @@ export default function useBackend(currentOperator, currentTurnId, currentSucurs
   const [backendLastOk, setBackendLastOk] = useState(null);
   const [pendingSync, setPendingSync] = useState(0);
   const [todaySalesTotal, setTodaySalesTotal] = useState(0);
+  const [cashSalesTotal, setCashSalesTotal] = useState(0);
   const [totalEgresos, setTotalEgresos] = useState(0);
   const [operators, setOperators] = useState([]);
   const [sucursales, setSucursales] = useState([]);
@@ -233,6 +234,7 @@ export default function useBackend(currentOperator, currentTurnId, currentSucurs
                     fetchProductsDB();
                     apiGet(`/sales/today?sucursal_id=${currentSucursalId}`).then(r => r.json()).then(d => {
                       setTodaySalesTotal((d.total_efectivo || 0) + (d.total_tarjeta || 0) + (d.total_transferencia || 0) + (d.total_mp || 0) + (d.total_fiado || 0));
+                      setCashSalesTotal(d.total_efectivo || 0);
                       setResumenData(d);
                       setTotalEgresos(d.total_egresos || 0);
                     }).catch(() => {});
@@ -271,6 +273,7 @@ export default function useBackend(currentOperator, currentTurnId, currentSucurs
           fetchProductsDB();
           apiGet(`/sales/today?sucursal_id=${currentSucursalId}`).then(r => r.json()).then(d => {
             setTodaySalesTotal((d.total_efectivo || 0) + (d.total_tarjeta || 0) + (d.total_transferencia || 0) + (d.total_mp || 0) + (d.total_fiado || 0));
+            setCashSalesTotal(d.total_efectivo || 0);
             setResumenData(d);
             setTotalEgresos(d.total_egresos || 0);
           }).catch(() => {});
@@ -300,6 +303,7 @@ export default function useBackend(currentOperator, currentTurnId, currentSucurs
             const todayRes = await apiGet(`/sales/today?sucursal_id=${currentSucursalId}`);
             const todayData = await todayRes.json();
             setTodaySalesTotal((todayData.total_efectivo || 0) + (todayData.total_tarjeta || 0) + (todayData.total_transferencia || 0) + (todayData.total_mp || 0) + (todayData.total_fiado || 0));
+            setCashSalesTotal(todayData.total_efectivo || 0);
             setResumenData(todayData);
             setTotalEgresos(todayData.total_egresos || 0);
           } catch (e) { console.error(e) }
@@ -368,6 +372,7 @@ export default function useBackend(currentOperator, currentTurnId, currentSucurs
     backendLastOk, setBackendLastOk,
     pendingSync, setPendingSync,
     todaySalesTotal, setTodaySalesTotal,
+    cashSalesTotal, setCashSalesTotal,
     totalEgresos, setTotalEgresos,
     operators, setOperators,
     sucursales, setSucursales,
