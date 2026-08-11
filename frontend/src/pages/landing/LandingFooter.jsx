@@ -80,11 +80,11 @@ export default function LandingFooter({ navigate, setShowContactModal, handleDog
           border-top: 1px solid var(--lp-line);
           padding: 56px 24px 28px;
         }
-        .ftr-inner { max-width: 1160px; margin: 0 auto; }
+        .ftr-inner { max-width: 1280px; margin: 0 auto; }
         .ftr-grid {
           display: grid;
-          grid-template-columns: 1.4fr 1fr 1fr 1fr 1fr;
-          gap: 48px;
+          grid-template-columns: 1.3fr 1fr 1fr 1fr 1fr 1fr;
+          gap: 32px;
         }
         /* ── Columna de marca ── */
         .ftr-brand { max-width: 340px; }
