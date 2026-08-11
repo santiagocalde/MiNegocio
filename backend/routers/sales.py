@@ -558,9 +558,9 @@ async def today_sales(sucursal_id: Optional[int] = Query(None)) -> dict:
                            COALESCE(SUM(CASE WHEN payment_method='tarjeta' THEN total ELSE 0 END),0) as total_tarjeta,
                            COALESCE(SUM(CASE WHEN payment_method='transferencia' THEN total ELSE 0 END),0) as total_transferencia,
                            COALESCE(SUM(CASE WHEN payment_method='mercadopago' THEN total ELSE 0 END),0) as total_mp
-                    FROM sales WHERE business_id = $1 AND timestamp >= current_date AND timestamp < current_date + interval '1 day' AND sucursal_id = $2
+                     FROM sales WHERE business_id = $1 AND timestamp >= date_trunc('day', now() AT TIME ZONE 'America/Argentina/Buenos_Aires') AT TIME ZONE 'America/Argentina/Buenos_Aires' AND timestamp < date_trunc('day', now() AT TIME ZONE 'America/Argentina/Buenos_Aires') AT TIME ZONE 'America/Argentina/Buenos_Aires' + INTERVAL '1 day' AND sucursal_id = $2
                 """, b_id, sucursal_id)
-                egresos_row = await conn.fetchrow("SELECT COALESCE(SUM(monto),0) as total_egresos FROM egresos_caja WHERE business_id = $1 AND timestamp >= current_date AND timestamp < current_date + interval '1 day'", b_id)
+                egresos_row = await conn.fetchrow("SELECT COALESCE(SUM(monto),0) as total_egresos FROM egresos_caja WHERE business_id = $1 AND timestamp >= date_trunc('day', now() AT TIME ZONE 'America/Argentina/Buenos_Aires') AT TIME ZONE 'America/Argentina/Buenos_Aires' AND timestamp < date_trunc('day', now() AT TIME ZONE 'America/Argentina/Buenos_Aires') AT TIME ZONE 'America/Argentina/Buenos_Aires' + INTERVAL '1 day'", b_id)
             else:
                 row = await conn.fetchrow("""
                     SELECT COUNT(*) as total_tickets, COALESCE(SUM(total),0) as total_vendido,
@@ -569,9 +569,9 @@ async def today_sales(sucursal_id: Optional[int] = Query(None)) -> dict:
                            COALESCE(SUM(CASE WHEN payment_method='tarjeta' THEN total ELSE 0 END),0) as total_tarjeta,
                            COALESCE(SUM(CASE WHEN payment_method='transferencia' THEN total ELSE 0 END),0) as total_transferencia,
                            COALESCE(SUM(CASE WHEN payment_method='mercadopago' THEN total ELSE 0 END),0) as total_mp
-                    FROM sales WHERE business_id = $1 AND timestamp >= current_date AND timestamp < current_date + interval '1 day'
+                     FROM sales WHERE business_id = $1 AND timestamp >= date_trunc('day', now() AT TIME ZONE 'America/Argentina/Buenos_Aires') AT TIME ZONE 'America/Argentina/Buenos_Aires' AND timestamp < date_trunc('day', now() AT TIME ZONE 'America/Argentina/Buenos_Aires') AT TIME ZONE 'America/Argentina/Buenos_Aires' + INTERVAL '1 day'
                 """, b_id)
-                egresos_row = await conn.fetchrow("SELECT COALESCE(SUM(monto),0) as total_egresos FROM egresos_caja WHERE business_id = $1 AND timestamp >= current_date AND timestamp < current_date + interval '1 day'", b_id)
+                egresos_row = await conn.fetchrow("SELECT COALESCE(SUM(monto),0) as total_egresos FROM egresos_caja WHERE business_id = $1 AND timestamp >= date_trunc('day', now() AT TIME ZONE 'America/Argentina/Buenos_Aires') AT TIME ZONE 'America/Argentina/Buenos_Aires' AND timestamp < date_trunc('day', now() AT TIME ZONE 'America/Argentina/Buenos_Aires') AT TIME ZONE 'America/Argentina/Buenos_Aires' + INTERVAL '1 day'", b_id)
             result = dict(row) if row else {"total_tickets": 0, "total_vendido": 0, "total_fiado": 0, "total_efectivo": 0, "total_tarjeta": 0, "total_transferencia": 0, "total_mp": 0}
             result["total_egresos"] = float(egresos_row["total_egresos"] or 0) if egresos_row else 0
             return result
