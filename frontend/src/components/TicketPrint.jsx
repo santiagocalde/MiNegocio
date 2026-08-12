@@ -2,32 +2,23 @@ import { useEffect, useRef } from 'react';
 import QRCode from 'qrcode';
 
 /*
-  TicketPrint — Ticket térmico estilo Coto/supermercado (80mm)
-  Se muestra oculto en la pantalla y aparece al imprimir (Ctrl+P / window.print())
-  El ancho real de la ticketera es ~42 chars en fuente monospace 12px.
+  TicketPrint ??? Ticket termico 80mm
+  Estructurado con HTML/CSS, no monospace hackeado.
 */
 
-const LINE = '─'.repeat(42);
-const DLINE = '═'.repeat(42);
+const fmt = (n) => (typeof n === 'number' ? n.toLocaleString('es-AR') : n);
+const F = (n) => '$' + (typeof n === 'number' ? n.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : n);
 
-function center(text, width = 42) {
-  const pad = Math.max(0, Math.floor((width - text.length) / 2));
-  return ' '.repeat(pad) + text;
-}
-
-function formatRow(name, qty, price, total, width = 42) {
-  // "2x Coca Cola 500ml         $2.400"
-  const qtyStr = `${qty}x `;
-  const totalStr = `$${total.toLocaleString('es-AR')}`;
-  const maxName = width - qtyStr.length - totalStr.length - 1;
-  const truncName = name.length > maxName ? name.slice(0, maxName - 1) + '…' : name.padEnd(maxName);
-  return qtyStr + truncName + ' ' + totalStr;
-}
-
-function rAlign(label, value, width = 42) {
-  const v = `$${typeof value === 'number' ? value.toLocaleString('es-AR') : value}`;
-  const pad = Math.max(1, width - label.length - v.length);
-  return label + ' '.repeat(pad) + v;
+function ItemRow({ item }) {
+  const lineTotal = item.price * (item.qty || 1);
+  return (
+    <tr className="t-row">
+      <td className="t-qty">{item.qty || 1}x</td>
+      <td className="t-name">{item.name}</td>
+      <td className="t-price">{F(item.price)}</td>
+      <td className="t-ltotal">{F(lineTotal)}</td>
+    </tr>
+  );
 }
 
 export default function TicketPrint({ cart, total, payment, change, operator, ticketNumber, config, isClosingShift, shiftData, tipoFactura, afip, paymentMethod }) {
@@ -46,129 +37,141 @@ export default function TicketPrint({ cart, total, payment, change, operator, ti
   const instagram = config?.instagram || '';
   const cuit = config?.cuit || '';
   const condicion = config?.condicion_iva || 'Monotributista';
-  const mensaje = config?.mensaje_ticket || '¡Gracias por su compra!';
+  const mensaje = config?.mensaje_ticket || 'Gracias por su compra';
   const numeroCaja = config?.numero_caja || 'CAJA 1';
   const logoUrl = config?.logo_url || '';
-  
   const isFacturaA = tipoFactura === 'A';
 
   const qrCanvasRef = useRef(null);
 
   useEffect(() => {
     if (afip?.cae && qrCanvasRef.current) {
-      const qrUrl = `https://afip.gob.ar/fe/comprobante?cae=${afip.cae}`;
-      QRCode.toCanvas(qrCanvasRef.current, qrUrl, {
-        width: 140,
-        margin: 2,
-        color: { dark: '#1E3A5F', light: '#fff' }
+      QRCode.toCanvas(qrCanvasRef.current, `https://afip.gob.ar/fe/comprobante?cae=${afip.cae}`, {
+        width: 140, margin: 2, color: { dark: '#1E3A5F', light: '#fff' }
       });
     }
   }, [afip]);
 
+  const hr = <hr className="t-hr" />;
+
+  if (isClosingShift) {
+    const diff = (shiftData?.counted_cash || 0) - (shiftData?.sales_total || 0);
+    return (
+      <div className="ticket-print-area">
+        <div className="t-header">
+          <div className="t-title">CIERRE DE TURNO</div>
+          <div className="t-subtitle">{nombre.toUpperCase()}</div>
+        </div>
+        {hr}
+        <table className="t-inline"><tbody>
+          <tr><td className="t-lef">Operador</td><td className="t-rit">{shiftData?.operator || operator}</td></tr>
+          <tr><td className="t-lef">Fecha</td><td className="t-rit">{fecha}  {hora}</td></tr>
+          <tr><td className="t-lef">Apertura</td><td className="t-rit">{shiftData?.opened_at ? new Date(shiftData.opened_at).toLocaleTimeString('es-AR', {hour:'2-digit',minute:'2-digit'}) : '--:--'}</td></tr>
+        </tbody></table>
+        {hr}
+        <div className="t-section-title">RESUMEN DE VENTAS</div>
+        <table className="t-inline"><tbody>
+          <tr><td className="t-lef">Total tickets</td><td className="t-rit">{fmt(shiftData?.total_tickets || 0)}</td></tr>
+          <tr><td className="t-lef">Ventas efectivo</td><td className="t-rit">{F(shiftData?.total_efectivo || 0)}</td></tr>
+          {shiftData?.total_fiado > 0 && <tr><td className="t-lef">Ventas fiado</td><td className="t-rit">{F(shiftData.total_fiado)}</td></tr>}
+          <tr className="t-total-row"><td className="t-lef">TOTAL SISTEMA</td><td className="t-rit">{F((shiftData?.total_efectivo || 0) + (shiftData?.total_fiado || 0))}</td></tr>
+        </tbody></table>
+        {hr}
+        <div className="t-section-title">TOP PRODUCTOS</div>
+        <table className="t-inline"><tbody>
+          {(shiftData?.top_products || []).slice(0, 5).map((p, i) => (
+            <tr key={i}><td className="t-lef">{i + 1}. {p.product_name.slice(0, 28)}</td><td className="t-rit">x{p.qty}</td></tr>
+          ))}
+        </tbody></table>
+        {hr}
+        <div className="t-section-title">BALANCE DE CAJA</div>
+        <table className="t-inline"><tbody>
+          <tr><td className="t-lef">Sistema dice</td><td className="t-rit">{F(shiftData?.sales_total || 0)}</td></tr>
+          <tr><td className="t-lef">Efectivo contado</td><td className="t-rit">{F(shiftData?.counted_cash || 0)}</td></tr>
+        </tbody></table>
+        {hr}
+        <div className="t-center">
+          {diff === 0 ? 'CAJA PERFECTA' : diff > 0 ? `SOBRA ${F(Math.abs(diff))}` : `FALTA ${F(Math.abs(diff))}`}
+        </div>
+        <div style={{ marginTop: 20, textAlign: 'center' }}>
+          <div style={{ marginBottom: 24 }}>Firma del operador</div>
+          <div>_____________________</div>
+          <div style={{ marginTop: 4, fontWeight: 700 }}>{shiftData?.operator || operator}</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="ticket-print-area">
-      {logoUrl && <div style={{ textAlign: 'center', padding: '4px 0' }}><img src={logoUrl} style={{ maxHeight: '48px', maxWidth: '150px', objectFit: 'contain' }} alt="logo" /></div>}
-      {!isClosingShift ? (
-        /* ═══════════════════════════════ TICKET DE VENTA ═══════════════════════════════ */
-        <pre className="ticket-body">
-{DLINE}
-{center(nombre.toUpperCase())}
-{subtitulo ? center(subtitulo) : ''}
-{direccion ? center(direccion) : ''}
-{telefono ? center(`Tel: ${telefono}`) : ''}
-{instagram ? center(`IG: ${instagram}`) : ''}
-{DLINE}
-{`CUIT: ${cuit}`}
-{`Cond. IVA: ${condicion}`}
-{LINE}
-{`CAJERO: ${operator || 'Sistema'}`}
-{`${numeroCaja}   TICKET: #${String(ticketNumber || 1).padStart(5, '0')}`}
-{`FECHA: ${fecha}   HORA: ${hora}`}
-{LINE}
-{'CANT  DESCRIPCIÓN                  PRECIO'}
-{LINE}
-{(cart || []).map(item =>
-  formatRow(item.name, item.qty, item.price, item.price * item.qty)
-).join('\n')}
-{LINE}
-{isFacturaA ? (
-  <>
-{rAlign('SUBTOTAL NETO:', subtotal.toFixed(2))}
-{rAlign(`IVA (${ivaRate}%):`, iva.toFixed(2))}
-{LINE}
-  </>
-) : (
-  <>
-{center('El precio incluye IVA')}
-  </>
-)}
-{rAlign('*** TOTAL:', total)}
-{LINE}
-{rAlign(`${(paymentMethod || 'EFECTIVO').toUpperCase()}:`, payment)}
-{rAlign('VUELTO:', change >= 0 ? change : 0)}
-{LINE}
-{center(mensaje)}
-{center('¡Vuelva pronto!')}
-{afip && afip.cae ? (
-  <>
-{DLINE}
-{center('DATOS AFIP (Punto 34)')}
-{`CAE: ${afip.cae}`}
-{`Vto CAE: ${afip.vto}`}
-{`Comprobante: ${tipoFactura} N° ${afip.cbte}`}
-{DLINE}
-<div style={{ textAlign: 'center', margin: '8px 0' }}>
-  <canvas ref={qrCanvasRef} style={{ width: 140, height: 140 }} />
-</div>
-  </>
-) : null}
-{DLINE}
-{center(`MiNegocio v1.0`)}
-        </pre>
+      {logoUrl && <div style={{ textAlign: 'center', paddingBottom: 6 }}><img src={logoUrl} style={{ maxHeight: 44, maxWidth: 140, objectFit: 'contain' }} alt="logo" /></div>}
+      <div className="t-header">
+        <div className="t-title">{nombre.toUpperCase()}</div>
+        {subtitulo && <div className="t-subtitle">{subtitulo}</div>}
+        {direccion && <div className="t-subtitle">{direccion}</div>}
+        {telefono && <div className="t-subtitle">Tel: {telefono}</div>}
+        {instagram && <div className="t-subtitle">IG: {instagram}</div>}
+      </div>
+      {hr}
+      <table className="t-inline"><tbody>
+        {(cuit || condicion) ? <><tr><td className="t-lef">CUIT</td><td className="t-rit">{cuit}</td></tr>
+        <tr><td className="t-lef">Cond. IVA</td><td className="t-rit">{condicion}</td></tr></> : null}
+      </tbody></table>
+      {hr}
+      <table className="t-inline"><tbody>
+        <tr><td className="t-lef">{numeroCaja}</td><td className="t-rit">Ticket #{String(ticketNumber || 1).padStart(5, '0')}</td></tr>
+        <tr><td className="t-lef">{fecha}  {hora}</td><td className="t-rit">Cajero: {operator || 'Sistema'}</td></tr>
+      </tbody></table>
+      {hr}
+      <table className="t-items">
+        <thead>
+          <tr className="t-head-row">
+            <th className="t-qty">Cant</th>
+            <th className="t-name">Descripcion</th>
+            <th className="t-price">P.Unit</th>
+            <th className="t-ltotal">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {(cart || []).map((item, i) => <ItemRow key={i} item={item} />)}
+        </tbody>
+      </table>
+      {hr}
+      {isFacturaA ? (
+        <table className="t-inline t-summary"><tbody>
+          <tr><td className="t-lef">SUBTOTAL NETO</td><td className="t-rit">{F(subtotal.toFixed(2))}</td></tr>
+          <tr><td className="t-lef">IVA {ivaRate}%</td><td className="t-rit">{F(iva.toFixed(2))}</td></tr>
+          <tr><td className="t-lef"></td><td className="t-rit"></td></tr>
+        </tbody></table>
       ) : (
-        /* ═══════════════════════════════ REPORTE DE CIERRE ═══════════════════════════════ */
-        <pre className="ticket-body">
-{DLINE}
-{center('** CIERRE DE TURNO **')}
-{center(nombre.toUpperCase())}
-{LINE}
-{`OPERADOR: ${shiftData?.operator || operator}`}
-{`FECHA:    ${fecha}   HORA: ${hora}`}
-{`APERTURA: ${shiftData?.opened_at ? new Date(shiftData.opened_at).toLocaleTimeString('es-AR', {hour:'2-digit',minute:'2-digit'}) : '--:--'}`}
-{LINE}
-{'RESUMEN DE VENTAS'}
-{LINE}
-{rAlign('Total tickets:', shiftData?.total_tickets || 0, 42).replace('$', ' ')}
-{rAlign('Ventas efectivo:', shiftData?.total_efectivo || 0)}
-{shiftData?.total_fiado > 0 ? rAlign('Ventas fiado:', shiftData.total_fiado) : ''}
-{rAlign('TOTAL SISTEMA:', (shiftData?.total_efectivo || 0) + (shiftData?.total_fiado || 0))}
-{LINE}
-{'TOP PRODUCTOS DEL TURNO'}
-{LINE}
-{(shiftData?.top_products || []).slice(0, 5).map((p, i) =>
-  `${i + 1}. ${p.product_name.slice(0, 25).padEnd(25)} x${p.qty}`
-).join('\n')}
-{LINE}
-{'BALANCE DE CAJA'}
-{LINE}
-{rAlign('Sistema dice:', shiftData?.sales_total || 0)}
-{rAlign('Efectivo contado:', shiftData?.counted_cash || 0)}
-{LINE}
-{(() => {
-  const diff = (shiftData?.counted_cash || 0) - (shiftData?.sales_total || 0);
-  if (diff === 0) return center('✓ CAJA PERFECTA');
-  if (diff > 0) return center(`SOBRA $${Math.abs(diff).toLocaleString('es-AR')}`);
-  return center(`*** FALTA $${Math.abs(diff).toLocaleString('es-AR')} ***`);
-})()}
-{DLINE}
-{center('Firma del operador:')}
-{''}
-{''}
-{center('_____________________')}
-{center(shiftData?.operator || operator)}
-{DLINE}
-        </pre>
+        <div className="t-center" style={{ fontSize: '0.7em', marginBottom: 4 }}>El precio incluye IVA</div>
       )}
+      <table className="t-inline t-summary"><tbody>
+        <tr className="t-total-row"><td className="t-lef">TOTAL</td><td className="t-rit" style={{ fontSize: '1.3em' }}>{F(total)}</td></tr>
+      </tbody></table>
+      {hr}
+      <table className="t-inline"><tbody>
+        <tr><td className="t-lef">{(paymentMethod || 'EFECTIVO').toUpperCase()}</td><td className="t-rit">{F(payment)}</td></tr>
+        <tr><td className="t-lef">VUELTO</td><td className="t-rit">{F(change >= 0 ? change : 0)}</td></tr>
+      </tbody></table>
+      {hr}
+      <div className="t-center t-mensaje">{mensaje}</div>
+      <div className="t-center" style={{ marginBottom: 8, fontSize: '0.85em' }}>Vuelva pronto!</div>
+      {afip?.cae ? (
+        <>
+          {hr}
+          <div className="t-center" style={{ fontWeight: 700, marginBottom: 4 }}>DATOS AFIP</div>
+          <table className="t-inline"><tbody>
+            <tr><td className="t-lef">CAE</td><td className="t-rit" style={{ fontSize: '0.75em' }}>{afip.cae}</td></tr>
+            <tr><td className="t-lef">Vto CAE</td><td className="t-rit">{afip.vto}</td></tr>
+            <tr><td className="t-lef">Comprobante</td><td className="t-rit">{tipoFactura} Nro {afip.cbte}</td></tr>
+          </tbody></table>
+          <div style={{ textAlign: 'center', margin: '8px 0' }}>
+            <canvas ref={qrCanvasRef} style={{ width: 128, height: 128 }} />
+          </div>
+        </>
+      ) : null}
+      <div className="t-center" style={{ marginTop: 10, fontSize: '0.65em', color: '#999' }}>MiNegocio v1.0</div>
     </div>
   );
 }
