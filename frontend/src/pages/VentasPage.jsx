@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import useIsMobile from '../hooks/useIsMobile';
 import useCart from '../hooks/useCart';
 import useSales from '../hooks/useSales';
@@ -248,10 +249,11 @@ export default function VentasPage() {
         productsDB={backend.productsDB}
         onAddToCart={p => cart.handleQuickAdd(p.code, p.name, p.price)} />
 
-      {sales.lastSale && (
+      {sales.lastSale && createPortal(
         <TicketPrint cart={sales.lastSale.cart} total={sales.lastSale.total} payment={sales.lastSale.payment}
           change={sales.lastSale.change} operator={auth.currentOperator?.name} ticketNumber={sales.ticketNumber}
-          config={backend.businessConfig} isClosingShift={false} tipoFactura={sales.lastSale.tipoFactura} afip={sales.lastSale.afip} paymentMethod={sales.lastSale.paymentMethod || cart.paymentMethod} />
+          config={backend.businessConfig} isClosingShift={false} tipoFactura={sales.lastSale.tipoFactura} afip={sales.lastSale.afip} paymentMethod={sales.lastSale.paymentMethod || cart.paymentMethod} />,
+        document.body
       )}
 
       {/* F7: Modal pedido de envío */}

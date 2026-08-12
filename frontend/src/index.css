@@ -590,15 +590,12 @@ svg {
     size: 80mm auto;
     margin: 2mm 3mm;
   }
-  body * { visibility: hidden !important; }
-  .ticket-print-area,
-  .ticket-print-area * { visibility: visible !important; }
+  body > *:not(.ticket-print-area) { display: none !important; }
   .ticket-print-area {
     display: block !important;
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
+    position: static !important;
     width: 74mm !important;
+    margin: 0 auto !important;
     background: white !important;
     color: black !important;
     font-family: 'Courier New', 'Lucida Console', monospace !important;
@@ -612,7 +609,6 @@ svg {
     width: 100% !important;
     word-break: break-all !important;
   }
-  .layout, .modal-overlay, .sidebar, .topbar { display: none !important; }
 }
 
 .ticket-print-area {
