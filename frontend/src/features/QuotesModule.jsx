@@ -3,6 +3,7 @@ import { usePanelContext } from '../context/PanelContext';
 import { apiGet, apiPost, apiPut, apiDelete } from '../services/apiClient';
 import ClientePicker from '../components/corralon/ClientePicker';
 import CatalogModal from '../components/pos/CatalogModal';
+import VariantPicker from '../components/pos/VariantPicker';
 
 const STATUS_MAP = {
   draft:     { label: 'Borrador',  color: 'var(--lp-ink-faint)' },
@@ -73,6 +74,7 @@ export default function QuotesModule() {
 
   // Product search
   const [productSearch, setProductSearch] = useState('');
+  const [variantProduct, setVariantProduct] = useState(null);
   const [searchResults, setSearchResults] = useState([]);
   const [productQty, setProductQty] = useState('1');
   const [productPrice, setProductPrice] = useState('');
@@ -118,6 +120,15 @@ export default function QuotesModule() {
   const getListPrice = (p, lt) => {
     const map = { a: p.price, b: p.price_b, c: p.price_c, d: p.price_d, e: p.price_e };
     return parseFloat(map[lt] ?? p.price) || parseFloat(p.price) || 0;
+  };
+
+  const addOrPickVariant = (p) => {
+    if (p.has_variants) {
+      setVariantProduct(p);
+    } else {
+      addItem(p);
+      setShowCatalog(false);
+    }
   };
 
   const addItem = (p) => {
@@ -897,10 +908,24 @@ const handleStatus = async (id, status) => {
       {showCatalog && (
         <CatalogModal
           products={catalogProducts}
-          onSelect={p => { addItem(p); }}
+          onSelect={p => { addOrPickVariant(p); }}
           onClose={() => setShowCatalog(false)}
           getPrice={p => getListPrice(p, formListType)}
           title="Catálogo — elegí un producto"
+        />
+      )}
+      {variantProduct && (
+        <VariantPicker
+          product={variantProduct}
+          onSelect={v => {
+            const price = parseFloat(productPrice) || getListPrice(v, formListType);
+            setFormItems(prev => [...prev, { product_id: v.id, product_name: v.variant_label || v.name, quantity: parseFloat(productQty) || 1, unit_price: price }]);
+            setProductQty('1'); setProductPrice('');
+            setVariantProduct(null);
+            setShowCatalog(false);
+          }}
+          onClose={() => setVariantProduct(null)}
+          getPrice={p => getListPrice(p, formListType)}
         />
       )}
     </div>
