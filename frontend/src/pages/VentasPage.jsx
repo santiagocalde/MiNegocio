@@ -154,14 +154,14 @@ export default function VentasPage() {
             listType={cart.listType} setListType={cart.setListType} businessType={businessType} />
           </div>
         </div>
+        <div data-tour="payment-panel" style={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
         {/* Botón nota de pedido — visible cuando hay ítems en el carrito, antes de cobrar */}
         {businessType === 'corralon' && cart.cart.length > 0 && !showShipModal && (
           <button onClick={openShipModal}
-            style={{ flexShrink: 0, padding: '10px 16px', background: 'rgba(20,187,166,0.08)', border: '1.5px solid rgba(20,187,166,0.4)', borderRadius: 8, color: 'var(--accent-primary, #14BBA6)', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer', marginBottom: 6, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+            style={{ padding: '10px 16px', background: 'rgba(20,187,166,0.08)', border: '1.5px solid rgba(20,187,166,0.4)', borderRadius: 8, color: 'var(--accent-primary, #14BBA6)', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer', marginBottom: 12, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
             🚚 Crear nota de pedido
           </button>
         )}
-        <div data-tour="payment-panel" style={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
         <PaymentPanel cart={cart.cart} total={cart.total} adjustedTotal={cart.adjustedTotal}
           effectiveTotal={cart.effectiveTotal} subtotal={cart.subtotal} iva={cart.iva}
           discount={cart.discount} ivaRate={cart.ivaRate} change={cart.change}
