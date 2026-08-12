@@ -502,6 +502,9 @@ async def init_db(DB_PATH: str, logger) -> None:
         await add_column_if_not_exists(db, "products", "parent_product_id", "INTEGER")
         await add_column_if_not_exists(db, "products", "variant_label", "TEXT", default="''")
 
+        # Proveedor asociado al producto (FK a suppliers)
+        await add_column_if_not_exists(db, "products", "supplier_id", "INTEGER")
+
         await db.commit()
 
         # Punto 55: Creación de índices para performance

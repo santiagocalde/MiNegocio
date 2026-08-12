@@ -39,6 +39,32 @@ export default function VentasPage() {
   const [shipSaving, setShipSaving] = useState(false);
   // Set de índices del carrito marcados como "envío" (default: todos)
   const [shipItemIdxs, setShipItemIdxs] = useState(new Set());
+  const [lastShipNote, setLastShipNote] = useState(null); // {id, client, items, date}
+
+  const printShipNote = (note) => {
+    const w = window.open('', '_blank', 'width=400,height=600');
+    const items = (note.items || []).map(it =>
+      `<tr><td style="padding:4px 8px">${it.name || it.product_name || '—'}</td><td style="text-align:right;padding:4px 8px;font-weight:700">${it.qty || it.quantity || 1}</td></tr>`
+    ).join('');
+    w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Nota de entrega</title>
+    <style>body{font-family:monospace;font-size:13px;padding:16px;max-width:320px;margin:0 auto}
+    h2{text-align:center;font-size:1rem;margin:0 0 8px}
+    .sep{border-top:1px dashed #000;margin:8px 0}
+    table{width:100%;border-collapse:collapse}
+    @media print{body{margin:0}}</style></head><body>
+    <h2>📦 NOTA DE ENTREGA #${note.id}</h2>
+    <div class="sep"></div>
+    <p style="margin:4px 0"><b>Cliente:</b> ${note.client?.name || '—'}</p>
+    <p style="margin:4px 0"><b>Dirección:</b> ${note.client?.address || '—'}</p>
+    <p style="margin:4px 0"><b>Fecha:</b> ${note.date || new Date().toLocaleDateString('es-AR')}</p>
+    <div class="sep"></div>
+    <table><thead><tr><th style="text-align:left;padding:4px 8px">Producto</th><th style="text-align:right;padding:4px 8px">Cant.</th></tr></thead>
+    <tbody>${items}</tbody></table>
+    <div class="sep"></div>
+    <p style="text-align:center;margin:8px 0">Firma: ____________________</p>
+    <script>window.onload=()=>window.print()</script></body></html>`);
+    w.document.close();
+  };
 
   const openShipModal = () => {
     // Por default todos los ítems se marcan como envío al abrir
@@ -73,6 +99,8 @@ export default function VentasPage() {
       });
       if (r.ok) {
         const data = await r.json();
+        const envioItems = cart.cart.filter((_, i) => shipItemIdxs.has(i));
+        setLastShipNote({ id: data.id, client: shipClient, date: shipDate || new Date().toLocaleDateString('es-AR'), items: envioItems });
         addToast(`Nota de pedido #${data.id} creada. Aparece en Notas de pedido.`, 'success');
         setShowShipModal(false);
         setShipClient(null);
@@ -156,10 +184,18 @@ export default function VentasPage() {
         </div>
         {/* Botón nota de pedido — visible cuando hay ítems en el carrito, antes de cobrar */}
         {businessType === 'corralon' && cart.cart.length > 0 && !showShipModal && (
-          <button onClick={openShipModal}
-            style={{ flexShrink: 0, padding: '10px 16px', background: 'rgba(20,187,166,0.08)', border: '1.5px solid rgba(20,187,166,0.4)', borderRadius: 8, color: 'var(--accent-primary, #14BBA6)', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer', marginBottom: 6, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-            🚚 Crear nota de pedido
-          </button>
+          <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
+            <button onClick={openShipModal}
+              style={{ flex: 1, padding: '10px 16px', background: 'rgba(20,187,166,0.08)', border: '1.5px solid rgba(20,187,166,0.4)', borderRadius: 8, color: 'var(--accent-primary, #14BBA6)', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+              🚚 Crear nota de pedido
+            </button>
+            {lastShipNote && (
+              <button onClick={() => printShipNote(lastShipNote)} title="Imprimir última nota de entrega"
+                style={{ padding: '10px 14px', background: 'rgba(20,187,166,0.08)', border: '1.5px solid rgba(20,187,166,0.4)', borderRadius: 8, color: 'var(--accent-primary, #14BBA6)', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}>
+                🖨️
+              </button>
+            )}
+          </div>
         )}
         <div data-tour="payment-panel" style={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
         <PaymentPanel cart={cart.cart} total={cart.total} adjustedTotal={cart.adjustedTotal}

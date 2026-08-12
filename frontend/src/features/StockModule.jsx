@@ -121,7 +121,8 @@ export default function StockModule() {
 
   const [showNuevoProducto, setShowNuevoProducto] = useState(false);
   const [categories, setCategories] = useState([]);
-  const [newProduct, setNewProduct] = useState({ code: '', name: '', price: '', cost_price: '', price_b: '', price_c: '', price_d: '', price_e: '', stock: '', min_stock: '5', iva: '21%', category_id: '', unit_label: 'unidad', codigos_extra: '' });
+  const [suppliers, setSuppliers] = useState([]);
+  const [newProduct, setNewProduct] = useState({ code: '', name: '', price: '', cost_price: '', price_b: '', price_c: '', price_d: '', price_e: '', stock: '', min_stock: '5', iva: '21%', category_id: '', supplier_id: '', unit_label: 'unidad', codigos_extra: '' });
   const [confirmState, setConfirmState] = useState({ isOpen: false, title: '', message: '', onConfirm: null, confirmLabel: 'Confirmar', variant: 'danger' });
   const [showNewCategory, setShowNewCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -261,6 +262,7 @@ export default function StockModule() {
 
   useEffect(() => {
     apiGet('/categories').then(r => r.ok ? r.json() : []).then(d => setCategories(Array.isArray(d) ? d : [])).catch(() => {});
+    apiGet('/suppliers').then(r => r.ok ? r.json() : []).then(d => setSuppliers(Array.isArray(d) ? d : [])).catch(() => {});
   }, []);
 
   const handleCreateProduct = async () => {
@@ -290,12 +292,13 @@ export default function StockModule() {
         price_d: newProduct.price_d ? parseFloat(newProduct.price_d) : null,
         price_e: newProduct.price_e ? parseFloat(newProduct.price_e) : null,
         unit_label: newProduct.unit_label || 'unidad',
+        supplier_id: newProduct.supplier_id ? parseInt(newProduct.supplier_id) : null,
         extra_codes: (newProduct.codigos_extra || '').split(',').map(c => c.trim()).filter(Boolean),
       });
       if (res.ok) {
         if (addToast) addToast('Producto creado exitosamente.', 'success');
         setShowNuevoProducto(false);
-        setNewProduct({ code: '', name: '', price: '', cost_price: '', price_b: '', price_c: '', price_d: '', price_e: '', stock: '', min_stock: '5', iva: '21%', category_id: '', unit_label: 'unidad', codigos_extra: '' });
+        setNewProduct({ code: '', name: '', price: '', cost_price: '', price_b: '', price_c: '', price_d: '', price_e: '', stock: '', min_stock: '5', iva: '21%', category_id: '', supplier_id: '', unit_label: 'unidad', codigos_extra: '' });
         fetchProducts();
         if (onProductsUpdated) onProductsUpdated();
       } else {
@@ -677,7 +680,7 @@ export default function StockModule() {
                     ) : null}
                   </td>
                   <td style={{ padding: '8px 16px', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
-                    Sin proveedor
+                    {p.supplier_name || '—'}
                   </td>
                   <td style={{ padding: '16px 24px', textAlign: 'center' }}>
                     <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
@@ -982,6 +985,16 @@ export default function StockModule() {
                   {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
               </div>
+              {suppliers.length > 0 && (
+                <div>
+                  <label style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '6px', fontWeight: 600 }}>Proveedor</label>
+                  <select value={newProduct.supplier_id} onChange={e => setNewProduct({ ...newProduct, supplier_id: e.target.value })}
+                    style={{ width: '100%', padding: '10px 12px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '8px', outline: 'none', fontSize: '0.95rem', boxSizing: 'border-box' }}>
+                    <option value="">Sin proveedor</option>
+                    {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  </select>
+                </div>
+              )}
             </div>
             <div style={{ marginTop: '16px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>

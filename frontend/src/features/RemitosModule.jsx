@@ -62,6 +62,17 @@ export default function RemitosModule() {
   // Postergado — mini modal de fecha
   const [postponeModal, setPostponeModal] = useState(null); // null | { remito_id, date }
 
+  // Edición inline de fecha por fila
+  const [editingDateId, setEditingDateId] = useState(null);
+
+  const handleDateChange = async (id, newDate) => {
+    if (!newDate) return;
+    await apiPost(`/remitos/${id}/status`, { status: 'pending', scheduled_date: newDate });
+    setEditingDateId(null);
+    fetchRemitos();
+    addToast?.('Fecha actualizada.', 'success');
+  };
+
   // Form
   const [formCustomer, setFormCustomer] = useState(null); // { id, name, phone, address } | null
   const [formAddress, setFormAddress] = useState('');
@@ -537,8 +548,27 @@ ${stopRows}
                   <div style={{ fontWeight: 700, color: 'var(--lp-ink)', fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     N° {r.id} — {r.customer_name || r.address || 'Sin cliente'}
                   </div>
-                  <div style={{ fontSize: '0.74rem', color: 'var(--lp-ink-faint)', marginTop: 2 }}>
-                    {fmtDate(r.scheduled_date)}{r.driver ? ` · ${r.driver}` : ''}{r.address ? ` · ${r.address}` : ''}
+                  <div style={{ fontSize: '0.74rem', color: 'var(--lp-ink-faint)', marginTop: 2, display: 'flex', alignItems: 'center', gap: 4 }}>
+                    {editingDateId === r.id ? (
+                      <input
+                        type="date"
+                        defaultValue={r.scheduled_date ? r.scheduled_date.slice(0, 10) : ''}
+                        autoFocus
+                        onClick={e => e.stopPropagation()}
+                        onBlur={e => { e.stopPropagation(); handleDateChange(r.id, e.target.value); }}
+                        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleDateChange(r.id, e.target.value); } if (e.key === 'Escape') setEditingDateId(null); }}
+                        style={{ fontSize: '0.74rem', border: '1px solid var(--lp-primary)', borderRadius: 4, padding: '1px 4px', background: 'var(--lp-surface)', color: 'var(--lp-ink)', cursor: 'pointer' }}
+                      />
+                    ) : (
+                      <span
+                        title="Hacer clic para cambiar fecha"
+                        onClick={e => { e.stopPropagation(); setEditingDateId(r.id); }}
+                        style={{ cursor: 'pointer', textDecoration: 'underline dotted', textUnderlineOffset: 2 }}
+                      >
+                        {fmtDate(r.scheduled_date)}
+                      </span>
+                    )}
+                    {r.driver ? ` · ${r.driver}` : ''}{r.address ? ` · ${r.address}` : ''}
                   </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>

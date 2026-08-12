@@ -170,7 +170,6 @@ export default function Sidebar({
         roles: ['admin', 'manager'],
         items: [
           { label: 'Depósito', path: '/panel/inventario', icon: 'Box' },
-          { label: 'Compras', path: '/panel/compras', icon: 'Truck', minPlan: 'simple', featureKey: 'compras' },
         ],
       },
       {

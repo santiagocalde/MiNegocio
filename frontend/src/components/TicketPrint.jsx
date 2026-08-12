@@ -107,6 +107,8 @@ export default function TicketPrint({ cart, total, payment, change, operator, ti
 {rAlign(`${(paymentMethod || 'EFECTIVO').toUpperCase()}:`, payment)}
 {rAlign('VUELTO:', change >= 0 ? change : 0)}
 {LINE}
+{center('████  P A G A D O  ████')}
+{LINE}
 {center(mensaje)}
 {center('¡Vuelva pronto!')}
 {afip && afip.cae ? (

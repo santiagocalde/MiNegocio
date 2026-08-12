@@ -87,8 +87,9 @@ async def list_products(q: Optional[str] = Query(None), limit: int = Query(500),
         pool = await get_pg_pool()
         async with pool.acquire() as conn:
             base = (
-                f"SELECT p.*, c.name AS category_name, {_extra_codes_pg}, {_has_variants_pg} "
+                f"SELECT p.*, c.name AS category_name, s.name AS supplier_name, {_extra_codes_pg}, {_has_variants_pg} "
                 "FROM products p LEFT JOIN categories c ON c.id = p.category_id "
+                "LEFT JOIN suppliers s ON s.id = p.supplier_id "
             )
             if q:
                 rows = await conn.fetch(
@@ -111,8 +112,9 @@ async def list_products(q: Optional[str] = Query(None), limit: int = Query(500),
     else:
         async with aiosqlite.connect(main.DB_PATH) as db:
             base = (
-                f"SELECT p.*, c.name AS category_name, {_extra_codes_sq}, {_has_variants_sq} "
+                f"SELECT p.*, c.name AS category_name, s.name AS supplier_name, {_extra_codes_sq}, {_has_variants_sq} "
                 "FROM products p LEFT JOIN categories c ON c.id = p.category_id "
+                "LEFT JOIN suppliers s ON s.id = p.supplier_id "
             )
             if q:
                 cur = await db.execute(
@@ -554,7 +556,8 @@ async def update_product(product_id: int, body: dict) -> dict:
             params = []
             n = 1
             for k in ('code', 'name', 'price', 'price_b', 'price_c', 'price_d', 'price_e',
-                      'cost_price', 'stock', 'min_stock', 'iva', 'category_id', 'expiry_date', 'en_catalogo'):
+                      'cost_price', 'stock', 'min_stock', 'iva', 'category_id', 'expiry_date', 'en_catalogo',
+                      'supplier_id'):
                 if k in body:
                     sets.append(f"{k} = ${n}")
                     params.append(body[k])
@@ -578,7 +581,8 @@ async def update_product(product_id: int, body: dict) -> dict:
             sets = []
             params = []
             for k in ('code', 'name', 'price', 'price_b', 'price_c', 'price_d', 'price_e',
-                      'cost_price', 'stock', 'min_stock', 'iva', 'category_id', 'expiry_date', 'en_catalogo'):
+                      'cost_price', 'stock', 'min_stock', 'iva', 'category_id', 'expiry_date', 'en_catalogo',
+                      'supplier_id'):
                 if k in body:
                     sets.append(f"{k} = ?")
                     params.append(body[k])

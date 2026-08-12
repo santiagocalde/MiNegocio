@@ -21,6 +21,35 @@ export default function UsuariosModule() {
   const [showModal, setShowModal] = useState(false);
   const [editIndex, setEditIndex] = useState(null);
   const [form, setForm] = useState({ name: '', pin: '', role: 'cashier' });
+
+  // Permisos por módulo según rol (informativo, no guardado individualmente)
+  const MODULE_PERMS = {
+    cashier: {
+      'Mostrador': true, 'Presupuestos': true, 'Acopios': true,
+      'Lista de clientes': true, 'Cuentas corrientes': true,
+      'Notas de pedido': false, 'Depósito': false, 'Historial': false,
+      'Configuración': false, 'Reportes': false,
+    },
+    logistica: {
+      'Mostrador': false, 'Presupuestos': false, 'Acopios': false,
+      'Lista de clientes': false, 'Cuentas corrientes': false,
+      'Notas de pedido': true, 'Depósito': false, 'Historial': false,
+      'Configuración': false, 'Reportes': false,
+    },
+    manager: {
+      'Mostrador': true, 'Presupuestos': true, 'Acopios': true,
+      'Lista de clientes': true, 'Cuentas corrientes': true,
+      'Notas de pedido': true, 'Depósito': true, 'Historial': true,
+      'Configuración': false, 'Reportes': true,
+    },
+    admin: {
+      'Mostrador': true, 'Presupuestos': true, 'Acopios': true,
+      'Lista de clientes': true, 'Cuentas corrientes': true,
+      'Notas de pedido': true, 'Depósito': true, 'Historial': true,
+      'Configuración': true, 'Reportes': true,
+    },
+  };
+  const rolePerms = MODULE_PERMS[form.role] || MODULE_PERMS.cashier;
   const [adminPin, setAdminPin] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState(null); // { id, name }
 
@@ -201,15 +230,30 @@ export default function UsuariosModule() {
                 placeholder={editIndex !== null ? 'Dejar vac&iacute;o para mantener' : '••••'}
                 style={{ width: '100%', padding: '10px 12px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '8px', outline: 'none', fontSize: '0.95rem', boxSizing: 'border-box' }} />
             </div>
-            <div style={{ marginBottom: '24px' }}>
+            <div style={{ marginBottom: editIndex === null ? '16px' : '24px' }}>
               <label style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '6px', fontWeight: 600 }}>Rol</label>
               <select value={form.role} onChange={e => setForm({ ...form, role: e.target.value })}
                 style={{ width: '100%', padding: '10px 12px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '8px', outline: 'none', fontSize: '0.95rem', boxSizing: 'border-box' }}>
                 <option value="cashier">Cajero</option>
                 <option value="logistica">Logística (solo despacho)</option>
+                <option value="manager">Encargado</option>
                 <option value="admin">Admin</option>
               </select>
             </div>
+            {/* Checklist de permisos — solo al crear */}
+            {editIndex === null && (
+              <div style={{ marginBottom: '24px', padding: '14px 16px', background: 'rgba(0,0,0,0.12)', border: '1px solid var(--border-color)', borderRadius: '10px' }}>
+                <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: 700, marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Acceso a módulos</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 12px' }}>
+                  {Object.entries(rolePerms).map(([mod, allowed]) => (
+                    <div key={mod} style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: '0.83rem', color: allowed ? 'var(--text-primary)' : 'var(--text-secondary)', opacity: allowed ? 1 : 0.55 }}>
+                      <span style={{ fontSize: '0.85rem', color: allowed ? '#10B981' : 'var(--text-secondary)' }}>{allowed ? '✓' : '✕'}</span>
+                      {mod}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
               <button onClick={() => setShowModal(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', padding: '10px 16px', borderRadius: '8px', cursor: 'pointer', transition: 'all 0.15s', fontWeight: 600 }}>Cancelar</button>
               <button onClick={handleSave} style={{ background: 'var(--accent-primary)', border: 'none', color: 'var(--sheet)', padding: '10px 24px', borderRadius: 'var(--radius-sm)', cursor: 'pointer', transition: 'filter 0.15s', fontWeight: 800 }}>

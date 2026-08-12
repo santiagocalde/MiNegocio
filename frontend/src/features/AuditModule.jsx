@@ -209,15 +209,17 @@ export default function AuditModule() {
                       </span>
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '1.05rem', marginBottom: '4px' }}>
+                      <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '1.05rem', marginBottom: '2px' }}>
                         {m.product_name}
                       </div>
-                      <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                      <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: detail ? '4px' : 0 }}>
                         {m.timestamp ? new Date(m.timestamp).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' }) : '---'}{m.operator && m.operator !== 'Sistema' ? ` • ${m.operator}` : ''}
                       </div>
-                    </div>
-                    <div style={{ flex: 1, color: 'var(--text-secondary)', fontSize: '0.85rem', padding: '0 16px', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {m.reason || ''}
+                      {detail && (
+                        <div style={{ fontSize: '0.85rem', color: 'var(--text-primary)', fontWeight: 500, lineHeight: 1.4 }}>
+                          {detail}
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
