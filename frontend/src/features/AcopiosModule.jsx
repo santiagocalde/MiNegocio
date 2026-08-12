@@ -166,6 +166,10 @@ export default function AcopiosModule() {
 
   const handleCobrar = async () => {
     if (!cobrarModal) return;
+    if (cobrarMethod === 'cc' && !cobrarModal.customerId) {
+      addToast?.('Para cobrar en cuenta corriente tenés que tener un cliente asignado al acopio.', 'warning');
+      return;
+    }
     setCobrarSaving(true);
     try {
       const r = await apiPost(`/acopios/${cobrarModal.id}/cobrar`, {
@@ -531,7 +535,7 @@ export default function AcopiosModule() {
               const total = (detail.items || []).reduce((s, it) => s + (it.unit_price || 0) * (it.quantity_total || 0), 0);
               return !isPaid && detail.acopio.status === 'active' ? (
                 <button
-                  onClick={e => { e.stopPropagation(); setCobrarModal({ id: detail.acopio.id, customerName: detail.acopio.customer_name, total }); setCobrarAmount(String(total)); setCobrarMethod('efectivo'); }}
+                  onClick={e => { e.stopPropagation(); setCobrarModal({ id: detail.acopio.id, customerName: detail.acopio.customer_name, customerId: detail.acopio.customer_id, total }); setCobrarAmount(String(total)); setCobrarMethod('efectivo'); }}
                   className="lp-btn lp-btn--ghost"
                   style={{ width: '100%', marginBottom: 8, color: 'var(--lp-green)', borderColor: 'var(--lp-green)' }}>
                   💰 Cobrar acopio
@@ -673,9 +677,14 @@ export default function AcopiosModule() {
                 </div>
               )}
             </div>
+            {cobrarMethod === 'cc' && !cobrarModal.customerId && (
+              <div style={{ padding: '10px 14px', background: 'rgba(251,191,36,0.12)', border: '1px solid rgba(251,191,36,0.4)', borderRadius: 8, marginBottom: 12, fontSize: '0.85rem', color: 'var(--lp-ink)', lineHeight: 1.4 }}>
+                ⚠️ Este acopio no tiene cliente asignado. Para cobrar en cuenta corriente necesitás asociarlo a un cliente.
+              </div>
+            )}
             <div style={{ display: 'flex', gap: 8 }}>
               <button onClick={() => setCobrarModal(null)} className="lp-btn lp-btn--ghost" style={{ flex: 1 }}>Cancelar</button>
-              <button onClick={handleCobrar} disabled={cobrarSaving} className="lp-btn lp-btn--primary" style={{ flex: 2, background: 'var(--lp-green)', borderColor: 'var(--lp-green)' }}>
+              <button onClick={handleCobrar} disabled={cobrarSaving || (cobrarMethod === 'cc' && !cobrarModal.customerId)} className="lp-btn lp-btn--primary" style={{ flex: 2, background: cobrarMethod === 'cc' && !cobrarModal.customerId ? 'var(--lp-ink-faint)' : 'var(--lp-green)', borderColor: 'var(--lp-green)', cursor: cobrarMethod === 'cc' && !cobrarModal.customerId ? 'not-allowed' : 'pointer' }}>
                 {cobrarSaving ? 'Guardando...' : cobrarMethod === 'cc' ? 'Pasar a cuenta corriente' : 'Confirmar cobro'}
               </button>
             </div>
