@@ -104,26 +104,31 @@ async def get_current_business(request: Request) -> dict | None:
 
 async def _preload_starter_catalog(conn, biz_id: str, business_type: str) -> int:
     """Inserta categorías y productos típicos del rubro. Precios en 0 para que
-    el dueño los ajuste. Devuelve la cantidad de productos creados."""
-    from services.starter_catalog import get_starter_products
-    productos = get_starter_products(business_type)
-    if not productos:
-        return 0
-    cat_ids: dict = {}
-    creados = 0
-    for categoria, nombre in productos:
-        if categoria not in cat_ids:
-            cat_ids[categoria] = await conn.fetchval(
-                "INSERT INTO categories (business_id, name) VALUES ($1, $2) RETURNING id",
-                biz_id, categoria,
-            )
-        creados += 1
-        await conn.execute(
-            """INSERT INTO products (business_id, code, name, price, stock, category_id, is_active)
-               VALUES ($1, $2, $3, 0, 0, $4, 1)""",
-            biz_id, f"INIT-{creados:03d}", nombre, cat_ids[categoria],
-        )
-    return creados
+    el dueño los ajuste. Devuelve la cantidad de productos creados.
+
+    DESHABILITADO: los usuarios nuevos arrancan con catálogo vacío y cargan
+    sus propios productos. Para reactivar, descomentar el bloque de abajo.
+    """
+    return 0
+    # from services.starter_catalog import get_starter_products
+    # productos = get_starter_products(business_type)
+    # if not productos:
+    #     return 0
+    # cat_ids: dict = {}
+    # creados = 0
+    # for categoria, nombre in productos:
+    #     if categoria not in cat_ids:
+    #         cat_ids[categoria] = await conn.fetchval(
+    #             "INSERT INTO categories (business_id, name) VALUES ($1, $2) RETURNING id",
+    #             biz_id, categoria,
+    #         )
+    #     creados += 1
+    #     await conn.execute(
+    #         """INSERT INTO products (business_id, code, name, price, stock, category_id, is_active)
+    #            VALUES ($1, $2, $3, 0, 0, $4, 1)""",
+    #         biz_id, f"INIT-{creados:03d}", nombre, cat_ids[categoria],
+    #     )
+    # return creados
 
 
 @router.get("/check-email", summary="Verificar disponibilidad de email antes del registro")
