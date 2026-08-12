@@ -3,6 +3,7 @@ import { Icons } from '../ui/Icons';
 import AddAmountModal from './AddAmountModal';
 import CameraBarcodeScanner from '../ui/CameraBarcodeScanner';
 import CatalogModal from './CatalogModal';
+import VariantPicker from './VariantPicker';
 import useIsMobile from '../../hooks/useIsMobile';
 import { findProductByAnyCode } from '../../utils/productLookup';
 
@@ -13,6 +14,18 @@ export default function SearchBar({
   const [showAddAmountModal, setShowAddAmountModal] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
   const [showCatalog, setShowCatalog] = useState(false);
+  const [variantProduct, setVariantProduct] = useState(null); // producto padre esperando selección de variante
+
+  // Agrega al carrito directo o abre el picker si tiene variantes
+  const addOrPickVariant = useCallback((p) => {
+    if (p.has_variants) {
+      setVariantProduct(p);
+    } else {
+      handleQuickAdd(p.code, p.name, getPrice(p));
+      setSearch('');
+      searchRef.current?.focus();
+    }
+  }, [handleQuickAdd, getPrice, setSearch, searchRef]);
   const isMobile = useIsMobile();
   const lastScanRef = useRef({ code: '', time: 0 });
 
@@ -138,13 +151,9 @@ export default function SearchBar({
               // Búsqueda normal por código exacto
               const exact = findProductByAnyCode(productsDB, term);
               if (exact && !isDuplicateScan(term)) {
-                handleQuickAdd(exact.code, exact.name, getPrice(exact));
-                setSearch('');
-                searchRef.current?.focus();
+                addOrPickVariant(exact);
               } else if (autocomplete.length === 1 && !isDuplicateScan(term)) {
-                handleQuickAdd(autocomplete[0].code, autocomplete[0].name, getPrice(autocomplete[0]));
-                setSearch('');
-                searchRef.current?.focus();
+                addOrPickVariant(autocomplete[0]);
               }
             }
           }}
@@ -156,9 +165,9 @@ export default function SearchBar({
               <button
                 id={`autocomplete-${i}`}
                 key={p.id}
-                onClick={() => { handleQuickAdd(p.code, p.name, getPrice(p)); setSearch(''); searchRef.current?.focus(); }}
+                onClick={() => addOrPickVariant(p)}
                 onKeyDown={e => {
-                  if (e.key === 'Enter') { handleQuickAdd(p.code, p.name, getPrice(p)); setSearch(''); searchRef.current?.focus(); }
+                  if (e.key === 'Enter') addOrPickVariant(p);
                   if (e.key === 'ArrowDown') document.getElementById(`autocomplete-${i + 1}`)?.focus();
                   if (e.key === 'ArrowUp') { if (i === 0) searchRef.current?.focus(); else document.getElementById(`autocomplete-${i - 1}`)?.focus(); }
                 }}
@@ -168,9 +177,12 @@ export default function SearchBar({
                 onMouseEnter={e => e.target.style.background = 'var(--bg-hover)'}
                 onMouseLeave={e => e.target.style.background = 'transparent'}
               >
-                <span style={{ fontWeight: 600 }}>{p.name}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontWeight: 600 }}>{p.name}</span>
+                  {p.has_variants && <span style={{ fontSize: '0.72rem', background: 'var(--wash-primary, rgba(20,187,166,0.12))', color: 'var(--accent-primary)', borderRadius: 4, padding: '1px 6px', fontWeight: 700 }}>Variantes</span>}
+                </div>
                 <div style={{ display: 'flex', gap: '16px', color: 'var(--text-secondary)' }}>
-                  <span>${getPrice(p)}</span>
+                  {!p.has_variants && <span>${getPrice(p)}</span>}
                   <span style={{ color: p.stock > 0 ? 'var(--accent-success)' : 'var(--accent-danger)' }}>Stock: {p.stock}</span>
                 </div>
               </button>
@@ -184,8 +196,20 @@ export default function SearchBar({
       {showCatalog && (
         <CatalogModal
           products={productsDB}
-          onSelect={p => { handleQuickAdd(p.code, p.name, getPrice(p)); searchRef.current?.focus(); }}
+          onSelect={p => {
+            setShowCatalog(false);
+            if (p.has_variants) { setVariantProduct(p); }
+            else { handleQuickAdd(p.code, p.name, getPrice(p)); searchRef.current?.focus(); }
+          }}
           onClose={() => setShowCatalog(false)}
+          getPrice={getPrice}
+        />
+      )}
+      {variantProduct && (
+        <VariantPicker
+          product={variantProduct}
+          onSelect={v => { handleQuickAdd(v.code || variantProduct.code, v.variant_label || v.name, getPrice(v)); searchRef.current?.focus(); }}
+          onClose={() => setVariantProduct(null)}
           getPrice={getPrice}
         />
       )}

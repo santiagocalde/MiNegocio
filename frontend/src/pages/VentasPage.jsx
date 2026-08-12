@@ -32,15 +32,32 @@ export default function VentasPage() {
   const paymentRef = useRef(null);
   const fiadoRef = useRef(null);
 
-  // F7: pedido de envío desde mostrador
+  // Pedido de envío desde mostrador — con split por ítem retira/envío
   const [showShipModal, setShowShipModal] = useState(false);
   const [shipClient, setShipClient] = useState(null);
   const [shipDate, setShipDate] = useState('');
   const [shipSaving, setShipSaving] = useState(false);
+  // Set de índices del carrito marcados como "envío" (default: todos)
+  const [shipItemIdxs, setShipItemIdxs] = useState(new Set());
+
+  const openShipModal = () => {
+    // Por default todos los ítems se marcan como envío al abrir
+    setShipItemIdxs(new Set(cart.cart.map((_, i) => i)));
+    setShowShipModal(true);
+  };
+
+  const toggleShipItem = (idx) => {
+    setShipItemIdxs(prev => {
+      const next = new Set(prev);
+      next.has(idx) ? next.delete(idx) : next.add(idx);
+      return next;
+    });
+  };
 
   const handleCreateShipOrder = async () => {
     if (!shipClient) { addToast('Seleccioná un cliente.', 'error'); return; }
-    if (cart.cart.length === 0) { addToast('El carrito está vacío.', 'error'); return; }
+    const envioItems = cart.cart.filter((_, i) => shipItemIdxs.has(i));
+    if (envioItems.length === 0) { addToast('Marcá al menos un ítem para enviar.', 'error'); return; }
     setShipSaving(true);
     try {
       const r = await apiPost('/remitos', {
@@ -48,7 +65,7 @@ export default function VentasPage() {
         address: shipClient.address || '',
         scheduled_date: shipDate || new Date().toISOString().slice(0, 10),
         operator: auth.currentOperator?.name || 'Sistema',
-        items: cart.cart.map(it => ({
+        items: envioItems.map(it => ({
           product_id: it.id,
           quantity: it.qty || it.quantity || 1,
           unit_price: it.price || 0,
@@ -56,13 +73,13 @@ export default function VentasPage() {
       });
       if (r.ok) {
         const data = await r.json();
-        addToast(`Pedido de envío #${data.id} creado. Aparece en Remitos.`, 'success');
+        addToast(`Nota de pedido #${data.id} creada. Aparece en Notas de pedido.`, 'success');
         setShowShipModal(false);
         setShipClient(null);
         setShipDate('');
-        cart.clearCart();
+        setShipItemIdxs(new Set());
       } else {
-        addToast('No se pudo crear el pedido de envío.', 'error');
+        addToast('No se pudo crear la nota de pedido.', 'error');
       }
     } catch { addToast('Error de conexión.', 'error'); }
     setShipSaving(false);
@@ -137,11 +154,11 @@ export default function VentasPage() {
             listType={cart.listType} setListType={cart.setListType} businessType={businessType} />
           </div>
         </div>
-        {/* F7: botón pedido de envío post-venta (corralón, al lado del cobro, tras procesar venta) */}
-        {businessType === 'corralon' && !isMobile && cart.lastSaleItems?.length > 0 && !showShipModal && (
-          <button onClick={() => setShowShipModal(true)}
-            style={{ flexShrink: 0, padding: '10px 16px', background: 'rgba(20,187,166,0.1)', border: '1.5px solid rgba(20,187,166,0.5)', borderRadius: 8, color: 'var(--accent-primary, #14BBA6)', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer', marginBottom: 6, width: '100%' }}>
-            📦 Crear pedido de envío con la última venta
+        {/* Botón nota de pedido — visible cuando hay ítems en el carrito, antes de cobrar */}
+        {businessType === 'corralon' && cart.cart.length > 0 && !showShipModal && (
+          <button onClick={openShipModal}
+            style={{ flexShrink: 0, padding: '10px 16px', background: 'rgba(20,187,166,0.08)', border: '1.5px solid rgba(20,187,166,0.4)', borderRadius: 8, color: 'var(--accent-primary, #14BBA6)', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer', marginBottom: 6, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+            🚚 Crear nota de pedido
           </button>
         )}
         <div data-tour="payment-panel" style={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
@@ -247,15 +264,35 @@ export default function VentasPage() {
               <button onClick={() => setShowShipModal(false)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: '1.3rem' }}>✕</button>
             </div>
 
-            {/* Productos del carrito (resumen) */}
-            <div style={{ marginBottom: 14, padding: '10px 14px', background: 'rgba(255,255,255,0.04)', borderRadius: 8, fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)' }}>
-              <div style={{ fontWeight: 700, marginBottom: 6, color: 'rgba(255,255,255,0.9)' }}>Ítems del carrito:</div>
-              {cart.cart.map((it, i) => (
-                <div key={i} style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span>{it.name} × {it.qty || it.quantity || 1}</span>
-                  <span style={{ fontFamily: 'var(--lp-font-mono, monospace)' }}>${Number((it.price || 0) * (it.qty || it.quantity || 1)).toLocaleString('es-AR')}</span>
-                </div>
-              ))}
+            {/* Split por ítem: Retira / Envío */}
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8, display: 'flex', justifyContent: 'space-between' }}>
+                <span>Ítem</span>
+                <span>¿Retira o envío?</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {cart.cart.map((it, i) => {
+                  const esEnvio = shipItemIdxs.has(i);
+                  return (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: 'rgba(255,255,255,0.04)', borderRadius: 8, gap: 12 }}>
+                      <span style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.85)', flex: 1 }}>
+                        {it.name} <span style={{ color: 'rgba(255,255,255,0.4)' }}>× {it.qty || it.quantity || 1}</span>
+                      </span>
+                      <div style={{ display: 'flex', gap: 0, borderRadius: 6, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.15)', flexShrink: 0 }}>
+                        <button onClick={() => esEnvio && toggleShipItem(i)} style={{ padding: '5px 12px', fontSize: '0.78rem', fontWeight: 700, background: !esEnvio ? '#14BBA6' : 'transparent', color: !esEnvio ? '#fff' : 'rgba(255,255,255,0.4)', border: 'none', cursor: 'pointer', transition: 'all 0.15s' }}>
+                          🏠 Retira
+                        </button>
+                        <button onClick={() => !esEnvio && toggleShipItem(i)} style={{ padding: '5px 12px', fontSize: '0.78rem', fontWeight: 700, background: esEnvio ? '#14BBA6' : 'transparent', color: esEnvio ? '#fff' : 'rgba(255,255,255,0.4)', border: 'none', borderLeft: '1px solid rgba(255,255,255,0.15)', cursor: 'pointer', transition: 'all 0.15s' }}>
+                          🚚 Envío
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div style={{ marginTop: 8, fontSize: '0.78rem', color: 'rgba(20,187,166,0.8)', textAlign: 'right' }}>
+                {shipItemIdxs.size} de {cart.cart.length} ítems se envían
+              </div>
             </div>
 
             {/* Cliente */}
@@ -283,9 +320,9 @@ export default function VentasPage() {
               <button onClick={() => setShowShipModal(false)} style={{ flex: 1, padding: '10px 16px', background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 8, color: 'rgba(255,255,255,0.6)', fontWeight: 700, cursor: 'pointer' }}>
                 Cancelar
               </button>
-              <button onClick={handleCreateShipOrder} disabled={!shipClient || shipSaving}
-                style={{ flex: 2, padding: '10px 16px', background: shipClient ? '#14BBA6' : 'rgba(20,187,166,0.2)', border: 'none', borderRadius: 8, color: shipClient ? '#fff' : 'rgba(20,187,166,0.5)', fontWeight: 800, cursor: shipClient ? 'pointer' : 'default', fontSize: '0.95rem' }}>
-                {shipSaving ? 'Creando...' : '📦 Crear pedido de envío'}
+              <button onClick={handleCreateShipOrder} disabled={!shipClient || shipSaving || shipItemIdxs.size === 0}
+                style={{ flex: 2, padding: '10px 16px', background: (shipClient && shipItemIdxs.size > 0) ? '#14BBA6' : 'rgba(20,187,166,0.2)', border: 'none', borderRadius: 8, color: (shipClient && shipItemIdxs.size > 0) ? '#fff' : 'rgba(20,187,166,0.5)', fontWeight: 800, cursor: (shipClient && shipItemIdxs.size > 0) ? 'pointer' : 'default', fontSize: '0.95rem' }}>
+                {shipSaving ? 'Creando...' : `🚚 Crear nota (${shipItemIdxs.size} ítem${shipItemIdxs.size !== 1 ? 's' : ''})`}
               </button>
             </div>
           </div>

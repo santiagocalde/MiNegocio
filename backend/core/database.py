@@ -498,6 +498,10 @@ async def init_db(DB_PATH: str, logger) -> None:
         # F6: Pedido a proveedor como compra pendiente
         await add_column_if_not_exists(db, "purchases", "status", "TEXT", default="'confirmed'")
 
+        # Variantes de producto: columna en products para agrupar variantes bajo un producto padre
+        await add_column_if_not_exists(db, "products", "parent_product_id", "INTEGER")
+        await add_column_if_not_exists(db, "products", "variant_label", "TEXT", default="''")
+
         await db.commit()
 
         # Punto 55: Creación de índices para performance

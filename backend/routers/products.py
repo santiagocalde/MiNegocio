@@ -76,26 +76,30 @@ async def list_products(q: Optional[str] = Query(None), limit: int = Query(500),
     b_id = _biz_id()
     # LEFT JOIN a categories para devolver category_name (la tabla de inventario
     # lo muestra; antes el SELECT * no lo traía y siempre salía "Sin categoría").
+    # Subconsulta reutilizable: detecta si el producto tiene variantes hijas
+    _has_variants_pg  = "(SELECT COUNT(*) FROM products v WHERE v.parent_product_id = p.id AND v.is_active = 1) > 0 AS has_variants"
+    _has_variants_sq  = "(SELECT COUNT(*) FROM products v WHERE v.parent_product_id = p.id AND v.is_active = 1) > 0 AS has_variants"
+    _extra_codes_pg   = "(SELECT COALESCE(string_agg(pb.code, ','), '') FROM product_barcodes pb WHERE pb.product_id = p.id) AS extra_codes_raw"
+    _extra_codes_sq   = "(SELECT COALESCE(GROUP_CONCAT(pb.code, ','), '') FROM product_barcodes pb WHERE pb.product_id = p.id) AS extra_codes_raw"
+
     if USE_PG:
         from db_helpers import get_pg_pool
         pool = await get_pg_pool()
         async with pool.acquire() as conn:
+            base = (
+                f"SELECT p.*, c.name AS category_name, {_extra_codes_pg}, {_has_variants_pg} "
+                "FROM products p LEFT JOIN categories c ON c.id = p.category_id "
+            )
             if q:
                 rows = await conn.fetch(
-                    "SELECT p.*, c.name AS category_name, "
-                    "(SELECT COALESCE(string_agg(pb.code, ','), '') FROM product_barcodes pb WHERE pb.product_id = p.id) AS extra_codes_raw "
-                    "FROM products p "
-                    "LEFT JOIN categories c ON c.id = p.category_id "
-                    "WHERE p.business_id = $1 AND p.is_active = 1 AND (p.code ILIKE $2 OR p.name ILIKE $2) ORDER BY p.name LIMIT $3",
+                    base + "WHERE p.business_id = $1 AND p.is_active = 1 AND p.parent_product_id IS NULL "
+                    "AND (p.code ILIKE $2 OR p.name ILIKE $2) ORDER BY p.name LIMIT $3",
                     b_id, f"%{q}%", limit
                 )
             else:
                 rows = await conn.fetch(
-                    "SELECT p.*, c.name AS category_name, "
-                    "(SELECT COALESCE(string_agg(pb.code, ','), '') FROM product_barcodes pb WHERE pb.product_id = p.id) AS extra_codes_raw "
-                    "FROM products p "
-                    "LEFT JOIN categories c ON c.id = p.category_id "
-                    "WHERE p.business_id = $1 AND p.is_active = 1 ORDER BY p.name LIMIT $2",
+                    base + "WHERE p.business_id = $1 AND p.is_active = 1 AND p.parent_product_id IS NULL "
+                    "ORDER BY p.name LIMIT $2",
                     b_id, limit
                 )
             out = []
@@ -106,22 +110,21 @@ async def list_products(q: Optional[str] = Query(None), limit: int = Query(500),
             return out
     else:
         async with aiosqlite.connect(main.DB_PATH) as db:
+            base = (
+                f"SELECT p.*, c.name AS category_name, {_extra_codes_sq}, {_has_variants_sq} "
+                "FROM products p LEFT JOIN categories c ON c.id = p.category_id "
+            )
             if q:
                 cur = await db.execute(
-                    "SELECT p.*, c.name AS category_name, "
-                    "(SELECT COALESCE(GROUP_CONCAT(pb.code, ','), '') FROM product_barcodes pb WHERE pb.product_id = p.id) AS extra_codes_raw "
-                    "FROM products p "
-                    "LEFT JOIN categories c ON c.id = p.category_id "
-                    "WHERE p.is_active = 1 AND (p.code LIKE ? OR p.name LIKE ?) ORDER BY p.name LIMIT ?",
+                    base + "WHERE p.is_active = 1 AND p.parent_product_id IS NULL "
+                    "AND (p.code LIKE ? OR p.name LIKE ?) ORDER BY p.name LIMIT ?",
                     (f"%{q}%", f"%{q}%", limit)
                 )
             else:
                 cur = await db.execute(
-                    "SELECT p.*, c.name AS category_name, "
-                    "(SELECT COALESCE(GROUP_CONCAT(pb.code, ','), '') FROM product_barcodes pb WHERE pb.product_id = p.id) AS extra_codes_raw "
-                    "FROM products p "
-                    "LEFT JOIN categories c ON c.id = p.category_id "
-                    "WHERE p.is_active = 1 ORDER BY p.name LIMIT ?", (limit,))
+                    base + "WHERE p.is_active = 1 AND p.parent_product_id IS NULL ORDER BY p.name LIMIT ?",
+                    (limit,)
+                )
             rows = await cur.fetchall()
             out = []
             for r in rows:
@@ -129,6 +132,29 @@ async def list_products(q: Optional[str] = Query(None), limit: int = Query(500),
                 d["extra_codes"] = [c for c in (d.pop("extra_codes_raw", "") or "").split(",") if c]
                 out.append(d)
             return out
+
+
+@router.get("/api/products/{product_id}/variants", summary="Variantes de un producto")
+async def get_product_variants(product_id: int) -> list:
+    """Devuelve las variantes (hijos) de un producto padre."""
+    b_id = _biz_id()
+    if USE_PG:
+        from db_helpers import get_pg_pool
+        pool = await get_pg_pool()
+        async with pool.acquire() as conn:
+            rows = await conn.fetch(
+                "SELECT * FROM products WHERE business_id = $1 AND parent_product_id = $2 AND is_active = 1 ORDER BY variant_label",
+                b_id, product_id
+            )
+            return [dict(r) for r in rows]
+    else:
+        async with aiosqlite.connect(main.DB_PATH) as db:
+            cur = await db.execute(
+                "SELECT * FROM products WHERE parent_product_id = ? AND is_active = 1 ORDER BY variant_label",
+                (product_id,)
+            )
+            rows = await cur.fetchall()
+            return [row_to_dict(r, cur.description) for r in rows]
 
 
 @router.get("/api/products/dead-stock", summary="Productos sin rotacion")

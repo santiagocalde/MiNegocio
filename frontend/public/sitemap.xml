@@ -85,24 +85,31 @@
   <url><loc>https://mi-negocio.app/comparar-sistemas-para-corralones/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
 
 
-<url><loc>https://mi-negocio.app/software-vineria-buenos-aires/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
-<url><loc>https://mi-negocio.app/software-vineria-rosario/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
-<url><loc>https://mi-negocio.app/software-vineria-cordoba/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
-<url><loc>https://mi-negocio.app/software-vineria-mar-del-plata/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
-<url><loc>https://mi-negocio.app/software-vineria-mendoza/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
-<url><loc>https://mi-negocio.app/software-almacen-buenos-aires/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
-<url><loc>https://mi-negocio.app/software-almacen-rosario/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
-<url><loc>https://mi-negocio.app/software-almacen-cordoba/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
-<url><loc>https://mi-negocio.app/software-almacen-mar-del-plata/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
-<url><loc>https://mi-negocio.app/software-almacen-mendoza/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
-<url><loc>https://mi-negocio.app/software-ferreteria-buenos-aires/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
-<url><loc>https://mi-negocio.app/software-ferreteria-rosario/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
-<url><loc>https://mi-negocio.app/software-ferreteria-cordoba/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
-<url><loc>https://mi-negocio.app/software-ferreteria-mar-del-plata/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
-<url><loc>https://mi-negocio.app/software-ferreteria-mendoza/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
-<url><loc>https://mi-negocio.app/software-dietetica-buenos-aires/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
-<url><loc>https://mi-negocio.app/software-dietetica-rosario/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
-<url><loc>https://mi-negocio.app/software-dietetica-cordoba/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
-<url><loc>https://mi-negocio.app/software-dietetica-mar-del-plata/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
-<url><loc>https://mi-negocio.app/software-dietetica-mendoza/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <!-- ETAPA 8: Vinería - Ciudades -->
+  <url><loc>https://mi-negocio.app/software-vineria-buenos-aires/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://mi-negocio.app/software-vineria-rosario/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://mi-negocio.app/software-vineria-cordoba/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://mi-negocio.app/software-vineria-mar-del-plata/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://mi-negocio.app/software-vineria-mendoza/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+
+  <!-- ETAPA 9: Almacén - Ciudades -->
+  <url><loc>https://mi-negocio.app/software-almacen-buenos-aires/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://mi-negocio.app/software-almacen-rosario/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://mi-negocio.app/software-almacen-cordoba/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://mi-negocio.app/software-almacen-mar-del-plata/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://mi-negocio.app/software-almacen-mendoza/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+
+  <!-- ETAPA 10: Ferretería - Ciudades -->
+  <url><loc>https://mi-negocio.app/software-ferreteria-buenos-aires/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://mi-negocio.app/software-ferreteria-rosario/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://mi-negocio.app/software-ferreteria-cordoba/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://mi-negocio.app/software-ferreteria-mar-del-plata/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://mi-negocio.app/software-ferreteria-mendoza/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+
+  <!-- ETAPA 11: Dietética - Ciudades -->
+  <url><loc>https://mi-negocio.app/software-dietetica-buenos-aires/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://mi-negocio.app/software-dietetica-rosario/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://mi-negocio.app/software-dietetica-cordoba/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://mi-negocio.app/software-dietetica-mar-del-plata/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://mi-negocio.app/software-dietetica-mendoza/</loc><lastmod>2026-08-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
 </urlset>

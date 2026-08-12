@@ -126,6 +126,48 @@ export default function StockModule() {
   const [showNewCategory, setShowNewCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [promptState, setPromptState] = useState({ isOpen: false, title: '', value: '', onConfirm: null });
+  const [variantParent, setVariantParent] = useState(null);   // producto padre para gestión de variantes
+  const [variantList, setVariantList] = useState([]);
+  const [variantLoading, setVariantLoading] = useState(false);
+  const [newVariantLabel, setNewVariantLabel] = useState('');
+  const [newVariantPrice, setNewVariantPrice] = useState('');
+  const [newVariantStock, setNewVariantStock] = useState('');
+  const [variantSaving, setVariantSaving] = useState(false);
+
+  const openVariantManager = async (p) => {
+    setVariantParent(p);
+    setVariantLoading(true);
+    try {
+      const r = await apiGet(`/products/${p.id}/variants`);
+      if (r.ok) setVariantList(await r.json());
+    } catch {} finally { setVariantLoading(false); }
+  };
+
+  const handleAddVariant = async () => {
+    if (!newVariantLabel.trim()) { addToast('Escribí la etiqueta de la variante (ej: "25 kg").', 'error'); return; }
+    setVariantSaving(true);
+    try {
+      const r = await apiPost('/products', {
+        name: variantParent.name,
+        code: `${variantParent.code || ''}-${newVariantLabel.replace(/\s+/g, '').toLowerCase()}`,
+        price: parseFloat(newVariantPrice) || variantParent.price || 0,
+        stock: parseFloat(newVariantStock) || 0,
+        category_id: variantParent.category_id || null,
+        parent_product_id: variantParent.id,
+        variant_label: newVariantLabel.trim(),
+        unit_label: variantParent.unit_label || 'unidad',
+      });
+      if (r.ok) {
+        addToast(`Variante "${newVariantLabel}" creada.`, 'success');
+        setNewVariantLabel(''); setNewVariantPrice(''); setNewVariantStock('');
+        const r2 = await apiGet(`/products/${variantParent.id}/variants`);
+        if (r2.ok) setVariantList(await r2.json());
+        fetchProducts();
+        if (onProductsUpdated) onProductsUpdated();
+      } else { addToast('No se pudo crear la variante.', 'error'); }
+    } catch { addToast('Error de conexión.', 'error'); }
+    setVariantSaving(false);
+  };
   const [showScanner, setShowScanner] = useState(false);
   const [scanTarget, setScanTarget] = useState(null); // 'code' when scanning for product code
   const [importResult, setImportResult] = useState(null); // resultado de la última importación CSV
@@ -797,6 +839,7 @@ export default function StockModule() {
                           }
                         });
                       }} className="stock-act" style={{ background: 'transparent', color: 'var(--text-primary)', border: '1px solid var(--border-color)', padding: '6px 12px', borderRadius: 'var(--radius-sm)', fontSize: '0.82rem', cursor: 'pointer', fontWeight: 700, whiteSpace: 'nowrap' }}>Códigos</button>
+                      <button onClick={() => openVariantManager(p)} className="stock-act" style={{ background: 'transparent', color: 'var(--accent-primary)', border: '1px solid var(--accent-primary)', padding: '6px 12px', borderRadius: 'var(--radius-sm)', fontSize: '0.82rem', cursor: 'pointer', fontWeight: 700, whiteSpace: 'nowrap', opacity: 0.8 }} title="Gestionar variantes (presentaciones)">Variantes</button>
                       <button onClick={() => { setConfirmState({ isOpen: true, title: 'Eliminar Producto', message: 'Estas por eliminar ' + p.name + '. Esta accion no se puede deshacer.', confirmLabel: 'Eliminar', variant: 'danger', onConfirm: () => { setConfirmState(prev => ({...prev, isOpen: false})); apiDelete('/products/' + p.id).then(r => { if (r.ok) { addToast(p.name + ' eliminado.', 'success'); fetchProducts(); if (onProductsUpdated) onProductsUpdated(); } else addToast('No se pudo eliminar. Reintenta.', 'error'); }).catch(() => addToast('Sin internet.', 'error')); } }); }} style={{ background: 'rgba(239, 68, 68, 0.08)', color: 'var(--accent-danger)', border: '1px solid rgba(239, 68, 68, 0.2)', padding: '4px 8px', borderRadius: '6px', fontSize: '0.75rem', cursor: 'pointer', fontWeight: 600, whiteSpace: 'nowrap', marginLeft: 'auto' }}><Icons.Trash /></button>
                       {p.is_virtual === 1 && p.stock > 0 && (
                         <button onClick={() => handleUnpack(p.id)} style={{ background: 'rgba(59, 130, 246, 0.1)', color: 'var(--accent-primary)', border: '1px solid rgba(59, 130, 246, 0.2)', padding: '6px 12px', borderRadius: '6px', fontSize: '0.8rem', cursor: 'pointer', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Icons.Package style={{ width: '14px', height: '14px' }} /> Desarmar</button>
@@ -1160,6 +1203,49 @@ export default function StockModule() {
             <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
               <button onClick={() => setPromptState({...promptState, isOpen: false})} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', padding: '10px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Cancelar</button>
               <button onClick={() => promptState.onConfirm(promptState.value)} style={{ background: 'var(--gradient-primary)', border: 'none', color: 'white', padding: '10px 24px', borderRadius: '8px', cursor: 'pointer', fontWeight: 700 }}>Guardar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de gestión de variantes */}
+      {variantParent && (
+        <div onClick={() => setVariantParent(null)} style={{ position: 'fixed', inset: 0, zIndex: 2000, background: 'rgba(0,0,0,0.65)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 12, width: '100%', maxWidth: 460, padding: 24, boxShadow: 'var(--shadow-lg)', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+              <div>
+                <h3 style={{ margin: 0, fontWeight: 800, fontSize: '1rem', color: 'var(--text-primary)' }}>Variantes — {variantParent.name}</h3>
+                <p style={{ margin: '4px 0 0', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>Ej: 25 kg, 50 kg, Rojo, Grande</p>
+              </div>
+              <button onClick={() => setVariantParent(null)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1.2rem' }}>✕</button>
+            </div>
+            <div style={{ flex: 1, overflowY: 'auto', marginBottom: 16 }}>
+              {variantLoading && <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Cargando...</p>}
+              {!variantLoading && variantList.length === 0 && <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Sin variantes todavía. Agregá la primera abajo.</p>}
+              {variantList.map(v => (
+                <div key={v.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: 'var(--bg-hover)', borderRadius: 8, marginBottom: 6 }}>
+                  <span style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.9rem' }}>{v.variant_label}</span>
+                  <div style={{ display: 'flex', gap: 16, color: 'var(--text-secondary)', fontSize: '0.85rem', fontVariantNumeric: 'tabular-nums' }}>
+                    <span style={{ color: 'var(--accent-primary)', fontWeight: 700 }}>${(v.price || 0).toLocaleString('es-AR')}</span>
+                    <span>Stock: {v.stock ?? 0}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: 14 }}>
+              <p style={{ margin: '0 0 10px', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Agregar variante</p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px 80px', gap: 8, marginBottom: 10 }}>
+                <input placeholder="Etiqueta (ej: 25 kg)" value={newVariantLabel} onChange={e => setNewVariantLabel(e.target.value)}
+                  style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border-color)', background: 'var(--bg-hover)', color: 'var(--text-primary)', fontSize: '0.9rem', outline: 'none' }} />
+                <input type="number" placeholder="Precio" value={newVariantPrice} onChange={e => setNewVariantPrice(e.target.value)}
+                  style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border-color)', background: 'var(--bg-hover)', color: 'var(--text-primary)', fontSize: '0.9rem', outline: 'none', textAlign: 'right' }} />
+                <input type="number" placeholder="Stock" value={newVariantStock} onChange={e => setNewVariantStock(e.target.value)}
+                  style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border-color)', background: 'var(--bg-hover)', color: 'var(--text-primary)', fontSize: '0.9rem', outline: 'none', textAlign: 'right' }} />
+              </div>
+              <button onClick={handleAddVariant} disabled={variantSaving}
+                style={{ width: '100%', padding: '10px', background: 'var(--accent-primary)', border: 'none', borderRadius: 8, color: '#fff', fontWeight: 800, cursor: 'pointer', fontSize: '0.9rem' }}>
+                {variantSaving ? 'Guardando...' : '+ Agregar variante'}
+              </button>
             </div>
           </div>
         </div>
