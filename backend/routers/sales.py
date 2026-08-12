@@ -138,7 +138,7 @@ async def close_turn(turn_id: int, body: TurnClose) -> dict:
                 )
                 if not op_row:
                     raise HTTPException(403, detail="Operador no encontrado")
-                if op_row["role"] != "admin":
+                if op_row["role"] not in ("admin", "logistica", "manager"):
                     if not body.pin:
                         raise HTTPException(403, detail="El cajero debe ingresar su PIN para cerrar el turno")
                     if not bcrypt.checkpw(body.pin.encode(), op_row["pin"].encode()):
@@ -188,7 +188,7 @@ async def close_turn(turn_id: int, body: TurnClose) -> dict:
                 op_row = await cur.fetchone()
                 if not op_row:
                     raise HTTPException(403, detail="Operador no encontrado")
-                if op_row[1] != "admin":
+                if op_row[1] not in ("admin", "logistica", "manager"):
                     if not body.pin:
                         raise HTTPException(403, detail="El cajero debe ingresar su PIN para cerrar el turno")
                     if not bcrypt.checkpw(body.pin.encode(), op_row[0].encode()):

@@ -80,6 +80,7 @@ export default function RemitosModule() {
   const [formDate, setFormDate]       = useState(() => new Date().toISOString().slice(0, 10));
   const [formItems, setFormItems]     = useState([]);
   const [productSearch, setProductSearch] = useState('');
+  const [variantProduct, setVariantProduct] = useState(null);
   const [searchResults, setSearchResults] = useState([]);
 
   const fetchNotas = useCallback(async () => {
@@ -123,6 +124,14 @@ export default function RemitosModule() {
   const addItem = (p) => {
     setFormItems(prev => [...prev, { product_id: p.id, product_name: p.name, quantity: 1, unit_price: p.price || 0 }]);
     setProductSearch(''); setSearchResults([]);
+  };
+
+  const addOrPickVariant = (p) => {
+    if (p.has_variants) {
+      setVariantProduct(p);
+    } else {
+      addItem(p);
+    }
   };
   const removeItem = (i) => setFormItems(prev => prev.filter((_, idx) => idx !== i));
   const updateItemQty = (i, qty) => setFormItems(prev => prev.map((it, idx) => idx === i ? { ...it, quantity: Math.max(1, parseFloat(qty) || 1) } : it));
@@ -669,7 +678,7 @@ ${stopRows}
             {searchResults.length > 0 && (
               <div style={{ marginBottom: 8, maxHeight: 130, overflow: 'auto', border: '1px solid var(--lp-line)', borderRadius: 6 }}>
                 {searchResults.map(p => (
-                  <div key={p.id} onClick={() => addItem(p)} style={{ padding: '7px 10px', cursor: 'pointer', fontSize: '0.83rem', borderBottom: '1px solid var(--lp-line)', color: 'var(--lp-ink)' }}
+                  <div key={p.id} onClick={() => addOrPickVariant(p)} style={{ padding: '7px 10px', cursor: 'pointer', fontSize: '0.83rem', borderBottom: '1px solid var(--lp-line)', color: 'var(--lp-ink)' }}
                     onMouseEnter={e => e.currentTarget.style.background = 'var(--lp-paper-sunken)'}
                     onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                     {p.name} · <span style={{ fontFamily: 'var(--lp-font-mono)' }}>${formatPesos(p.price)}</span>
@@ -702,6 +711,17 @@ ${stopRows}
       )}
 
       {/* ── Modal: Postergar (mini date picker) ── */}
+      {variantProduct && (
+        <VariantPicker
+          product={variantProduct}
+          onSelect={v => {
+            addItem({ ...v, name: v.variant_label || v.name });
+            setVariantProduct(null);
+          }}
+          onClose={() => setVariantProduct(null)}
+        />
+      )}
+
       {postponeModal && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 1001, background: 'rgba(11,19,43,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
           onMouseDown={e => { if (e.target === e.currentTarget) setPostponeModal(null); }}>

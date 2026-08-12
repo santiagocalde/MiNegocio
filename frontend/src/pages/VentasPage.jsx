@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import useIsMobile from '../hooks/useIsMobile';
 import useCart from '../hooks/useCart';
 import useSales from '../hooks/useSales';
@@ -182,6 +183,7 @@ export default function VentasPage() {
             listType={cart.listType} setListType={cart.setListType} businessType={businessType} />
           </div>
         </div>
+        <div data-tour="payment-panel" style={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
         {/* Botón nota de pedido — visible cuando hay ítems en el carrito, antes de cobrar */}
         {businessType === 'corralon' && cart.cart.length > 0 && !showShipModal && (
           <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
@@ -197,7 +199,6 @@ export default function VentasPage() {
             )}
           </div>
         )}
-        <div data-tour="payment-panel" style={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
         <PaymentPanel cart={cart.cart} total={cart.total} adjustedTotal={cart.adjustedTotal}
           effectiveTotal={cart.effectiveTotal} subtotal={cart.subtotal} iva={cart.iva}
           discount={cart.discount} ivaRate={cart.ivaRate} change={cart.change}
@@ -284,10 +285,11 @@ export default function VentasPage() {
         productsDB={backend.productsDB}
         onAddToCart={p => cart.handleQuickAdd(p.code, p.name, p.price)} />
 
-      {sales.lastSale && (
+      {sales.lastSale && createPortal(
         <TicketPrint cart={sales.lastSale.cart} total={sales.lastSale.total} payment={sales.lastSale.payment}
           change={sales.lastSale.change} operator={auth.currentOperator?.name} ticketNumber={sales.ticketNumber}
-          config={backend.businessConfig} isClosingShift={false} tipoFactura={sales.lastSale.tipoFactura} afip={sales.lastSale.afip} paymentMethod={sales.lastSale.paymentMethod || cart.paymentMethod} />
+          config={backend.businessConfig} isClosingShift={false} tipoFactura={sales.lastSale.tipoFactura} afip={sales.lastSale.afip} paymentMethod={sales.lastSale.paymentMethod || cart.paymentMethod} />,
+        document.body
       )}
 
       {/* F7: Modal pedido de envío */}

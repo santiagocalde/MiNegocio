@@ -134,6 +134,10 @@ export default function StockModule() {
   const [newVariantPrice, setNewVariantPrice] = useState('');
   const [newVariantStock, setNewVariantStock] = useState('');
   const [variantSaving, setVariantSaving] = useState(false);
+  const [editingVariantId, setEditingVariantId] = useState(null);
+  const [editVariantLabel, setEditVariantLabel] = useState('');
+  const [editVariantPrice, setEditVariantPrice] = useState('');
+  const [editVariantStock, setEditVariantStock] = useState('');
 
   const openVariantManager = async (p) => {
     setVariantParent(p);
@@ -168,6 +172,56 @@ export default function StockModule() {
       } else { addToast('No se pudo crear la variante.', 'error'); }
     } catch { addToast('Error de conexión.', 'error'); }
     setVariantSaving(false);
+  };
+
+  const startEditVariant = (v) => {
+    setEditingVariantId(v.id);
+    setEditVariantLabel(v.variant_label || '');
+    setEditVariantPrice(v.price || '');
+    setEditVariantStock(v.stock ?? '');
+  };
+
+  const cancelEditVariant = () => {
+    setEditingVariantId(null);
+    setEditVariantLabel('');
+    setEditVariantPrice('');
+    setEditVariantStock('');
+  };
+
+  const handleUpdateVariant = async (v) => {
+    const price = parseFloat(editVariantPrice);
+    const stock = parseFloat(editVariantStock);
+    const label = editVariantLabel.trim();
+    if (!label) { addToast('La etiqueta no puede estar vacia.', 'error'); return; }
+    try {
+      const r = await apiPut('/products/' + v.id, {
+        variant_label: label,
+        price: isNaN(price) ? v.price : price,
+        stock: isNaN(stock) ? (v.stock ?? 0) : stock,
+      });
+      if (r.ok) {
+        addToast('Variante actualizada.', 'success');
+        cancelEditVariant();
+        const r2 = await apiGet('/products/' + variantParent.id + '/variants');
+        if (r2.ok) setVariantList(await r2.json());
+        fetchProducts();
+        if (onProductsUpdated) onProductsUpdated();
+      } else { addToast('No se pudo actualizar.', 'error'); }
+    } catch { addToast('Error de conexion.', 'error'); }
+  };
+
+  const handleDeleteVariant = async (v) => {
+    if (!window.confirm('Eliminar la variante ' + (v.variant_label || v.name) + '? Esta accion no se puede deshacer.')) return;
+    try {
+      const r = await apiDelete('/products/' + v.id);
+      if (r.ok) {
+        addToast('Variante eliminada.', 'success');
+        const r2 = await apiGet('/products/' + variantParent.id + '/variants');
+        if (r2.ok) setVariantList(await r2.json());
+        fetchProducts();
+        if (onProductsUpdated) onProductsUpdated();
+      } else { addToast('No se pudo eliminar.', 'error'); }
+    } catch { addToast('Error de conexion.', 'error'); }
   };
   const [showScanner, setShowScanner] = useState(false);
   const [scanTarget, setScanTarget] = useState(null); // 'code' when scanning for product code
@@ -1236,13 +1290,32 @@ export default function StockModule() {
               {variantLoading && <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Cargando...</p>}
               {!variantLoading && variantList.length === 0 && <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Sin variantes todavía. Agregá la primera abajo.</p>}
               {variantList.map(v => (
-                <div key={v.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: 'var(--bg-hover)', borderRadius: 8, marginBottom: 6 }}>
-                  <span style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.9rem' }}>{v.variant_label}</span>
-                  <div style={{ display: 'flex', gap: 16, color: 'var(--text-secondary)', fontSize: '0.85rem', fontVariantNumeric: 'tabular-nums' }}>
-                    <span style={{ color: 'var(--accent-primary)', fontWeight: 700 }}>${(v.price || 0).toLocaleString('es-AR')}</span>
-                    <span>Stock: {v.stock ?? 0}</span>
+                editingVariantId === v.id ? (
+                  <div key={v.id} style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '8px 12px', background: 'rgba(20,187,166,0.05)', border: '1px solid rgba(20,187,166,0.25)', borderRadius: 8, marginBottom: 6 }}>
+                    <input placeholder="Etiqueta" value={editVariantLabel} onChange={e => setEditVariantLabel(e.target.value)}
+                      style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: '0.85rem', outline: 'none' }} />
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <input type="number" placeholder="Precio" value={editVariantPrice} onChange={e => setEditVariantPrice(e.target.value)}
+                        style={{ flex: 1, padding: '6px 10px', borderRadius: 6, border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: '0.85rem', outline: 'none', textAlign: 'right' }} />
+                      <input type="number" placeholder="Stock" value={editVariantStock} onChange={e => setEditVariantStock(e.target.value)}
+                        style={{ flex: 1, padding: '6px 10px', borderRadius: 6, border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: '0.85rem', outline: 'none', textAlign: 'right' }} />
+                    </div>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <button onClick={() => handleUpdateVariant(v)} style={{ flex: 1, padding: '6px', background: 'var(--accent-primary)', border: 'none', borderRadius: 6, color: '#fff', fontWeight: 700, cursor: 'pointer', fontSize: '0.8rem' }}>Guardar</button>
+                      <button onClick={cancelEditVariant} style={{ flex: 1, padding: '6px', background: 'var(--bg-hover)', border: '1px solid var(--border-color)', borderRadius: 6, color: 'var(--text-secondary)', fontWeight: 600, cursor: 'pointer', fontSize: '0.8rem' }}>Cancelar</button>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div key={v.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: 'var(--bg-hover)', borderRadius: 8, marginBottom: 6 }}>
+                    <span style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.9rem', flex: 1 }}>{v.variant_label}</span>
+                    <div style={{ display: 'flex', gap: 12, alignItems: 'center', color: 'var(--text-secondary)', fontSize: '0.85rem', fontVariantNumeric: 'tabular-nums' }}>
+                      <span style={{ color: 'var(--accent-primary)', fontWeight: 700 }}>${(v.price || 0).toLocaleString('es-AR')}</span>
+                      <span>Stock: {v.stock ?? 0}</span>
+                      <button onClick={() => startEditVariant(v)} title="Editar" style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '0.85rem', padding: 2 }}>???</button>
+                      <button onClick={() => handleDeleteVariant(v)} title="Eliminar" style={{ background: 'none', border: 'none', color: 'var(--accent-danger)', cursor: 'pointer', fontSize: '0.9rem', padding: 2 }}>????</button>
+                    </div>
+                  </div>
+                )
               ))}
             </div>
             <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: 14 }}>
