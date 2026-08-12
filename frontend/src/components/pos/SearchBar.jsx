@@ -16,6 +16,11 @@ export default function SearchBar({
   const [showCatalog, setShowCatalog] = useState(false);
   const [variantProduct, setVariantProduct] = useState(null); // producto padre esperando selección de variante
 
+  const getPrice = (p) => {
+    const map = { a: p.price, b: p.price_b, c: p.price_c, d: p.price_d, e: p.price_e };
+    return (map[listType] || p.price) || 0;
+  };
+
   // Agrega al carrito directo o abre el picker si tiene variantes
   const addOrPickVariant = useCallback((p) => {
     if (p.has_variants) {
@@ -36,11 +41,6 @@ export default function SearchBar({
     return false;
   }, []);
 
-  const getPrice = (p) => {
-    const map = { a: p.price, b: p.price_b, c: p.price_c, d: p.price_d, e: p.price_e };
-    return (map[listType] || p.price) || 0;
-  };
-
   const playErrorBeep = useCallback(() => {
     try {
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -60,7 +60,7 @@ export default function SearchBar({
     const exact = findProductByAnyCode(productsDB, code);
     if (exact) {
       addToast(`Escaneado: ${exact.name}`, 'info');
-      handleQuickAdd(exact.code, exact.name, getPrice(exact));
+      addOrPickVariant(exact);
       setSearch('');
       searchRef.current?.focus();
     } else {
@@ -69,7 +69,7 @@ export default function SearchBar({
       playErrorBeep();
       addToast(`Código no encontrado: ${code}`, 'warning', 3500);
     }
-  }, [productsDB, handleQuickAdd, setSearch, searchRef, addToast, listType, playErrorBeep]);
+  }, [productsDB, addOrPickVariant, setSearch, searchRef, addToast, listType, playErrorBeep]);
   const autocomplete = useMemo(() => {
     if (!search.trim() || !productsDB) return [];
     return productsDB
@@ -118,7 +118,7 @@ export default function SearchBar({
             if (e.target.value.trim().length > 0 && e.target.value.trim().length < 3) {
               const term = e.target.value.trim();
               const codeMatch = findProductByAnyCode(productsDB, term);
-              if (codeMatch && !isDuplicateScan(term)) { handleQuickAdd(codeMatch.code, codeMatch.name, getPrice(codeMatch)); setSearch(''); searchRef.current?.focus(); }
+              if (codeMatch && !isDuplicateScan(term)) { addOrPickVariant(codeMatch); setSearch(''); searchRef.current?.focus(); }
             }
           }}
           onKeyDown={e => {
@@ -208,7 +208,7 @@ export default function SearchBar({
       {variantProduct && (
         <VariantPicker
           product={variantProduct}
-          onSelect={v => { handleQuickAdd(v.code || variantProduct.code, v.variant_label || v.name, getPrice(v)); searchRef.current?.focus(); }}
+          onSelect={v => { handleQuickAdd(v.code || variantProduct.code, v.variant_label || v.name, getPrice(v), v); searchRef.current?.focus(); }}
           onClose={() => setVariantProduct(null)}
           getPrice={getPrice}
         />
