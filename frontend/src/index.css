@@ -356,6 +356,13 @@ svg {
     box-shadow: 12px 0 40px rgba(0,0,0,0.6);
   }
   .sidebar-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 250; }
+
+  /* Cards en mobile: más redondeadas y con borde más definido para el contorno */
+  .ledger-sheet { border-radius: 12px; border-color: var(--border-color); }
+
+  /* Search bar en mobile: radio mayor y altura cómoda */
+  .search-bar { border-radius: 10px; height: 50px; padding: 0 14px; gap: 8px; }
+  .search-bar input { font-size: 1rem; }
 }
 
 

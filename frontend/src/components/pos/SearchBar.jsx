@@ -79,11 +79,11 @@ export default function SearchBar({
 
   // Estilos de acción compactos (mobile) vs normales (desktop)
   const actionBtnStyle = isMobile
-    ? { flex: 1, background: 'var(--bg-hover)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', padding: '7px 4px', borderRadius: '8px', fontSize: '0.72rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', minHeight: 36 }
+    ? { flex: 1, background: 'var(--bg-hover)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', padding: '0 4px', borderRadius: '10px', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '3px', height: 52 }
     : { background: 'var(--bg-hover)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', padding: '8px 12px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '6px' };
 
   return (
-    <div className="ledger-sheet" style={{ padding: isMobile ? '8px 10px' : '14px 18px' }}>
+    <div className="ledger-sheet" style={{ padding: isMobile ? '12px 12px' : '14px 18px' }}>
       {/* Desktop: título + botones en la misma fila */}
       {!isMobile && (
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px' }}>
@@ -194,18 +194,20 @@ export default function SearchBar({
           </div>
         )}
       </div>
-      {/* Mobile: fila de acciones compacta debajo del campo de búsqueda */}
+      {/* Mobile: fila de acciones debajo del campo de búsqueda */}
       {isMobile && (
-        <div style={{ display: 'flex', gap: '6px', marginTop: '7px' }}>
+        <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
           <button onClick={() => setShowCatalog(true)} style={actionBtnStyle}>
-            <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+            <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" style={{ flexShrink: 0 }}><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
             Catálogo
           </button>
           <button onClick={() => setShowPriceCheck(true)} style={actionBtnStyle}>
-            <Icons.Search style={{ width: 13, height: 13, flexShrink: 0 }} />Precio
+            <Icons.Search style={{ width: 18, height: 18, flexShrink: 0 }} />
+            Precio
           </button>
           <button onClick={() => setShowAddAmountModal(true)} style={actionBtnStyle}>
-            <Icons.DollarSign style={{ width: 13, height: 13, flexShrink: 0 }} />Monto
+            <Icons.DollarSign style={{ width: 18, height: 18, flexShrink: 0 }} />
+            Monto
           </button>
         </div>
       )}

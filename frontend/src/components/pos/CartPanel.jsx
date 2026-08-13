@@ -74,7 +74,10 @@ export default function CartPanel({ cart, total, adjustedTotal, updateQty, setIt
 
       <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '6px 10px' : '12px 20px', display: 'flex', flexDirection: 'column', gap: isMobile ? '4px' : '6px' }}>
         {cart.length === 0 ? (
-          <div style={{ textAlign: 'center', color: 'var(--text-secondary)', marginTop: isMobile ? '16px' : '40px', fontSize: isMobile ? '0.85rem' : undefined }}>No hay productos en el carrito.</div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: isMobile ? 6 : 10, padding: isMobile ? '10px 0' : '40px 0', color: 'var(--text-secondary)' }}>
+            <svg width={isMobile ? 28 : 40} height={isMobile ? 28 : 40} fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24" opacity="0.35"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z"/></svg>
+            <span style={{ fontSize: isMobile ? '0.82rem' : '0.92rem' }}>Buscá un producto para agregar</span>
+          </div>
         ) : (
           cart.map(item => (
             <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: isMobile ? '6px 8px' : '8px 12px', background: 'var(--surface-veil)', borderRadius: isMobile ? '8px' : '12px', border: '1px solid var(--border-color)' }}>

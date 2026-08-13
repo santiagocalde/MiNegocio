@@ -207,10 +207,10 @@ export default function Sidebar({
         onClick={() => setCollapsed(false)}
         aria-label="Abrir menú"
         style={{
-          position: 'fixed', top: '50%', left: 0, transform: 'translateY(-50%)',
+          position: 'fixed', top: 12, left: 0,
           zIndex: 310, background: 'var(--bg-card)', border: '1px solid var(--border-color)',
           borderLeft: 'none', borderRadius: '0 8px 8px 0',
-          width: 20, height: 48,
+          width: 20, height: 44,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           cursor: 'pointer', opacity: 0.35,
           color: 'var(--text-secondary)', fontSize: '0.75rem', lineHeight: 1,
