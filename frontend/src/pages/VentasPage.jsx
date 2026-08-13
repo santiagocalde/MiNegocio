@@ -165,8 +165,8 @@ export default function VentasPage() {
       <TopBar currentOperator={auth.currentOperator} sucursales={backend.sucursales}
         currentSucursalId={currentSucursalId} setCurrentSucursalId={setCurrentSucursalId} />
 
-      <div style={{ padding: isMobile ? '8px 10px' : '16px 24px', width: '100%', height: isMobile ? 'calc(100dvh - 60px)' : 'calc(100% - 72px)', display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '8px' : '16px', alignItems: 'flex-start', boxSizing: 'border-box' }}>
-        <div style={{ flex: isMobile ? '0 0 auto' : '2', display: 'flex', flexDirection: 'column', gap: isMobile ? '8px' : '16px', minHeight: 0, height: isMobile ? 'auto' : '100%', maxHeight: isMobile ? '48vh' : undefined }}>
+      <div style={{ padding: isMobile ? '8px 16px' : '16px 24px', width: '100%', height: isMobile ? 'calc(100dvh - 60px)' : 'calc(100% - 72px)', display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '8px' : '16px', alignItems: isMobile ? 'stretch' : 'flex-start', boxSizing: 'border-box', overflowY: isMobile ? 'auto' : undefined }}>
+        <div style={{ flex: isMobile ? '0 0 auto' : '2', display: 'flex', flexDirection: 'column', gap: isMobile ? '8px' : '16px', minHeight: 0, height: isMobile ? 'auto' : '100%', maxHeight: isMobile ? '55vh' : undefined }}>
           <div data-tour="search-bar" style={{ width: '100%', flexShrink: 0 }}>
           <SearchBar search={cart.search} setSearch={cart.setSearch} searchRef={searchRef}
             searchError={cart.searchError} flash={cart.flash}
@@ -183,7 +183,7 @@ export default function VentasPage() {
             listType={cart.listType} setListType={cart.setListType} businessType={businessType} />
           </div>
         </div>
-        <div data-tour="payment-panel" style={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
+        <div data-tour="payment-panel" style={{ flex: 1, minHeight: 0, overflowY: "auto", width: isMobile ? '100%' : undefined }}>
         {/* Botón nota de pedido — visible cuando hay ítems en el carrito, antes de cobrar */}
         {businessType === 'corralon' && cart.cart.length > 0 && !showShipModal && (
           <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>

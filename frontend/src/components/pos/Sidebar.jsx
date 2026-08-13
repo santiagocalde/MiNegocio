@@ -212,12 +212,12 @@ export default function Sidebar({
           borderLeft: 'none', borderRadius: '0 8px 8px 0',
           width: 20, height: 44,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          cursor: 'pointer', opacity: 0.35,
+          cursor: 'pointer', opacity: 0.6,
           color: 'var(--text-secondary)', fontSize: '0.75rem', lineHeight: 1,
           transition: 'opacity 0.2s',
         }}
-        onTouchStart={e => e.currentTarget.style.opacity = '0.85'}
-        onTouchEnd={e => e.currentTarget.style.opacity = '0.35'}
+        onTouchStart={e => e.currentTarget.style.opacity = '1'}
+        onTouchEnd={e => e.currentTarget.style.opacity = '0.6'}
       >
         ›
       </button>

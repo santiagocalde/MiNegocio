@@ -119,7 +119,7 @@ export default function PaymentPanel({
         </div>
       </div>
 
-      <div className="ledger-sheet" style={{ marginTop: '0', padding: '14px 18px' }}>
+      <div className="ledger-sheet" style={{ marginTop: '0', padding: isMobile ? '10px 12px' : '14px 18px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
           <h3 className="ledger-label" style={{ fontSize: '0.72rem' }}>Accesos rápidos</h3>
           <button onClick={() => setIsEditingQuick(!isEditingQuick)} style={{ background: isEditingQuick ? 'var(--accent-primary)' : 'var(--surface-veil)', color: isEditingQuick ? 'var(--bg-card)' : 'var(--text-secondary)', border: 'none', borderRadius: '6px', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s' }}>
