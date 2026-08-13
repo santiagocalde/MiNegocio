@@ -162,33 +162,30 @@ export default function ReportsModule() {
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: isMobile ? '10px' : '16px', marginBottom: '24px', flexShrink: 0 }}>
-        <div className="ledger-sheet" style={{ padding: isMobile ? '12px' : '20px', position: 'relative' }}>
-          <div className="ledger-label" style={{ marginBottom: '12px' }}>Total de Ventas</div>
-          <div className="ledger-num" style={{ fontSize: '1.7rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '4px' }}>{summary.totalVentas}</div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Total de ventas registradas del negocio.</div>
-          <svg style={{ position: 'absolute', top: '20px', right: '20px', color: 'var(--text-secondary)', opacity: 0.5 }} width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+      {/* En mobile: 2 cards por fila, pero compactas y con font menor para no desbordar */}
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: isMobile ? '8px' : '16px', marginBottom: '24px', flexShrink: 0 }}>
+        <div className="ledger-sheet" style={{ padding: isMobile ? '10px' : '20px', position: 'relative', minWidth: 0 }}>
+          <div className="ledger-label" style={{ marginBottom: isMobile ? '6px' : '12px', fontSize: isMobile ? '0.65rem' : undefined }}>Total Ventas</div>
+          <div className="ledger-num" style={{ fontSize: isMobile ? '1.4rem' : '1.7rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '4px' }}>{summary.totalVentas}</div>
+          <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', display: isMobile ? 'none' : undefined }}>Total de ventas registradas.</div>
         </div>
 
-        <div className="ledger-sheet" style={{ padding: isMobile ? '12px' : '20px', position: 'relative' }}>
-          <div className="ledger-label" style={{ marginBottom: '12px' }}>Ingresos Totales</div>
-          <div className="ledger-num" style={{ fontSize: '1.7rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '4px' }}>{formatPesos(summary.ingresos)}</div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Ingresos totales registrados del negocio.</div>
-          <svg style={{ position: 'absolute', top: '20px', right: '20px', color: 'var(--text-secondary)', opacity: 0.5 }} width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <div className="ledger-sheet" style={{ padding: isMobile ? '10px' : '20px', position: 'relative', minWidth: 0 }}>
+          <div className="ledger-label" style={{ marginBottom: isMobile ? '6px' : '12px', fontSize: isMobile ? '0.65rem' : undefined }}>Ingresos</div>
+          <div className="ledger-num" style={{ fontSize: isMobile ? '1.1rem' : '1.7rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{formatPesos(summary.ingresos)}</div>
+          <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', display: isMobile ? 'none' : undefined }}>Ingresos totales registrados.</div>
         </div>
 
-        <div className="ledger-sheet" style={{ padding: isMobile ? '12px' : '20px', position: 'relative' }}>
-          <div className="ledger-label" style={{ marginBottom: '12px' }}>Método de Pago Más Usado</div>
-          <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '4px', letterSpacing: '-0.5px' }}>{summary.metodoUsado}</div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{summary.pctEfectivo}% de las ventas</div>
-          <svg style={{ position: 'absolute', top: '20px', right: '20px', color: 'var(--text-secondary)', opacity: 0.5 }} width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+        <div className="ledger-sheet" style={{ padding: isMobile ? '10px' : '20px', position: 'relative', minWidth: 0 }}>
+          <div className="ledger-label" style={{ marginBottom: isMobile ? '6px' : '12px', fontSize: isMobile ? '0.65rem' : undefined }}>Pago más usado</div>
+          <div style={{ fontSize: isMobile ? '1.2rem' : '1.6rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '4px', letterSpacing: '-0.5px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{summary.metodoUsado}</div>
+          <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', display: isMobile ? 'none' : undefined }}>{summary.pctEfectivo}% de las ventas</div>
         </div>
 
-        <div className="ledger-sheet" style={{ padding: isMobile ? '12px' : '20px', position: 'relative' }}>
-          <div className="ledger-label" style={{ marginBottom: '12px' }}>Producto Más Popular</div>
-          <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '4px', letterSpacing: '-0.5px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{summary.productoPopular}</div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{summary.pctProducto} ventas</div>
-          <svg style={{ position: 'absolute', top: '20px', right: '20px', color: 'var(--text-secondary)', opacity: 0.5 }} width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+        <div className="ledger-sheet" style={{ padding: isMobile ? '10px' : '20px', position: 'relative', minWidth: 0 }}>
+          <div className="ledger-label" style={{ marginBottom: isMobile ? '6px' : '12px', fontSize: isMobile ? '0.65rem' : undefined }}>Más popular</div>
+          <div style={{ fontSize: isMobile ? '1rem' : '1.6rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '4px', letterSpacing: '-0.5px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{summary.productoPopular}</div>
+          <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>{summary.pctProducto} ventas</div>
         </div>
       </div>
 
