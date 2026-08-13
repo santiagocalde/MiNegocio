@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import { usePanelContext } from '../context/PanelContext';
 import { apiGet, apiPost } from '../services/apiClient';
 import FeatureGate from '../components/ui/FeatureGate';
@@ -12,6 +13,7 @@ import PedidoProveedorTab from './purchases/PedidoProveedorTab';
 const PLAN_WEIGHT = { trial: 1, simple: 1, pro: 2, ia: 3 };
 
 export default function PurchasesModule() {
+  const location = useLocation();
   const { backend, addToast, auth, currentPlan, businessType } = usePanelContext();
   const globalProductsDB = backend.productsDB;
   const onProductsUpdated = backend.fetchProductsDB;
@@ -106,6 +108,9 @@ export default function PurchasesModule() {
     setLoading(false);
   };
 
+  // Si se navega desde ProveedoresModule con ?supplier_id=X, filtrar historial por ese proveedor.
+  const supplierIdFromUrl = new URLSearchParams(location.search).get('supplier_id');
+
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchSuppliers();
@@ -113,6 +118,15 @@ export default function PurchasesModule() {
     if (activeTab === 'pending') fetchPendingPurchases();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
+
+  // Cuando se cargaron los proveedores y hay un supplier_id en la URL,
+  // pre-filtrar el historial por ese proveedor.
+  useEffect(() => {
+    if (!supplierIdFromUrl || suppliers.length === 0) return;
+    const found = suppliers.find(s => String(s.id) === String(supplierIdFromUrl));
+    if (found) setSearchTerm(found.name);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [suppliers, supplierIdFromUrl]);
 
   const addToCart = (product) => {
     const existing = cart.find(i => i.product_id === product.id);

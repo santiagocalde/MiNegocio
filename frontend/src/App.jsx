@@ -1,6 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { PanelProvider } from './context/PanelContext';
+import { PanelProvider, usePanelContext } from './context/PanelContext';
 import PanelLayout from './layouts/PanelLayout';
 import LandingPage from './pages/LandingPage';
 import ErrorBoundary from './components/ui/ErrorBoundary';
@@ -56,6 +56,62 @@ function PanelSuspense({ children }) {
   );
 }
 
+// Mapa de moduleKey → path de fallback (primer módulo disponible del operador)
+const MODULE_PATH = {
+  'Mostrador':          '/panel/ventas',
+  'Presupuestos':       '/panel/presupuestos',
+  'Acopios':            '/panel/acopios',
+  'Lista de clientes':  '/panel/lista-clientes',
+  'Cuentas corrientes': '/panel/clientes',
+  'Notas de pedido':    '/panel/remitos',
+  'Depósito':           '/panel/inventario',
+  'Historial':          '/panel/auditoria',
+  'Reportes':           '/panel/dashboard',
+  'Configuración':      '/panel/configuracion',
+};
+
+/**
+ * Protege una ruta por módulo o por rol. Sólo actúa cuando el operador tiene
+ * permisos personalizados (permissions != null && length > 0); si usa los
+ * defaults del rol el sidebar es la única barrera (nivel básico acordado).
+ *
+ * - adminOnly: sólo admin puede entrar. manager y resto son redirigidos.
+ * - moduleKey: si el operador tiene perms custom y NO incluye esta clave,
+ *   redirige a su primer módulo permitido (o /panel/ventas).
+ */
+function RoleGuard({ children, moduleKey, adminOnly }) {
+  const { auth } = usePanelContext();
+  const currentOperator = auth?.currentOperator;
+
+  // Sin operador: PanelProvider ya maneja la autenticación.
+  if (!currentOperator) return children;
+
+  const role = currentOperator.role;
+  const perms = currentOperator.permissions; // null | string[]
+  const isPrivileged = role === 'admin' || role === 'manager';
+
+  // Admin y manager pasan todo.
+  if (isPrivileged) return children;
+
+  // Rutas exclusivas de admin.
+  if (adminOnly) {
+    const fallback = Array.isArray(perms) && perms.length > 0
+      ? (MODULE_PATH[perms[0]] || '/panel/ventas')
+      : '/panel/ventas';
+    return <Navigate to={fallback} replace />;
+  }
+
+  // Sin moduleKey o sin perms personalizados: la ruta es accesible.
+  if (!moduleKey || !Array.isArray(perms) || perms.length === 0) return children;
+
+  // Si el módulo está en los perms, OK.
+  if (perms.includes(moduleKey)) return children;
+
+  // No permitido: ir al primer módulo habilitado.
+  const fallback = MODULE_PATH[perms[0]] || '/panel/ventas';
+  return <Navigate to={fallback} replace />;
+}
+
 function App() {
   return (
     <BrowserRouter>
@@ -76,26 +132,26 @@ function App() {
         }>
           <Route index element={<Navigate to="inicio" replace />} />
           <Route path="inicio" element={<PanelSuspense><InicioPage /></PanelSuspense>} />
-          <Route path="ventas" element={<PanelSuspense><VentasPage /></PanelSuspense>} />
-          <Route path="inventario" element={<PanelSuspense><StockModule /></PanelSuspense>} />
+          <Route path="ventas" element={<RoleGuard moduleKey="Mostrador"><PanelSuspense><VentasPage /></PanelSuspense></RoleGuard>} />
+          <Route path="inventario" element={<RoleGuard moduleKey="Depósito"><PanelSuspense><StockModule /></PanelSuspense></RoleGuard>} />
           <Route path="compras" element={<PanelSuspense><PurchasesModule /></PanelSuspense>} />
-          <Route path="clientes" element={<PanelSuspense><FiadoModule /></PanelSuspense>} />
+          <Route path="clientes" element={<RoleGuard moduleKey="Cuentas corrientes"><PanelSuspense><FiadoModule /></PanelSuspense></RoleGuard>} />
           <Route path="proveedores" element={<PanelSuspense><ProveedoresModule /></PanelSuspense>} />
           <Route path="etiquetas" element={<PanelSuspense><EtiquetasModule /></PanelSuspense>} />
           <Route path="catalogo-web" element={<PanelSuspense><CatalogoModule /></PanelSuspense>} />
           <Route path="reportes" element={<PanelSuspense><ReportsModule /></PanelSuspense>} />
           <Route path="promociones" element={<PanelSuspense><PromotionModule /></PanelSuspense>} />
           <Route path="recomendaciones" element={<PanelSuspense><RecomendacionesModule /></PanelSuspense>} />
-          <Route path="usuarios" element={<PanelSuspense><UsuariosModule /></PanelSuspense>} />
-          <Route path="auditoria" element={<PanelSuspense><AuditModule /></PanelSuspense>} />
-          <Route path="presupuestos" element={<PanelSuspense><QuotesModule /></PanelSuspense>} />
-          <Route path="remitos" element={<PanelSuspense><RemitosModule /></PanelSuspense>} />
+          <Route path="usuarios" element={<RoleGuard adminOnly><PanelSuspense><UsuariosModule /></PanelSuspense></RoleGuard>} />
+          <Route path="auditoria" element={<RoleGuard moduleKey="Historial"><PanelSuspense><AuditModule /></PanelSuspense></RoleGuard>} />
+          <Route path="presupuestos" element={<RoleGuard moduleKey="Presupuestos"><PanelSuspense><QuotesModule /></PanelSuspense></RoleGuard>} />
+          <Route path="remitos" element={<RoleGuard moduleKey="Notas de pedido"><PanelSuspense><RemitosModule /></PanelSuspense></RoleGuard>} />
           <Route path="obras" element={<PanelSuspense><ObrasModule /></PanelSuspense>} />
-          <Route path="lista-clientes" element={<PanelSuspense><ClientesModule /></PanelSuspense>} />
-          <Route path="acopios" element={<PanelSuspense><AcopiosModule /></PanelSuspense>} />
+          <Route path="lista-clientes" element={<RoleGuard moduleKey="Lista de clientes"><PanelSuspense><ClientesModule /></PanelSuspense></RoleGuard>} />
+          <Route path="acopios" element={<RoleGuard moduleKey="Acopios"><PanelSuspense><AcopiosModule /></PanelSuspense></RoleGuard>} />
           <Route path="devoluciones" element={<PanelSuspense><CreditNotesModule /></PanelSuspense>} />
-          <Route path="dashboard" element={<PanelSuspense><DashboardModule /></PanelSuspense>} />
-          <Route path="configuracion" element={<PanelSuspense><ConfigPage /></PanelSuspense>} />
+          <Route path="dashboard" element={<RoleGuard moduleKey="Reportes"><PanelSuspense><DashboardModule /></PanelSuspense></RoleGuard>} />
+          <Route path="configuracion" element={<RoleGuard adminOnly><PanelSuspense><ConfigPage /></PanelSuspense></RoleGuard>} />
           <Route path="soporte" element={<PanelSuspense><SoportePage /></PanelSuspense>} />
           <Route path="plan" element={<PanelSuspense><PlanPage /></PanelSuspense>} />
         </Route>
