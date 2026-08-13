@@ -12,8 +12,10 @@ const Icons = {
 };
 
 export default function AuditModule() {
-  const { addToast, currentPlan } = usePanelContext();
-  const isLocked = PLAN_WEIGHT[currentPlan] < PLAN_WEIGHT['pro'];
+  const { addToast, currentPlan, plan } = usePanelContext();
+  // Esperar a que el plan esté cargado antes de bloquear (evita falso-positivo con caché vieja)
+  const planLoaded = plan?.planLoaded ?? true;
+  const isLocked = planLoaded && PLAN_WEIGHT[currentPlan] < PLAN_WEIGHT['pro'];
   const [movements, setMovements] = useState([]);
   const [filterType, setFilterType] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
