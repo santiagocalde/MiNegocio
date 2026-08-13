@@ -215,12 +215,14 @@ export default function Sidebar({
         <div data-tour="sidebar-nav">
         {NAV_ITEMS.map((section) => {
           if (section.roles && !section.roles.includes(role)) return null;
-          const operatorPerms = currentOperator?.permissions; // null = sin restricción
+          const operatorPerms = currentOperator?.permissions; // null/[] = sin restricción
+          const isPrivileged = role === 'admin' || role === 'manager';
           const items = section.items.filter(item => {
             if (item.roles && !item.roles.includes(role)) return false;
             if (item.featureKey && !features[item.featureKey]) return false;
-            // Filtrar por permisos granulares del operador (solo si tiene permisos customizados)
-            if (operatorPerms && item.moduleKey && !operatorPerms.includes(item.moduleKey)) return false;
+            // Filtrar por permisos granulares SOLO en roles no privilegiados con perms customizados no vacíos.
+            // admin/manager ven todo siempre; permisos null o [] también = acceso completo.
+            if (!isPrivileged && Array.isArray(operatorPerms) && operatorPerms.length > 0 && item.moduleKey && !operatorPerms.includes(item.moduleKey)) return false;
             return true;
           });
 
