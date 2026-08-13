@@ -505,6 +505,9 @@ async def init_db(DB_PATH: str, logger) -> None:
         # Proveedor asociado al producto (FK a suppliers)
         await add_column_if_not_exists(db, "products", "supplier_id", "INTEGER")
 
+        # Permisos por módulo para operadores (JSON array, NULL = acceso completo por rol)
+        await add_column_if_not_exists(db, "operators", "permissions", "TEXT")
+
         await db.commit()
 
         # Punto 55: Creación de índices para performance

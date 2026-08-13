@@ -3,6 +3,7 @@ Operadores y login local por PIN.
 """
 import os
 import hmac
+import json
 import logging
 from datetime import datetime
 from typing import Optional
@@ -105,7 +106,7 @@ async def login(request: Request, data: dict) -> dict:
         pool = await get_pg_pool()
         async with pool.acquire() as conn:
             b_id = business_id_ctx.get()
-            rows = await conn.fetch("SELECT id, name, pin, role FROM operators WHERE business_id = $1", b_id)
+            rows = await conn.fetch("SELECT id, name, pin, role, permissions FROM operators WHERE business_id = $1", b_id)
             for row in rows:
                 stored = row["pin"] or ""
                 if stored.startswith("$2b$"):
@@ -122,27 +123,39 @@ async def login(request: Request, data: dict) -> dict:
         raise HTTPException(status_code=401, detail="PIN incorrecto")
     else:
         async with aiosqlite.connect(main.DB_PATH) as db:
-            async with db.execute("SELECT id, name, pin, role FROM operators") as cur:
+            db.row_factory = aiosqlite.Row
+            async with db.execute("SELECT id, name, pin, role, permissions FROM operators") as cur:
                 rows = await cur.fetchall()
-        for op_id, op_name, op_pin_hash, op_role in rows:
-            stored = op_pin_hash or ""
+        for row in rows:
+            stored = row["pin"] or ""
             if stored.startswith("$2b$"):
                 if bcrypt.checkpw(pin.encode(), stored.encode()):
-                    t = await _ensure_open_turn(op_name)
-                    return {"operator_id": op_id, "id": op_id, "name": op_name, "role": op_role, **t}
+                    t = await _ensure_open_turn(row["name"])
+                    return {**_base_op(row), **t}
             # PIN legacy en texto plano: constant-time + migración a bcrypt.
             elif hmac.compare_digest(pin, stored):
                 new_hash = bcrypt.hashpw(pin.encode(), bcrypt.gensalt()).decode()
                 async with aiosqlite.connect(main.DB_PATH) as db2:
-                    await db2.execute("UPDATE operators SET pin = ? WHERE id = ?", (new_hash, op_id))
+                    await db2.execute("UPDATE operators SET pin = ? WHERE id = ?", (new_hash, row["id"]))
                     await db2.commit()
-                t = await _ensure_open_turn(op_name)
-                return {"operator_id": op_id, "id": op_id, "name": op_name, "role": op_role, **t}
+                t = await _ensure_open_turn(row["name"])
+                return {**_base_op(row), **t}
         raise HTTPException(status_code=401, detail="PIN incorrecto")
 
 
+def _parse_permissions(raw) -> list | None:
+    """Parsea el campo permissions de la BD (JSON string o None)."""
+    if raw is None:
+        return None
+    try:
+        return json.loads(raw)
+    except Exception:
+        return None
+
+
 def _base_op(row) -> dict:
-    return {"operator_id": row["id"], "id": row["id"], "name": row["name"], "role": row["role"]}
+    perms = _parse_permissions(row["permissions"] if "permissions" in row.keys() else None)
+    return {"operator_id": row["id"], "id": row["id"], "name": row["name"], "role": row["role"], "permissions": perms}
 
 
 # ── Login de dueño sin PIN (cuenta de un solo operador) ───────
@@ -165,7 +178,7 @@ async def login_owner(request: Request) -> dict:
             if not b_id:
                 raise HTTPException(status_code=401, detail="No autenticado")
             rows = await conn.fetch(
-                "SELECT id, name, role FROM operators WHERE business_id = $1", b_id
+                "SELECT id, name, role, permissions FROM operators WHERE business_id = $1", b_id
             )
             if len(rows) != 1:
                 raise HTTPException(status_code=409, detail="La cuenta tiene mas de un operador; se requiere PIN")
@@ -174,13 +187,14 @@ async def login_owner(request: Request) -> dict:
             return {**_base_op(row), **t}
     else:
         async with aiosqlite.connect(main.DB_PATH) as db:
-            async with db.execute("SELECT id, name, role FROM operators") as cur:
+            db.row_factory = aiosqlite.Row
+            async with db.execute("SELECT id, name, role, permissions FROM operators") as cur:
                 rows = await cur.fetchall()
         if len(rows) != 1:
             raise HTTPException(status_code=409, detail="La cuenta tiene mas de un operador; se requiere PIN")
-        op_id, op_name, op_role = rows[0]
-        t = await _ensure_open_turn(op_name)
-        return {"operator_id": op_id, "id": op_id, "name": op_name, "role": op_role, **t}
+        row = rows[0]
+        t = await _ensure_open_turn(row["name"])
+        return {**_base_op(row), **t}
 
 
 # ── CRUD Operadores ───────────────────────────────────────────
@@ -192,15 +206,21 @@ async def list_operators() -> list:
         pool = await get_pg_pool()
         async with pool.acquire() as conn:
             rows = await conn.fetch(
-                "SELECT id, name, role FROM operators WHERE business_id = $1 ORDER BY name",
+                "SELECT id, name, role, permissions FROM operators WHERE business_id = $1 ORDER BY name",
                 business_id_ctx.get(),
             )
-            return [dict(r) for r in rows]
+            out = []
+            for r in rows:
+                d = dict(r)
+                d["permissions"] = _parse_permissions(d.get("permissions"))
+                out.append(d)
+            return out
     else:
         async with aiosqlite.connect(main.DB_PATH) as db:
-            async with db.execute("SELECT id, name, role FROM operators") as cur:
+            db.row_factory = aiosqlite.Row
+            async with db.execute("SELECT id, name, role, permissions FROM operators") as cur:
                 rows = await cur.fetchall()
-                return [_row_to_dict(r, cur.description) for r in rows]
+                return [{"id": r["id"], "name": r["name"], "role": r["role"], "permissions": _parse_permissions(r["permissions"])} for r in rows]
 
 
 @router.put("/api/operators", summary="Reemplazar todos los operadores")
@@ -245,11 +265,13 @@ async def create_operator(request: Request, data: dict) -> dict:
     name = str(data.get("name", "")).strip()
     pin  = str(data.get("pin", ""))
     role = str(data.get("role", "employee"))
+    perms_raw = data.get("permissions")  # list | None
+    perms_json = json.dumps(perms_raw) if isinstance(perms_raw, list) else None
     if not name:
         raise HTTPException(400, detail="Nombre requerido")
     if not pin.isdigit() or len(pin) < 4 or len(pin) > 6:
         raise HTTPException(400, detail="PIN 4-6 digitos")
-    if role not in ("admin", "manager", "employee", "cashier", "logistica"):
+    if role not in ("admin", "manager", "employee", "cashier", "logistica", "vendedor"):
         raise HTTPException(400, detail="Rol invalido")
 
     if USE_PG:
@@ -275,17 +297,18 @@ async def create_operator(request: Request, data: dict) -> dict:
         async with pool.acquire() as conn:
             b_id = business_id_ctx.get()
             row = await conn.fetchrow(
-                "INSERT INTO operators (business_id, name, pin, role) VALUES ($1,$2,$3,$4) RETURNING id",
-                b_id, name, _hash_pin(pin), role,
+                "INSERT INTO operators (business_id, name, pin, role, permissions) VALUES ($1,$2,$3,$4,$5) RETURNING id",
+                b_id, name, _hash_pin(pin), role, perms_json,
             )
-            return {"id": row["id"], "name": name, "role": role}
+            return {"id": row["id"], "name": name, "role": role, "permissions": perms_raw}
     else:
         async with aiosqlite.connect(main.DB_PATH) as db:
             cur = await db.execute(
-                "INSERT INTO operators (name, pin, role) VALUES (?,?,?)", (name, _hash_pin(pin), role)
+                "INSERT INTO operators (name, pin, role, permissions) VALUES (?,?,?,?)",
+                (name, _hash_pin(pin), role, perms_json)
             )
             await db.commit()
-            return {"id": cur.lastrowid, "name": name, "role": role}
+            return {"id": cur.lastrowid, "name": name, "role": role, "permissions": perms_raw}
 
 
 @router.post("/api/operators/{operator_id}", summary="Actualizar operador")
@@ -309,9 +332,13 @@ async def patch_operator(operator_id: int, data: dict) -> dict:
                 updates.append(f"pin = ${n}"); params.append(_hash_pin(p)); n += 1
             if "role" in data:
                 r = str(data["role"])
-                if r not in ("admin", "manager", "employee", "cashier"):
+                if r not in ("admin", "manager", "employee", "cashier", "logistica", "vendedor"):
                     raise HTTPException(400, detail="Rol invalido")
                 updates.append(f"role = ${n}"); params.append(r); n += 1
+            if "permissions" in data:
+                perms = data["permissions"]
+                perms_json = json.dumps(perms) if isinstance(perms, list) else None
+                updates.append(f"permissions = ${n}"); params.append(perms_json); n += 1
             if not updates:
                 return {"message": "Sin cambios"}
             params.append(operator_id)
@@ -332,9 +359,13 @@ async def patch_operator(operator_id: int, data: dict) -> dict:
                 updates.append("pin = ?"); params.append(_hash_pin(p))
             if "role" in data:
                 r = str(data["role"])
-                if r not in ("admin", "manager", "employee", "cashier"):
+                if r not in ("admin", "manager", "employee", "cashier", "logistica", "vendedor"):
                     raise HTTPException(400, detail="Rol invalido")
                 updates.append("role = ?"); params.append(r)
+            if "permissions" in data:
+                perms = data["permissions"]
+                perms_json = json.dumps(perms) if isinstance(perms, list) else None
+                updates.append("permissions = ?"); params.append(perms_json)
             if not updates:
                 return {"message": "Sin cambios"}
             params.append(operator_id)

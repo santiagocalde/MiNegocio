@@ -137,39 +137,39 @@ export default function Sidebar({
         category: 'ADMIN',
         roles: ['admin', 'manager'],
         items: [
-          { label: 'Dashboard', path: '/panel/dashboard', icon: 'Chart', roles: ['admin'] },
+          { label: 'Dashboard', path: '/panel/dashboard', icon: 'Chart', roles: ['admin'], moduleKey: 'Reportes' },
           { label: 'Caja', path: '/panel/inicio', icon: 'Lock', roles: ['admin', 'manager'] },
-          { label: 'Historial', path: '/panel/auditoria', icon: 'Clipboard', roles: ['admin', 'manager'], minPlan: 'pro', featureKey: 'auditoria' },
+          { label: 'Historial', path: '/panel/auditoria', icon: 'Clipboard', roles: ['admin', 'manager'], minPlan: 'pro', featureKey: 'auditoria', moduleKey: 'Historial' },
         ],
       },
       {
         category: 'VENTAS',
         items: [
-          { label: 'Mostrador', path: '/panel/ventas', icon: 'ShoppingCart', roles: ['admin', 'manager', 'operator', 'vendedor'] },
-          { label: 'Presupuestos', path: '/panel/presupuestos', icon: 'Clipboard', roles: ['admin', 'manager', 'vendedor'] },
+          { label: 'Mostrador', path: '/panel/ventas', icon: 'ShoppingCart', roles: ['admin', 'manager', 'operator', 'vendedor', 'cashier'], moduleKey: 'Mostrador' },
+          { label: 'Presupuestos', path: '/panel/presupuestos', icon: 'Clipboard', roles: ['admin', 'manager', 'vendedor', 'cashier'], moduleKey: 'Presupuestos' },
           { label: 'Devoluciones', path: '/panel/devoluciones', icon: 'Edit', roles: ['admin', 'manager'] },
-          { label: 'Acopios', path: '/panel/acopios', icon: 'Box', roles: ['admin', 'manager', 'vendedor'] },
+          { label: 'Acopios', path: '/panel/acopios', icon: 'Box', roles: ['admin', 'manager', 'vendedor', 'cashier'], moduleKey: 'Acopios' },
         ],
       },
       {
         category: 'LOGÍSTICA',
-        roles: ['admin', 'manager', 'logistica'],
+        roles: ['admin', 'manager', 'logistica', 'cashier', 'vendedor'],
         items: [
-          { label: 'Notas de pedido', path: '/panel/remitos', icon: 'Truck', roles: ['admin', 'manager', 'logistica'] },
+          { label: 'Notas de pedido', path: '/panel/remitos', icon: 'Truck', roles: ['admin', 'manager', 'logistica', 'cashier', 'vendedor'], moduleKey: 'Notas de pedido' },
         ],
       },
       {
         category: 'CLIENTES',
         items: [
-          { label: 'Lista de clientes', path: '/panel/lista-clientes', icon: 'Users', roles: ['admin', 'manager', 'operator', 'vendedor'] },
-          { label: 'Cuentas corrientes', path: '/panel/clientes', icon: 'Book', roles: ['admin', 'manager', 'operator', 'vendedor'], featureKey: 'fiados' },
+          { label: 'Lista de clientes', path: '/panel/lista-clientes', icon: 'Users', roles: ['admin', 'manager', 'operator', 'vendedor', 'cashier'], moduleKey: 'Lista de clientes' },
+          { label: 'Cuentas corrientes', path: '/panel/clientes', icon: 'Book', roles: ['admin', 'manager', 'operator', 'vendedor', 'cashier'], featureKey: 'fiados', moduleKey: 'Cuentas corrientes' },
         ],
       },
       {
         category: 'STOCK',
         roles: ['admin', 'manager'],
         items: [
-          { label: 'Depósito', path: '/panel/inventario', icon: 'Box' },
+          { label: 'Depósito', path: '/panel/inventario', icon: 'Box', moduleKey: 'Depósito' },
         ],
       },
       {
@@ -184,7 +184,7 @@ export default function Sidebar({
         category: 'SISTEMA',
         roles: ['admin'],
         items: [
-          { label: 'Configuración', path: '/panel/configuracion', icon: 'Settings' },
+          { label: 'Configuración', path: '/panel/configuracion', icon: 'Settings', moduleKey: 'Configuración' },
           { label: 'Usuarios', path: '/panel/usuarios', icon: 'Users' },
         ],
       },
@@ -215,9 +215,12 @@ export default function Sidebar({
         <div data-tour="sidebar-nav">
         {NAV_ITEMS.map((section) => {
           if (section.roles && !section.roles.includes(role)) return null;
+          const operatorPerms = currentOperator?.permissions; // null = sin restricción
           const items = section.items.filter(item => {
             if (item.roles && !item.roles.includes(role)) return false;
             if (item.featureKey && !features[item.featureKey]) return false;
+            // Filtrar por permisos granulares del operador (solo si tiene permisos customizados)
+            if (operatorPerms && item.moduleKey && !operatorPerms.includes(item.moduleKey)) return false;
             return true;
           });
 

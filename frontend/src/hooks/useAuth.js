@@ -30,8 +30,8 @@ export default function useAuth(addToast) {
       if (res.ok) {
         const data = await res.json();
         const operatorObj = data.operator_id
-          ? { id: data.operator_id, name: data.name || data.operator_name || 'Dueño', role: data.role || 'admin' }
-          : { name: data.name || 'Dueño', role: 'admin' };
+          ? { id: data.operator_id, name: data.name || data.operator_name || 'Dueño', role: data.role || 'admin', permissions: data.permissions ?? null }
+          : { name: data.name || 'Dueño', role: 'admin', permissions: null };
         setCurrentOperator(operatorObj);
         setCurrentTurnId(data.turn_id);
         if (data.turn_opened_at) {
@@ -66,8 +66,8 @@ export default function useAuth(addToast) {
       if (!res.ok) return false;
       const data = await res.json();
       const operatorObj = data.operator_id
-        ? { id: data.operator_id, name: data.name || data.operator_name || 'Dueño', role: data.role || 'admin' }
-        : { name: data.name || 'Dueño', role: 'admin' };
+        ? { id: data.operator_id, name: data.name || data.operator_name || 'Dueño', role: data.role || 'admin', permissions: data.permissions ?? null }
+        : { name: data.name || 'Dueño', role: 'admin', permissions: null };
       setCurrentOperator(operatorObj);
       setCurrentTurnId(data.turn_id);
       if (data.turn_opened_at) {
