@@ -114,7 +114,7 @@ export default function SearchBar({
         <input
           ref={searchRef}
           type="text"
-          placeholder="Buscar producto... (Enter para agregar)"
+          placeholder="Buscar producto..."
           aria-label="Buscar producto por código o nombre"
           value={search}
           onChange={e => {

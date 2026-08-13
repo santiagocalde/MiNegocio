@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePanelContext } from '../context/PanelContext';
+import useIsMobile from '../hooks/useIsMobile';
 import { apiGet, apiPost, apiPut, apiDelete } from '../services/apiClient';
 import FeatureGate from '../components/ui/FeatureGate';
 
@@ -16,6 +17,7 @@ const Icons = {
 
 export default function PromotionModule() {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const { addToast, currentPlan } = usePanelContext();
   const PLAN_WEIGHT = { trial: 1, simple: 1, pro: 2, ia: 3 };
   const isLocked = PLAN_WEIGHT[currentPlan] < PLAN_WEIGHT['simple'];
@@ -186,19 +188,19 @@ export default function PromotionModule() {
 
   return (
     <FeatureGate isLocked={isLocked} requiredPlan="Simple">
-    <div style={{ padding: '12px 20px', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflowY: 'auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '16px', flexShrink: 0 }}>
+    <div style={{ padding: isMobile ? '12px 14px' : '12px 20px', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflowY: 'auto', overflowX: 'hidden' }}>
+      <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'stretch' : 'flex-end', gap: isMobile ? '10px' : '0', marginBottom: '16px', flexShrink: 0 }}>
         <div>
           <div className="ledger-label">Combos y descuentos</div>
           <h1 className="ledger-title" style={{ fontSize: '1.6rem', marginTop: 4 }}>Promociones</h1>
         </div>
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <button onClick={handleOpenModal} style={{ background: 'var(--accent-primary)', border: 'none', color: 'var(--sheet)', padding: '11px 20px', borderRadius: 'var(--radius-sm)', fontSize: '0.9rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', transition: 'filter 0.15s' }}
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          <button onClick={handleOpenModal} style={{ flex: isMobile ? 1 : undefined, background: 'var(--accent-primary)', border: 'none', color: 'var(--sheet)', padding: '11px 20px', borderRadius: 'var(--radius-sm)', fontSize: '0.9rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer', transition: 'filter 0.15s' }}
             onMouseEnter={e => e.currentTarget.style.filter = 'brightness(1.08)'}
             onMouseLeave={e => e.currentTarget.style.filter = 'brightness(1)'}>
             <Icons.Plus /> Nueva promoción
           </button>
-          <button onClick={() => navigate('/panel/ventas')} style={{ background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', padding: '12px 24px', borderRadius: '8px', fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button onClick={() => navigate('/panel/ventas')} style={{ flex: isMobile ? 1 : undefined, background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', padding: '12px 24px', borderRadius: '8px', fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
             <Icons.Close /> Cerrar
           </button>
         </div>

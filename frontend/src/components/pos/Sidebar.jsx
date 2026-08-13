@@ -229,7 +229,7 @@ export default function Sidebar({
     {isMobile && !collapsed && <div className="sidebar-backdrop" onClick={() => setCollapsed(true)} />}
     <aside className={`sidebar${collapsed ? ' collapsed' : ''}`}>
       <div className="brand" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, padding: '6px 8px', borderBottom: 'none', boxShadow: 'none' }}>
-        <img className="sidebar-logo" src={LogoPrincipal} alt="MiNegocio" onClick={() => navigate('/panel/ventas')} style={{ maxWidth: '120px', width: '70%', height: 'auto', objectFit: 'contain', cursor: 'pointer' }} />
+        {!isMobile && <img className="sidebar-logo" src={LogoPrincipal} alt="MiNegocio" onClick={() => navigate('/panel/ventas')} style={{ maxWidth: '120px', width: '70%', height: 'auto', objectFit: 'contain', cursor: 'pointer' }} />}
         <button className="sidebar-toggle" onClick={() => setCollapsed(c => !c)} title={collapsed ? 'Expandir menú' : 'Contraer menú'} aria-label={collapsed ? 'Expandir menú' : 'Contraer menú'}
           style={{ background: 'var(--bg-hover)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', borderRadius: 8, minWidth: 30, height: 30, fontSize: '1.1rem', lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
           {collapsed ? '›' : '‹'}

@@ -377,6 +377,7 @@ svg {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  overflow-x: hidden;
 }
 
 /* Topbar - Glassmorphic */

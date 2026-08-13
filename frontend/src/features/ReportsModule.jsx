@@ -131,26 +131,26 @@ export default function ReportsModule() {
   }, [fetchReports, dateFrom, dateTo]);
 
   const renderReports = () => (
-    <div style={{ padding: '12px 20px', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflowY: 'auto' }}>
+    <div style={{ padding: isMobile ? '12px 14px' : '12px 20px', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflowY: 'auto', overflowX: 'hidden' }}>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: '12px', flexWrap: 'wrap', marginBottom: '18px', flexShrink: 0 }}>
+      <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'stretch' : 'flex-end', gap: isMobile ? '10px' : '12px', marginBottom: '18px', flexShrink: 0 }}>
         <div>
           <div className="ledger-label">Libro de ventas</div>
-          <h1 className="ledger-title" style={{ fontSize: '1.6rem', marginTop: 4 }}>Cómo venís</h1>
+          <h1 className="ledger-title" style={{ fontSize: isMobile ? '1.3rem' : '1.6rem', marginTop: 4 }}>Cómo venís</h1>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <label className="ledger-label">Fecha desde</label>
-            <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} style={{ background: 'var(--sheet)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '0 16px', borderRadius: 'var(--radius-sm)', outline: 'none', fontFamily: 'var(--font-mono)', fontSize: '0.85rem', height: '42px', fontWeight: 600 }} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: isMobile ? 1 : undefined }}>
+            <label className="ledger-label">Desde</label>
+            <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} style={{ background: 'var(--sheet)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '0 10px', borderRadius: 'var(--radius-sm)', outline: 'none', fontFamily: 'var(--font-mono)', fontSize: '0.85rem', height: '42px', fontWeight: 600, width: '100%', boxSizing: 'border-box' }} />
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <label className="ledger-label">Fecha hasta</label>
-            <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} style={{ background: 'var(--sheet)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '0 16px', borderRadius: 'var(--radius-sm)', outline: 'none', fontFamily: 'var(--font-mono)', fontSize: '0.85rem', height: '42px', fontWeight: 600 }} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: isMobile ? 1 : undefined }}>
+            <label className="ledger-label">Hasta</label>
+            <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} style={{ background: 'var(--sheet)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '0 10px', borderRadius: 'var(--radius-sm)', outline: 'none', fontFamily: 'var(--font-mono)', fontSize: '0.85rem', height: '42px', fontWeight: 600, width: '100%', boxSizing: 'border-box' }} />
           </div>
 
-          <button onClick={() => fetchReports()} disabled={loading} title="Actualizar" style={{ height: '42px', padding: '0 16px', background: 'var(--accent-primary)', border: 'none', borderRadius: 'var(--radius-sm)', color: 'var(--sheet)', cursor: loading ? 'wait' : 'pointer', fontSize: '0.9rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <button onClick={() => fetchReports()} disabled={loading} title="Actualizar" style={{ height: '42px', padding: '0 16px', background: 'var(--accent-primary)', border: 'none', borderRadius: 'var(--radius-sm)', color: 'var(--sheet)', cursor: loading ? 'wait' : 'pointer', fontSize: '0.9rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, alignSelf: 'flex-end' }}>
             Actualizar
           </button>
         </div>

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { TableVirtuoso } from 'react-virtuoso';
 import { usePanelContext } from '../context/PanelContext';
+import useIsMobile from '../hooks/useIsMobile';
 import { apiGet, apiPost, apiPut, apiDelete, SERVER_URL } from '../services/apiClient';
 import { SkeletonTable } from '../components/ui/Skeleton';
 import EmptyState from '../components/ui/EmptyState';
@@ -97,6 +98,7 @@ const valorizedStock = (p) => {
 const formatMoney = (n) => '$' + Number(n || 0).toLocaleString('es-AR');
 
 export default function StockModule() {
+  const isMobile = useIsMobile();
   const { backend, addToast } = usePanelContext();
   const onProductsUpdated = backend.fetchProductsDB;
   const [products, setProducts] = useState([]);
@@ -557,29 +559,29 @@ export default function StockModule() {
   };
 
   return (
-    <div style={{ padding: '12px 20px', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflowY: 'auto' }}>
+    <div style={{ padding: isMobile ? '12px 14px' : '12px 20px', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflowY: 'auto', overflowX: 'hidden' }}>
 
       {/* HEADER */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: '10px', flexWrap: 'wrap', marginBottom: '16px', flexShrink: 0 }}>
+      <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'stretch' : 'flex-end', gap: '10px', marginBottom: '16px', flexShrink: 0 }}>
         <div>
           <div className="ledger-label">Libro de inventario</div>
-          <h1 className="ledger-title" style={{ fontSize: '1.6rem', marginTop: 4 }}>Lo que tenés</h1>
+          <h1 className="ledger-title" style={{ fontSize: isMobile ? '1.3rem' : '1.6rem', marginTop: 4 }}>Lo que tenés</h1>
         </div>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-           <button onClick={() => setShowNuevoProducto(true)} style={{ background: 'var(--accent-primary)', color: 'var(--sheet)', border: 'none', borderRadius: 'var(--radius-sm)', padding: '10px 18px', fontSize: '0.92rem', fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap', transition: 'filter 0.15s' }}
+           <button onClick={() => setShowNuevoProducto(true)} style={{ flex: isMobile ? 1 : undefined, background: 'var(--accent-primary)', color: 'var(--sheet)', border: 'none', borderRadius: 'var(--radius-sm)', padding: '10px 18px', fontSize: '0.9rem', fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap', transition: 'filter 0.15s', textAlign: 'center' }}
               onMouseEnter={e => e.currentTarget.style.filter = 'brightness(1.08)'}
               onMouseLeave={e => e.currentTarget.style.filter = 'brightness(1)'}>
-              + Nuevo producto
+              + Nuevo
             </button>
-            <button onClick={() => setShowAumentoMasivo(true)} style={{ background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--accent-danger)', padding: '10px 15px', borderRadius: 'var(--radius-sm)', fontSize: '0.92rem', fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap', transition: 'border-color 0.15s' }}
+            <button onClick={() => setShowAumentoMasivo(true)} style={{ flex: isMobile ? 1 : undefined, background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--accent-danger)', padding: '10px 12px', borderRadius: 'var(--radius-sm)', fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px', whiteSpace: 'nowrap', transition: 'border-color 0.15s' }}
               onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--accent-danger)'}
               onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border-color)'}>
-              <Icons.Chart /> Aumento masivo
+              <Icons.Chart /> {isMobile ? 'Aumento' : 'Aumento masivo'}
             </button>
             <input type="file" ref={fileInputRef} accept=".csv,.txt,.tsv" style={{ display: 'none' }} onChange={handleImportCsv} />
-            <div style={{ display: 'inline-flex', gap: 0 }}>
-              <button onClick={() => fileInputRef.current?.click()} style={{ background: 'transparent', border: '1px solid var(--border-color)', borderRight: 'none', color: 'var(--text-primary)', padding: '10px 15px', borderRadius: 'var(--radius-sm) 0 0 var(--radius-sm)', fontSize: '0.92rem', fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}>
-                <Icons.Download /> Importar CSV
+            <div style={{ display: 'inline-flex', gap: 0, flex: isMobile ? 1 : undefined }}>
+              <button onClick={() => fileInputRef.current?.click()} style={{ flex: 1, background: 'transparent', border: '1px solid var(--border-color)', borderRight: 'none', color: 'var(--text-primary)', padding: '10px 12px', borderRadius: 'var(--radius-sm) 0 0 var(--radius-sm)', fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px', whiteSpace: 'nowrap' }}>
+                <Icons.Download /> CSV
               </button>
               <button onClick={() => setShowCsvHelp(true)} title="Ver formato esperado y descargar plantilla"
                 style={{ background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', padding: '10px 11px', borderRadius: '0 var(--radius-sm) var(--radius-sm) 0', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}>
