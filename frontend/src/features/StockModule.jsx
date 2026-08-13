@@ -140,6 +140,7 @@ export default function StockModule() {
   const [editVariantLabel, setEditVariantLabel] = useState('');
   const [editVariantPrice, setEditVariantPrice] = useState('');
   const [editVariantStock, setEditVariantStock] = useState('');
+  const [openActionMenu, setOpenActionMenu] = useState(null); // id del producto con menú de acciones abierto (mobile)
 
   const openVariantManager = async (p) => {
     setVariantParent(p);
@@ -380,6 +381,28 @@ export default function StockModule() {
     } catch {
       if (addToast) addToast("Sin internet. Revisá tu conexión.", "error");
     }
+  };
+
+  // Acciones por producto, unificadas para desktop (botones) y mobile (menú ⋯)
+  const productActions = (p) => {
+    const cfg = JSON.parse(localStorage.getItem('minegocio_config') || '{}');
+    const lbB = cfg.price_list_b_name || 'Lista B';
+    const lbC = cfg.price_list_c_name || 'Lista C';
+    const actions = [
+      { label: '$ Precio', tone: 'default', onClick: () => setPromptState({ isOpen: true, title: `Nuevo precio para ${p.name} (actual: $${p.price})`, value: p.price ?? '', onConfirm: async (newPrice) => { setPromptState(prev => ({...prev, isOpen: false})); if (newPrice !== null && newPrice !== '' && !isNaN(newPrice) && parseFloat(newPrice) >= 0) { try { const res = await apiPost(`/products/${p.id}/price`, { price: parseFloat(newPrice) }); if (res.ok) { addToast?.(`Precio de ${p.name} actualizado.`, 'success'); fetchProducts(); onProductsUpdated?.(); } else addToast?.('No se pudo actualizar el precio. Reintentá o revisá tu conexión.', 'error'); } catch { addToast?.('Sin internet. Revisá tu conexión.', 'error'); } } } }) },
+      { label: `$ ${lbB}`, tone: 'warning', onClick: () => setPromptState({ isOpen: true, title: `${lbB} para ${p.name} (actual: ${p.price_b ? '$' + p.price_b : 'sin cargar'})`, value: p.price_b ?? '', onConfirm: async (val) => { setPromptState(prev => ({...prev, isOpen: false})); if (val !== null && val !== '' && !isNaN(val) && parseFloat(val) >= 0) { try { const res = await apiPut(`/products/${p.id}`, { price_b: parseFloat(val) }); if (res.ok) { addToast?.(`${lbB} de ${p.name} actualizado.`, 'success'); fetchProducts(); onProductsUpdated?.(); } else addToast?.('No se pudo actualizar.', 'error'); } catch { addToast?.('Sin internet.', 'error'); } } } }) },
+      { label: `$ ${lbC}`, tone: 'primary', onClick: () => setPromptState({ isOpen: true, title: `${lbC} para ${p.name} (actual: ${p.price_c ? '$' + p.price_c : 'sin cargar'})`, value: p.price_c ?? '', onConfirm: async (val) => { setPromptState(prev => ({...prev, isOpen: false})); if (val !== null && val !== '' && !isNaN(val) && parseFloat(val) >= 0) { try { const res = await apiPut(`/products/${p.id}`, { price_c: parseFloat(val) }); if (res.ok) { addToast?.(`${lbC} de ${p.name} actualizado.`, 'success'); fetchProducts(); onProductsUpdated?.(); } else addToast?.('No se pudo actualizar.', 'error'); } catch { addToast?.('Sin internet.', 'error'); } } } }) },
+      { label: 'Stock', tone: 'default', onClick: () => setPromptState({ isOpen: true, title: `Nuevo stock para ${p.name} (actual: ${p.stock})`, value: p.stock ?? '', onConfirm: async (newStock) => { setPromptState(prev => ({...prev, isOpen: false})); if (newStock !== null && newStock !== '' && !isNaN(newStock) && parseInt(newStock) >= 0) { try { const res = await apiPost(`/products/${p.id}/stock`, { stock: parseInt(newStock) }); if (res.ok) { addToast?.(`Stock de ${p.name} actualizado.`, 'success'); fetchProducts(); onProductsUpdated?.(); } else addToast?.('No se pudo actualizar el stock. Reintentá o revisá tu conexión.', 'error'); } catch { addToast?.('Sin internet. Revisá tu conexión.', 'error'); } } } }) },
+      { label: 'Nombre', tone: 'default', onClick: () => setPromptState({ isOpen: true, title: `Nuevo nombre para ${p.name}`, value: p.name, onConfirm: async (newName) => { setPromptState(prev => ({...prev, isOpen: false})); if (newName !== null && newName.trim()) { try { const res = await apiPut(`/products/${p.id}`, { name: newName.trim() }); if (res.ok) { addToast?.(`Nombre de ${p.name} actualizado.`, 'success'); fetchProducts(); onProductsUpdated?.(); } else addToast?.('No se pudo actualizar el nombre. Reintentá o revisá tu conexión.', 'error'); } catch { addToast?.('Sin internet. Revisá tu conexión.', 'error'); } } } }) },
+      { label: 'Costo', tone: 'default', onClick: () => setPromptState({ isOpen: true, title: `Costo de ${p.name} (actual: ${p.cost_price ? '$' + p.cost_price : 'sin cargar'})`, value: p.cost_price ?? '', onConfirm: async (newCost) => { setPromptState(prev => ({...prev, isOpen: false})); if (newCost !== null && newCost !== '' && !isNaN(newCost) && parseFloat(newCost) >= 0) { try { const res = await apiPut(`/products/${p.id}`, { cost_price: parseFloat(newCost) }); if (res.ok) { addToast?.(`Costo de ${p.name} actualizado.`, 'success'); fetchProducts(); onProductsUpdated?.(); } else addToast?.('No se pudo actualizar el costo. Reintentá o revisá tu conexión.', 'error'); } catch { addToast?.('Sin internet. Revisá tu conexión.', 'error'); } } } }) },
+      { label: 'Códigos', tone: 'default', onClick: () => setPromptState({ isOpen: true, title: `Códigos de barra para ${p.name}`, value: (p.extra_codes || []).join(', '), text: true, hint: 'Separados por coma. Los códigos cargados reemplazan a los anteriores.', onConfirm: async (codes) => { setPromptState(prev => ({...prev, isOpen: false})); try { const res = await apiPut(`/products/${p.id}`, { extra_codes: (codes || '').split(',').map(c => c.trim()).filter(Boolean) }); if (res.ok) { addToast?.(`Códigos de ${p.name} actualizados.`, 'success'); fetchProducts(); onProductsUpdated?.(); } else addToast?.('No se pudieron actualizar los códigos. Reintentá o revisá tu conexión.', 'error'); } catch { addToast?.('Sin internet. Revisá tu conexión.', 'error'); } } }) },
+      { label: 'Variantes', tone: 'primary', onClick: () => openVariantManager(p) },
+      { label: 'Eliminar', tone: 'danger', onClick: () => setConfirmState({ isOpen: true, title: 'Eliminar Producto', message: 'Estas por eliminar ' + p.name + '. Esta accion no se puede deshacer.', confirmLabel: 'Eliminar', variant: 'danger', onConfirm: () => { setConfirmState(prev => ({...prev, isOpen: false})); apiDelete('/products/' + p.id).then(r => { if (r.ok) { addToast(p.name + ' eliminado.', 'success'); fetchProducts(); onProductsUpdated?.(); } else addToast('No se pudo eliminar. Reintenta.', 'error'); }).catch(() => addToast('Sin internet.', 'error')); } }) },
+    ];
+    if (p.is_virtual === 1 && p.stock > 0) {
+      actions.push({ label: 'Desarmar', tone: 'blue', onClick: () => handleUnpack(p.id) });
+    }
+    return actions;
   };
 
   const handleAumentoMasivo = async () => {
@@ -738,172 +761,30 @@ export default function StockModule() {
                   <td style={{ padding: '8px 16px', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
                     {p.supplier_name || '—'}
                   </td>
-                  <td style={{ padding: '16px 24px', textAlign: 'center' }}>
-                    <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                      <button onClick={() => {
-                        setPromptState({
-                          isOpen: true,
-                          title: `Nuevo precio para ${p.name} (actual: $${p.price})`,
-                          value: p.price ?? '',
-                          onConfirm: async (newPrice) => {
-                            setPromptState(prev => ({...prev, isOpen: false}));
-                            if (newPrice !== null && newPrice !== '' && !isNaN(newPrice) && parseFloat(newPrice) >= 0) {
-                              try {
-                                const res = await apiPost(`/products/${p.id}/price`, { price: parseFloat(newPrice) });
-                                if (res.ok) {
-                                  if (addToast) addToast(`Precio de ${p.name} actualizado.`, 'success');
-                                  fetchProducts();
-                                  if (onProductsUpdated) onProductsUpdated();
-                                } else {
-                                  if (addToast) addToast('No se pudo actualizar el precio. Reintentá o revisá tu conexión.', 'error');
-                                }
-                              } catch {
-                                if (addToast) addToast('Sin internet. Revisá tu conexión.', 'error');
-                              }
-                            }
-                          }
-                        });
-                      }} className="stock-act" style={{ background: 'transparent', color: 'var(--text-primary)', border: '1px solid var(--border-color)', padding: '6px 12px', borderRadius: 'var(--radius-sm)', fontSize: '0.82rem', cursor: 'pointer', fontWeight: 700, whiteSpace: 'nowrap' }}>$ Precio</button>
-                      <button onClick={() => {
-                        const cfg = JSON.parse(localStorage.getItem('minegocio_config') || '{}');
-                        const lbB = cfg.price_list_b_name || 'Lista B';
-                        setPromptState({
-                          isOpen: true,
-                          title: `${lbB} para ${p.name} (actual: ${p.price_b ? '$' + p.price_b : 'sin cargar'})`,
-                          value: p.price_b ?? '',
-                          onConfirm: async (val) => {
-                            setPromptState(prev => ({...prev, isOpen: false}));
-                            if (val !== null && val !== '' && !isNaN(val) && parseFloat(val) >= 0) {
-                              try {
-                                const res = await apiPut(`/products/${p.id}`, { price_b: parseFloat(val) });
-                                if (res.ok) { addToast?.(`${lbB} de ${p.name} actualizado.`, 'success'); fetchProducts(); if (onProductsUpdated) onProductsUpdated(); }
-                                else addToast?.('No se pudo actualizar.', 'error');
-                              } catch { addToast?.('Sin internet.', 'error'); }
-                            }
-                          }
-                        });
-                      }} className="stock-act" style={{ background: 'transparent', color: 'var(--accent-warning)', border: '1px solid rgba(245,158,11,0.3)', padding: '6px 12px', borderRadius: 'var(--radius-sm)', fontSize: '0.78rem', cursor: 'pointer', fontWeight: 700, whiteSpace: 'nowrap' }}>$ B</button>
-                      <button onClick={() => {
-                        const cfg = JSON.parse(localStorage.getItem('minegocio_config') || '{}');
-                        const lbC = cfg.price_list_c_name || 'Lista C';
-                        setPromptState({
-                          isOpen: true,
-                          title: `${lbC} para ${p.name} (actual: ${p.price_c ? '$' + p.price_c : 'sin cargar'})`,
-                          value: p.price_c ?? '',
-                          onConfirm: async (val) => {
-                            setPromptState(prev => ({...prev, isOpen: false}));
-                            if (val !== null && val !== '' && !isNaN(val) && parseFloat(val) >= 0) {
-                              try {
-                                const res = await apiPut(`/products/${p.id}`, { price_c: parseFloat(val) });
-                                if (res.ok) { addToast?.(`${lbC} de ${p.name} actualizado.`, 'success'); fetchProducts(); if (onProductsUpdated) onProductsUpdated(); }
-                                else addToast?.('No se pudo actualizar.', 'error');
-                              } catch { addToast?.('Sin internet.', 'error'); }
-                            }
-                          }
-                        });
-                      }} className="stock-act" style={{ background: 'transparent', color: 'var(--accent-primary)', border: '1px solid rgba(20,187,166,0.3)', padding: '6px 12px', borderRadius: 'var(--radius-sm)', fontSize: '0.78rem', cursor: 'pointer', fontWeight: 700, whiteSpace: 'nowrap' }}>$ C</button>
-                      <button onClick={() => {
-                        setPromptState({
-                          isOpen: true,
-                          title: `Nuevo stock para ${p.name} (actual: ${p.stock})`,
-                          value: p.stock ?? '',
-                          onConfirm: async (newStock) => {
-                            setPromptState(prev => ({...prev, isOpen: false}));
-                            if (newStock !== null && newStock !== '' && !isNaN(newStock) && parseInt(newStock) >= 0) {
-                              try {
-                                const res = await apiPost(`/products/${p.id}/stock`, { stock: parseInt(newStock) });
-                                if (res.ok) {
-                                  if (addToast) addToast(`Stock de ${p.name} actualizado.`, 'success');
-                                  fetchProducts();
-                                  if (onProductsUpdated) onProductsUpdated();
-                                } else {
-                                  if (addToast) addToast('No se pudo actualizar el stock. Reintentá o revisá tu conexión.', 'error');
-                                }
-                              } catch {
-                                if (addToast) addToast('Sin internet. Revisá tu conexión.', 'error');
-                              }
-                            }
-                          }
-                        });
-                      }} className="stock-act" style={{ background: 'transparent', color: 'var(--text-primary)', border: '1px solid var(--border-color)', padding: '6px 12px', borderRadius: 'var(--radius-sm)', fontSize: '0.82rem', cursor: 'pointer', fontWeight: 700, whiteSpace: 'nowrap' }}>Stock</button>
-                      <button onClick={() => {
-                        setPromptState({
-                          isOpen: true,
-                          title: `Nuevo nombre para ${p.name}`,
-                          value: p.name,
-                          onConfirm: async (newName) => {
-                            setPromptState(prev => ({...prev, isOpen: false}));
-                            if (newName !== null && newName.trim()) {
-                              try {
-                                const res = await apiPut(`/products/${p.id}`, { name: newName.trim() });
-                                if (res.ok) {
-                                  if (addToast) addToast(`Nombre de ${p.name} actualizado.`, 'success');
-                                  fetchProducts();
-                                  if (onProductsUpdated) onProductsUpdated();
-                                } else {
-                                  if (addToast) addToast('No se pudo actualizar el nombre. Reintentá o revisá tu conexión.', 'error');
-                                }
-                              } catch {
-                                if (addToast) addToast('Sin internet. Revisá tu conexión.', 'error');
-                              }
-                            }
-                          }
-                        });
-                      }} className="stock-act" style={{ background: 'transparent', color: 'var(--text-primary)', border: '1px solid var(--border-color)', padding: '6px 12px', borderRadius: 'var(--radius-sm)', fontSize: '0.82rem', cursor: 'pointer', fontWeight: 700, whiteSpace: 'nowrap' }}>Nombre</button>
-                      <button onClick={() => {
-                        setPromptState({
-                          isOpen: true,
-                          title: `Costo de ${p.name} (actual: ${p.cost_price ? '$' + p.cost_price : 'sin cargar'})`,
-                          value: p.cost_price ?? '',
-                          onConfirm: async (newCost) => {
-                            setPromptState(prev => ({...prev, isOpen: false}));
-                            if (newCost !== null && newCost !== '' && !isNaN(newCost) && parseFloat(newCost) >= 0) {
-                              try {
-                                const res = await apiPut(`/products/${p.id}`, { cost_price: parseFloat(newCost) });
-                                if (res.ok) {
-                                  if (addToast) addToast(`Costo de ${p.name} actualizado.`, 'success');
-                                  fetchProducts();
-                                  if (onProductsUpdated) onProductsUpdated();
-                                } else {
-                                  if (addToast) addToast('No se pudo actualizar el costo. Reintentá o revisá tu conexión.', 'error');
-                                }
-                              } catch {
-                                if (addToast) addToast('Sin internet. Revisá tu conexión.', 'error');
-                              }
-                            }
-                          }
-                        });
-                      }} className="stock-act" style={{ background: 'transparent', color: 'var(--text-primary)', border: '1px solid var(--border-color)', padding: '6px 12px', borderRadius: 'var(--radius-sm)', fontSize: '0.82rem', cursor: 'pointer', fontWeight: 700, whiteSpace: 'nowrap' }}>Costo</button>
-                      <button onClick={() => {
-                        setPromptState({
-                          isOpen: true,
-                          title: `Códigos de barra para ${p.name}`,
-                          value: (p.extra_codes || []).join(', '),
-                          text: true,
-                          hint: 'Separados por coma. Los códigos cargados reemplazan a los anteriores.',
-                          onConfirm: async (codes) => {
-                            setPromptState(prev => ({...prev, isOpen: false}));
-                            try {
-                              const res = await apiPut(`/products/${p.id}`, { extra_codes: (codes || '').split(',').map(c => c.trim()).filter(Boolean) });
-                              if (res.ok) {
-                                if (addToast) addToast(`Códigos de ${p.name} actualizados.`, 'success');
-                                fetchProducts();
-                                if (onProductsUpdated) onProductsUpdated();
-                              } else {
-                                if (addToast) addToast('No se pudieron actualizar los códigos. Reintentá o revisá tu conexión.', 'error');
-                              }
-                            } catch {
-                              if (addToast) addToast('Sin internet. Revisá tu conexión.', 'error');
-                            }
-                          }
-                        });
-                      }} className="stock-act" style={{ background: 'transparent', color: 'var(--text-primary)', border: '1px solid var(--border-color)', padding: '6px 12px', borderRadius: 'var(--radius-sm)', fontSize: '0.82rem', cursor: 'pointer', fontWeight: 700, whiteSpace: 'nowrap' }}>Códigos</button>
-                      <button onClick={() => openVariantManager(p)} className="stock-act" style={{ background: 'transparent', color: 'var(--accent-primary)', border: '1px solid var(--accent-primary)', padding: '6px 12px', borderRadius: 'var(--radius-sm)', fontSize: '0.82rem', cursor: 'pointer', fontWeight: 700, whiteSpace: 'nowrap', opacity: 0.8 }} title="Gestionar variantes (presentaciones)">Variantes</button>
-                      <button onClick={() => { setConfirmState({ isOpen: true, title: 'Eliminar Producto', message: 'Estas por eliminar ' + p.name + '. Esta accion no se puede deshacer.', confirmLabel: 'Eliminar', variant: 'danger', onConfirm: () => { setConfirmState(prev => ({...prev, isOpen: false})); apiDelete('/products/' + p.id).then(r => { if (r.ok) { addToast(p.name + ' eliminado.', 'success'); fetchProducts(); if (onProductsUpdated) onProductsUpdated(); } else addToast('No se pudo eliminar. Reintenta.', 'error'); }).catch(() => addToast('Sin internet.', 'error')); } }); }} style={{ background: 'rgba(239, 68, 68, 0.08)', color: 'var(--accent-danger)', border: '1px solid rgba(239, 68, 68, 0.2)', padding: '4px 8px', borderRadius: '6px', fontSize: '0.75rem', cursor: 'pointer', fontWeight: 600, whiteSpace: 'nowrap', marginLeft: 'auto' }}><Icons.Trash /></button>
-                      {p.is_virtual === 1 && p.stock > 0 && (
-                        <button onClick={() => handleUnpack(p.id)} style={{ background: 'rgba(59, 130, 246, 0.1)', color: 'var(--accent-primary)', border: '1px solid rgba(59, 130, 246, 0.2)', padding: '6px 12px', borderRadius: '6px', fontSize: '0.8rem', cursor: 'pointer', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Icons.Package style={{ width: '14px', height: '14px' }} /> Desarmar</button>
-                      )}
-                    </div>
+                  <td style={{ padding: isMobile ? '8px 8px' : '16px 24px', textAlign: 'center' }}>
+                    {isMobile ? (
+                      <>
+                        <button onClick={() => setOpenActionMenu(p.id)} aria-label="Acciones" title="Acciones" style={{ background: 'var(--bg-hover)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '8px', width: '36px', height: '36px', fontSize: '1.15rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, letterSpacing: '1px', lineHeight: 1 }}>⋯</button>
+                        {openActionMenu === p.id && (
+                          <div style={{ position: 'fixed', inset: 0, zIndex: 1100 }} onClick={() => setOpenActionMenu(null)}>
+                            <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)' }} />
+                            <div onClick={e => e.stopPropagation()} style={{ position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 1, background: 'var(--bg-card)', borderTopLeftRadius: '16px', borderTopRightRadius: '16px', padding: '6px 12px 18px', boxShadow: '0 -4px 24px rgba(0,0,0,0.4)', maxHeight: '80vh', overflowY: 'auto' }}>
+                              <div style={{ textAlign: 'center', padding: '10px 0', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)' }}>{p.name}</div>
+                              {productActions(p).map((a, i) => (
+                                <button key={i} onClick={() => { setOpenActionMenu(null); a.onClick(); }} style={{ display: 'block', width: '100%', textAlign: 'left', background: 'transparent', border: 'none', borderTop: i > 0 ? '1px solid var(--border-color)' : 'none', color: a.tone === 'danger' ? 'var(--accent-danger)' : 'var(--text-primary)', padding: '14px 8px', fontSize: '1rem', fontWeight: 600, cursor: 'pointer' }}>{a.label}</button>
+                              ))}
+                              <button onClick={() => setOpenActionMenu(null)} style={{ display: 'block', width: '100%', textAlign: 'center', background: 'var(--bg-hover)', border: 'none', borderRadius: '8px', color: 'var(--text-secondary)', padding: '12px', fontSize: '0.95rem', fontWeight: 700, cursor: 'pointer', marginTop: '8px' }}>Cancelar</button>
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                        {productActions(p).map((a, i) => (
+                          <button key={i} onClick={a.onClick} className="stock-act" style={{ background: a.tone === 'danger' ? 'rgba(239, 68, 68, 0.08)' : 'transparent', color: a.tone === 'danger' ? 'var(--accent-danger)' : a.tone === 'warning' ? 'var(--accent-warning)' : a.tone === 'primary' ? 'var(--accent-primary)' : a.tone === 'blue' ? 'var(--accent-primary)' : 'var(--text-primary)', border: a.tone === 'danger' ? '1px solid rgba(239, 68, 68, 0.2)' : a.tone === 'warning' ? '1px solid rgba(245,158,11,0.3)' : a.tone === 'primary' ? '1px solid rgba(20,187,166,0.3)' : a.tone === 'blue' ? '1px solid rgba(59, 130, 246, 0.2)' : '1px solid var(--border-color)', padding: '6px 12px', borderRadius: 'var(--radius-sm)', fontSize: '0.82rem', cursor: 'pointer', fontWeight: 700, whiteSpace: 'nowrap' }}>{a.label}</button>
+                        ))}
+                      </div>
+                    )}
                   </td>
                 </>
               )}
