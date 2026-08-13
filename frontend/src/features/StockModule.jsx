@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { TableVirtuoso } from 'react-virtuoso';
 import { usePanelContext } from '../context/PanelContext';
 import useIsMobile from '../hooks/useIsMobile';
@@ -765,7 +766,7 @@ export default function StockModule() {
                     {isMobile ? (
                       <>
                         <button onClick={() => setOpenActionMenu(p.id)} aria-label="Acciones" title="Acciones" style={{ background: 'var(--bg-hover)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '8px', width: '36px', height: '36px', fontSize: '1.15rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, letterSpacing: '1px', lineHeight: 1 }}>⋯</button>
-                        {openActionMenu === p.id && (
+                        {openActionMenu === p.id && createPortal(
                           <div style={{ position: 'fixed', inset: 0, zIndex: 1100 }} onClick={() => setOpenActionMenu(null)}>
                             <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)' }} />
                             <div onClick={e => e.stopPropagation()} style={{ position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 1, background: 'var(--bg-card)', borderTopLeftRadius: '16px', borderTopRightRadius: '16px', padding: '6px 12px 18px', boxShadow: '0 -4px 24px rgba(0,0,0,0.4)', maxHeight: '80vh', overflowY: 'auto' }}>
@@ -775,7 +776,8 @@ export default function StockModule() {
                               ))}
                               <button onClick={() => setOpenActionMenu(null)} style={{ display: 'block', width: '100%', textAlign: 'center', background: 'var(--bg-hover)', border: 'none', borderRadius: '8px', color: 'var(--text-secondary)', padding: '12px', fontSize: '0.95rem', fontWeight: 700, cursor: 'pointer', marginTop: '8px' }}>Cancelar</button>
                             </div>
-                          </div>
+                          </div>,
+                          document.body
                         )}
                       </>
                     ) : (
