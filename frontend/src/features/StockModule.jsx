@@ -884,11 +884,6 @@ export default function StockModule() {
               {[{ label: 'Código', key: 'code', type: 'text' }, { label: 'Nombre', key: 'name', type: 'text' },
                 { label: 'Precio Venta ($)', key: 'price', type: 'number' }, { label: 'Precio Costo ($)', key: 'cost_price', type: 'number' },
                 { label: 'Stock', key: 'stock', type: 'number' }, { label: 'Stock Mínimo', key: 'min_stock', type: 'number' },
-                { label: (() => { try { return JSON.parse(localStorage.getItem('minegocio_config')||'{}').price_list_b_name || 'Lista B — Mayorista'; } catch { return 'Lista B — Mayorista'; } })() + ' ($)', key: 'price_b', type: 'number' },
-                { label: (() => { try { return JSON.parse(localStorage.getItem('minegocio_config')||'{}').price_list_c_name || 'Lista C'; } catch { return 'Lista C'; } })() + ' ($)', key: 'price_c', type: 'number' },
-                { label: (() => { try { return JSON.parse(localStorage.getItem('minegocio_config')||'{}').price_list_d_name || 'Lista D'; } catch { return 'Lista D'; } })() + ' ($)', key: 'price_d', type: 'number' },
-                { label: (() => { try { return JSON.parse(localStorage.getItem('minegocio_config')||'{}').price_list_e_name || 'Lista E'; } catch { return 'Lista E'; } })() + ' ($)', key: 'price_e', type: 'number' },
-                { label: 'Unidad', key: 'unit_label', type: 'text' },
               ].map(f => (
                 <div key={f.key}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
@@ -904,13 +899,6 @@ export default function StockModule() {
                     style={{ width: '100%', padding: '10px 12px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '8px', outline: 'none', fontSize: '0.95rem', boxSizing: 'border-box' }} />
                 </div>
               ))}
-              <div>
-                <label style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '6px', fontWeight: 600 }}>IVA</label>
-                <select value={newProduct.iva} onChange={e => setNewProduct({ ...newProduct, iva: e.target.value })}
-                  style={{ width: '100%', padding: '10px 12px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '8px', outline: 'none', fontSize: '0.95rem', boxSizing: 'border-box' }}>
-                  <option value="21%">21%</option><option value="10.5%">10.5%</option><option value="0%">0%</option>
-                </select>
-              </div>
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                   <label style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 600 }}>Categoría</label>
