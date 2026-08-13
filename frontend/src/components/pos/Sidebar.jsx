@@ -199,6 +199,31 @@ export default function Sidebar({
     corralonLabels['Compras'] = 'Compras';
   }
 
+  // En mobile colapsado: el sidebar desaparece por completo.
+  // Solo queda un botón flotante desvanecido en el borde izquierdo de la pantalla.
+  if (isMobile && collapsed) {
+    return (
+      <button
+        onClick={() => setCollapsed(false)}
+        aria-label="Abrir menú"
+        style={{
+          position: 'fixed', top: '50%', left: 0, transform: 'translateY(-50%)',
+          zIndex: 310, background: 'var(--bg-card)', border: '1px solid var(--border-color)',
+          borderLeft: 'none', borderRadius: '0 8px 8px 0',
+          width: 20, height: 48,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          cursor: 'pointer', opacity: 0.35,
+          color: 'var(--text-secondary)', fontSize: '0.75rem', lineHeight: 1,
+          transition: 'opacity 0.2s',
+        }}
+        onTouchStart={e => e.currentTarget.style.opacity = '0.85'}
+        onTouchEnd={e => e.currentTarget.style.opacity = '0.35'}
+      >
+        ›
+      </button>
+    );
+  }
+
   return (
     <>
     {isMobile && !collapsed && <div className="sidebar-backdrop" onClick={() => setCollapsed(true)} />}
