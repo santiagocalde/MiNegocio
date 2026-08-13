@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Icons } from '../ui/Icons';
 import ProductThumb from '../ui/ProductThumb';
 import { formatMoney } from '../../utils/format';
+import useIsMobile from '../../hooks/useIsMobile';
 
 // Color del badge de stock según nivel: agotado (rojo), bajo (ámbar), sano (verde).
 // Usa tokens theme-aware (wash + accent) para leerse bien en claro y oscuro.
@@ -13,6 +14,7 @@ const stockTone = (stock, min) => {
 };
 
 export default function CartPanel({ cart, total, adjustedTotal, updateQty, setItemQty, removeItem, listType, setListType, businessType, canEditPrice, setItemPrice }) {
+  const isMobile = useIsMobile();
   const displayTotal = adjustedTotal ?? total;
 
   // Precio editable por ítem (solo si canEditPrice)
@@ -45,7 +47,7 @@ export default function CartPanel({ cart, total, adjustedTotal, updateQty, setIt
 
   return (
     <div className="ledger-sheet" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      <div style={{ padding: '13px 20px', borderBottom: '1px solid var(--rule-strong)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ padding: isMobile ? '8px 12px' : '13px 20px', borderBottom: '1px solid var(--rule-strong)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <h2 className="ledger-title" style={{ fontSize: '1.15rem' }}>Carrito</h2>
           {cart.length > 0 && (
@@ -70,14 +72,14 @@ export default function CartPanel({ cart, total, adjustedTotal, updateQty, setIt
         <p className="ledger-num" style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', margin: 0 }}>{formatMoney(displayTotal)}</p>
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto', padding: '12px 20px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '6px 10px' : '12px 20px', display: 'flex', flexDirection: 'column', gap: isMobile ? '4px' : '6px' }}>
         {cart.length === 0 ? (
-          <div style={{ textAlign: 'center', color: 'var(--text-secondary)', marginTop: '40px' }}>No hay productos en el carrito. Utilice el buscador superior.</div>
+          <div style={{ textAlign: 'center', color: 'var(--text-secondary)', marginTop: isMobile ? '16px' : '40px', fontSize: isMobile ? '0.85rem' : undefined }}>No hay productos en el carrito.</div>
         ) : (
           cart.map(item => (
-            <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: 'var(--surface-veil)', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
-              <div style={{ display: 'flex', gap: '10px', alignItems: 'center', minWidth: 0 }}>
-                <ProductThumb name={item.name} size={36} />
+            <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: isMobile ? '6px 8px' : '8px 12px', background: 'var(--surface-veil)', borderRadius: isMobile ? '8px' : '12px', border: '1px solid var(--border-color)' }}>
+              <div style={{ display: 'flex', gap: isMobile ? '6px' : '10px', alignItems: 'center', minWidth: 0 }}>
+                {!isMobile && <ProductThumb name={item.name} size={36} />}
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0 }}>
                   <div style={{ fontWeight: 700, fontSize: 'var(--fs-body)', color: 'var(--text-primary)', letterSpacing: '0.1px' }}>{item.name}</div>

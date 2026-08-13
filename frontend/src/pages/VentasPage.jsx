@@ -165,8 +165,8 @@ export default function VentasPage() {
       <TopBar currentOperator={auth.currentOperator} sucursales={backend.sucursales}
         currentSucursalId={currentSucursalId} setCurrentSucursalId={setCurrentSucursalId} />
 
-      <div style={{ padding: '16px 24px', width: '100%', height: isMobile ? 'calc(100dvh - 60px)' : 'calc(100% - 72px)', display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '16px', alignItems: 'flex-start', boxSizing: 'border-box' }}>
-        <div style={{ flex: isMobile ? '0 0 auto' : '2', display: 'flex', flexDirection: 'column', gap: '16px', minHeight: 0, height: isMobile ? 'auto' : '100%', maxHeight: isMobile ? '40vh' : undefined }}>
+      <div style={{ padding: isMobile ? '8px 10px' : '16px 24px', width: '100%', height: isMobile ? 'calc(100dvh - 60px)' : 'calc(100% - 72px)', display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '8px' : '16px', alignItems: 'flex-start', boxSizing: 'border-box' }}>
+        <div style={{ flex: isMobile ? '0 0 auto' : '2', display: 'flex', flexDirection: 'column', gap: isMobile ? '8px' : '16px', minHeight: 0, height: isMobile ? 'auto' : '100%', maxHeight: isMobile ? '48vh' : undefined }}>
           <div data-tour="search-bar" style={{ width: '100%', flexShrink: 0 }}>
           <SearchBar search={cart.search} setSearch={cart.setSearch} searchRef={searchRef}
             searchError={cart.searchError} flash={cart.flash}
