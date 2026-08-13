@@ -139,7 +139,7 @@ export default function Sidebar({
         items: [
           { label: 'Dashboard', path: '/panel/dashboard', icon: 'Chart', roles: ['admin'], moduleKey: 'Reportes' },
           { label: 'Caja', path: '/panel/inicio', icon: 'Lock', roles: ['admin', 'manager'] },
-          { label: 'Historial', path: '/panel/auditoria', icon: 'Clipboard', roles: ['admin', 'manager'], minPlan: 'pro', featureKey: 'auditoria', moduleKey: 'Historial' },
+          { label: 'Historial', path: '/panel/auditoria', icon: 'Clipboard', roles: ['admin', 'manager'], featureKey: 'auditoria', moduleKey: 'Historial' },
         ],
       },
       {
