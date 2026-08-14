@@ -26,6 +26,16 @@ export default function VentasPage() {
   const cart = useCart(backend.productsDB, ivaRate, playBeep);
   const promos = usePromotions(cart.cart);
 
+  // Nombres configurables de las listas de precio (A/B/C/D/E) para el selector por ítem
+  const cfg = backend.businessConfig || {};
+  const priceLists = [
+    { v: 'a', label: cfg.price_list_a_name || 'Lista A — Minorista' },
+    { v: 'b', label: cfg.price_list_b_name || 'Lista B — Mayorista' },
+    { v: 'c', label: cfg.price_list_c_name || 'Lista C' },
+    { v: 'd', label: cfg.price_list_d_name || 'Lista D' },
+    { v: 'e', label: cfg.price_list_e_name || 'Lista E' },
+  ];
+
   useEffect(() => { cart.setPromotionSavings(promos.promotionSavings); // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [promos.promotionSavings]);
 
@@ -179,8 +189,10 @@ export default function VentasPage() {
           <CartPanel cart={cart.cart} total={cart.total} adjustedTotal={cart.adjustedTotal}
             updateQty={cart.updateQty} setItemQty={cart.setItemQty} removeItem={cart.removeItem}
             setItemPrice={cart.setItemPrice}
+            setItemList={cart.setItemList}
+            priceLists={priceLists}
             canEditPrice={true}
-            listType={cart.listType} setListType={cart.setListType} businessType={businessType} />
+            listType={cart.listType} setListType={cart.setListType} />
           </div>
         </div>
         <div data-tour="payment-panel" style={{ flex: 1, minHeight: 0, overflowY: "auto", width: isMobile ? '100%' : undefined }}>
