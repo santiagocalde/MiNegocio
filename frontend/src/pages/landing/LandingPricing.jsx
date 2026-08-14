@@ -77,8 +77,8 @@ function PlanCard({ plan, isYearly, onCta, isLoggedIn }) {
           const isArca = f.includes('ARCA');
           return (
             <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 11, fontSize: '0.9rem', color: isArca ? 'var(--lp-ink-faint)' : 'var(--lp-ink-soft)' }}>
-              <div style={{ color: isArca ? '#D97706' : (plan.popular ? 'var(--lp-primary-ink)' : 'var(--lp-green)'), marginTop: 3, flexShrink: 0 }}>
-                {isArca ? <Svg.Bolt /> : <Svg.Check />}
+              <div style={{ color: plan.popular ? 'var(--lp-primary-ink)' : 'var(--lp-green)', marginTop: 3, flexShrink: 0 }}>
+                <Svg.Check />
               </div>
               {isArca
                 ? <span>Facturación ARCA <span style={{ fontSize: '0.78rem', color: '#D97706', fontWeight: 700 }}>+adicional</span></span>
