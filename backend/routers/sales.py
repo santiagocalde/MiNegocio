@@ -343,9 +343,13 @@ async def list_turns(limit: int = Query(30), date_from: Optional[str] = Query(No
             params = [b_id]
             n = 2
             if date_from:
-                clauses.append(f"closed_at::date >= ${n}::date"); params.append(date_from); n += 1
+                try: parsed_from = datetime.strptime(date_from, '%Y-%m-%d').date()
+                except Exception: parsed_from = date_from
+                clauses.append(f"closed_at::date >= ${n}::date"); params.append(parsed_from); n += 1
             if date_to:
-                clauses.append(f"closed_at::date <= ${n}::date"); params.append(date_to); n += 1
+                try: parsed_to = datetime.strptime(date_to, '%Y-%m-%d').date()
+                except Exception: parsed_to = date_to
+                clauses.append(f"closed_at::date <= ${n}::date"); params.append(parsed_to); n += 1
             where = " AND ".join(clauses)
             rows = await conn.fetch(
                 f"SELECT * FROM turns WHERE {where} ORDER BY closed_at DESC NULLS LAST, opened_at DESC LIMIT ${n}",
