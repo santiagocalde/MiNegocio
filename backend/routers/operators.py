@@ -34,6 +34,24 @@ def _row_to_dict(row, description):
 
 # ── Helpers de turno ──────────────────────────────────────────
 
+async def _ultimo_cierre_pg(conn, b_id):
+    """counted_cash del último turno CERRADO con arqueo (para sugerir caja inicial)."""
+    return await conn.fetchval(
+        "SELECT counted_cash FROM turns WHERE business_id = $1 AND closed_at IS NOT NULL "
+        "AND counted_cash IS NOT NULL ORDER BY id DESC LIMIT 1",
+        b_id,
+    )
+
+
+async def _ultimo_cierre_sqlite(db):
+    cur = await db.execute(
+        "SELECT counted_cash FROM turns WHERE closed_at IS NOT NULL AND counted_cash IS NOT NULL "
+        "ORDER BY id DESC LIMIT 1"
+    )
+    row = await cur.fetchone()
+    return row[0] if row else None
+
+
 async def _ensure_open_turn_pg(conn, operator: str, b_id: str) -> dict:
     row = await conn.fetchrow(
         "SELECT id, opened_at FROM turns WHERE closed_at IS NULL AND business_id = $1 ORDER BY opened_at DESC LIMIT 1",
@@ -53,11 +71,20 @@ async def _ensure_open_turn_pg(conn, operator: str, b_id: str) -> dict:
             )
         else:
             return {"turn_id": row["id"], "turn_auto_opened": False, "turn_opened_at": str(row["opened_at"])}
+    # Caja inicial sugerida: el conteo del último cierre con arqueo (ej. los $25.000
+    # que quedaron en el cajón ayer). Si no hay cierres previos, queda en 0.
+    suggested = await _ultimo_cierre_pg(conn, b_id)
+    initial = float(suggested or 0)
     new_row = await conn.fetchrow(
-        "INSERT INTO turns (business_id, operator) VALUES ($1, $2) RETURNING id, opened_at",
-        b_id, operator,
+        "INSERT INTO turns (business_id, operator, initial_cash) VALUES ($1, $2, $3) RETURNING id, opened_at, initial_cash",
+        b_id, operator, initial,
     )
-    return {"turn_id": new_row["id"], "turn_auto_opened": True, "turn_opened_at": str(new_row["opened_at"])}
+    return {
+        "turn_id": new_row["id"], "turn_auto_opened": True,
+        "turn_opened_at": str(new_row["opened_at"]),
+        "initial_cash": float(new_row["initial_cash"] or 0),
+        "suggested_initial_cash": initial,
+    }
 
 
 async def _ensure_open_turn(operator: str) -> dict:
@@ -81,14 +108,19 @@ async def _ensure_open_turn(operator: str) -> dict:
                     await db.commit()
                 else:
                     return {"turn_id": row[0], "turn_auto_opened": False, "turn_opened_at": row[1]}
+        suggested = await _ultimo_cierre_sqlite(db)
+        initial = float(suggested or 0)
         cur = await db.execute(
-            "INSERT INTO turns (operator, opened_at) VALUES (?, datetime('now','localtime'))", (operator,)
+            "INSERT INTO turns (operator, opened_at, initial_cash) VALUES (?, datetime('now','localtime'), ?)",
+            (operator, initial),
         )
         await db.commit()
         return {
             "turn_id": cur.lastrowid,
             "turn_auto_opened": True,
             "turn_opened_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "initial_cash": initial,
+            "suggested_initial_cash": initial,
         }
 
 

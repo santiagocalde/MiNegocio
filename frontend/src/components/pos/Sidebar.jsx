@@ -41,6 +41,7 @@ const NAV_ITEMS = [
     items: [
       { label: 'Dashboard', path: '/panel/dashboard', icon: 'Chart', minPlan: 'pro' },
       { label: 'Reportes', path: '/panel/reportes', icon: 'Chart' },
+      { label: 'Cajas', path: '/panel/cajas', icon: 'Lock' },
       { label: 'Promociones', path: '/panel/promociones', icon: 'Tag', featureKey: 'promociones' },
       { label: 'Sugerencias IA', short: 'IA', path: '/panel/recomendaciones', icon: 'AI', minPlan: 'ia', featureKey: 'recomendaciones' },
     ],
@@ -140,6 +141,7 @@ export default function Sidebar({
           { label: 'Dashboard', path: '/panel/dashboard', icon: 'Chart', roles: ['admin'], moduleKey: 'Reportes' },
           { label: 'Caja', path: '/panel/inicio', icon: 'Lock', roles: ['admin', 'manager'] },
           { label: 'Historial', path: '/panel/auditoria', icon: 'Clipboard', roles: ['admin', 'manager'], featureKey: 'auditoria', moduleKey: 'Historial' },
+          { label: 'Cajas', path: '/panel/cajas', icon: 'Chart', roles: ['admin'] },
         ],
       },
       {

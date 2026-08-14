@@ -332,21 +332,41 @@ async def close_turn(turn_id: int, body: TurnClose) -> dict:
 
 
 @router.get("/api/turns", summary="Historial de turnos")
-async def list_turns(limit: int = 30) -> list:
+async def list_turns(limit: int = Query(30), date_from: Optional[str] = Query(None), date_to: Optional[str] = Query(None)) -> list:
+    """Historial de cajas (turnos). Filtros opcionales por fecha de CIERRE."""
     b_id = _biz_id()
     if USE_PG:
         from db_helpers import get_pg_pool
         pool = await get_pg_pool()
         async with pool.acquire() as conn:
+            clauses = ["business_id = $1"]
+            params = [b_id]
+            n = 2
+            if date_from:
+                clauses.append(f"closed_at::date >= ${n}::date"); params.append(date_from); n += 1
+            if date_to:
+                clauses.append(f"closed_at::date <= ${n}::date"); params.append(date_to); n += 1
+            where = " AND ".join(clauses)
             rows = await conn.fetch(
-                "SELECT * FROM turns WHERE business_id = $1 ORDER BY opened_at DESC LIMIT $2",
-                b_id, limit
+                f"SELECT * FROM turns WHERE {where} ORDER BY closed_at DESC NULLS LAST, opened_at DESC LIMIT ${n}",
+                *params, limit
             )
             return [dict(r) for r in rows]
     else:
         import aiosqlite
         async with aiosqlite.connect(main.DB_PATH) as db:
-            cur = await db.execute("SELECT * FROM turns ORDER BY opened_at DESC LIMIT ?", (limit,))
+            clauses = ["1=1"]
+            params = []
+            if date_from:
+                clauses.append("date(closed_at) >= date(?)"); params.append(date_from)
+            if date_to:
+                clauses.append("date(closed_at) <= date(?)"); params.append(date_to)
+            where = " AND ".join(clauses)
+            params.append(limit)
+            cur = await db.execute(
+                f"SELECT * FROM turns WHERE {where} ORDER BY closed_at DESC, opened_at DESC LIMIT ?",
+                params,
+            )
             rows = await cur.fetchall()
             return [row_to_dict(r, cur.description) for r in rows]
 
