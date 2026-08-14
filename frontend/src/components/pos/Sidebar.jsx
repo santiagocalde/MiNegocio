@@ -6,6 +6,7 @@ import ThemeToggle from './ThemeToggle';
 import LogoPrincipal from '../../assets/images/MiNegocio_transparente_real.png';
 import { usePanelContext } from '../../context/PanelContext';
 import { getBusinessFeatures } from '../../config/businessDefaults';
+import { apiPatch } from '../../services/apiClient';
 import useIsMobile from '../../hooks/useIsMobile';
 
 const PLAN_WEIGHT = { trial: 1, simple: 1, pro: 2, ia: 3 };
@@ -91,9 +92,30 @@ export default function Sidebar({
 }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { currentPlan, businessType } = usePanelContext();
+  const { currentPlan, businessType, auth, addToast } = usePanelContext();
   const currentPath = location.pathname;
   const [cajaExpanded, setCajaExpanded] = React.useState(true);
+  // Edición inline de la caja inicial (la sugerida al abrir se puede corregir)
+  const [editingInitial, setEditingInitial] = useState(false);
+  const [initialEditVal, setInitialEditVal] = useState('');
+
+  const saveInitialCash = async () => {
+    setEditingInitial(false);
+    const v = parseFloat(initialEditVal);
+    if (isNaN(v) || v < 0) return;
+    const monto = Math.round(v);
+    try {
+      const res = await apiPatch(`/turns/${currentTurnId}/initial-cash`, { initial_cash: monto });
+      if (res.ok) {
+        auth.setInitialCash(monto);
+        if (addToast) addToast('Caja inicial actualizada.', 'success');
+      } else {
+        if (addToast) addToast('No se pudo actualizar la caja inicial.', 'error');
+      }
+    } catch {
+      if (addToast) addToast('Sin conexión. Reintentá.', 'error');
+    }
+  };
   const isMobile = useIsMobile();
   // En mobile el sidebar arranca como riel de íconos (retraído); el usuario
   // puede expandirlo con el botón. En desktop queda expandido como siempre.
@@ -334,12 +356,36 @@ export default function Sidebar({
               </span>
             </div>
           )}
-          {initialCash > 0 && (
+          {currentTurnId && (
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ color: 'var(--text-secondary)', fontSize: '0.7rem' }}>Caja inicial</span>
-              <span style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', fontFamily: 'var(--font-mono)' }}>
-                ${(initialCash || 0).toLocaleString('es-AR')}
-              </span>
+              {editingInitial ? (
+                <input
+                  type="number"
+                  autoFocus
+                  min="0"
+                  value={initialEditVal}
+                  onChange={e => setInitialEditVal(e.target.value)}
+                  onBlur={saveInitialCash}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') e.currentTarget.blur();
+                    if (e.key === 'Escape') setEditingInitial(false);
+                  }}
+                  style={{ width: '90px', textAlign: 'right', background: 'var(--bg-main)', border: '1px solid var(--accent-primary)', borderRadius: '4px', color: 'var(--text-primary)', padding: '2px 6px', fontSize: '0.7rem', fontFamily: 'var(--font-mono)', outline: 'none' }}
+                />
+              ) : (
+                <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <span style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', fontFamily: 'var(--font-mono)' }}>
+                    ${(initialCash || 0).toLocaleString('es-AR')}
+                  </span>
+                  <button
+                    onClick={() => { setInitialEditVal(String(initialCash || 0)); setEditingInitial(true); }}
+                    title="Editar caja inicial"
+                    aria-label="Editar caja inicial"
+                    style={{ background: 'transparent', border: 'none', color: 'var(--text-faint)', cursor: 'pointer', fontSize: '0.7rem', padding: '0 2px', lineHeight: 1 }}
+                  >✎</button>
+                </span>
+              )}
             </div>
           )}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 700 }}>

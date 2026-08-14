@@ -331,6 +331,40 @@ async def close_turn(turn_id: int, body: TurnClose) -> dict:
                 "status": "perfecto" if abs(difference) < 0.01 else ("sobrante" if difference > 0 else "faltante")}
 
 
+@router.patch("/api/turns/{turn_id}/initial-cash", summary="Ajustar caja inicial del turno abierto")
+async def update_turn_initial_cash(turn_id: int, body: dict = Body(...)) -> dict:
+    """Permite corregir el monto con el que se abrió la caja (solo turno abierto).
+    El arqueo del cierre usa este valor, así que ajustarlo evita sobrantes/faltantes falsos."""
+    b_id = _biz_id()
+    try:
+        monto = round(float(body.get("initial_cash")), 2)
+    except (TypeError, ValueError):
+        raise HTTPException(400, detail="Monto inválido")
+    if monto < 0:
+        raise HTTPException(400, detail="El monto no puede ser negativo")
+    if USE_PG:
+        from db_helpers import get_pg_pool
+        pool = await get_pg_pool()
+        async with pool.acquire() as conn:
+            res = await conn.execute(
+                "UPDATE turns SET initial_cash = $1 WHERE id = $2 AND business_id = $3 AND closed_at IS NULL",
+                monto, turn_id, b_id
+            )
+            if res == "UPDATE 0":
+                raise HTTPException(400, detail="Turno no encontrado o ya cerrado")
+    else:
+        import aiosqlite
+        async with aiosqlite.connect(main.DB_PATH) as db:
+            cur = await db.execute(
+                "UPDATE turns SET initial_cash = ? WHERE id = ? AND closed_at IS NULL",
+                (monto, turn_id)
+            )
+            if cur.rowcount == 0:
+                raise HTTPException(400, detail="Turno no encontrado o ya cerrado")
+            await db.commit()
+    return {"success": True, "initial_cash": monto}
+
+
 @router.get("/api/turns", summary="Historial de turnos")
 async def list_turns(limit: int = Query(30), date_from: Optional[str] = Query(None), date_to: Optional[str] = Query(None)) -> list:
     """Historial de cajas (turnos). Filtros opcionales por fecha de CIERRE."""

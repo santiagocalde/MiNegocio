@@ -46,7 +46,7 @@ export default function useAuth(addToast) {
         localStorage.removeItem('minegocio_onboarding_pin');
         if (data.initial_cash != null) setInitialCash(Number(data.initial_cash) || 0);
         if (data.turn_auto_opened && (data.suggested_initial_cash || 0) > 0) {
-          addToast(`Caja abierta con $${Number(data.suggested_initial_cash).toLocaleString('es-AR')} (igual al arqueo de ayer).`, 'info', 6000);
+          addToast(`Caja abierta con $${Number(data.suggested_initial_cash).toLocaleString('es-AR')} (igual al arqueo de ayer). Si arrancás con otro monto, editá "Caja inicial" en el panel.`, 'info', 7000);
         }
         setIsAuthenticated(true);
       } else {
@@ -87,7 +87,7 @@ export default function useAuth(addToast) {
       localStorage.removeItem('minegocio_onboarding_pin');
       if (data.initial_cash != null) setInitialCash(Number(data.initial_cash) || 0);
       if (data.turn_auto_opened && (data.suggested_initial_cash || 0) > 0) {
-        addToast(`Caja abierta con $${Number(data.suggested_initial_cash).toLocaleString('es-AR')} (igual al arqueo de ayer).`, 'info', 6000);
+        addToast(`Caja abierta con $${Number(data.suggested_initial_cash).toLocaleString('es-AR')} (igual al arqueo de ayer). Si arrancás con otro monto, editá "Caja inicial" en el panel.`, 'info', 7000);
       }
       setIsAuthenticated(true);
       return 'ok';
