@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Icons } from '../ui/Icons';
 import { usePanelContext } from '../../context/PanelContext';
 import { apiGet } from '../../services/apiClient';
+import CategoryBreakdown from './CategoryBreakdown';
 
 /** Icono inline 16 × 16, color heredado del padre */
 const Ico = ({ icon: Icon }) => (
@@ -202,6 +203,9 @@ function ResumenModal({ showResumen, setShowResumen, resumenData, businessConfig
             </div>
           </div>
         )}
+
+        {/* Ventas por categoría — componente aparte al pie del resumen */}
+        <CategoryBreakdown items={resumenData?.por_categoria} />
 
         {/* Acciones */}
         <div className="modal-actions" style={{ marginTop: '20px' }}>

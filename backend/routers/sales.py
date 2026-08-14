@@ -45,6 +45,83 @@ PLACEHOLDER = "$1" if USE_PG else "?"
 
 
 # ────────────────────────────────────────────────────────────
+# VENTAS POR CATEGORÍA (resumen de caja / cierre de turno)
+# ────────────────────────────────────────────────────────────
+async def _por_categoria_pg(conn, b_id, turn_id=None, sucursal_id=None):
+    """Totales vendidos agrupados por categoría del producto (modo PG)."""
+    base = (
+        "SELECT COALESCE(c.name, 'Sin categoría') AS categoria, "
+        "ROUND(SUM(si.quantity * si.unit_price)::numeric, 2) AS total, "
+        "ROUND(SUM(si.quantity)::numeric, 2) AS cantidad "
+        "FROM sale_items si "
+        "JOIN sales s ON s.id = si.sale_id "
+        "LEFT JOIN products p ON p.id = si.product_id "
+        "LEFT JOIN categories c ON c.id = p.category_id "
+    )
+    if turn_id is not None:
+        rows = await conn.fetch(
+            base + "WHERE s.business_id = $1 AND s.turn_id = $2 "
+                   "GROUP BY COALESCE(c.name, 'Sin categoría') ORDER BY total DESC",
+            b_id, turn_id,
+        )
+    elif sucursal_id:
+        rows = await conn.fetch(
+            base + "WHERE s.business_id = $1 AND s.sucursal_id = $2 "
+                   "AND s.timestamp >= date_trunc('day', now() AT TIME ZONE 'America/Argentina/Buenos_Aires') AT TIME ZONE 'America/Argentina/Buenos_Aires' "
+                   "AND s.timestamp < date_trunc('day', now() AT TIME ZONE 'America/Argentina/Buenos_Aires') AT TIME ZONE 'America/Argentina/Buenos_Aires' + INTERVAL '1 day' "
+                   "GROUP BY COALESCE(c.name, 'Sin categoría') ORDER BY total DESC",
+            b_id, sucursal_id,
+        )
+    else:
+        rows = await conn.fetch(
+            base + "WHERE s.business_id = $1 "
+                   "AND s.timestamp >= date_trunc('day', now() AT TIME ZONE 'America/Argentina/Buenos_Aires') AT TIME ZONE 'America/Argentina/Buenos_Aires' "
+                   "AND s.timestamp < date_trunc('day', now() AT TIME ZONE 'America/Argentina/Buenos_Aires') AT TIME ZONE 'America/Argentina/Buenos_Aires' + INTERVAL '1 day' "
+                   "GROUP BY COALESCE(c.name, 'Sin categoría') ORDER BY total DESC",
+            b_id,
+        )
+    return [
+        {"categoria": r["categoria"], "total": float(r["total"] or 0), "cantidad": float(r["cantidad"] or 0)}
+        for r in rows
+    ]
+
+
+async def _por_categoria_sqlite(db, turn_id=None, sucursal_id=None):
+    """Totales vendidos agrupados por categoría del producto (modo SQLite)."""
+    base = (
+        "SELECT COALESCE(c.name, 'Sin categoría') AS categoria, "
+        "ROUND(SUM(si.quantity * si.unit_price), 2) AS total, "
+        "ROUND(SUM(si.quantity), 2) AS cantidad "
+        "FROM sale_items si "
+        "JOIN sales s ON s.id = si.sale_id "
+        "LEFT JOIN products p ON p.id = si.product_id "
+        "LEFT JOIN categories c ON c.id = p.category_id "
+    )
+    if turn_id is not None:
+        cur = await db.execute(
+            base + "WHERE s.turn_id = ? "
+                   "GROUP BY COALESCE(c.name, 'Sin categoría') ORDER BY total DESC",
+            (turn_id,),
+        )
+    elif sucursal_id:
+        cur = await db.execute(
+            base + "WHERE s.sucursal_id = ? AND date(s.timestamp) = date('now','localtime') "
+                   "GROUP BY COALESCE(c.name, 'Sin categoría') ORDER BY total DESC",
+            (sucursal_id,),
+        )
+    else:
+        cur = await db.execute(
+            base + "WHERE date(s.timestamp) = date('now','localtime') "
+                   "GROUP BY COALESCE(c.name, 'Sin categoría') ORDER BY total DESC",
+        )
+    rows = await cur.fetchall()
+    return [
+        {"categoria": r["categoria"], "total": float(r["total"] or 0), "cantidad": float(r["cantidad"] or 0)}
+        for r in (row_to_dict(r, cur.description) for r in rows)
+    ]
+
+
+# ────────────────────────────────────────────────────────────
 # TURNS ENDPOINTS
 # ────────────────────────────────────────────────────────────
 @router.post("/api/turns", status_code=201, summary="Abrir turno")
@@ -574,6 +651,7 @@ async def today_sales(sucursal_id: Optional[int] = Query(None)) -> dict:
                 egresos_row = await conn.fetchrow("SELECT COALESCE(SUM(monto),0) as total_egresos FROM egresos_caja WHERE business_id = $1 AND timestamp >= date_trunc('day', now() AT TIME ZONE 'America/Argentina/Buenos_Aires') AT TIME ZONE 'America/Argentina/Buenos_Aires' AND timestamp < date_trunc('day', now() AT TIME ZONE 'America/Argentina/Buenos_Aires') AT TIME ZONE 'America/Argentina/Buenos_Aires' + INTERVAL '1 day'", b_id)
             result = dict(row) if row else {"total_tickets": 0, "total_vendido": 0, "total_fiado": 0, "total_efectivo": 0, "total_tarjeta": 0, "total_transferencia": 0, "total_mp": 0}
             result["total_egresos"] = float(egresos_row["total_egresos"] or 0) if egresos_row else 0
+            result["por_categoria"] = await _por_categoria_pg(conn, b_id, sucursal_id=sucursal_id)
             return result
     else:
         import aiosqlite
@@ -603,6 +681,7 @@ async def today_sales(sucursal_id: Optional[int] = Query(None)) -> dict:
             egresos_row = await egresos_cur.fetchone()
             result = row_to_dict(row, cur.description)
             result["total_egresos"] = float(egresos_row[0] or 0)
+            result["por_categoria"] = await _por_categoria_sqlite(db, sucursal_id=sucursal_id)
             return result
 
 
@@ -687,6 +766,7 @@ async def turn_detail(turn_id: int) -> dict:
             detail = dict(row)
             detail["sales"] = [dict(r) for r in sales]
             detail["egresos"] = [dict(r) for r in egresos]
+            detail["por_categoria"] = await _por_categoria_pg(conn, b_id, turn_id=turn_id)
             return detail
     else:
         import aiosqlite
@@ -707,6 +787,7 @@ async def turn_detail(turn_id: int) -> dict:
                 (turn_id,)
             )
             detail["egresos"] = [row_to_dict(r, cur.description) for r in await cur.fetchall()]
+            detail["por_categoria"] = await _por_categoria_sqlite(db, turn_id=turn_id)
             return detail
 
 

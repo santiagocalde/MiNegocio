@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { apiPost, apiGet } from '../../services/apiClient';
+import CategoryBreakdown from './CategoryBreakdown';
 
 export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, currentOperator, todaySalesTotal, resumenData, countedCash, setCountedCash, closeCajaPin, setCloseCajaPin, calculateCajaDiff, cashRef, addToast, currentTurnId, onTurnClosed }) {
   const [closing, setClosing] = useState(false);
   const [pendingRemitos, setPendingRemitos] = useState([]);
   const [postponing, setPostponing] = useState(false);
+  const [turnCats, setTurnCats] = useState([]);
 
   const isLogistica = currentOperator?.role === 'logistica';
   const isAdmin = currentOperator?.role === 'admin';
@@ -17,6 +19,15 @@ export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, curren
       .then(data => setPendingRemitos(Array.isArray(data) ? data : []))
       .catch(() => setPendingRemitos([]));
   }, [isLogistica, isClosingCaja]);
+
+  // Ventas por categoría del turno activo (para separar la plata por rubro al cuadrar)
+  useEffect(() => {
+    if (!isClosingCaja || !currentTurnId) return;
+    apiGet(`/turns/${currentTurnId}/detail`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => setTurnCats(Array.isArray(d?.por_categoria) ? d.por_categoria : []))
+      .catch(() => setTurnCats([]));
+  }, [isClosingCaja, currentTurnId]);
 
   if (!isClosingCaja) return null;
 
@@ -167,6 +178,10 @@ export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, curren
           )}
         </div>
       )}
+
+      {/* Ventas por categoría — componente aparte al pie del cierre */}
+      <CategoryBreakdown items={turnCats} />
+
       <div className="modal-actions">
         <button className="btn btn-modal-cancel" onClick={() => { setIsClosingCaja(false); setCountedCash(''); setCloseCajaPin(''); }} disabled={closing}>Cancelar (Esc)</button>
         <button className="btn btn-modal-confirm" style={{ background: 'var(--accent-danger)', opacity: !countedCash || (!isAdmin && closeCajaPin.length < 4) || closing ? 0.5 : 1 }} onClick={handleCloseTurn} disabled={!countedCash || (!isAdmin && closeCajaPin.length < 4) || closing}>
