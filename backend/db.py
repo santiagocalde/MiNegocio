@@ -302,11 +302,11 @@ async def init_pg() -> None:
             -- Detalle de pagos mixtos (efectivo + tarjeta/transferencia) para que el
             -- arqueo del cierre de caja pueda sumar la porción en efectivo.
             CREATE TABLE IF NOT EXISTS sale_payments (
-                id          SERIAL PRIMARY KEY,
-                business_id TEXT NOT NULL REFERENCES businesses(id),
-                sale_id     INTEGER NOT NULL REFERENCES sales(id) ON DELETE CASCADE,
-                method      TEXT NOT NULL,
-                amount      NUMERIC(12,2) NOT NULL DEFAULT 0
+                id         SERIAL PRIMARY KEY,
+                sale_id    INTEGER NOT NULL REFERENCES sales(id) ON DELETE CASCADE,
+                method     TEXT NOT NULL,
+                amount     NUMERIC(12,2) NOT NULL DEFAULT 0,
+                created_at TIMESTAMPTZ DEFAULT now()
             );
             CREATE INDEX IF NOT EXISTS idx_sale_payments_sale ON sale_payments(sale_id);
 

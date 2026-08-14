@@ -482,8 +482,8 @@ async def create_sale(request: Request, body: SaleCreate, idempotency_key: Optio
 
                 if is_split and body.payments:
                     await conn.executemany(
-                        "INSERT INTO sale_payments (business_id, sale_id, method, amount) VALUES ($1,$2,$3,$4)",
-                        [(b_id, sale_id, p.method, round(p.amount, 2)) for p in body.payments if getattr(p, "amount", 0) > 0]
+                        "INSERT INTO sale_payments (sale_id, method, amount) VALUES ($1,$2,$3)",
+                        [(sale_id, p.method, round(p.amount, 2)) for p in body.payments if getattr(p, "amount", 0) > 0]
                     )
 
                 await events.emit("sale-created", {"id": sale_id, "business_id": b_id}, business_id=b_id)
