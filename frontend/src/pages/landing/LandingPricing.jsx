@@ -5,12 +5,26 @@ import { Reveal } from './hooks/useReveal';
 const Svg = {
   Check: () => <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>,
   ChevronRight: () => <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>,
+  Bolt: () => <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>,
 };
 
 const FALLBACK_PLANS = [
-  { id: 'simple', name: 'Básico', monthly: 19999, yearly: 180000, desc: 'Arrancá a vender hoy.', popular: false, features: ['Punto de venta con lector de barras', 'Dashboard con ventas del día', 'El vuelto se calcula solo', 'Funciona sin internet', 'Control de stock automático', 'Cuentas corrientes (fiados)', 'Compras a proveedores', 'Promociones y descuentos', 'Hasta 2 usuarios'], cta: 'Adquirir' },
-  { id: 'pro', name: 'Pro', monthly: 29999, yearly: 270000, desc: 'El plan más completo.', popular: true, features: ['Todo lo de Básico', 'Presupuestos para tus clientes', 'Historial de ventas por cliente', 'Tu catálogo online con QR', 'Reportes de lo que vendés y ganás', 'Análisis de qué productos te convienen', 'Registro de compras a proveedores', 'Hasta 5 usuarios'], cta: 'Adquirir' },
-  { id: 'ia', name: 'IA', monthly: 39999, yearly: 360000, desc: 'Inteligencia artificial para tu negocio.', popular: false, features: ['Todo lo de Pro', 'Escáner de facturas con IA', 'Resumen diario del negocio con IA', 'Asesor de precios y reposición con IA', 'Cobranza de fiados por WhatsApp con IA', 'Pedidos por adelantado con entregas parciales', 'Hasta 7 usuarios'], cta: 'Adquirir' },
+  { id: 'simple', name: 'Básico', monthly: 19999, yearly: 180000, desc: 'Arrancá a vender hoy.', popular: false,
+    features: ['Punto de venta con lector de barras', 'Dashboard con ventas del día', 'El vuelto se calcula solo', 'Funciona sin internet', 'Control de stock automático', 'Cuentas corrientes (fiados)', 'Compras a proveedores', 'Promociones y descuentos', 'Hasta 2 usuarios', 'Facturación ARCA (+adicional)'],
+    cta: 'Adquirir' },
+  { id: 'pro', name: 'Pro', monthly: 29999, yearly: 270000, desc: 'El plan más completo.', popular: true,
+    features: ['Todo lo de Básico', 'Presupuestos para tus clientes', 'Historial de ventas por cliente', 'Tu catálogo online con QR', 'Reportes de lo que vendés y ganás', 'Análisis de qué productos te convienen', 'Registro de compras a proveedores', 'Hasta 5 usuarios', 'Facturación ARCA (+adicional)'],
+    cta: 'Adquirir' },
+  { id: 'ia', name: 'IA', monthly: 39999, yearly: 360000, desc: 'Inteligencia artificial para tu negocio.', popular: false,
+    features: ['Todo lo de Pro', 'Escáner de facturas con IA', 'Resumen diario del negocio con IA', 'Asesor de precios y reposición con IA', 'Cobranza de fiados por WhatsApp con IA', 'Pedidos por adelantado con entregas parciales', 'Hasta 7 usuarios', 'Facturación ARCA (+adicional)'],
+    cta: 'Adquirir' },
+];
+
+const ARCA_TIERS = [
+  { label: '150 fact/mes',  limit: 150,  monthly: 4500,  popular: false },
+  { label: '400 fact/mes',  limit: 400,  monthly: 8000,  popular: true  },
+  { label: '800 fact/mes',  limit: 800,  monthly: 14000, popular: false },
+  { label: 'Sin límite',    limit: null, monthly: 20000, popular: false },
 ];
 
 function PlanCard({ plan, isYearly, onCta, isLoggedIn }) {
@@ -59,20 +73,80 @@ function PlanCard({ plan, isYearly, onCta, isLoggedIn }) {
         )}
       </div>
       <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 28px 0', display: 'flex', flexDirection: 'column', gap: 12, flex: 1 }}>
-        {plan.features.map((f, i) => (
-          <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 11, fontSize: '0.9rem', color: 'var(--lp-ink-soft)' }}>
-            <div style={{ color: plan.popular ? 'var(--lp-primary-ink)' : 'var(--lp-green)', marginTop: 2, flexShrink: 0 }}>
-              <Svg.Check width={14} />
-            </div>
-            {f}
-          </li>
-        ))}
+        {plan.features.map((f, i) => {
+          const isArca = f.includes('ARCA');
+          return (
+            <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 11, fontSize: '0.9rem', color: isArca ? 'var(--lp-ink-faint)' : 'var(--lp-ink-soft)' }}>
+              <div style={{ color: isArca ? '#D97706' : (plan.popular ? 'var(--lp-primary-ink)' : 'var(--lp-green)'), marginTop: 3, flexShrink: 0 }}>
+                {isArca ? <Svg.Bolt /> : <Svg.Check />}
+              </div>
+              {isArca
+                ? <span>Facturación ARCA <span style={{ fontSize: '0.78rem', color: '#D97706', fontWeight: 700 }}>+adicional</span></span>
+                : f}
+            </li>
+          );
+        })}
       </ul>
       <button onClick={onCta} className={plan.popular ? 'lp-btn lp-btn--primary' : 'lp-btn lp-btn--ghost'} style={{
         width: '100%', justifyContent: 'center', padding: '13px 0', fontSize: '0.95rem',
       }}>
         {isLoggedIn ? `Activar plan ${plan.name}` : plan.cta}
       </button>
+    </div>
+  );
+}
+
+function ArcaAddonSection({ isYearly, onCta }) {
+  return (
+    <div style={{ maxWidth: 1000, margin: '44px auto 0', padding: '28px 32px', borderRadius: 20, background: 'var(--lp-paper-raised)', border: '1px solid rgba(217,119,6,0.25)', boxShadow: '0 4px 24px rgba(217,119,6,0.08)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 18 }}>
+        <div style={{ background: 'rgba(217,119,6,0.12)', color: '#D97706', borderRadius: 10, width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+        </div>
+        <div>
+          <h3 style={{ fontFamily: 'var(--lp-font-display)', fontSize: '1.15rem', fontWeight: 700, color: 'var(--lp-ink)', margin: 0 }}>
+            Facturación Electrónica ARCA
+          </h3>
+          <p style={{ fontSize: '0.82rem', color: 'var(--lp-ink-soft)', margin: '4px 0 0', lineHeight: 1.5 }}>
+            Se suma a cualquier plan. Elegí el tramo según tu volumen mensual de facturas.
+          </p>
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 14 }}>
+        {ARCA_TIERS.map((tier, i) => (
+          <div key={i}
+            style={{
+              padding: '20px 16px', borderRadius: 14, textAlign: 'center', cursor: 'pointer',
+              background: tier.popular ? 'rgba(217,119,6,0.07)' : 'var(--lp-paper-sunken)',
+              border: tier.popular ? '2px solid #D97706' : '1px solid var(--lp-line)',
+              position: 'relative', transition: 'transform 0.2s, box-shadow 0.2s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(217,119,6,0.15)'; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'none'; }}
+            onClick={() => onCta && onCta(tier)}
+          >
+            {tier.popular && (
+              <div style={{ position: 'absolute', top: -11, left: '50%', transform: 'translateX(-50%)', background: '#D97706', color: '#fff', fontSize: '0.62rem', fontWeight: 800, padding: '3px 10px', borderRadius: 20, letterSpacing: '0.1em', whiteSpace: 'nowrap' }}>
+                MÁS ELEGIDO
+              </div>
+            )}
+            <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--lp-ink-soft)', marginBottom: 12, letterSpacing: '0.01em' }}>
+              {tier.label}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: 2 }}>
+              <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--lp-ink-faint)' }}>$</span>
+              <span className="lp-money" style={{ fontSize: '1.75rem', fontWeight: 800, color: tier.popular ? '#D97706' : 'var(--lp-ink)', letterSpacing: '-0.02em', lineHeight: 1 }}>
+                {tier.monthly.toLocaleString('es-AR')}
+              </span>
+            </div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--lp-ink-faint)', marginTop: 4 }}>/mes</div>
+          </div>
+        ))}
+      </div>
+      <p style={{ fontSize: '0.73rem', color: 'var(--lp-ink-faint)', margin: '18px 0 0', textAlign: 'center', lineHeight: 1.6 }}>
+        Requiere CUIT y certificado digital ARCA (gratuito, se tramita desde el sistema). · Facturación tipo A, B y C.
+      </p>
     </div>
   );
 }
@@ -125,7 +199,13 @@ export default function LandingPricing({ isYearly, setIsYearly, isLoggedIn, setC
             </Reveal>
           ))}
         </div>
+
+        {/* Add-on: Facturación ARCA */}
         <Reveal delay={4}>
+          <ArcaAddonSection isYearly={isYearly} onCta={() => isLoggedIn ? null : navigate('/register')} />
+        </Reveal>
+
+        <Reveal delay={5}>
           <div className="lp-plan-custom" style={{ textAlign: 'center', marginTop: 44, padding: '28px', borderRadius: 16, border: '1px solid var(--lp-line)', background: 'var(--lp-paper-raised)' }}>
             <p style={{ fontWeight: 700, marginBottom: 6, color: 'var(--lp-ink)' }}>¿Necesitás un plan a medida?</p>
             <p style={{ color: 'var(--lp-ink-soft)', fontSize: '0.85rem', marginBottom: 14 }}>Ideal para cadenas de kioscos con múltiples sucursales.</p>
