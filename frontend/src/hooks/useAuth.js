@@ -44,9 +44,6 @@ export default function useAuth(addToast) {
         localStorage.setItem(K_OPERATOR, JSON.stringify(operatorObj));
         localStorage.setItem(K_TURN_ID, String(data.turn_id || ''));
         localStorage.removeItem('minegocio_onboarding_pin');
-        if (data.turn_auto_opened) {
-          localStorage.setItem('minegocio_onboarding_pending', 'true');
-        }
         setIsAuthenticated(true);
       } else {
         addToast('PIN incorrecto', 'error');
@@ -84,9 +81,6 @@ export default function useAuth(addToast) {
       localStorage.setItem(K_OPERATOR, JSON.stringify(operatorObj));
       localStorage.setItem(K_TURN_ID, String(data.turn_id || ''));
       localStorage.removeItem('minegocio_onboarding_pin');
-      if (data.turn_auto_opened) {
-        localStorage.setItem('minegocio_onboarding_pending', 'true');
-      }
       setIsAuthenticated(true);
       return 'ok';
     } catch {
