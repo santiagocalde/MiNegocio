@@ -58,12 +58,16 @@ export default function useAuth(addToast) {
   };
 
   // Abre turno sin PIN para cuentas de un solo operador (el dueño). El backend
-  // autoriza por el JWT de la cuenta y responde 409 si hay más de un operador
-  // (ahí sí hace falta el PIN). Devuelve true si abrió turno, false si no.
+  // autoriza por el JWT de la cuenta y responde:
+  //   409 → hay más de un operador (ahí sí hace falta el PIN)
+  //   401 → la sesión SaaS no es válida (hay que volver al login, nunca PIN)
+  // Devuelve 'ok' | 'multi' | 'auth' | 'error'.
   const openOwnerTurn = async () => {
     try {
       const res = await apiPost(`/login/owner`);
-      if (!res.ok) return false;
+      if (res.status === 409) return 'multi';
+      if (res.status === 401) return 'auth';
+      if (!res.ok) return 'error';
       const data = await res.json();
       const operatorObj = data.operator_id
         ? { id: data.operator_id, name: data.name || data.operator_name || 'Dueño', role: data.role || 'admin', permissions: data.permissions ?? null }
@@ -84,9 +88,9 @@ export default function useAuth(addToast) {
         localStorage.setItem('minegocio_onboarding_pending', 'true');
       }
       setIsAuthenticated(true);
-      return true;
+      return 'ok';
     } catch {
-      return false;
+      return 'error';
     }
   };
 
