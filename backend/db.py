@@ -299,6 +299,17 @@ async def init_pg() -> None:
             -- los índices se hinchan si el vacuum no corre seguido.
             ALTER TABLE sales SET (autovacuum_vacuum_scale_factor=0.05, autovacuum_analyze_scale_factor=0.02);
 
+            -- Detalle de pagos mixtos (efectivo + tarjeta/transferencia) para que el
+            -- arqueo del cierre de caja pueda sumar la porción en efectivo.
+            CREATE TABLE IF NOT EXISTS sale_payments (
+                id          SERIAL PRIMARY KEY,
+                business_id TEXT NOT NULL REFERENCES businesses(id),
+                sale_id     INTEGER NOT NULL REFERENCES sales(id) ON DELETE CASCADE,
+                method      TEXT NOT NULL,
+                amount      NUMERIC(12,2) NOT NULL DEFAULT 0
+            );
+            CREATE INDEX IF NOT EXISTS idx_sale_payments_sale ON sale_payments(sale_id);
+
             CREATE TABLE IF NOT EXISTS sale_items (
                 id              SERIAL PRIMARY KEY,
                 business_id     TEXT NOT NULL REFERENCES businesses(id),

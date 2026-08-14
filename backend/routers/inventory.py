@@ -14,6 +14,18 @@ def _biz_id():
     return main.business_id_ctx.get() if hasattr(main, 'business_id_ctx') else None
 
 
+async def _open_turn_pg(conn, b_id):
+    """Turno abierto actual del negocio (o None)."""
+    return await conn.fetchval(
+        "SELECT id FROM turns WHERE closed_at IS NULL AND business_id = $1 ORDER BY id DESC LIMIT 1", b_id)
+
+
+async def _open_turn_sqlite(db):
+    cur = await db.execute("SELECT id FROM turns WHERE closed_at IS NULL ORDER BY id DESC LIMIT 1")
+    row = await cur.fetchone()
+    return row[0] if row else None
+
+
 def _pin_matches(pin: str, stored: str) -> bool:
     """Compara un PIN contra el hash guardado (bcrypt), con fallback constant-time
     para PINs legacy en texto plano."""
@@ -118,7 +130,7 @@ async def revert_sale_item(sale_id: int, body: dict) -> dict:
             await _require_supervisor_pin_pg(conn, body.get("supervisor_pin") or body.get("operator_pin"), b_id)
 
             async with conn.transaction():
-                sale = await conn.fetchrow("SELECT id, reverted FROM sales WHERE id = $1 AND business_id = $2", sale_id, b_id)
+                sale = await conn.fetchrow("SELECT id, reverted, payment_method, is_fiado, turn_id FROM sales WHERE id = $1 AND business_id = $2", sale_id, b_id)
                 if not sale: raise HTTPException(404, detail="Venta no encontrada")
                 if sale["reverted"] == 1: raise HTTPException(400, detail="Venta ya anulada")
 
@@ -135,6 +147,23 @@ async def revert_sale_item(sale_id: int, body: dict) -> dict:
                     b_id, body.get("product_id"), qty, f"Devolucion parcial Venta #{sale_id}", body.get("operator", "Sistema"),
                     f"revert-{sale_id}-{body.get('product_id')}"
                 )
+
+                # Devolución en efectivo: la plata sale del cajón, se registra como egreso
+                # del turno abierto actual para que el arqueo no marque faltante falso.
+                if sale["payment_method"] == 'efectivo' and not sale["is_fiado"]:
+                    price_row = await conn.fetchrow(
+                        "SELECT unit_price FROM sale_items WHERE sale_id = $1 AND product_id = $2",
+                        sale_id, body.get("product_id")
+                    )
+                    if price_row:
+                        refund_cash = round(float(price_row["unit_price"] or 0) * qty, 2)
+                        if refund_cash > 0:
+                            open_turn = await _open_turn_pg(conn, b_id)
+                            if open_turn:
+                                await conn.execute(
+                                    "INSERT INTO egresos_caja (business_id, turn_id, monto, motivo, type, operator) VALUES ($1,$2,$3,$4,'gasto',$5)",
+                                    b_id, open_turn, refund_cash, f"Devolucion parcial Venta #{sale_id}", body.get("operator", "Sistema")
+                                )
 
                 fiado = await conn.fetchrow("SELECT is_fiado, fiado_name FROM sales WHERE id = $1", sale_id)
                 if fiado and fiado["is_fiado"] == 1 and fiado["fiado_name"]:
@@ -157,7 +186,7 @@ async def revert_sale_item(sale_id: int, body: dict) -> dict:
             async with aiosqlite.connect(main.DB_PATH) as db:
                 await _require_supervisor_pin_sqlite(db, body.get("supervisor_pin") or body.get("operator_pin"))
                 await db.execute("BEGIN IMMEDIATE")
-                cur = await db.execute("SELECT id, reverted FROM sales WHERE id = ?", (sale_id,))
+                cur = await db.execute("SELECT id, reverted, payment_method, is_fiado, turn_id FROM sales WHERE id = ?", (sale_id,))
                 sale = await cur.fetchone()
                 if not sale: raise HTTPException(404, detail="Venta no encontrada")
                 if sale[1] == 1: raise HTTPException(400, detail="Venta ya anulada")
@@ -170,6 +199,21 @@ async def revert_sale_item(sale_id: int, body: dict) -> dict:
                     "INSERT INTO stock_movements (product_id, movement_type, quantity, reason, operator) VALUES (?,?,?,?,?)",
                     (body.get("product_id"), "devolucion", qty, f"Devolucion parcial Venta #{sale_id}", body.get("operator", "Sistema"))
                 )
+                # Devolución en efectivo: la plata sale del cajón, se registra como egreso
+                # del turno abierto actual para que el arqueo no marque faltante falso.
+                if sale[2] == 'efectivo' and not sale[3]:
+                    cur_px = await db.execute(
+                        "SELECT unit_price FROM sale_items WHERE sale_id = ? AND product_id = ?", (sale_id, body.get("product_id")))
+                    p_row = await cur_px.fetchone()
+                    if p_row:
+                        refund_cash = round(float(p_row[0] or 0) * qty, 2)
+                        if refund_cash > 0:
+                            open_turn = await _open_turn_sqlite(db)
+                            if open_turn:
+                                await db.execute(
+                                    "INSERT INTO egresos_caja (turn_id, monto, motivo, type, operator) VALUES (?,?,?,'gasto',?)",
+                                    (open_turn, refund_cash, f"Devolucion parcial Venta #{sale_id}", body.get("operator", "Sistema"))
+                                )
                 await db.commit()
             return {"success": True}
 
@@ -193,6 +237,16 @@ async def revert_sale(sale_id: int, body: dict = Body(default={}), operator: str
                 for it in items:
                     await conn.execute("UPDATE products SET stock = stock + $1 WHERE id = $2", it["quantity"], it["product_id"])
                 await conn.execute("UPDATE sales SET reverted = 1 WHERE id = $1", sale_id)
+                # Anulación de una venta en efectivo de OTRO turno (ya cerrado): la plata
+                # sale del cajón actual y se registra como egreso del turno abierto.
+                # Si es del turno actual, el filtro reverted=0 del cierre ya la descuenta.
+                if sale["payment_method"] == 'efectivo' and not sale["is_fiado"]:
+                    open_turn = await _open_turn_pg(conn, b_id)
+                    if open_turn and open_turn != sale["turn_id"]:
+                        await conn.execute(
+                            "INSERT INTO egresos_caja (business_id, turn_id, monto, motivo, type, operator) VALUES ($1,$2,$3,$4,'gasto',$5)",
+                            b_id, open_turn, round(float(sale["total"] or 0), 2), f"Anulacion Venta #{sale_id}", body.get("operator", "Sistema")
+                        )
             return {"success": True}
     else:
         async with main.db_write_lock:
@@ -206,6 +260,15 @@ async def revert_sale(sale_id: int, body: dict = Body(default={}), operator: str
                 for it in await items.fetchall():
                     await db.execute("UPDATE products SET stock = stock + ? WHERE id = ?", (it[4], it[3]))
                 await db.execute("UPDATE sales SET reverted = 1 WHERE id = ?", (sale_id,))
+                # Ídem rama PG: anulación en efectivo de otro turno → egreso del turno abierto.
+                s_dict = row_to_dict(s, sale.description)
+                if s_dict.get("payment_method") == 'efectivo' and not s_dict.get("is_fiado"):
+                    open_turn = await _open_turn_sqlite(db)
+                    if open_turn and open_turn != s_dict.get("turn_id"):
+                        await db.execute(
+                            "INSERT INTO egresos_caja (turn_id, monto, motivo, type, operator) VALUES (?,?,?,'gasto',?)",
+                            (open_turn, round(float(s_dict.get("total") or 0), 2), f"Anulacion Venta #{sale_id}", body.get("operator", "Sistema"))
+                        )
                 await db.commit()
             return {"success": True}
 

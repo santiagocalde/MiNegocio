@@ -44,6 +44,18 @@ def _now():
 PLACEHOLDER = "$1" if USE_PG else "?"
 
 
+async def _open_turn_pg(conn, b_id):
+    """Turno abierto actual del negocio (o None)."""
+    return await conn.fetchval(
+        "SELECT id FROM turns WHERE closed_at IS NULL AND business_id = $1 ORDER BY id DESC LIMIT 1", b_id)
+
+
+async def _open_turn_sqlite(db):
+    cur = await db.execute("SELECT id FROM turns WHERE closed_at IS NULL ORDER BY id DESC LIMIT 1")
+    row = await cur.fetchone()
+    return row[0] if row else None
+
+
 # ────────────────────────────────────────────────────────────
 # VENTAS POR CATEGORÍA (resumen de caja / cierre de turno)
 # ────────────────────────────────────────────────────────────
@@ -60,13 +72,13 @@ async def _por_categoria_pg(conn, b_id, turn_id=None, sucursal_id=None):
     )
     if turn_id is not None:
         rows = await conn.fetch(
-            base + "WHERE s.business_id = $1 AND s.turn_id = $2 "
+            base + "WHERE s.business_id = $1 AND s.turn_id = $2 AND s.reverted = 0 "
                    "GROUP BY COALESCE(c.name, 'Sin categoría') ORDER BY total DESC",
             b_id, turn_id,
         )
     elif sucursal_id:
         rows = await conn.fetch(
-            base + "WHERE s.business_id = $1 AND s.sucursal_id = $2 "
+            base + "WHERE s.business_id = $1 AND s.sucursal_id = $2 AND s.reverted = 0 "
                    "AND s.timestamp >= date_trunc('day', now() AT TIME ZONE 'America/Argentina/Buenos_Aires') AT TIME ZONE 'America/Argentina/Buenos_Aires' "
                    "AND s.timestamp < date_trunc('day', now() AT TIME ZONE 'America/Argentina/Buenos_Aires') AT TIME ZONE 'America/Argentina/Buenos_Aires' + INTERVAL '1 day' "
                    "GROUP BY COALESCE(c.name, 'Sin categoría') ORDER BY total DESC",
@@ -74,7 +86,7 @@ async def _por_categoria_pg(conn, b_id, turn_id=None, sucursal_id=None):
         )
     else:
         rows = await conn.fetch(
-            base + "WHERE s.business_id = $1 "
+            base + "WHERE s.business_id = $1 AND s.reverted = 0 "
                    "AND s.timestamp >= date_trunc('day', now() AT TIME ZONE 'America/Argentina/Buenos_Aires') AT TIME ZONE 'America/Argentina/Buenos_Aires' "
                    "AND s.timestamp < date_trunc('day', now() AT TIME ZONE 'America/Argentina/Buenos_Aires') AT TIME ZONE 'America/Argentina/Buenos_Aires' + INTERVAL '1 day' "
                    "GROUP BY COALESCE(c.name, 'Sin categoría') ORDER BY total DESC",
@@ -99,19 +111,19 @@ async def _por_categoria_sqlite(db, turn_id=None, sucursal_id=None):
     )
     if turn_id is not None:
         cur = await db.execute(
-            base + "WHERE s.turn_id = ? "
+            base + "WHERE s.turn_id = ? AND s.reverted = 0 "
                    "GROUP BY COALESCE(c.name, 'Sin categoría') ORDER BY total DESC",
             (turn_id,),
         )
     elif sucursal_id:
         cur = await db.execute(
-            base + "WHERE s.sucursal_id = ? AND date(s.timestamp) = date('now','localtime') "
+            base + "WHERE s.sucursal_id = ? AND s.reverted = 0 AND date(s.timestamp) = date('now','localtime') "
                    "GROUP BY COALESCE(c.name, 'Sin categoría') ORDER BY total DESC",
             (sucursal_id,),
         )
     else:
         cur = await db.execute(
-            base + "WHERE date(s.timestamp) = date('now','localtime') "
+            base + "WHERE s.reverted = 0 AND date(s.timestamp) = date('now','localtime') "
                    "GROUP BY COALESCE(c.name, 'Sin categoría') ORDER BY total DESC",
         )
     rows = await cur.fetchall()
@@ -230,15 +242,22 @@ async def close_turn(turn_id: int, body: TurnClose) -> dict:
                 if row["closed_at"] is not None:
                     raise HTTPException(400, detail="Este turno ya esta cerrado")
 
-                # Efectivo esperado en el cajón = base inicial + ventas EN EFECTIVO (no fiado)
-                # - egresos de caja del turno. NO se cuentan tarjeta/transferencia/MP (no van
-                # al cajón) ni fiado (no se cobró). Se calcula en el backend, no se confía en
-                # el total que manda el front (que incluía todos los métodos = faltante falso).
+                # Efectivo esperado en el cajón = base inicial + ventas EN EFECTIVO (no fiado,
+                # no anuladas) + porción efectivo de pagos mixtos - egresos de caja del turno.
+                # NO se cuentan tarjeta/transferencia/MP (no van al cajón) ni fiado (no se cobró).
+                # Se calcula en el backend, no se confía en el total que manda el front.
                 cash_sales = await conn.fetchval(
                     "SELECT COALESCE(SUM(total),0) FROM sales WHERE turn_id = $1 AND business_id = $2 "
-                    "AND payment_method = 'efectivo' AND is_fiado = 0",
+                    "AND payment_method = 'efectivo' AND is_fiado = 0 AND reverted = 0",
                     turn_id, b_id
                 )
+                split_efectivo = await conn.fetchval(
+                    "SELECT COALESCE(SUM(sp.amount),0) FROM sale_payments sp "
+                    "JOIN sales s2 ON s2.id = sp.sale_id "
+                    "WHERE s2.turn_id = $1 AND s2.business_id = $2 AND sp.method = 'efectivo' AND s2.reverted = 0",
+                    turn_id, b_id
+                )
+                cash_sales = float(cash_sales or 0) + float(split_efectivo or 0)
                 egresos = await conn.fetchval(
                     "SELECT COALESCE(SUM(monto),0) FROM egresos_caja WHERE turn_id = $1 AND business_id = $2",
                     turn_id, b_id
@@ -279,13 +298,21 @@ async def close_turn(turn_id: int, body: TurnClose) -> dict:
                 turn = await cur.fetchone()
                 if not turn: raise HTTPException(404, detail="Turno no encontrado")
                 if turn[0] is not None: raise HTTPException(400, detail="Este turno ya esta cerrado")
-                # Efectivo esperado = base inicial + ventas EN EFECTIVO (no fiado) - egresos.
+                # Efectivo esperado = base inicial + ventas EN EFECTIVO (no fiado, no anuladas)
+                # + porción efectivo de pagos mixtos - egresos.
                 # (mismo criterio que la rama PG; no se confía en el total del front)
                 cur2 = await db.execute(
-                    "SELECT COALESCE(SUM(total),0) FROM sales WHERE turn_id=? AND payment_method='efectivo' AND is_fiado=0",
+                    "SELECT COALESCE(SUM(total),0) FROM sales WHERE turn_id=? AND payment_method='efectivo' AND is_fiado=0 AND reverted=0",
                     (turn_id,)
                 )
                 cash_sales = (await cur2.fetchone())[0] or 0
+                cur_split = await db.execute(
+                    "SELECT COALESCE(SUM(sp.amount),0) FROM sale_payments sp "
+                    "JOIN sales s2 ON s2.id = sp.sale_id "
+                    "WHERE s2.turn_id=? AND sp.method='efectivo' AND s2.reverted=0",
+                    (turn_id,)
+                )
+                cash_sales = float(cash_sales) + float((await cur_split.fetchone())[0] or 0)
                 cur3 = await db.execute("SELECT COALESCE(SUM(monto),0) FROM egresos_caja WHERE turn_id=?", (turn_id,))
                 egresos = (await cur3.fetchone())[0] or 0
                 expected_cash = round(float(turn[1] or 0) + float(cash_sales) - float(egresos), 2)
@@ -453,6 +480,12 @@ async def create_sale(request: Request, body: SaleCreate, idempotency_key: Optio
                                  b_id, cust_id, fiado_debt, f"Venta Fiada #{sale_id}", body.turn_id, body.operator
                             )
 
+                if is_split and body.payments:
+                    await conn.executemany(
+                        "INSERT INTO sale_payments (business_id, sale_id, method, amount) VALUES ($1,$2,$3,$4)",
+                        [(b_id, sale_id, p.method, round(p.amount, 2)) for p in body.payments if getattr(p, "amount", 0) > 0]
+                    )
+
                 await events.emit("sale-created", {"id": sale_id, "business_id": b_id}, business_id=b_id)
                 await conn.execute(
                     "INSERT INTO audit_log (business_id, action, operator, details) VALUES ($1,$2,$3,$4)",
@@ -565,6 +598,12 @@ async def create_sale(request: Request, body: SaleCreate, idempotency_key: Optio
                             (cust_id, fiado_debt, 'sale', f"Venta Fiada #{sale_id}", body.turn_id, body.operator)
                         )
 
+                if is_split and body.payments:
+                    await db.executemany(
+                        "INSERT INTO sale_payments (sale_id, method, amount) VALUES (?,?,?)",
+                        [(sale_id, p.method, round(p.amount, 2)) for p in body.payments if getattr(p, "amount", 0) > 0]
+                    )
+
                 await db.commit()
                 await db.execute(
                     "INSERT INTO audit_log (action, operator, details) VALUES (?,?,?)",
@@ -578,14 +617,16 @@ async def create_sale(request: Request, body: SaleCreate, idempotency_key: Optio
 
 @router.post("/api/sales/{sale_id}/cobrar-fiado", summary="Cobrar fiado y actualizar balance")
 async def cobrar_fiado(sale_id: int) -> dict:
-    """Marca un fiado como cobrado y actualiza el balance del cliente."""
+    """Marca un fiado como cobrado y actualiza el balance del cliente.
+    El efectivo que entra al cajón se registra como ingreso (egreso negativo)
+    en el turno abierto actual, así el arqueo del cierre cuadra."""
     b_id = _biz_id()
     if USE_PG:
         from db_helpers import get_pg_pool
         pool = await get_pg_pool()
         async with pool.acquire() as conn:
             sale = await conn.fetchrow(
-                "SELECT id, is_fiado, fiado_name, total FROM sales WHERE id = $1 AND business_id = $2",
+                "SELECT id, is_fiado, fiado_name, total, payment_method FROM sales WHERE id = $1 AND business_id = $2",
                 sale_id, b_id
             )
             if not sale:
@@ -598,11 +639,24 @@ async def cobrar_fiado(sale_id: int) -> dict:
                     sale["total"], b_id, sale["fiado_name"]
                 )
             await conn.execute("UPDATE sales SET is_fiado = false WHERE id = $1", sale_id)
+            # Si el fiado se creó como 'fiado' (o split con parte fiada), el cobro
+            # nunca entra a cash_sales: se registra como ingreso del turno actual.
+            if sale["payment_method"] != 'efectivo':
+                already_cash = await conn.fetchval(
+                    "SELECT COALESCE(SUM(amount),0) FROM sale_payments WHERE sale_id = $1 AND method = 'efectivo'", sale_id)
+                cobro = round(float(sale["total"] or 0) - float(already_cash or 0), 2)
+                if cobro > 0:
+                    open_turn = await _open_turn_pg(conn, b_id)
+                    if open_turn:
+                        await conn.execute(
+                            "INSERT INTO egresos_caja (business_id, turn_id, monto, motivo, type, operator) VALUES ($1,$2,$3,$4,'ingreso','Sistema')",
+                            b_id, open_turn, -cobro, f"Cobro fiado Venta #{sale_id}"
+                        )
     else:
         import aiosqlite
         async with aiosqlite.connect(main.DB_PATH) as db:
             sale_row = await db.execute_fetchall(
-                "SELECT id, is_fiado, fiado_name, total FROM sales WHERE id = ?",
+                "SELECT id, is_fiado, fiado_name, total, payment_method FROM sales WHERE id = ?",
                 (sale_id,)
             )
             if not sale_row:
@@ -612,10 +666,22 @@ async def cobrar_fiado(sale_id: int) -> dict:
                 raise HTTPException(400, detail="Esta venta no es un fiado")
             if sale[2]:
                 await db.execute(
-                    "UPDATE customers SET balance = balance - ? WHERE business_id = ? AND name = ?",
-                    (sale[3], b_id, sale[2])
+                    "UPDATE customers SET balance = balance - ? WHERE name = ?",
+                    (sale[3], sale[2])
                 )
             await db.execute("UPDATE sales SET is_fiado = 0 WHERE id = ?", (sale_id,))
+            if sale[4] != 'efectivo':
+                cur_ap = await db.execute(
+                    "SELECT COALESCE(SUM(amount),0) FROM sale_payments WHERE sale_id = ? AND method = 'efectivo'", (sale_id,))
+                already_cash = (await cur_ap.fetchone())[0] or 0
+                cobro = round(float(sale[3] or 0) - float(already_cash), 2)
+                if cobro > 0:
+                    open_turn = await _open_turn_sqlite(db)
+                    if open_turn:
+                        await db.execute(
+                            "INSERT INTO egresos_caja (turn_id, monto, motivo, type, operator) VALUES (?,?,?,'ingreso','Sistema')",
+                            (open_turn, -cobro, f"Cobro fiado Venta #{sale_id}")
+                        )
             await db.commit()
     return {"success": True, "message": "Fiado cobrado"}
 
@@ -635,7 +701,7 @@ async def today_sales(sucursal_id: Optional[int] = Query(None)) -> dict:
                            COALESCE(SUM(CASE WHEN payment_method='tarjeta' THEN total ELSE 0 END),0) as total_tarjeta,
                            COALESCE(SUM(CASE WHEN payment_method='transferencia' THEN total ELSE 0 END),0) as total_transferencia,
                            COALESCE(SUM(CASE WHEN payment_method='mercadopago' THEN total ELSE 0 END),0) as total_mp
-                     FROM sales WHERE business_id = $1 AND timestamp >= date_trunc('day', now() AT TIME ZONE 'America/Argentina/Buenos_Aires') AT TIME ZONE 'America/Argentina/Buenos_Aires' AND timestamp < date_trunc('day', now() AT TIME ZONE 'America/Argentina/Buenos_Aires') AT TIME ZONE 'America/Argentina/Buenos_Aires' + INTERVAL '1 day' AND sucursal_id = $2
+                     FROM sales WHERE business_id = $1 AND reverted = 0 AND timestamp >= date_trunc('day', now() AT TIME ZONE 'America/Argentina/Buenos_Aires') AT TIME ZONE 'America/Argentina/Buenos_Aires' AND timestamp < date_trunc('day', now() AT TIME ZONE 'America/Argentina/Buenos_Aires') AT TIME ZONE 'America/Argentina/Buenos_Aires' + INTERVAL '1 day' AND sucursal_id = $2
                 """, b_id, sucursal_id)
                 egresos_row = await conn.fetchrow("SELECT COALESCE(SUM(monto),0) as total_egresos FROM egresos_caja WHERE business_id = $1 AND timestamp >= date_trunc('day', now() AT TIME ZONE 'America/Argentina/Buenos_Aires') AT TIME ZONE 'America/Argentina/Buenos_Aires' AND timestamp < date_trunc('day', now() AT TIME ZONE 'America/Argentina/Buenos_Aires') AT TIME ZONE 'America/Argentina/Buenos_Aires' + INTERVAL '1 day'", b_id)
             else:
@@ -646,11 +712,24 @@ async def today_sales(sucursal_id: Optional[int] = Query(None)) -> dict:
                            COALESCE(SUM(CASE WHEN payment_method='tarjeta' THEN total ELSE 0 END),0) as total_tarjeta,
                            COALESCE(SUM(CASE WHEN payment_method='transferencia' THEN total ELSE 0 END),0) as total_transferencia,
                            COALESCE(SUM(CASE WHEN payment_method='mercadopago' THEN total ELSE 0 END),0) as total_mp
-                     FROM sales WHERE business_id = $1 AND timestamp >= date_trunc('day', now() AT TIME ZONE 'America/Argentina/Buenos_Aires') AT TIME ZONE 'America/Argentina/Buenos_Aires' AND timestamp < date_trunc('day', now() AT TIME ZONE 'America/Argentina/Buenos_Aires') AT TIME ZONE 'America/Argentina/Buenos_Aires' + INTERVAL '1 day'
+                     FROM sales WHERE business_id = $1 AND reverted = 0 AND timestamp >= date_trunc('day', now() AT TIME ZONE 'America/Argentina/Buenos_Aires') AT TIME ZONE 'America/Argentina/Buenos_Aires' AND timestamp < date_trunc('day', now() AT TIME ZONE 'America/Argentina/Buenos_Aires') AT TIME ZONE 'America/Argentina/Buenos_Aires' + INTERVAL '1 day'
                 """, b_id)
                 egresos_row = await conn.fetchrow("SELECT COALESCE(SUM(monto),0) as total_egresos FROM egresos_caja WHERE business_id = $1 AND timestamp >= date_trunc('day', now() AT TIME ZONE 'America/Argentina/Buenos_Aires') AT TIME ZONE 'America/Argentina/Buenos_Aires' AND timestamp < date_trunc('day', now() AT TIME ZONE 'America/Argentina/Buenos_Aires') AT TIME ZONE 'America/Argentina/Buenos_Aires' + INTERVAL '1 day'", b_id)
             result = dict(row) if row else {"total_tickets": 0, "total_vendido": 0, "total_fiado": 0, "total_efectivo": 0, "total_tarjeta": 0, "total_transferencia": 0, "total_mp": 0}
             result["total_egresos"] = float(egresos_row["total_egresos"] or 0) if egresos_row else 0
+            # Porción en efectivo de pagos mixtos (split): esa plata sí está en el cajón.
+            _split_q = (
+                "SELECT COALESCE(SUM(sp.amount),0) FROM sale_payments sp "
+                "JOIN sales s2 ON s2.id = sp.sale_id "
+                "WHERE s2.business_id = $1 AND sp.method = 'efectivo' AND s2.reverted = 0 "
+                "AND s2.timestamp >= date_trunc('day', now() AT TIME ZONE 'America/Argentina/Buenos_Aires') AT TIME ZONE 'America/Argentina/Buenos_Aires' "
+                "AND s2.timestamp < date_trunc('day', now() AT TIME ZONE 'America/Argentina/Buenos_Aires') AT TIME ZONE 'America/Argentina/Buenos_Aires' + INTERVAL '1 day'"
+            )
+            if sucursal_id:
+                split_efectivo = await conn.fetchval(_split_q + " AND s2.sucursal_id = $2", b_id, sucursal_id)
+            else:
+                split_efectivo = await conn.fetchval(_split_q, b_id)
+            result["total_efectivo"] = round(float(result.get("total_efectivo") or 0) + float(split_efectivo or 0), 2)
             result["por_categoria"] = await _por_categoria_pg(conn, b_id, sucursal_id=sucursal_id)
             return result
     else:
@@ -664,7 +743,7 @@ async def today_sales(sucursal_id: Optional[int] = Query(None)) -> dict:
                            COALESCE(SUM(CASE WHEN payment_method='tarjeta' THEN total ELSE 0 END),0) as total_tarjeta,
                            COALESCE(SUM(CASE WHEN payment_method='transferencia' THEN total ELSE 0 END),0) as total_transferencia,
                            COALESCE(SUM(CASE WHEN payment_method='mercadopago' THEN total ELSE 0 END),0) as total_mp
-                    FROM sales WHERE date(timestamp)=date('now','localtime') AND sucursal_id = ?
+                     FROM sales WHERE date(timestamp)=date('now','localtime') AND sucursal_id = ? AND reverted = 0
                 """, (sucursal_id,))
             else:
                 cur = await db.execute("""
@@ -674,13 +753,26 @@ async def today_sales(sucursal_id: Optional[int] = Query(None)) -> dict:
                            COALESCE(SUM(CASE WHEN payment_method='tarjeta' THEN total ELSE 0 END),0) as total_tarjeta,
                            COALESCE(SUM(CASE WHEN payment_method='transferencia' THEN total ELSE 0 END),0) as total_transferencia,
                            COALESCE(SUM(CASE WHEN payment_method='mercadopago' THEN total ELSE 0 END),0) as total_mp
-                    FROM sales WHERE date(timestamp)=date('now','localtime')
+                     FROM sales WHERE date(timestamp)=date('now','localtime') AND reverted = 0
                 """)
             row = await cur.fetchone()
             egresos_cur = await db.execute("SELECT COALESCE(SUM(monto),0) as total_egresos FROM egresos_caja WHERE date(timestamp)=date('now','localtime')")
             egresos_row = await egresos_cur.fetchone()
             result = row_to_dict(row, cur.description)
             result["total_egresos"] = float(egresos_row[0] or 0)
+            # Porción en efectivo de pagos mixtos (split): esa plata sí está en el cajón.
+            if sucursal_id:
+                cur_split = await db.execute(
+                    "SELECT COALESCE(SUM(sp.amount),0) FROM sale_payments sp "
+                    "JOIN sales s2 ON s2.id = sp.sale_id "
+                    "WHERE sp.method='efectivo' AND s2.reverted=0 AND date(s2.timestamp)=date('now','localtime') AND s2.sucursal_id=?",
+                    (sucursal_id,))
+            else:
+                cur_split = await db.execute(
+                    "SELECT COALESCE(SUM(sp.amount),0) FROM sale_payments sp "
+                    "JOIN sales s2 ON s2.id = sp.sale_id "
+                    "WHERE sp.method='efectivo' AND s2.reverted=0 AND date(s2.timestamp)=date('now','localtime')")
+            result["total_efectivo"] = round(float(result.get("total_efectivo") or 0) + float((await cur_split.fetchone())[0] or 0), 2)
             result["por_categoria"] = await _por_categoria_sqlite(db, sucursal_id=sucursal_id)
             return result
 
@@ -1051,6 +1143,14 @@ async def pay_customer_balance(customer_id: int, payment: dict = Body(...)) -> d
                     "INSERT INTO customer_transactions (business_id, customer_id, amount, type, description, operator) VALUES ($1,$2,$3,'payment',$4,$5)",
                     b_id, customer_id, amount, desc, operator
                 )
+                # El efectivo del abono entra al cajón: ingreso del turno abierto actual.
+                if amount > 0:
+                    open_turn = await _open_turn_pg(conn, b_id)
+                    if open_turn:
+                        await conn.execute(
+                            "INSERT INTO egresos_caja (business_id, turn_id, monto, motivo, type, operator) VALUES ($1,$2,$3,$4,'ingreso',$5)",
+                            b_id, open_turn, -amount, desc, operator
+                        )
             return {"success": True, "new_balance": new_balance}
     else:
         import aiosqlite
@@ -1065,5 +1165,13 @@ async def pay_customer_balance(customer_id: int, payment: dict = Body(...)) -> d
                 "INSERT INTO customer_transactions (customer_id, amount, type, description, operator) VALUES (?,?,?,?,?)",
                 (customer_id, amount, 'payment', desc, operator)
             )
+            # El efectivo del abono entra al cajón: ingreso del turno abierto actual.
+            if amount > 0:
+                open_turn = await _open_turn_sqlite(db)
+                if open_turn:
+                    await db.execute(
+                        "INSERT INTO egresos_caja (turn_id, monto, motivo, type, operator) VALUES (?,?,?,'ingreso',?)",
+                        (open_turn, -amount, desc, operator)
+                    )
             await db.commit()
         return {"success": True, "new_balance": new_balance}
