@@ -638,7 +638,7 @@ async def cobrar_fiado(sale_id: int) -> dict:
                     "UPDATE customers SET balance = balance - $1 WHERE business_id = $2 AND name = $3",
                     sale["total"], b_id, sale["fiado_name"]
                 )
-            await conn.execute("UPDATE sales SET is_fiado = false WHERE id = $1", sale_id)
+            await conn.execute("UPDATE sales SET is_fiado = 0 WHERE id = $1", sale_id)
             # Si el fiado se creó como 'fiado' (o split con parte fiada), el cobro
             # nunca entra a cash_sales: se registra como ingreso del turno actual.
             if sale["payment_method"] != 'efectivo':
