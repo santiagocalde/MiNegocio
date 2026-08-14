@@ -2,11 +2,12 @@ import { useState, useEffect } from 'react';
 import { apiPost, apiGet } from '../../services/apiClient';
 import CategoryBreakdown from './CategoryBreakdown';
 
-export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, currentOperator, todaySalesTotal, resumenData, countedCash, setCountedCash, closeCajaPin, setCloseCajaPin, calculateCajaDiff, cashRef, addToast, currentTurnId, onTurnClosed }) {
+export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, currentOperator, todaySalesTotal, countedCash, setCountedCash, closeCajaPin, setCloseCajaPin, calculateCajaDiff, cashRef, addToast, currentTurnId, onTurnClosed }) {
   const [closing, setClosing] = useState(false);
   const [pendingRemitos, setPendingRemitos] = useState([]);
   const [postponing, setPostponing] = useState(false);
   const [turnCats, setTurnCats] = useState([]);
+  const [turnResumen, setTurnResumen] = useState(null);
 
   const isLogistica = currentOperator?.role === 'logistica';
   const isAdmin = currentOperator?.role === 'admin';
@@ -20,24 +21,37 @@ export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, curren
       .catch(() => setPendingRemitos([]));
   }, [isLogistica, isClosingCaja]);
 
-  // Ventas por categoría del turno activo (para separar la plata por rubro al cuadrar)
+  // Detalle del turno activo: resumen de caja del turno + ventas por categoría.
+  // El arqueo se calcula SIEMPRE contra los números de ESTE turno (no del día),
+  // igual que el backend al confirmar.
   useEffect(() => {
     if (!isClosingCaja || !currentTurnId) return;
     apiGet(`/turns/${currentTurnId}/detail`)
       .then(r => r.ok ? r.json() : null)
-      .then(d => setTurnCats(Array.isArray(d?.por_categoria) ? d.por_categoria : []))
-      .catch(() => setTurnCats([]));
+      .then(d => {
+        if (!d) return;
+        setTurnCats(Array.isArray(d?.por_categoria) ? d.por_categoria : []);
+        if (d?.resumen_caja) setTurnResumen(d.resumen_caja);
+      })
+      .catch(() => {});
   }, [isClosingCaja, currentTurnId]);
 
   if (!isClosingCaja) return null;
 
-  const methodRows = [
-    { label: 'Efectivo', value: resumenData?.total_efectivo || 0 },
-    { label: 'Transferencia', value: resumenData?.total_transferencia || 0 },
-    { label: 'MercadoPago', value: resumenData?.total_mp || 0 },
-    { label: 'Tarjeta', value: resumenData?.total_tarjeta || 0 },
-    { label: 'Fiado', value: resumenData?.total_fiado || 0 },
-  ].filter(m => m.value > 0);
+  // Efectivo del turno = ventas 100% efectivo + porción efectivo de pagos mixtos.
+  const turnEfectivo = turnResumen
+    ? (turnResumen.efectivo || 0) + (turnResumen.split_efectivo || 0)
+    : null;
+
+  // Diferencia del arqueo calculada contra el TURNO actual (igual que el backend).
+  // Si el detalle todavía no cargó, cae al cálculo diario como respaldo.
+  const cajaDiff = () => {
+    const counted = parseFloat(countedCash) || 0;
+    if (turnResumen) {
+      return Math.round(counted - turnEfectivo - (turnResumen.initial_cash || 0) + (turnResumen.egresos || 0));
+    }
+    return Math.round(calculateCajaDiff ? calculateCajaDiff() : 0);
+  };
 
   const handlePostponeAll = async () => {
     if (pendingRemitos.length === 0) return;
@@ -71,12 +85,13 @@ export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, curren
     }
     setClosing(true);
     try {
+      const diff = cajaDiff();
       const res = await apiPost(`/turns/${currentTurnId}/close`, {
         sales_total: todaySalesTotal || 0,
         counted_cash: isLogistica ? 0 : (parseFloat(countedCash) || 0),
         operator_id: isAdmin ? null : (currentOperator?.id || null),
         pin: (isAdmin || isLogistica) ? undefined : closeCajaPin,
-        notes: isLogistica ? 'Cierre de turno logística' : (calculateCajaDiff() !== 0 ? (calculateCajaDiff() > 0 ? `Sobrante: $${calculateCajaDiff()}` : `Faltante: $${Math.abs(calculateCajaDiff())}`) : 'Caja cerrada sin diferencias.'),
+        notes: isLogistica ? 'Cierre de turno logística' : (diff !== 0 ? (diff > 0 ? `Sobrante: $${diff}` : `Faltante: $${Math.abs(diff)}`) : 'Caja cerrada sin diferencias.'),
       });
       if (res.ok) {
         if (addToast) addToast('Turno cerrado correctamente.', 'success');
@@ -139,18 +154,28 @@ export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, curren
       <h2 className="modal-title" style={{ color: 'var(--text-primary)' }}>Cierre de Turno</h2>
       {currentOperator?.role === 'admin' && (
         <>
-        <p style={{ textAlign: 'center', color: 'var(--text-secondary)', marginBottom: '8px' }}>Hoy el sistema registró ventas por:</p>
-        <div className="modal-amount" style={{ color: 'var(--text-primary)', marginBottom: '8px', textAlign: 'center' }}>${(todaySalesTotal || 0).toLocaleString('es-AR')}</div>
-        {methodRows.length > 0 && (
+        <p style={{ textAlign: 'center', color: 'var(--text-secondary)', marginBottom: '8px' }}>{turnResumen ? 'Este turno registró ventas por:' : 'Hoy el sistema registró ventas por:'}</p>
+        <div className="modal-amount" style={{ color: 'var(--text-primary)', marginBottom: '8px', textAlign: 'center' }}>${((turnResumen ? turnResumen.total : todaySalesTotal) || 0).toLocaleString('es-AR')}</div>
+        {turnResumen ? (
           <div style={{ border: '1px solid var(--border-color)', borderRadius: '8px', padding: '12px 16px', marginBottom: '12px' }}>
-            {methodRows.map(m => (
-              <div key={m.label} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: '0.9rem' }}>
-                <span style={{ color: 'var(--text-secondary)' }}>{m.label}</span>
-                <span style={{ color: 'var(--text-primary)', fontWeight: 700 }}>${m.value.toLocaleString('es-AR')}</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: '0.9rem' }}>
+              <span style={{ color: 'var(--text-secondary)' }}>Efectivo de este turno</span>
+              <span style={{ color: 'var(--text-primary)', fontWeight: 700 }}>${(turnEfectivo || 0).toLocaleString('es-AR')}</span>
+            </div>
+            {(turnResumen.egresos || 0) !== 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: '0.9rem' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>Egresos / ingresos de este turno</span>
+                <span style={{ color: 'var(--accent-warning)', fontWeight: 700 }}>{turnResumen.egresos > 0 ? `−$${turnResumen.egresos.toLocaleString('es-AR')}` : `+$${Math.abs(turnResumen.egresos).toLocaleString('es-AR')}`}</span>
               </div>
-            ))}
+            )}
+            {(turnResumen.initial_cash || 0) > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: '0.9rem' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>Caja inicial</span>
+                <span style={{ color: 'var(--text-primary)', fontWeight: 700 }}>${(turnResumen.initial_cash || 0).toLocaleString('es-AR')}</span>
+              </div>
+            )}
           </div>
-        )}
+        ) : null}
         <p style={{ textAlign: 'center', color: 'var(--text-secondary)', marginBottom: '16px', fontSize: '0.8rem' }}>
           El arqueo compara solo el <strong>efectivo físico</strong> del cajón. Las transferencias y posnet van a tu cuenta bancaria aparte.
         </p>
@@ -170,10 +195,10 @@ export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, curren
         </div>
       )}
       {countedCash && (isAdmin || closeCajaPin.length === 4) && (
-        <div style={{ textAlign: 'center', marginBottom: '24px', padding: '16px', borderRadius: '12px', background: calculateCajaDiff() === 0 ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)' }}>
-          {calculateCajaDiff() === 0 ? <span style={{ color: 'var(--accent-success)', fontWeight: 700, fontSize: '1.5rem' }}>Caja perfecta! No sobra ni falta.</span> : (
-            <div><span style={{ color: 'var(--accent-danger)', fontWeight: 800, fontSize: '1.8rem' }}>{calculateCajaDiff() > 0 ? `Sobra $${calculateCajaDiff().toLocaleString('es-AR')}` : `Falta $${Math.abs(calculateCajaDiff()).toLocaleString('es-AR')}`}</span>
-              <p style={{ color: 'var(--accent-danger)', marginTop: '8px', fontSize: '0.9rem' }}>Revisa los billetes o anota el {calculateCajaDiff() > 0 ? 'sobrante' : 'faltante'} en las observaciones.</p>
+        <div style={{ textAlign: 'center', marginBottom: '24px', padding: '16px', borderRadius: '12px', background: cajaDiff() === 0 ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)' }}>
+          {cajaDiff() === 0 ? <span style={{ color: 'var(--accent-success)', fontWeight: 700, fontSize: '1.5rem' }}>Caja perfecta! No sobra ni falta.</span> : (
+            <div><span style={{ color: 'var(--accent-danger)', fontWeight: 800, fontSize: '1.8rem' }}>{cajaDiff() > 0 ? `Sobra $${cajaDiff().toLocaleString('es-AR')}` : `Falta $${Math.abs(cajaDiff()).toLocaleString('es-AR')}`}</span>
+              <p style={{ color: 'var(--accent-danger)', marginTop: '8px', fontSize: '0.9rem' }}>Revisa los billetes o anota el {cajaDiff() > 0 ? 'sobrante' : 'faltante'} en las observaciones.</p>
             </div>
           )}
         </div>

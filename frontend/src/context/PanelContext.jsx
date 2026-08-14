@@ -108,6 +108,13 @@ export function PanelProvider({ children }) {
     };
 
     const resolveGate = async () => {
+      // Recién se cerró un turno: no auto-abrir la caja, mostrar el botón
+      // "Abrir Caja" para que quede claro que el turno anterior ya se cerró.
+      if (localStorage.getItem('minegocio_just_closed') === '1') {
+        localStorage.removeItem('minegocio_just_closed');
+        setOwnerGate('owner');
+        return;
+      }
       let list = null;
       try {
         const r = await apiGet('/operators');

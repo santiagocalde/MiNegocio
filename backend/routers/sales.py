@@ -858,6 +858,23 @@ async def turn_detail(turn_id: int) -> dict:
             detail = dict(row)
             detail["sales"] = [dict(r) for r in sales]
             detail["egresos"] = [dict(r) for r in egresos]
+            # Resumen de caja del TURNO (no del día) para que el arqueo en vivo
+            # del modal de cierre coincida exacto con el cálculo del backend.
+            resumen = await conn.fetchrow(
+                "SELECT "
+                "COALESCE((SELECT SUM(total) FROM sales WHERE turn_id = $1 AND business_id = $2 AND payment_method = 'efectivo' AND is_fiado = 0 AND reverted = 0), 0) AS efectivo, "
+                "COALESCE((SELECT SUM(sp.amount) FROM sale_payments sp JOIN sales s2 ON s2.id = sp.sale_id WHERE s2.turn_id = $1 AND s2.business_id = $2 AND sp.method = 'efectivo' AND s2.reverted = 0), 0) AS split_efectivo, "
+                "COALESCE((SELECT SUM(monto) FROM egresos_caja WHERE turn_id = $1 AND business_id = $2), 0) AS egresos, "
+                "COALESCE((SELECT SUM(total) FROM sales WHERE turn_id = $1 AND business_id = $2 AND reverted = 0), 0) AS total",
+                turn_id, b_id
+            )
+            detail["resumen_caja"] = {
+                "total": float(resumen["total"] or 0),
+                "efectivo": float(resumen["efectivo"] or 0),
+                "split_efectivo": float(resumen["split_efectivo"] or 0),
+                "egresos": float(resumen["egresos"] or 0),
+                "initial_cash": float(row["initial_cash"] or 0),
+            }
             detail["por_categoria"] = await _por_categoria_pg(conn, b_id, turn_id=turn_id)
             return detail
     else:
@@ -879,6 +896,24 @@ async def turn_detail(turn_id: int) -> dict:
                 (turn_id,)
             )
             detail["egresos"] = [row_to_dict(r, cur.description) for r in await cur.fetchall()]
+            # Resumen de caja del TURNO (no del día) para que el arqueo en vivo
+            # del modal de cierre coincida exacto con el cálculo del backend.
+            cur_r = await db.execute(
+                "SELECT "
+                "COALESCE((SELECT SUM(total) FROM sales WHERE turn_id = ? AND payment_method='efectivo' AND is_fiado=0 AND reverted=0), 0), "
+                "COALESCE((SELECT SUM(sp.amount) FROM sale_payments sp JOIN sales s2 ON s2.id = sp.sale_id WHERE s2.turn_id = ? AND sp.method='efectivo' AND s2.reverted=0), 0), "
+                "COALESCE((SELECT SUM(monto) FROM egresos_caja WHERE turn_id = ?), 0), "
+                "COALESCE((SELECT SUM(total) FROM sales WHERE turn_id = ? AND reverted=0), 0)",
+                (turn_id, turn_id, turn_id, turn_id)
+            )
+            resumen_row = await cur_r.fetchone()
+            detail["resumen_caja"] = {
+                "efectivo": float(resumen_row[0] or 0),
+                "split_efectivo": float(resumen_row[1] or 0),
+                "egresos": float(resumen_row[2] or 0),
+                "total": float(resumen_row[3] or 0),
+                "initial_cash": float(detail.get("initial_cash") or 0),
+            }
             detail["por_categoria"] = await _por_categoria_sqlite(db, turn_id=turn_id)
             return detail
 
