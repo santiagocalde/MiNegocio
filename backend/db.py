@@ -664,6 +664,34 @@ async def init_pg() -> None:
             -- QR de cobro de Mercado Pago del comercio (imagen "Mi QR", data URL).
             ALTER TABLE business_config ADD COLUMN IF NOT EXISTS mp_qr_url TEXT DEFAULT '';
 
+            -- Resincronizar secuencias de las tablas con ids seriales: cargas
+            -- masivas con ids explícitos (p.ej. simulaciones o migraciones)
+            -- dejan la secuencia atrás y el próximo INSERT choca con un id
+            -- existente (UniqueViolation). Al arrancar, siempre las ponemos al
+            -- menos al max(id). Es idempotente y barato.
+            DO $$
+            DECLARE t RECORD;
+            BEGIN
+              FOR t IN
+                SELECT c.relname AS tbl
+                FROM pg_catalog.pg_class c
+                JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+                WHERE c.relkind = 'r' AND n.nspname = 'public'
+              LOOP
+                BEGIN
+                  EXECUTE format(
+                    'SELECT setval(pg_get_serial_sequence(''%I'', ''id''), '
+                    'GREATEST((SELECT max(id) FROM %I), '
+                    'COALESCE((SELECT last_value FROM pg_get_serial_sequence(''%I'', ''id'')), 0)))',
+                    t.tbl, t.tbl, t.tbl
+                  );
+                EXCEPTION WHEN OTHERS THEN
+                  NULL;
+                END;
+              END LOOP;
+            END
+            $$;
+
             -- Presupuestos v2: descuento global y forma de pago
             ALTER TABLE quotes ADD COLUMN IF NOT EXISTS discount_pct NUMERIC(5,2) DEFAULT 0;
             ALTER TABLE quotes ADD COLUMN IF NOT EXISTS forma_pago VARCHAR(50) DEFAULT 'Contado';
