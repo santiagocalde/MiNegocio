@@ -52,16 +52,21 @@ function ResumenModal({ showResumen, setShowResumen, resumenData, businessConfig
     ['Tickets',             fmtN(resumenData?.total_tickets),      ''],
     ['Ticket promedio',     fmt((resumenData?.total_vendido || 0) / Math.max(1, resumenData?.total_tickets || 1)), ''],
     ['Efectivo',            fmt(resumenData?.total_efectivo),      'var(--accent-primary)'],
-    ['Tarjeta débito',      fmt(resumenData?.total_tarjeta),       'var(--text-primary)'],
+    ['Tarjeta',             fmt(resumenData?.total_tarjeta),       'var(--text-primary)'],
     ['Transferencias',      fmt(resumenData?.total_transferencia), 'var(--text-primary)'],
+    ['QR',                  fmt(resumenData?.total_mp),            'var(--text-primary)'],
     ['Fiado pendiente',     fmt(resumenData?.total_fiado),         'var(--accent-warning)'],
   ];
+
+  const topProducts = Array.isArray(resumenData?.productos_top) ? resumenData.productos_top : [];
 
   // ── Corralón: secciones ──
   const cajaSections = [
     { label: 'Total facturado',   value: fmt(resumenData?.total_vendido),       color: 'var(--accent-success)', big: true },
     { label: 'Efectivo',          value: fmt(resumenData?.total_efectivo),      color: 'var(--accent-primary)' },
+    { label: 'Tarjeta',           value: fmt(resumenData?.total_tarjeta),       color: 'var(--text-primary)' },
     { label: 'Transferencias',    value: fmt(resumenData?.total_transferencia), color: 'var(--text-primary)' },
+    { label: 'QR',                value: fmt(resumenData?.total_mp),            color: 'var(--text-primary)' },
     { label: 'Cuenta corriente',  value: fmt(resumenData?.total_fiado),         color: 'var(--accent-warning)' },
   ];
   const despachoPending = corralonData?.remitos_pendientes ?? 0;
@@ -73,7 +78,9 @@ function ResumenModal({ showResumen, setShowResumen, resumenData, businessConfig
   const corralonPrintRows = [
     ['Total facturado',       fmt(resumenData?.total_vendido)],
     ['Efectivo',              fmt(resumenData?.total_efectivo)],
+    ['Tarjeta',               fmt(resumenData?.total_tarjeta)],
     ['Transferencias',        fmt(resumenData?.total_transferencia)],
+    ['QR',                    fmt(resumenData?.total_mp)],
     ['Cta. corriente',        fmt(resumenData?.total_fiado)],
     ['— Despacho —',         ''],
     ['Notas pendientes',      fmtN(despachoPending)],
@@ -206,6 +213,26 @@ function ResumenModal({ showResumen, setShowResumen, resumenData, businessConfig
 
         {/* Ventas por categoría — componente aparte al pie del resumen */}
         <CategoryBreakdown items={resumenData?.por_categoria} />
+
+        {/* Más vendidos del día */}
+        {topProducts.length > 0 && (
+          <div>
+            <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '6px', paddingLeft: '2px' }}>
+              Más vendidos
+            </div>
+            <div style={{ border: '1px solid var(--border-color)', borderRadius: '8px', overflow: 'hidden', background: 'var(--bg-main)' }}>
+              {topProducts.map((p, i) => (
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 14px', borderBottom: i < topProducts.length - 1 ? '1px solid var(--border-color)' : 'none' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0 }}>
+                    <span style={{ color: 'var(--text-primary)', fontSize: '0.88rem', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.producto}</span>
+                    <span style={{ color: 'var(--text-faint)', fontSize: '0.72rem' }}>{p.cantidad} u</span>
+                  </div>
+                  <span style={{ fontWeight: 800, fontSize: '1rem', fontFamily: 'var(--font-mono)', color: 'var(--text-primary)', flexShrink: 0 }}>{fmt(p.total)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Acciones */}
         <div className="modal-actions" style={{ marginTop: '20px' }}>

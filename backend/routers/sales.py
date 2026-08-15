@@ -799,6 +799,19 @@ async def today_sales(sucursal_id: Optional[int] = Query(None)) -> dict:
                 split_efectivo = await conn.fetchval(_split_q, b_id)
             result["total_efectivo"] = round(float(result.get("total_efectivo") or 0) + float(split_efectivo or 0), 2)
             result["por_categoria"] = await _por_categoria_pg(conn, b_id, sucursal_id=sucursal_id)
+            _top_q = (
+                "SELECT si.product_name, SUM(si.quantity) AS qty, SUM(si.quantity * si.unit_price) AS total "
+                "FROM sale_items si JOIN sales s ON s.id = si.sale_id "
+                "WHERE s.business_id = $1 AND s.reverted = 0 {sucursal_clause} "
+                "AND s.timestamp >= date_trunc('day', now() AT TIME ZONE 'America/Argentina/Buenos_Aires') AT TIME ZONE 'America/Argentina/Buenos_Aires' "
+                "AND s.timestamp < date_trunc('day', now() AT TIME ZONE 'America/Argentina/Buenos_Aires') AT TIME ZONE 'America/Argentina/Buenos_Aires' + INTERVAL '1 day' "
+                "GROUP BY si.product_name ORDER BY qty DESC, total DESC LIMIT 5"
+            )
+            if sucursal_id:
+                top_rows = await conn.fetch(_top_q.format(sucursal_clause="AND s.sucursal_id = $2"), b_id, sucursal_id)
+            else:
+                top_rows = await conn.fetch(_top_q.format(sucursal_clause=""), b_id)
+            result["productos_top"] = [{"producto": r["product_name"], "cantidad": int(r["qty"] or 0), "total": float(r["total"] or 0)} for r in top_rows]
             return result
     else:
         import aiosqlite
@@ -842,6 +855,20 @@ async def today_sales(sucursal_id: Optional[int] = Query(None)) -> dict:
                     "WHERE sp.method='efectivo' AND s2.reverted=0 AND date(s2.timestamp)=date('now','localtime')")
             result["total_efectivo"] = round(float(result.get("total_efectivo") or 0) + float((await cur_split.fetchone())[0] or 0), 2)
             result["por_categoria"] = await _por_categoria_sqlite(db, sucursal_id=sucursal_id)
+            _top_s = (
+                "SELECT si.product_name, SUM(si.quantity) AS qty, SUM(si.quantity * si.unit_price) AS total "
+                "FROM sale_items si JOIN sales s ON s.id = si.sale_id "
+                "WHERE date(s.timestamp)=date('now','localtime') AND s.reverted = 0 {sucursal_clause} "
+                "GROUP BY si.product_name ORDER BY qty DESC, total DESC LIMIT 5"
+            )
+            if sucursal_id:
+                cur_top = await db.execute(_top_s.format(sucursal_clause="AND s.sucursal_id = ?"), (sucursal_id,))
+            else:
+                cur_top = await db.execute(_top_s.format(sucursal_clause=""))
+            result["productos_top"] = []
+            for r in await cur_top.fetchall():
+                d = row_to_dict(r, cur_top.description)
+                result["productos_top"].append({"producto": d["product_name"], "cantidad": int(d["qty"] or 0), "total": float(d["total"] or 0)})
             return result
 
 
