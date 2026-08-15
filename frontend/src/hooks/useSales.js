@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { apiGet, apiPost } from '../services/apiClient';
 
-export default function useSales(cart, effectiveTotal, payment, paymentMethod, useSplitPayment, splitPayments, clientCuit, emitirFactura, tipoFactura, vueltoEnCuenta, clienteVuelto, adjustedTotal, currentTurnId, currentOperator, setCart, clearCart, setPayment, setPaymentMethod, setUseSplitPayment, setSplitPayments, setClientCuit, setAdjustedTotal, setEditingTotal, setItemDiscounts, setDiscountInputActive, setVueltoEnCuenta, setClienteVuelto, setEmitirFactura, setTipoFactura, mpPaymentStatus, addToast) {
+export default function useSales(cart, effectiveTotal, payment, paymentMethod, useSplitPayment, splitPayments, clientCuit, emitirFactura, tipoFactura, vueltoEnCuenta, clienteVuelto, adjustedTotal, currentTurnId, currentOperator, setCart, clearCart, setPayment, setPaymentMethod, setUseSplitPayment, setSplitPayments, setClientCuit, setAdjustedTotal, setEditingTotal, setItemDiscounts, setDiscountInputActive, setVueltoEnCuenta, setClienteVuelto, setEmitirFactura, setTipoFactura, addToast) {
   const [isCharging, setIsCharging] = useState(false);
   const [lastSale, setLastSale] = useState(null);
   const [lastSaleId, setLastSaleId] = useState(null);

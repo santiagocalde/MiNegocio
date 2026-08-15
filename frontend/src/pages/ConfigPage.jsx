@@ -24,6 +24,7 @@ const FIELDS = [
   { key: 'margen_estimado',     label: 'Margen de ganancia estimado (%)', placeholder: '35' },
   { key: 'mp_access_token',     label: 'Access Token de Mercado Pago', placeholder: 'APP_USR-...', type: 'password' },
   { key: 'mp_collector_id',     label: 'Alias / ID de Cobro de Mercado Pago', placeholder: 'TuAliasMP o ID de caja', type: 'password' },
+  { key: 'mp_qr_url',           label: 'QR de Mercado Pago (cobro en el mostrador)', isMpQr: true },
 ];
 
 const inputStyle = {
@@ -167,6 +168,36 @@ export default function ConfigPage() {
                           style={{ ...inputStyle, fontSize: '0.8rem', padding: '8px 12px', color: 'var(--text-secondary)' }}
                         />
                       </div>
+                    </div>
+                  </div>
+                ) : f.isMpQr ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    {config.mp_qr_url && (
+                      <div style={{ width: 72, height: 72, border: '1px solid var(--border-color)', borderRadius: 8, overflow: 'hidden', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <img src={config.mp_qr_url} alt="QR MP" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+                      </div>
+                    )}
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        style={{ ...inputStyle, padding: '8px', fontSize: '0.85rem', cursor: 'pointer' }}
+                        onChange={e => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          if (file.size > 500 * 1024) { addToast('La imagen es muy grande (máx 500KB).', 'error'); return; }
+                          const reader = new FileReader();
+                          reader.onload = () => setConfig(prev => ({ ...prev, mp_qr_url: reader.result }));
+                          reader.readAsDataURL(file);
+                        }}
+                      />
+                      <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: 0 }}>
+                        Subí tu "Mi QR" de Mercado Pago. El cliente lo escanea en el mostrador y paga. El pago lo confirmás vos, como con efectivo.
+                        {config.mp_qr_url && <button type="button" onClick={() => setConfig(prev => ({ ...prev, mp_qr_url: '' }))} style={{ marginLeft: 8, background: 'none', border: 'none', color: 'var(--accent-danger)', cursor: 'pointer', fontSize: '0.75rem' }}>Quitar</button>}
+                      </p>
+                      <p style={{ fontSize: '0.72rem', color: 'var(--accent-primary)', margin: '2px 0 0' }}>
+                        ¿Querés que el sistema confirme los pagos solo (que aparezca "pago recibido")? Es una función avanzada: escribinos a soporte para activarla.
+                      </p>
                     </div>
                   </div>
                 ) : f.options ? (

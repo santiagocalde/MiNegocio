@@ -30,11 +30,6 @@ export default function useBackend(currentOperator, currentTurnId, currentSucurs
   const [showBackupRestore, setShowBackupRestore] = useState(false);
   const [backupList, setBackupList] = useState([]);
   const [restoring, setRestoring] = useState(false);
-  const [mpQrData, setMpQrData] = useState(null);
-  const [mpPaymentUrl, setMpPaymentUrl] = useState('');
-  const [mpLoading, setMpLoading] = useState(false);
-  const [mpPaymentStatus, setMpPaymentStatus] = useState('pending');
-  const [mpIntentId, setMpIntentId] = useState('');
   const [expiryAlerts, setExpiryAlerts] = useState(null);
   const [showExpiryAlerts, setShowExpiryAlerts] = useState(false);
   const [showLogs, setShowLogs] = useState(false);
@@ -391,11 +386,6 @@ export default function useBackend(currentOperator, currentTurnId, currentSucurs
     showBackupRestore, setShowBackupRestore,
     backupList, setBackupList,
     restoring, setRestoring,
-    mpQrData, setMpQrData,
-    mpPaymentUrl, setMpPaymentUrl,
-    mpLoading, setMpLoading,
-    mpPaymentStatus, setMpPaymentStatus,
-    mpIntentId, setMpIntentId,
     expiryAlerts, setExpiryAlerts,
     showExpiryAlerts, setShowExpiryAlerts,
     showLogs, setShowLogs,

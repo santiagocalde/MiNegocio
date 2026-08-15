@@ -139,7 +139,7 @@ async def update_config(request: Request, data: dict) -> dict:
 
         COLS = ["nombre", "subtitulo", "direccion", "telefono", "cuit", "condicion_iva",
                 "numero_caja", "mensaje_ticket", "iva_rate", "mp_access_token", "mp_collector_id",
-                "catalogo_activo", "catalogo_slug", "catalogo_whatsapp", "catalogo_tema",
+                "mp_qr_url", "catalogo_activo", "catalogo_slug", "catalogo_whatsapp", "catalogo_tema",
                 "instagram", "propietario", "ing_brutos", "inicio_actividades", "logo_url",
                 "price_list_a_name", "price_list_b_name", "price_list_c_name",
                 "price_list_d_name", "price_list_e_name", "margen_estimado"]
@@ -193,7 +193,7 @@ async def update_config(request: Request, data: dict) -> dict:
         # lo no enviado se conserva), igual que la rama Postgres de arriba.
         COLS = ["nombre", "subtitulo", "direccion", "telefono", "cuit", "condicion_iva",
                 "numero_caja", "mensaje_ticket", "iva_rate", "mp_access_token", "mp_collector_id",
-                "instagram", "propietario", "ing_brutos", "inicio_actividades", "logo_url",
+                "mp_qr_url", "instagram", "propietario", "ing_brutos", "inicio_actividades", "logo_url",
                 "price_list_a_name", "price_list_b_name", "price_list_c_name",
                 "price_list_d_name", "price_list_e_name", "margen_estimado"]
         async with aiosqlite.connect(main.DB_PATH) as db:

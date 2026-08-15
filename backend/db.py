@@ -659,6 +659,8 @@ async def init_pg() -> None:
 
             -- Margen de ganancia estimado (%) para reportes (default 35)
             ALTER TABLE business_config ADD COLUMN IF NOT EXISTS margen_estimado TEXT DEFAULT '35';
+            -- QR de cobro de Mercado Pago del comercio (imagen "Mi QR", data URL).
+            ALTER TABLE business_config ADD COLUMN IF NOT EXISTS mp_qr_url TEXT DEFAULT '';
 
             -- Presupuestos v2: descuento global y forma de pago
             ALTER TABLE quotes ADD COLUMN IF NOT EXISTS discount_pct NUMERIC(5,2) DEFAULT 0;

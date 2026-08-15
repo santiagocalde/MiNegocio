@@ -5,7 +5,7 @@ import useCart from '../hooks/useCart';
 import useSales from '../hooks/useSales';
 import usePromotions from '../hooks/usePromotions';
 import { usePanelContext } from '../context/PanelContext';
-import { apiGet, apiPost } from '../services/apiClient';
+import { apiPost } from '../services/apiClient';
 import ClientePicker from '../components/corralon/ClientePicker';
 import TopBar from '../components/pos/TopBar';
 import SearchBar from '../components/pos/SearchBar';
@@ -134,7 +134,7 @@ export default function VentasPage() {
     cart.setAdjustedTotal, cart.setEditingTotal, cart.setItemDiscounts,
     cart.setDiscountInputActive, cart.setVueltoEnCuenta, cart.setClienteVuelto,
     cart.setEmitirFactura, cart.setTipoFactura,
-    backend.mpPaymentStatus, addToast
+    addToast
   );
 
   useEffect(() => {
@@ -156,19 +156,6 @@ export default function VentasPage() {
       return () => clearTimeout(t);
     }
   }, [sales.lastSale, cart.autoPrint]);
-
-  useEffect(() => {
-    if (!backend.mpIntentId || backend.mpPaymentStatus === 'approved') return;
-    const checkStatus = async () => {
-      try {
-        const res = await apiGet(`/mercadopago/payment-status/${backend.mpIntentId}`);
-        if (res.ok) { const data = await res.json(); if (data.status === 'approved') backend.setMpPaymentStatus('approved'); }
-      } catch (e) { console.error(e) }
-    };
-    const interval = setInterval(checkStatus, 3000);
-    return () => clearInterval(interval);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [backend.mpIntentId, backend.mpPaymentStatus]);
 
   return (
     <>
@@ -233,11 +220,7 @@ export default function VentasPage() {
           setIsCancelConfirm={cart.setIsCancelConfirm} searchRef={searchRef}
           autoPrint={cart.autoPrint} setAutoPrint={cart.setAutoPrint}
           saleConfirm={sales.saleConfirm}
-          mpQrData={backend.mpQrData} setMpQrData={backend.setMpQrData}
-          mpPaymentUrl={backend.mpPaymentUrl} setMpPaymentUrl={backend.setMpPaymentUrl}
-          mpLoading={backend.mpLoading} setMpLoading={backend.setMpLoading}
-          mpPaymentStatus={backend.mpPaymentStatus} setMpPaymentStatus={backend.setMpPaymentStatus}
-          setMpIntentId={backend.setMpIntentId} handleQuickAdd={cart.handleQuickAdd}
+          handleQuickAdd={cart.handleQuickAdd}
           handleRepeatSale={cart.handleRepeatSale}
           businessConfig={backend.businessConfig} setBusinessConfig={backend.setBusinessConfig} addToast={addToast}
           currentOperator={auth.currentOperator} promotionSavings={promos.promotionSavings} />
@@ -260,11 +243,6 @@ export default function VentasPage() {
         cart={cart.cart} autoPrint={cart.autoPrint} setAutoPrint={cart.setAutoPrint}
         isProcessing={sales.isProcessing} confirmCharge={sales.confirmCharge}
         paymentRef={paymentRef}
-        mpQrData={backend.mpQrData} setMpQrData={backend.setMpQrData}
-        mpPaymentUrl={backend.mpPaymentUrl} setMpPaymentUrl={backend.setMpPaymentUrl}
-        mpLoading={backend.mpLoading} setMpLoading={backend.setMpLoading}
-        mpPaymentStatus={backend.mpPaymentStatus} setMpPaymentStatus={backend.setMpPaymentStatus}
-        setMpIntentId={backend.setMpIntentId}
         businessConfig={backend.businessConfig} addToast={addToast}
         currentOperator={auth.currentOperator} />
 

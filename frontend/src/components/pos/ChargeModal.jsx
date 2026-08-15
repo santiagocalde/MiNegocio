@@ -254,6 +254,28 @@ export default function ChargeModal({
               </div>
             )}
 
+            {/* Mercado Pago - QR del comercio (el cliente escanea y paga) */}
+            {!useSplitPayment && paymentMethod === 'mercadopago' && (
+              <div style={{ background: 'var(--bg-card)', padding: isMobile ? '16px' : '24px', borderRadius: '16px', border: '1px solid rgba(20,187,166,0.3)', textAlign: 'center' }}>
+                <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '12px' }}>Pago con Mercado Pago</div>
+                {businessConfig?.mp_qr_url ? (
+                  <>
+                    <img src={businessConfig.mp_qr_url} alt="QR Mercado Pago" style={{ width: isMobile ? 180 : 220, height: isMobile ? 180 : 220, objectFit: 'contain', background: '#fff', borderRadius: '12px', padding: '8px' }} />
+                    <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: '12px' }}>El cliente escanea con la app de Mercado Pago y paga</div>
+                    <div style={{ marginTop: '10px', padding: '12px', background: 'rgba(20,187,166,0.06)', borderRadius: '8px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                      Monto a cobrar: <strong style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-mono)', fontSize: '1.1rem' }}>${finalTotal.toLocaleString('es-AR')}</strong>
+                    </div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '10px' }}>Cuando veas el pago acreditado, presioná "Procesar Venta".</div>
+                  </>
+                ) : (
+                  <div style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: 1.5 }}>
+                    <p>⚠️ No cargaste tu QR de Mercado Pago.</p>
+                    <p>Andá a <strong style={{ color: 'var(--accent-primary)' }}>Configuración → Datos del negocio</strong> y subí tu "Mi QR" de Mercado Pago.</p>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Configs Opcionales (Ticket) */}
             <div style={{ marginTop: isMobile ? '8px' : 'auto', display: 'flex', flexDirection: 'column', gap: isMobile ? '10px' : '16px' }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', background: 'var(--bg-card)', padding: '16px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
