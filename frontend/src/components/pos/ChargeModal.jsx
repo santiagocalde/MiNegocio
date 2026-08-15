@@ -3,17 +3,17 @@ import useIsMobile from '../../hooks/useIsMobile';
 import { Icons } from '../ui/Icons';
 
 const PAYMENT_METHODS = [
-  { key: 'efectivo',       label: 'Efectivo',       Icon: Icons.CashIcon },
-  { key: 'tarjeta',        label: 'Tarjeta Débito', Icon: Icons.CardIcon },
-  { key: 'transferencia',  label: 'Transferencia',  Icon: Icons.BankIcon },
-  { key: 'mercadopago',    label: 'Mercado Pago',   Icon: Icons.QRIcon },
+  { key: 'efectivo',       label: 'Efectivo',      Icon: Icons.CashIcon },
+  { key: 'tarjeta',        label: 'Tarjeta',       Icon: Icons.CardIcon },
+  { key: 'transferencia',  label: 'Transferencia', Icon: Icons.BankIcon },
+  { key: 'mercadopago',    label: 'QR',            Icon: Icons.QRIcon },
 ];
 
 const SPLIT_METHODS = [
   { key: 'efectivo',       label: 'Efectivo' },
-  { key: 'tarjeta',        label: 'Tarjeta Débito' },
+  { key: 'tarjeta',        label: 'Tarjeta' },
   { key: 'transferencia',  label: 'Transferencia' },
-  { key: 'mercadopago',    label: 'Mercado Pago' },
+  { key: 'mercadopago',    label: 'QR' },
 ];
 
 export default function ChargeModal({
