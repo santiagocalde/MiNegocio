@@ -70,25 +70,7 @@ export default function ChargeModal({
             <h2 style={{ fontSize: isMobile ? '1.2rem' : '1.75rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>Procesar Venta</h2>
             {!isMobile && <p style={{ color: 'var(--text-secondary)', margin: '4px 0 0 0', fontSize: '0.95rem' }}>Confirme el método de pago e importe</p>}
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-            <button
-              onClick={() => setUseSplitPayment(!useSplitPayment)}
-              aria-pressed={useSplitPayment}
-              title="Activar pago mixto"
-              style={{
-                display: 'flex', alignItems: 'center', gap: '8px', background: useSplitPayment ? 'rgba(20,187,166,0.12)' : 'var(--bg-hover)',
-                border: `1px solid ${useSplitPayment ? 'var(--accent-primary)' : 'var(--border-color)'}`,
-                borderRadius: '999px', padding: isMobile ? '6px 10px' : '8px 14px', cursor: 'pointer',
-                color: useSplitPayment ? 'var(--accent-primary)' : 'var(--text-secondary)', fontWeight: 700, fontSize: '0.85rem', transition: 'all 0.2s',
-              }}
-            >
-              <span style={{ width: 30, height: 16, borderRadius: '999px', position: 'relative', flexShrink: 0, background: useSplitPayment ? 'var(--accent-primary)' : 'rgba(255,255,255,0.15)', transition: 'background 0.2s' }}>
-                <span style={{ position: 'absolute', top: 2, left: useSplitPayment ? 16 : 2, width: 12, height: 12, borderRadius: '50%', background: '#fff', transition: 'left 0.2s' }} />
-              </span>
-              Pago Mixto
-            </button>
-            <button onClick={cancelCharge} style={{ background: 'var(--bg-hover)', border: 'none', borderRadius: '50%', width: isMobile ? '44px' : '36px', height: isMobile ? '44px' : '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1.2rem', transition: 'all 0.2s' }}><Icons.X /></button>
-          </div>
+          <button onClick={cancelCharge} style={{ background: 'var(--bg-hover)', border: 'none', borderRadius: '50%', width: isMobile ? '44px' : '36px', height: isMobile ? '44px' : '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1.2rem', transition: 'all 0.2s' }}><Icons.X /></button>
         </div>
 
         {/* 2-Column Layout */}
@@ -123,7 +105,25 @@ export default function ChargeModal({
             
             {/* Payment Method Selector */}
             <div>
-              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '1px' }}>Método de Pago</label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px' }}>Método de Pago</label>
+                <button
+                  onClick={() => setUseSplitPayment(!useSplitPayment)}
+                  aria-pressed={useSplitPayment}
+                  title="Activar pago mixto"
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '8px', background: useSplitPayment ? 'rgba(20,187,166,0.12)' : 'var(--bg-hover)',
+                    border: `1px solid ${useSplitPayment ? 'var(--accent-primary)' : 'var(--border-color)'}`,
+                    borderRadius: '999px', padding: isMobile ? '6px 10px' : '8px 14px', cursor: 'pointer',
+                    color: useSplitPayment ? 'var(--accent-primary)' : 'var(--text-secondary)', fontWeight: 700, fontSize: '0.85rem', transition: 'all 0.2s',
+                  }}
+                >
+                  <span style={{ width: 30, height: 16, borderRadius: '999px', position: 'relative', flexShrink: 0, background: useSplitPayment ? 'var(--accent-primary)' : 'rgba(255,255,255,0.15)', transition: 'background 0.2s' }}>
+                    <span style={{ position: 'absolute', top: 2, left: useSplitPayment ? 16 : 2, width: 12, height: 12, borderRadius: '50%', background: '#fff', transition: 'left 0.2s' }} />
+                  </span>
+                  Pago Mixto
+                </button>
+              </div>
               <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: isMobile ? '8px' : '12px' }}>
                 {PAYMENT_METHODS.map(m => (
                   <button
