@@ -14,10 +14,6 @@ export default class ErrorBoundary extends React.Component {
     console.error('ErrorBoundary caught:', error, info);
   }
 
-  handleReset = () => {
-    this.setState({ hasError: false, error: null });
-  };
-
   render() {
     if (this.state.hasError) {
       return (
@@ -31,19 +27,19 @@ export default class ErrorBoundary extends React.Component {
             </svg>
           </div>
           <h2 style={{ fontSize: '1.8rem', fontWeight: 800, margin: '0 0 8px 0', color: 'var(--text-primary)' }}>
-            Algo salió mal
+            Esperá unos segundos y recargá la página
           </h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: '1rem', margin: '0 0 24px 0', maxWidth: 400 }}>
-            Ocurrió un error inesperado al cargar esta sección. No se perdieron datos.
+            Estamos actualizando el sistema. Recargá la página y todo vuelve a la normalidad.
           </p>
           <div style={{ display: 'flex', gap: 12 }}>
-            <button onClick={this.handleReset}
+            <button onClick={() => window.location.reload()}
               style={{
                 background: 'var(--gradient-primary)', color: 'white', border: 'none',
                 padding: '12px 32px', borderRadius: 10, fontWeight: 700, fontSize: '1rem',
                 cursor: 'pointer',
               }}>
-              Reintentar
+              Recargar página
             </button>
             <button onClick={() => window.location.href = '/panel/ventas'}
               style={{
