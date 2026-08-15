@@ -932,17 +932,33 @@ async def turn_detail(turn_id: int) -> dict:
                 "SELECT "
                 "COALESCE((SELECT SUM(total) FROM sales WHERE turn_id = $1 AND business_id = $2 AND payment_method = 'efectivo' AND is_fiado = 0 AND reverted = 0), 0) AS efectivo, "
                 "COALESCE((SELECT SUM(sp.amount) FROM sale_payments sp JOIN sales s2 ON s2.id = sp.sale_id WHERE s2.turn_id = $1 AND s2.business_id = $2 AND sp.method = 'efectivo' AND s2.reverted = 0), 0) AS split_efectivo, "
+                "COALESCE((SELECT SUM(total) FROM sales WHERE turn_id = $1 AND business_id = $2 AND payment_method = 'tarjeta' AND is_fiado = 0 AND reverted = 0), 0) AS tarjeta, "
+                "COALESCE((SELECT SUM(sp.amount) FROM sale_payments sp JOIN sales s2 ON s2.id = sp.sale_id WHERE s2.turn_id = $1 AND s2.business_id = $2 AND sp.method = 'tarjeta' AND s2.reverted = 0), 0) AS split_tarjeta, "
+                "COALESCE((SELECT SUM(total) FROM sales WHERE turn_id = $1 AND business_id = $2 AND payment_method = 'transferencia' AND is_fiado = 0 AND reverted = 0), 0) AS transferencia, "
+                "COALESCE((SELECT SUM(sp.amount) FROM sale_payments sp JOIN sales s2 ON s2.id = sp.sale_id WHERE s2.turn_id = $1 AND s2.business_id = $2 AND sp.method = 'transferencia' AND s2.reverted = 0), 0) AS split_transferencia, "
+                "COALESCE((SELECT SUM(total) FROM sales WHERE turn_id = $1 AND business_id = $2 AND payment_method = 'mercadopago' AND is_fiado = 0 AND reverted = 0), 0) AS mercadopago, "
+                "COALESCE((SELECT SUM(sp.amount) FROM sale_payments sp JOIN sales s2 ON s2.id = sp.sale_id WHERE s2.turn_id = $1 AND s2.business_id = $2 AND sp.method = 'mercadopago' AND s2.reverted = 0), 0) AS split_mercadopago, "
                 "COALESCE((SELECT SUM(monto) FROM egresos_caja WHERE turn_id = $1 AND business_id = $2), 0) AS egresos, "
                 "COALESCE((SELECT SUM(total) FROM sales WHERE turn_id = $1 AND business_id = $2 AND reverted = 0), 0) AS total",
                 turn_id, b_id
             )
             detail["resumen_caja"] = {
                 "total": float(resumen["total"] or 0),
-                "efectivo": float(resumen["efectivo"] or 0),
-                "split_efectivo": float(resumen["split_efectivo"] or 0),
+                "efectivo": float(resumen["efectivo"] or 0) + float(resumen["split_efectivo"] or 0),
+                "tarjeta": float(resumen["tarjeta"] or 0) + float(resumen["split_tarjeta"] or 0),
+                "transferencia": float(resumen["transferencia"] or 0) + float(resumen["split_transferencia"] or 0),
+                "mercadopago": float(resumen["mercadopago"] or 0) + float(resumen["split_mercadopago"] or 0),
                 "egresos": float(resumen["egresos"] or 0),
                 "initial_cash": float(row["initial_cash"] or 0),
             }
+            top = await conn.fetch(
+                "SELECT si.product_name, SUM(si.quantity) AS qty, SUM(si.quantity * si.unit_price) AS total "
+                "FROM sale_items si JOIN sales s ON s.id = si.sale_id "
+                "WHERE s.turn_id = $1 AND s.business_id = $2 AND s.reverted = 0 "
+                "GROUP BY si.product_name ORDER BY qty DESC, total DESC LIMIT 5",
+                turn_id, b_id
+            )
+            detail["productos_top"] = [{"producto": r["product_name"], "cantidad": int(r["qty"] or 0), "total": float(r["total"] or 0)} for r in top]
             detail["por_categoria"] = await _por_categoria_pg(conn, b_id, turn_id=turn_id)
             return detail
     else:
@@ -970,19 +986,38 @@ async def turn_detail(turn_id: int) -> dict:
                 "SELECT "
                 "COALESCE((SELECT SUM(total) FROM sales WHERE turn_id = ? AND payment_method='efectivo' AND is_fiado=0 AND reverted=0), 0), "
                 "COALESCE((SELECT SUM(sp.amount) FROM sale_payments sp JOIN sales s2 ON s2.id = sp.sale_id WHERE s2.turn_id = ? AND sp.method='efectivo' AND s2.reverted=0), 0), "
+                "COALESCE((SELECT SUM(total) FROM sales WHERE turn_id = ? AND payment_method='tarjeta' AND is_fiado=0 AND reverted=0), 0), "
+                "COALESCE((SELECT SUM(sp.amount) FROM sale_payments sp JOIN sales s2 ON s2.id = sp.sale_id WHERE s2.turn_id = ? AND sp.method='tarjeta' AND s2.reverted=0), 0), "
+                "COALESCE((SELECT SUM(total) FROM sales WHERE turn_id = ? AND payment_method='transferencia' AND is_fiado=0 AND reverted=0), 0), "
+                "COALESCE((SELECT SUM(sp.amount) FROM sale_payments sp JOIN sales s2 ON s2.id = sp.sale_id WHERE s2.turn_id = ? AND sp.method='transferencia' AND s2.reverted=0), 0), "
+                "COALESCE((SELECT SUM(total) FROM sales WHERE turn_id = ? AND payment_method='mercadopago' AND is_fiado=0 AND reverted=0), 0), "
+                "COALESCE((SELECT SUM(sp.amount) FROM sale_payments sp JOIN sales s2 ON s2.id = sp.sale_id WHERE s2.turn_id = ? AND sp.method='mercadopago' AND s2.reverted=0), 0), "
                 "COALESCE((SELECT SUM(monto) FROM egresos_caja WHERE turn_id = ?), 0), "
                 "COALESCE((SELECT SUM(total) FROM sales WHERE turn_id = ? AND reverted=0), 0)",
-                (turn_id, turn_id, turn_id, turn_id)
+                (turn_id, turn_id, turn_id, turn_id, turn_id, turn_id, turn_id, turn_id, turn_id, turn_id)
             )
             resumen_row = await cur_r.fetchone()
             detail["resumen_caja"] = {
-                "efectivo": float(resumen_row[0] or 0),
-                "split_efectivo": float(resumen_row[1] or 0),
-                "egresos": float(resumen_row[2] or 0),
-                "total": float(resumen_row[3] or 0),
+                "efectivo": float(resumen_row[0] or 0) + float(resumen_row[1] or 0),
+                "tarjeta": float(resumen_row[2] or 0) + float(resumen_row[3] or 0),
+                "transferencia": float(resumen_row[4] or 0) + float(resumen_row[5] or 0),
+                "mercadopago": float(resumen_row[6] or 0) + float(resumen_row[7] or 0),
+                "egresos": float(resumen_row[8] or 0),
+                "total": float(resumen_row[9] or 0),
                 "initial_cash": float(detail.get("initial_cash") or 0),
             }
             detail["por_categoria"] = await _por_categoria_sqlite(db, turn_id=turn_id)
+            cur_top = await db.execute(
+                "SELECT si.product_name, SUM(si.quantity) AS qty, SUM(si.quantity * si.unit_price) AS total "
+                "FROM sale_items si JOIN sales s ON s.id = si.sale_id "
+                "WHERE s.turn_id = ? AND s.reverted = 0 "
+                "GROUP BY si.product_name ORDER BY qty DESC, total DESC LIMIT 5",
+                (turn_id,)
+            )
+            detail["productos_top"] = []
+            for r in await cur_top.fetchall():
+                d = row_to_dict(r, cur_top.description)
+                detail["productos_top"].append({"producto": d["product_name"], "cantidad": int(d["qty"] or 0), "total": float(d["total"] or 0)})
             return detail
 
 
