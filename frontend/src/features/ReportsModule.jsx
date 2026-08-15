@@ -105,7 +105,7 @@ export default function ReportsModule() {
         const bestProducto = bestProductoEntries[0]?.[0] || 'Varios';
         const bestProductoCount = bestProductoEntries[0]?.[1] || 0;
 
-        const metodosLabel = { mercadopago: 'Mercado Pago', tarjeta: 'Tarjeta', transferencia: 'Transferencia', efectivo: 'Efectivo', mixto: 'Pago Mixto' };
+        const metodosLabel = { mercadopago: 'QR', tarjeta: 'Tarjeta', transferencia: 'Transferencia', efectivo: 'Efectivo', mixto: 'Pago Mixto' };
         setSummary({ 
           totalVentas: data.length, 
           ingresos, 
