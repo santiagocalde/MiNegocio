@@ -7,6 +7,7 @@ Cobro con QR de Mercado Pago (auto-confirmación) en el mostrador.
 Gateado: requiere que el negocio tenga Access Token de MP y `mp_auto_confirm`.
 Protegido por el TenantMiddleware (token del negocio) como el resto de /api.
 """
+import logging
 import uuid
 
 from fastapi import APIRouter, Body, HTTPException, Request
@@ -15,6 +16,7 @@ import main
 from core.ratelimit import limiter
 from services.mercadopago import client, repo
 
+logger = logging.getLogger("mp_pos")
 router = APIRouter(prefix="/api/mp")
 
 
@@ -66,7 +68,19 @@ async def get_intent(request: Request, intent_id: str) -> dict:
             except Exception:  # noqa: BLE001
                 pay = None
             if pay:
-                await repo.mark_approved(biz, intent_id, pay["id"])
-                status = "approved"
+                # Red de seguridad: solo confirmamos si el monto pagado coincide
+                # con el del cobro (tolerancia de medio peso). Un pago por otro
+                # monto NO confirma la venta.
+                try:
+                    paid_ok = abs(float(pay.get("amount") or 0) - float(intent["total"])) < 0.5
+                except (TypeError, ValueError):
+                    paid_ok = False
+                if paid_ok:
+                    await repo.mark_approved(biz, intent_id, pay["id"])
+                    status = "approved"
+                else:
+                    logger.warning(
+                        "MP pago %s con monto distinto al cobro %s ($%s vs $%s) — no confirmo.",
+                        pay["id"], intent_id, pay.get("amount"), intent["total"])
 
     return {"status": status, "total": intent.get("total"), "mp_payment_id": intent.get("mp_payment_id") or ""}

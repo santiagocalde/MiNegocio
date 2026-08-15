@@ -49,8 +49,13 @@ export default function ChargeModal({
     mpWaiting;
 
   // Cerrar el modal (reseteando el pago mixto) sin tocar el carrito.
+  // Blindaje: si el cliente YA pagó por QR y no se cerró la venta, pedir
+  // confirmación fuerte para no perder un pago (el caso "cancela sin querer").
   const cancelCharge = () => {
     if (isProcessing) return;
+    if (mpPaid && !window.confirm(
+      `⚠️ El cliente YA PAGÓ $${Number(finalTotal).toLocaleString('es-AR')} por QR.\n\n` +
+      `Si cerrás ahora, la venta NO queda registrada. ¿Cancelar igual?`)) return;
     setIsCharging(false);
     setUseSplitPayment?.(false);
     setSplitPayments?.([{ method: 'efectivo', amount: '' }]);
@@ -69,9 +74,11 @@ export default function ChargeModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isCharging, isConfirmDisabled, confirmCharge, setIsCharging]);
 
-  // Resetear el estado de pago QR al abrir el modal o cambiar de método/mixto.
+  // Resetear el estado de pago QR SOLO al abrir/cerrar el modal (una venta nueva
+  // arranca sin pago). El método queda bloqueado una vez pagado, así que no hace
+  // falta resetear al cambiarlo.
   // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => { setMpPaid(false); }, [isCharging, paymentMethod, useSplitPayment]);
+  useEffect(() => { setMpPaid(false); }, [isCharging]);
 
   if (!isCharging) return null;
 
@@ -124,13 +131,14 @@ export default function ChargeModal({
                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px' }}>Método de Pago</label>
                 <button
                   onClick={() => setUseSplitPayment(!useSplitPayment)}
+                  disabled={mpPaid}
                   aria-pressed={useSplitPayment}
                   title="Activar pago mixto"
                   style={{
                     display: 'flex', alignItems: 'center', gap: '8px', background: useSplitPayment ? 'rgba(20,187,166,0.12)' : 'var(--bg-hover)',
                     border: `1px solid ${useSplitPayment ? 'var(--accent-primary)' : 'var(--border-color)'}`,
-                    borderRadius: '999px', padding: isMobile ? '6px 10px' : '8px 14px', cursor: 'pointer',
-                    color: useSplitPayment ? 'var(--accent-primary)' : 'var(--text-secondary)', fontWeight: 700, fontSize: '0.85rem', transition: 'all 0.2s',
+                    borderRadius: '999px', padding: isMobile ? '6px 10px' : '8px 14px', cursor: mpPaid ? 'not-allowed' : 'pointer',
+                    color: useSplitPayment ? 'var(--accent-primary)' : 'var(--text-secondary)', fontWeight: 700, fontSize: '0.85rem', transition: 'all 0.2s', opacity: mpPaid ? 0.5 : 1,
                   }}
                 >
                   <span style={{ width: 30, height: 16, borderRadius: '999px', position: 'relative', flexShrink: 0, background: useSplitPayment ? 'var(--accent-primary)' : 'rgba(255,255,255,0.15)', transition: 'background 0.2s' }}>
@@ -143,13 +151,14 @@ export default function ChargeModal({
                 {PAYMENT_METHODS.map(m => (
                   <button
                     key={m.key}
+                    disabled={mpPaid}
                     onClick={() => { setPaymentMethod(m.key); setUseSplitPayment(false); if (m.key !== 'efectivo') setPayment(String(finalTotal)); setTimeout(() => { if (m.key === 'efectivo') paymentRef?.current?.focus(); }, 100); }}
                     style={{
                       padding: isMobile ? '12px' : '16px', borderRadius: '12px', border: '2px solid',
                       borderColor: !useSplitPayment && paymentMethod === m.key ? 'var(--accent-primary)' : 'var(--border-color)',
                       background: !useSplitPayment && paymentMethod === m.key ? 'rgba(20,187,166, 0.08)' : 'var(--bg-card)',
                       color: !useSplitPayment && paymentMethod === m.key ? 'var(--accent-primary)' : 'var(--text-primary)',
-                      fontWeight: 700, cursor: 'pointer', fontSize: '0.95rem', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'center'
+                      fontWeight: 700, cursor: mpPaid ? 'not-allowed' : 'pointer', fontSize: '0.95rem', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'center', opacity: mpPaid && paymentMethod !== m.key ? 0.45 : 1
                     }}
                   >
                     <span style={{ width: 24, height: 24, color: 'currentColor' }}><m.Icon /></span> {m.label}
