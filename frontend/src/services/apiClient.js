@@ -75,8 +75,12 @@ async function request(method, path, body) {
         return fetchWithTimeout(`${SERVER_URL}${path}`, { method, headers, body: body ? JSON.stringify(body) : undefined });
       }
     }
-    const onAuthPage = typeof window !== 'undefined' && (window.location.pathname === '/' || window.location.pathname.startsWith('/panel'));
-    if (!onAuthPage) {
+    // La sesión no se pudo renovar (token vencido o invalidado, ej. tras un
+    // deploy que cambió el JWT_SECRET): limpiar y mandar a login. Antes, estando
+    // en /panel NO redirigía y el usuario quedaba atascado viendo "Acceso
+    // denegado" en cada acción, sin saber que tenía que volver a entrar.
+    clearSession();
+    if (typeof window !== 'undefined' && window.location.pathname !== '/') {
       window.location.href = '/';
     }
   }
