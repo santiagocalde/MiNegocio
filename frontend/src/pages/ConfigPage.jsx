@@ -23,6 +23,7 @@ const FIELDS = [
   { key: 'mp_access_token',     label: 'Access Token de Mercado Pago', placeholder: 'APP_USR-...', type: 'password', section: 'Medios de Pago' },
   { key: 'mp_collector_id',     label: 'Alias / ID de Cobro de Mercado Pago', placeholder: 'TuAliasMP o ID de caja', type: 'password', section: 'Medios de Pago' },
   { key: 'mp_qr_url',           label: 'QR de Mercado Pago (cobro en el mostrador)', isMpQr: true, section: 'Medios de Pago' },
+  { key: 'mp_auto_confirm',     label: 'Auto-confirmación de pagos con QR', isMpAuto: true, section: 'Medios de Pago' },
   { key: 'mensaje_ticket',      label: 'Mensaje final del ticket',    placeholder: '¡Gracias por su compra!', section: 'Ticket' },
   { key: 'margen_estimado',     label: 'Margen de ganancia estimado (%)', placeholder: '35', section: 'Análisis' },
 ];
@@ -184,10 +185,23 @@ export default function ConfigPage() {
               Subí tu "Mi QR" de Mercado Pago. El cliente lo escanea en el mostrador y paga. El pago lo confirmás vos, como con efectivo.
               {config.mp_qr_url && <button type="button" onClick={() => setConfig(prev => ({ ...prev, mp_qr_url: '' }))} style={{ marginLeft: 8, background: 'none', border: 'none', color: 'var(--accent-danger)', cursor: 'pointer', fontSize: '0.75rem' }}>Quitar</button>}
             </p>
-            <p style={{ fontSize: '0.72rem', color: 'var(--accent-primary)', margin: '2px 0 0' }}>
-              ¿Querés que el sistema confirme los pagos solo (que aparezca "pago recibido")? Es una función avanzada: escribinos a soporte para activarla.
+            <p style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', margin: '2px 0 0' }}>
+              ¿Querés que se confirme solo y aparezca "pago recibido"? Activá la auto-confirmación acá abajo (necesita tu Access Token de arriba).
             </p>
           </div>
+        </div>
+      ) : f.isMpAuto ? (
+        <div>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
+            <input type="checkbox"
+              checked={[1, '1', true, 'true'].includes(config.mp_auto_confirm)}
+              onChange={e => setConfig(prev => ({ ...prev, mp_auto_confirm: e.target.checked ? 1 : 0 }))}
+              style={{ width: 20, height: 20, accentColor: 'var(--accent-primary)', cursor: 'pointer' }} />
+            <span style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: '0.95rem' }}>Confirmar los pagos con QR automáticamente</span>
+          </label>
+          <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: '6px 0 0 32px' }}>
+            Cuando el cliente paga, la notebook muestra "PAGO RECIBIDO" y cierra la venta sola. Necesita tu Access Token de Mercado Pago (cargado arriba).
+          </p>
         </div>
       ) : f.options ? (
         <select

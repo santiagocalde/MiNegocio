@@ -130,6 +130,8 @@ async def update_config(request: Request, data: dict) -> dict:
             data["catalogo_slug"] = re.sub(r"[^a-z0-9-]", "", str(data["catalogo_slug"]).strip().lower())[:60]
         if "catalogo_activo" in data:
             data["catalogo_activo"] = 1 if data["catalogo_activo"] in (True, 1, "1", "true", "True") else 0
+        if "mp_auto_confirm" in data:
+            data["mp_auto_confirm"] = 1 if data["mp_auto_confirm"] in (True, 1, "1", "true", "True") else 0
         # Tema del catálogo: solo 5 paletas fijas (whitelist), nunca CSS arbitrario.
         if "catalogo_tema" in data:
             tema = str(data["catalogo_tema"]).strip().lower()
@@ -139,7 +141,7 @@ async def update_config(request: Request, data: dict) -> dict:
 
         COLS = ["nombre", "subtitulo", "direccion", "telefono", "cuit", "condicion_iva",
                 "numero_caja", "mensaje_ticket", "iva_rate", "mp_access_token", "mp_collector_id",
-                "mp_qr_url", "catalogo_activo", "catalogo_slug", "catalogo_whatsapp", "catalogo_tema",
+                "mp_qr_url", "mp_auto_confirm", "catalogo_activo", "catalogo_slug", "catalogo_whatsapp", "catalogo_tema",
                 "instagram", "propietario", "ing_brutos", "inicio_actividades", "logo_url",
                 "price_list_a_name", "price_list_b_name", "price_list_c_name",
                 "price_list_d_name", "price_list_e_name", "margen_estimado"]
@@ -193,7 +195,7 @@ async def update_config(request: Request, data: dict) -> dict:
         # lo no enviado se conserva), igual que la rama Postgres de arriba.
         COLS = ["nombre", "subtitulo", "direccion", "telefono", "cuit", "condicion_iva",
                 "numero_caja", "mensaje_ticket", "iva_rate", "mp_access_token", "mp_collector_id",
-                "mp_qr_url", "instagram", "propietario", "ing_brutos", "inicio_actividades", "logo_url",
+                "mp_qr_url", "mp_auto_confirm", "instagram", "propietario", "ing_brutos", "inicio_actividades", "logo_url",
                 "price_list_a_name", "price_list_b_name", "price_list_c_name",
                 "price_list_d_name", "price_list_e_name", "margen_estimado"]
         async with aiosqlite.connect(main.DB_PATH) as db:

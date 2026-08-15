@@ -394,6 +394,7 @@ from routers.sales import router as sales_router
 from routers.inventory import router as inventory_router
 from routers.config import router as config_router
 from routers.system import router as system_router
+from routers.mp_pos import router as mp_pos_router
 from routers.ai import router as ai_router
 from routers.promotions import router as promotions_router
 from routers.cashier import router as cashier_router
@@ -409,6 +410,7 @@ app.include_router(sales_router)
 app.include_router(inventory_router)
 app.include_router(config_router)
 app.include_router(system_router)
+app.include_router(mp_pos_router)
 app.include_router(ai_router)
 app.include_router(promotions_router)
 app.include_router(cashier_router)

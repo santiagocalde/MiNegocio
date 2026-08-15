@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import useIsMobile from '../../hooks/useIsMobile';
 import { Icons } from '../ui/Icons';
+import MpQrCobro from './MpQrCobro';
 
 const PAYMENT_METHODS = [
   { key: 'efectivo',       label: 'Efectivo',      Icon: Icons.CashIcon },
@@ -25,7 +26,7 @@ export default function ChargeModal({
   cart, autoPrint, setAutoPrint,
   isProcessing,
   confirmCharge, paymentRef,
-  businessConfig
+  businessConfig, addToast
 }) {
   const finalTotal = adjustedTotal ?? total;
   const splitSum = splitPayments.reduce((s, p) => s + (parseFloat(p.amount) || 0), 0);
@@ -36,6 +37,10 @@ export default function ChargeModal({
 
   const transferAlias = businessConfig?.catalogo_whatsapp || businessConfig?.mp_collector_id || null;
   const isMobile = useIsMobile();
+  // Auto-confirmación de MP: solo si el negocio la activó y cargó su token.
+  const mpAutoConfirm =
+    [1, '1', true, 'true'].includes(businessConfig?.mp_auto_confirm) &&
+    !!businessConfig?.mp_access_token_set;
 
   // Cerrar el modal (reseteando el pago mixto) sin tocar el carrito.
   const cancelCharge = () => {
@@ -261,8 +266,13 @@ export default function ChargeModal({
               </div>
             )}
 
-            {/* Mercado Pago - QR del comercio (el cliente escanea y paga) */}
-            {!useSplitPayment && paymentMethod === 'mercadopago' && (
+            {/* Mercado Pago con auto-confirmación: QR dinámico que se confirma solo */}
+            {!useSplitPayment && paymentMethod === 'mercadopago' && mpAutoConfirm && (
+              <MpQrCobro total={finalTotal} onPaid={confirmCharge} addToast={addToast} />
+            )}
+
+            {/* Mercado Pago simple - QR del comercio (el cajero confirma a mano) */}
+            {!useSplitPayment && paymentMethod === 'mercadopago' && !mpAutoConfirm && (
               <div style={{ background: 'var(--bg-card)', padding: isMobile ? '16px' : '24px', borderRadius: '16px', border: '1px solid rgba(20,187,166,0.3)', textAlign: 'center' }}>
                 <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '12px' }}>Pago con Mercado Pago</div>
                 {businessConfig?.mp_qr_url ? (
