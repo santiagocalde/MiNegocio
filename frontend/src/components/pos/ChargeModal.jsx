@@ -8,12 +8,19 @@ const PAYMENT_METHODS = [
   { key: 'transferencia',  label: 'Transferencia',  Icon: Icons.BankIcon },
 ];
 
+const SPLIT_METHODS = [
+  { key: 'efectivo',       label: 'Efectivo' },
+  { key: 'tarjeta',        label: 'Tarjeta Débito' },
+  { key: 'transferencia',  label: 'Transferencia' },
+  { key: 'mercadopago',    label: 'Mercado Pago' },
+];
+
 export default function ChargeModal({
   isCharging, setIsCharging,
   total, adjustedTotal, change,
   payment, setPayment, paymentMethod, setPaymentMethod,
   useSplitPayment, setUseSplitPayment,
-  splitPayments,
+  splitPayments, setSplitPayments,
   cart, autoPrint, setAutoPrint,
   isProcessing,
   confirmCharge, paymentRef,
@@ -103,11 +110,76 @@ export default function ChargeModal({
                     <span style={{ width: 24, height: 24, color: 'currentColor' }}><m.Icon /></span> {m.label}
                   </button>
                 ))}
+                <button
+                  onClick={() => { setUseSplitPayment(true); }}
+                  style={{
+                    padding: isMobile ? '12px' : '16px', borderRadius: '12px', border: '2px solid',
+                    borderColor: useSplitPayment ? 'var(--accent-primary)' : 'var(--border-color)',
+                    background: useSplitPayment ? 'rgba(20,187,166, 0.08)' : 'var(--bg-card)',
+                    color: useSplitPayment ? 'var(--accent-primary)' : 'var(--text-primary)',
+                    fontWeight: 700, cursor: 'pointer', fontSize: '0.95rem', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'center'
+                  }}
+                >
+                  <span style={{ width: 24, height: 24, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem' }}>⇄</span> Pago Mixto
+                </button>
               </div>
             </div>
 
+            {/* Pago Mixto: cada parte con su método y monto */}
+            {useSplitPayment && (
+              <div style={{ background: 'var(--bg-card)', padding: isMobile ? '14px' : '24px', borderRadius: '16px', border: '1px solid var(--accent-primary)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                  <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px' }}>Pago Mixto — cargá cada parte</label>
+                  <button onClick={() => setUseSplitPayment(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '0.8rem', textDecoration: 'underline', padding: 0 }}>Volver a método simple</button>
+                </div>
+                {splitPayments.map((p, i) => (
+                  <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
+                    <select
+                      value={p.method}
+                      onChange={e => setSplitPayments(prev => prev.map((x, j) => (j === i ? { ...x, method: e.target.value } : x)))}
+                      style={{ flex: 1, padding: '10px 12px', background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: 8, color: 'var(--text-primary)', fontSize: '0.9rem', outline: 'none' }}
+                    >
+                      {SPLIT_METHODS.map(m => <option key={m.key} value={m.key}>{m.label}</option>)}
+                    </select>
+                    <input
+                      type="number"
+                      min="0"
+                      placeholder="0"
+                      value={p.amount}
+                      onChange={e => setSplitPayments(prev => prev.map((x, j) => (j === i ? { ...x, amount: e.target.value } : x)))}
+                      style={{ width: '130px', padding: '10px 12px', background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: 8, color: 'var(--text-primary)', fontSize: '1rem', fontFamily: 'var(--font-mono)', textAlign: 'right', outline: 'none' }}
+                    />
+                    {splitPayments.length > 1 && (
+                      <button
+                        onClick={() => setSplitPayments(prev => prev.filter((_, j) => j !== i))}
+                        style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: 'var(--accent-danger)', borderRadius: 8, width: 38, height: 38, cursor: 'pointer', fontSize: '0.9rem', flexShrink: 0 }}
+                      >✕</button>
+                    )}
+                  </div>
+                ))}
+                <button
+                  onClick={() => setSplitPayments(prev => [...prev, { method: 'efectivo', amount: '' }])}
+                  style={{ background: 'var(--bg-hover)', border: '1px dashed var(--border-color)', borderRadius: 8, padding: '8px 14px', color: 'var(--text-primary)', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer' }}
+                >+ Agregar otra parte</button>
+                {(() => {
+                  const cargado = splitPayments.reduce((s, p) => s + (parseFloat(p.amount) || 0), 0);
+                  const falta = finalTotal - cargado;
+                  return (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px', paddingTop: '12px', borderTop: '1px dashed var(--border-color)', flexWrap: 'wrap', gap: 6 }}>
+                      <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                        Cargado: <strong style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>${cargado.toLocaleString('es-AR')}</strong> de ${finalTotal.toLocaleString('es-AR')}
+                      </span>
+                      <span style={{ fontWeight: 800, fontSize: '0.95rem', fontFamily: 'var(--font-mono)', color: falta > 0.01 ? 'var(--accent-warning)' : 'var(--accent-success)' }}>
+                        {falta > 0.01 ? `Faltan $${falta.toLocaleString('es-AR')}` : '✓ Completo'}
+                      </span>
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+
             {/* Efectivo */}
-            {paymentMethod === 'efectivo' && (
+            {!useSplitPayment && paymentMethod === 'efectivo' && (
               <div style={{ background: 'var(--bg-card)', padding: isMobile ? '14px' : '24px', borderRadius: '16px', border: '1px solid var(--border-color)' }}>
                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '1px' }}>¿Con cuánto paga? (Ingresa monto + Enter)</label>
                 <input 
@@ -137,7 +209,7 @@ export default function ChargeModal({
             )}
 
             {/* Transferencia - muestra alias */}
-            {paymentMethod === 'transferencia' && (
+            {!useSplitPayment && paymentMethod === 'transferencia' && (
               <div style={{ background: 'var(--bg-card)', padding: '24px', borderRadius: '16px', border: '1px solid rgba(20,187,166,0.3)', textAlign: 'center' }}>
                 <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '12px' }}>Datos para Transferencia</div>
                 {transferAlias ? (
@@ -163,7 +235,7 @@ export default function ChargeModal({
             )}
 
             {/* Tarjeta débito */}
-            {paymentMethod === 'tarjeta' && (
+            {!useSplitPayment && paymentMethod === 'tarjeta' && (
               <div style={{ background: 'var(--bg-card)', padding: '24px', borderRadius: '16px', border: '1px solid var(--border-color)', textAlign: 'center' }}>
                 <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px' }}>Pasá la tarjeta por el posnet</div>
                 <div style={{ fontSize: '2rem', fontWeight: 900, color: 'var(--accent-primary)', fontFamily: 'var(--font-mono)' }}>${finalTotal.toLocaleString('es-AR')}</div>
