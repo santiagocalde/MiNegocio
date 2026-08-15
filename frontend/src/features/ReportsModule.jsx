@@ -14,7 +14,6 @@ function formatPesos(n) {
 export default function ReportsModule() {
   const { currentPlan, currentSucursalId, trialDaysRemaining, isTrialExpired, trialEndDateFormatted } = usePanelContext();
   const isMobile = useIsMobile();
-  const serverUrl = SERVER_URL;
   const sucursalId = currentSucursalId;
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
@@ -23,7 +22,7 @@ export default function ReportsModule() {
   const [fetchError, setFetchError] = useState('');
   const [salesData, setSalesData] = useState([]);
   const [ganancias, setGanancias] = useState({ mensual: [], totales: { ingresos: 0, costo: 0, bruto: 0, gastos: 0, retiros: 0, ganancia: 0 } });
-  const [summary, setSummary] = useState({ totalVentas: 0, ingresos: 0, metodoUsado: 'Efectivo', pctEfectivo: 0, productoPopular: '...', pctProducto: 0 });
+  const [summary, setSummary] = useState({ totalVentas: 0, ingresos: 0, metodoUsado: 'Efectivo', pctMetodo: 0, productoPopular: '...', pctProducto: 0 });
   const [searchQuery, setSearchQuery] = useState('');
   const [estimada, setEstimada] = useState({ ventas: 0, tickets: 0, margen_pct: 35, ganancia_estimada: 0 });
   const [periodKey, setPeriodKey] = useState(null);
@@ -100,18 +99,18 @@ export default function ReportsModule() {
         const bestMetodoEntries = Object.entries(metodos).sort((a,b)=>b[1]-a[1]);
         const bestMetodo = bestMetodoEntries[0]?.[0] || 'Efectivo';
         const bestMetodoCount = bestMetodoEntries[0]?.[1] || 0;
-        const pctEfectivo = data.length > 0 ? Math.round((bestMetodoCount / data.length) * 100) : 0;
+        const pctMetodo = data.length > 0 ? Math.round((bestMetodoCount / data.length) * 100) : 0;
 
         const bestProductoEntries = Object.entries(productos).sort((a,b)=>b[1]-a[1]);
         const bestProducto = bestProductoEntries[0]?.[0] || 'Varios';
         const bestProductoCount = bestProductoEntries[0]?.[1] || 0;
 
-        const metodosLabel = { mercadopago: 'Mercado Pago', tarjeta: 'Tarjeta', transferencia: 'Transferencia', efectivo: 'Efectivo' };
+        const metodosLabel = { mercadopago: 'Mercado Pago', tarjeta: 'Tarjeta', transferencia: 'Transferencia', efectivo: 'Efectivo', mixto: 'Pago Mixto' };
         setSummary({ 
           totalVentas: data.length, 
           ingresos, 
           metodoUsado: metodosLabel[bestMetodo] || bestMetodo || 'Efectivo', 
-          pctEfectivo, 
+          pctMetodo, 
           productoPopular: bestProducto, 
           pctProducto: bestProductoCount 
         });
@@ -160,15 +159,47 @@ export default function ReportsModule() {
     if (dateFrom && dateTo) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       fetchReports();
-      const interval = setInterval(() => fetchReports(true), 10000);
+      const interval = setInterval(() => { fetchReports(true); fetchEstimada(); }, 10000);
       return () => clearInterval(interval);
     }
-  }, [fetchReports, dateFrom, dateTo]);
+  }, [fetchReports, fetchEstimada, dateFrom, dateTo]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchEstimada();
   }, [fetchEstimada]);
+
+  const exportFile = async (path, filename) => {
+    try {
+      const token = localStorage.getItem('saas_token');
+      const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+      let res = await fetch(`${SERVER_URL}${path}`, { headers });
+      if (res.status === 401 && token) {
+        const refreshToken = localStorage.getItem('saas_refresh_token');
+        if (refreshToken) {
+          const rr = await fetch(`${SERVER_URL}/auth/refresh`, { method: 'POST', headers: { 'Authorization': `Bearer ${refreshToken}`, 'Content-Type': 'application/json' } });
+          if (rr.ok) {
+            const d = await rr.json();
+            localStorage.setItem('saas_token', d.access_token);
+            if (d.refresh_token) localStorage.setItem('saas_refresh_token', d.refresh_token);
+            res = await fetch(`${SERVER_URL}${path}`, { headers: { 'Authorization': `Bearer ${d.access_token}` } });
+          }
+        }
+      }
+      if (!res.ok) throw new Error('export failed');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      setFetchError('No se pudo exportar. Reintentá.');
+    }
+  };
 
   const renderReports = () => (
     <div style={{ padding: isMobile ? '12px 14px' : '12px 20px', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflowY: 'auto', overflowX: 'hidden' }}>
@@ -237,7 +268,7 @@ export default function ReportsModule() {
         <div className="ledger-sheet" style={{ padding: isMobile ? '10px' : '20px', position: 'relative', minWidth: 0 }}>
           <div className="ledger-label" style={{ marginBottom: isMobile ? '6px' : '12px', fontSize: isMobile ? '0.65rem' : undefined }}>Pago más usado</div>
           <div style={{ fontSize: isMobile ? '1.2rem' : '1.6rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '4px', letterSpacing: '-0.5px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{summary.metodoUsado}</div>
-          <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', display: isMobile ? 'none' : undefined }}>{summary.pctEfectivo}% de las ventas</div>
+          <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', display: isMobile ? 'none' : undefined }}>{summary.pctMetodo}% de las ventas</div>
         </div>
 
         <div className="ledger-sheet" style={{ padding: isMobile ? '10px' : '20px', position: 'relative', minWidth: 0 }}>
@@ -316,16 +347,16 @@ export default function ReportsModule() {
 
       {canExport ? (
         <div style={{ display: 'flex', gap: '12px', marginBottom: isMobile ? '12px' : '24px', flexWrap: 'wrap' }}>
-          <a href={`${serverUrl}/reports/sales?desde=${dateFrom}&hasta=${dateTo}${sucursalId ? `&sucursal_id=${sucursalId}` : ''}`}
-            style={{ background: 'var(--accent-primary)', color: 'white', border: 'none', padding: '12px 24px', borderRadius: '12px', fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+          <button onClick={() => exportFile(`/reports/sales?desde=${dateFrom}&hasta=${dateTo}${sucursalId ? `&sucursal_id=${sucursalId}` : ''}`, `ventas_${dateFrom}_${dateTo}.xlsx`)}
+            style={{ background: 'var(--accent-primary)', color: 'white', border: 'none', padding: '12px 24px', borderRadius: '12px', fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s', display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
             <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
             Exportar Ventas Excel
-          </a>
-          <a href={`${serverUrl}/reports/products`}
-            style={{ background: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', padding: '12px 24px', borderRadius: '12px', fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+          </button>
+          <button onClick={() => exportFile('/reports/products', 'productos.xlsx')}
+            style={{ background: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', padding: '12px 24px', borderRadius: '12px', fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s', display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
             <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
             Exportar Productos Excel
-          </a>
+          </button>
         </div>
       ) : (
         <div style={{ marginBottom: '24px', background: 'rgba(20,187,166,0.08)', border: '1px solid rgba(20,187,166,0.15)', borderRadius: 10, padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 10 }}>
