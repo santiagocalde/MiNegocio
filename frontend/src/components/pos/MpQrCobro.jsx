@@ -52,7 +52,7 @@ export default function MpQrCobro({ total, onPaid, addToast }) {
           paidRef.current = true;
           clearInterval(iv);
           setStatus('paid');
-          setTimeout(() => onPaid?.(), 900); // deja ver el "PAGO RECIBIDO"
+          onPaid?.(); // desbloquea el botón "Procesar Venta" (no cierra la venta solo)
         }
       } catch { /* reintenta en el proximo tick */ }
     }, 3000);
@@ -68,6 +68,7 @@ export default function MpQrCobro({ total, onPaid, addToast }) {
         <div style={{ fontSize: '3rem', lineHeight: 1 }}>✓</div>
         <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--accent-success)', marginTop: 8 }}>¡PAGO RECIBIDO!</div>
         <div style={{ fontSize: '1.1rem', color: 'var(--text-primary)', fontFamily: 'var(--font-mono)', marginTop: 4 }}>${Number(total).toLocaleString('es-AR')}</div>
+        <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: 8 }}>Ya podés presionar "Procesar Venta".</div>
       </div>
     );
   }

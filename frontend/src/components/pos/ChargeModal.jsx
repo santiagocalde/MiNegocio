@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import useIsMobile from '../../hooks/useIsMobile';
 import { Icons } from '../ui/Icons';
 import MpQrCobro from './MpQrCobro';
@@ -30,17 +30,23 @@ export default function ChargeModal({
 }) {
   const finalTotal = adjustedTotal ?? total;
   const splitSum = splitPayments.reduce((s, p) => s + (parseFloat(p.amount) || 0), 0);
-  const isConfirmDisabled =
-    (!useSplitPayment && paymentMethod === 'efectivo' && (payment === '' || change < 0)) ||
-    isProcessing ||
-    (useSplitPayment && (splitSum < finalTotal - 0.01 || splitSum > finalTotal + 0.01));
-
   const transferAlias = businessConfig?.catalogo_whatsapp || businessConfig?.mp_collector_id || null;
   const isMobile = useIsMobile();
+
   // Auto-confirmación de MP: solo si el negocio la activó y cargó su token.
   const mpAutoConfirm =
     [1, '1', true, 'true'].includes(businessConfig?.mp_auto_confirm) &&
     !!businessConfig?.mp_access_token_set;
+  // Con MP auto-confirmado, "Procesar Venta" queda BLOQUEADO hasta que el pago
+  // entre; la alerta de MpQrCobro (onPaid) lo desbloquea (setMpPaid).
+  const [mpPaid, setMpPaid] = useState(false);
+  const mpWaiting = !useSplitPayment && paymentMethod === 'mercadopago' && mpAutoConfirm && !mpPaid;
+
+  const isConfirmDisabled =
+    (!useSplitPayment && paymentMethod === 'efectivo' && (payment === '' || change < 0)) ||
+    isProcessing ||
+    (useSplitPayment && (splitSum < finalTotal - 0.01 || splitSum > finalTotal + 0.01)) ||
+    mpWaiting;
 
   // Cerrar el modal (reseteando el pago mixto) sin tocar el carrito.
   const cancelCharge = () => {
@@ -62,6 +68,10 @@ export default function ChargeModal({
     return () => window.removeEventListener('keydown', handler);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isCharging, isConfirmDisabled, confirmCharge, setIsCharging]);
+
+  // Resetear el estado de pago QR al abrir el modal o cambiar de método/mixto.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { setMpPaid(false); }, [isCharging, paymentMethod, useSplitPayment]);
 
   if (!isCharging) return null;
 
@@ -268,7 +278,7 @@ export default function ChargeModal({
 
             {/* Mercado Pago con auto-confirmación: QR dinámico que se confirma solo */}
             {!useSplitPayment && paymentMethod === 'mercadopago' && mpAutoConfirm && (
-              <MpQrCobro total={finalTotal} onPaid={confirmCharge} addToast={addToast} />
+              <MpQrCobro total={finalTotal} onPaid={() => setMpPaid(true)} addToast={addToast} />
             )}
 
             {/* Mercado Pago simple - QR del comercio (el cajero confirma a mano) */}
@@ -308,7 +318,7 @@ export default function ChargeModal({
                   onClick={confirmCharge} 
                   disabled={isConfirmDisabled}
                   style={{ flex: 2, padding: isMobile ? '14px' : '20px', background: isConfirmDisabled ? 'var(--bg-hover)' : 'var(--gradient-primary)', color: isConfirmDisabled ? 'var(--text-secondary)' : 'white', border: 'none', borderRadius: '16px', fontSize: '1.2rem', fontWeight: 800, cursor: isConfirmDisabled ? 'not-allowed' : 'pointer', transition: 'all 0.2s', boxShadow: isConfirmDisabled ? 'none' : '0 10px 25px -5px rgba(20,187,166, 0.4)' }}>
-                  {isProcessing ? 'PROCESANDO...' : 'PROCESAR VENTA'}
+                  {isProcessing ? 'PROCESANDO...' : mpWaiting ? 'ESPERANDO PAGO...' : 'PROCESAR VENTA'}
                 </button>
               </div>
             </div>
