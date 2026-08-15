@@ -12,8 +12,8 @@ def _biz_id():
 
 def _redact_secrets(cfg: dict) -> dict:
     """Nunca devolver el mp_access_token (secreto de MercadoPago del negocio) al
-    cliente. Se reemplaza por un flag booleano para que la UI sepa si ya estÃ¡
-    configurado sin exponer el valor. El PUT preserva el token si llega vacÃ­o."""
+    cliente. Se reemplaza por un flag booleano para que la UI sepa si ya está
+    configurado sin exponer el valor. El PUT preserva el token si llega vacío."""
     if not cfg:
         return cfg
     cfg["mp_access_token_set"] = bool(cfg.get("mp_access_token"))
@@ -33,7 +33,7 @@ async def get_config() -> dict:
             # Siempre traemos business_name y business_type de la tabla businesses:
             # - business_name como fallback si no hay nombre en Ajustes
             # - business_type para que el frontend lo sincronice en cada F5 sin
-            #   necesidad de cerrar sesiÃ³n (PanelContext lo escribe en localStorage)
+            #   necesidad de cerrar sesión (PanelContext lo escribe en localStorage)
             biz = await conn.fetchrow(
                 "SELECT business_name, business_type FROM businesses WHERE id = $1", b_id
             )
@@ -51,18 +51,18 @@ async def get_config() -> dict:
             return _redact_secrets({key: value for key, value in rows})
 
 
-@router.get("/api/catalogo", summary="CatÃ¡logo pÃºblico de un comercio (sin auth)")
+@router.get("/api/catalogo", summary="Catálogo público de un comercio (sin auth)")
 @limiter.limit("30/minute")
 async def public_catalogo(request: Request, slug: str = Query("")) -> dict:
-    """Endpoint PÃšBLICO (sin token). Devuelve solo datos no sensibles del catÃ¡logo
-    de un comercio que tenga el catÃ¡logo activado. Nunca expone costo, stock ni
+    """Endpoint PÚBLICO (sin token). Devuelve solo datos no sensibles del catálogo
+    de un comercio que tenga el catálogo activado. Nunca expone costo, stock ni
     datos internos del negocio."""
     import re
     slug = re.sub(r"[^a-z0-9-]", "", (slug or "").strip().lower())[:60]
     if not slug:
-        raise HTTPException(404, detail="CatÃ¡logo no encontrado")
+        raise HTTPException(404, detail="Catálogo no encontrado")
     if not USE_PG:
-        return {"nombre": "CatÃ¡logo", "catalogo_whatsapp": "", "products": []}
+        return {"nombre": "Catálogo", "catalogo_whatsapp": "", "products": []}
 
     from db_helpers import get_pg_pool
     pool = await get_pg_pool()
@@ -75,10 +75,10 @@ async def public_catalogo(request: Request, slug: str = Query("")) -> dict:
             "WHERE bc.catalogo_slug = $1 AND bc.catalogo_activo = 1 LIMIT 1",
             slug,
         )
-        # El CatÃ¡logo web es un feature del Plan Pro+: si el negocio no estÃ¡ en
+        # El Catálogo web es un feature del Plan Pro+: si el negocio no está en
         # Pro/IA no existimos (404, no revelamos el motivo).
         if not cfg or cfg["plan"] not in ("pro", "ia"):
-            raise HTTPException(404, detail="CatÃ¡logo no disponible")
+            raise HTTPException(404, detail="Catálogo no disponible")
         prods = await conn.fetch(
             "SELECT p.id, p.name, p.price, p.category_id, c.name AS category_name, "
             "CASE WHEN p.stock <= 0 THEN 'agotado' "
@@ -91,7 +91,7 @@ async def public_catalogo(request: Request, slug: str = Query("")) -> dict:
             cfg["business_id"],
         )
         return {
-            "nombre": cfg["nombre"] or "CatÃ¡logo",
+            "nombre": cfg["nombre"] or "Catálogo",
             "subtitulo": cfg["subtitulo"] or "",
             "direccion": cfg["direccion"] or "",
             "catalogo_whatsapp": cfg["catalogo_whatsapp"] or "",
@@ -113,8 +113,8 @@ async def update_config(request: Request, data: dict) -> dict:
     if cuit and len(str(cuit)) > 20:
         raise HTTPException(400, detail="CUIT demasiado largo")
 
-    # El GET nunca devuelve el mp_access_token real (llega vacÃ­o al form). Si el
-    # usuario no cargÃ³ uno nuevo, no pisar el existente con "" â†’ se quita del
+    # El GET nunca devuelve el mp_access_token real (llega vacío al form). Si el
+    # usuario no cargó uno nuevo, no pisar el existente con "" → se quita del
     # payload para conservar el token ya guardado.
     if not data.get("mp_access_token"):
         data.pop("mp_access_token", None)
@@ -122,7 +122,7 @@ async def update_config(request: Request, data: dict) -> dict:
     if USE_PG:
         import re
         from db_helpers import get_pg_pool
-        # Alias de los nombres que usa el frontend del catÃ¡logo
+        # Alias de los nombres que usa el frontend del catálogo
         if "name" in data and "nombre" not in data: data["nombre"] = data["name"]
         if "whatsapp" in data and "catalogo_whatsapp" not in data: data["catalogo_whatsapp"] = data["whatsapp"]
         if "slug" in data and "catalogo_slug" not in data: data["catalogo_slug"] = data["slug"]
@@ -130,7 +130,7 @@ async def update_config(request: Request, data: dict) -> dict:
             data["catalogo_slug"] = re.sub(r"[^a-z0-9-]", "", str(data["catalogo_slug"]).strip().lower())[:60]
         if "catalogo_activo" in data:
             data["catalogo_activo"] = 1 if data["catalogo_activo"] in (True, 1, "1", "true", "True") else 0
-        # Tema del catÃ¡logo: solo 5 paletas fijas (whitelist), nunca CSS arbitrario.
+        # Tema del catálogo: solo 5 paletas fijas (whitelist), nunca CSS arbitrario.
         if "catalogo_tema" in data:
             tema = str(data["catalogo_tema"]).strip().lower()
             if tema not in ("ocean", "esmeralda", "medianoche", "ambar", "claro"):
@@ -146,26 +146,26 @@ async def update_config(request: Request, data: dict) -> dict:
         pool = await get_pg_pool()
         async with pool.acquire() as conn:
             b_id = _biz_id()
-            # CatÃ¡logo web = feature de Plan Pro+. Niego la activaciÃ³n si el plan
-            # no lo incluye y exijo un enlace Ãºnico antes de activar.
+            # Catálogo web = feature de Plan Pro+. Niego la activación si el plan
+            # no lo incluye y exijo un enlace único antes de activar.
             if data.get("catalogo_activo") == 1:
                 biz = await conn.fetchrow("SELECT plan FROM businesses WHERE id = $1", b_id)
                 if not biz or biz["plan"] not in ("pro", "ia"):
                     raise HTTPException(
                         status_code=402,
-                        detail="El catÃ¡logo web requiere Plan Pro o superior. Tu plan actual es '{}'.".format(
+                        detail="El catálogo web requiere Plan Pro o superior. Tu plan actual es '{}'.".format(
                             biz["plan"] or "desconocido" if biz else "desconocido"
                         ),
                     )
                 if not data.get("catalogo_slug"):
-                    raise HTTPException(400, detail="ElegÃ­ un enlace Ãºnico para tu catÃ¡logo antes de activarlo.")
+                    raise HTTPException(400, detail="Elegí un enlace único para tu catálogo antes de activarlo.")
             if data.get("catalogo_slug"):
                 dup = await conn.fetchrow(
                     "SELECT business_id FROM business_config WHERE catalogo_slug = $1 AND business_id <> $2 LIMIT 1",
                     data["catalogo_slug"], b_id,
                 )
                 if dup:
-                    raise HTTPException(409, "Ese enlace de catÃ¡logo ya estÃ¡ en uso por otro negocio. ElegÃ­ otro.")
+                    raise HTTPException(409, "Ese enlace de catálogo ya está en uso por otro negocio. Elegí otro.")
             async with conn.transaction():
                 # Merge no destructivo: lo enviado pisa, lo no enviado se conserva
                 existing = await conn.fetchrow("SELECT * FROM business_config WHERE business_id = $1", b_id)
@@ -180,11 +180,11 @@ async def update_config(request: Request, data: dict) -> dict:
                         b_id, *[merged[c] for c in COLS]
                     )
                 except Exception as e:
-                    # Aunque ya chequeamos duplicados arriba, el Ã­ndice Ãºnico de la DB
+                    # Aunque ya chequeamos duplicados arriba, el índice único de la DB
                     # (uq_business_config_catalogo_slug) cierra la carrera: si dos
                     # negocios eligen el mismo enlace a la vez, uno recibe 409.
                     if getattr(e, "sqlstate", "") == "23505":
-                        raise HTTPException(409, "Ese enlace de catÃ¡logo ya estÃ¡ en uso por otro negocio. ElegÃ­ otro.")
+                        raise HTTPException(409, "Ese enlace de catálogo ya está en uso por otro negocio. Elegí otro.")
                     raise
         return {"success": True}
     else:
@@ -198,7 +198,7 @@ async def update_config(request: Request, data: dict) -> dict:
                 "price_list_d_name", "price_list_e_name", "margen_estimado"]
         async with aiosqlite.connect(main.DB_PATH) as db:
             # business_config key-value: upsert no destructivo. mp_access_token ya
-            # fue removido de data arriba si llegÃ³ vacÃ­o, asÃ­ se conserva el guardado.
+            # fue removido de data arriba si llegó vacío, así se conserva el guardado.
             for c in COLS:
                 if c in data:
                     await db.execute(
@@ -286,7 +286,7 @@ async def delete_sucursal(sucursal_id: int) -> dict:
             return {"success": True}
 
 
-# â”€â”€ LOGO UPLOAD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── LOGO UPLOAD ───────────────────────────────────────────────
 from fastapi import UploadFile, File
 import pathlib, uuid, os
 
@@ -299,10 +299,10 @@ MAX_SIZE = 2 * 1024 * 1024  # 2 MB
 async def upload_logo(file: UploadFile = File(...)) -> dict:
     ext = pathlib.Path(file.filename or "logo.png").suffix.lower()
     if ext not in ALLOWED_EXTS:
-        raise HTTPException(400, "Formato no soportado. UsÃ¡ PNG, JPG, WEBP o SVG.")
+        raise HTTPException(400, "Formato no soportado. Usá PNG, JPG, WEBP o SVG.")
     data = await file.read()
     if len(data) > MAX_SIZE:
-        raise HTTPException(400, "El archivo excede el lÃ­mite de 2 MB.")
+        raise HTTPException(400, "El archivo excede el límite de 2 MB.")
     b_id = str(_biz_id() or "unknown").replace("/", "_")
     ts = uuid.uuid4().hex[:8]
     filename = f"{b_id}_{ts}{ext}"
