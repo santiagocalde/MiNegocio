@@ -25,6 +25,41 @@ export default function ReportsModule() {
   const [ganancias, setGanancias] = useState({ mensual: [], totales: { ingresos: 0, costo: 0, bruto: 0, gastos: 0, retiros: 0, ganancia: 0 } });
   const [summary, setSummary] = useState({ totalVentas: 0, ingresos: 0, metodoUsado: 'Efectivo', pctEfectivo: 0, productoPopular: '...', pctProducto: 0 });
   const [searchQuery, setSearchQuery] = useState('');
+  const [estimada, setEstimada] = useState({ ventas: 0, tickets: 0, margen_pct: 35, ganancia_estimada: 0 });
+  const [periodKey, setPeriodKey] = useState(null);
+
+  const fmtLocal = (x) => `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`;
+
+  // Períodos rápidos (desde 1 semana; los días no muestran margen de ganancia)
+  const PERIODS = [
+    { key: 'semana', label: 'Esta semana', calc: () => { const d = new Date(); const day = (d.getDay() + 6) % 7; const ini = new Date(d); ini.setDate(d.getDate() - day); return [ini, d]; } },
+    { key: 'semana_pasada', label: 'Semana pasada', calc: () => { const d = new Date(); const day = (d.getDay() + 6) % 7; const ini = new Date(d); ini.setDate(d.getDate() - day - 7); const fin = new Date(d); fin.setDate(d.getDate() - day - 1); return [ini, fin]; } },
+    { key: '2semanas', label: 'Últimas 2 semanas', calc: () => { const d = new Date(); const ini = new Date(d); ini.setDate(d.getDate() - 13); return [ini, d]; } },
+    { key: '3semanas', label: 'Últimas 3 semanas', calc: () => { const d = new Date(); const ini = new Date(d); ini.setDate(d.getDate() - 20); return [ini, d]; } },
+    { key: 'mes', label: 'Este mes', calc: () => { const d = new Date(); return [new Date(d.getFullYear(), d.getMonth(), 1), d]; } },
+    { key: 'mes_pasado', label: 'Mes pasado', calc: () => { const d = new Date(); const ini = new Date(d.getFullYear(), d.getMonth() - 1, 1); const fin = new Date(d.getFullYear(), d.getMonth(), 0); return [ini, fin]; } },
+  ];
+
+  const applyPeriod = (p) => {
+    const [ini, fin] = p.calc();
+    setDateFrom(fmtLocal(ini));
+    setDateTo(fmtLocal(fin));
+    setPeriodKey(p.key);
+  };
+
+  const periodLabel = PERIODS.find(p => p.key === periodKey)?.label || 'Período personalizado';
+
+  const fetchEstimada = useCallback(async () => {
+    try {
+      let path = '/reports/estimada';
+      if (dateFrom) path += `?desde=${dateFrom}`;
+      if (dateTo) path += `&hasta=${dateTo}`;
+      const res = await apiGet(path);
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data && typeof data.ventas === 'number') setEstimada(data);
+    } catch { /* noop */ }
+  }, [dateFrom, dateTo]);
 
   const filteredSales = searchQuery.trim()
     ? salesData.filter(s =>
@@ -130,6 +165,11 @@ export default function ReportsModule() {
     }
   }, [fetchReports, dateFrom, dateTo]);
 
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchEstimada();
+  }, [fetchEstimada]);
+
   const renderReports = () => (
     <div style={{ padding: isMobile ? '12px 14px' : '12px 20px', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflowY: 'auto', overflowX: 'hidden' }}>
 
@@ -162,6 +202,24 @@ export default function ReportsModule() {
         </div>
       )}
 
+      {/* Períodos rápidos para el margen (semana a mes) */}
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px', flexShrink: 0 }}>
+        {PERIODS.map(p => (
+          <button
+            key={p.key}
+            onClick={() => applyPeriod(p)}
+            style={{
+              padding: '7px 14px', borderRadius: 20, border: '1px solid', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 700, transition: 'all 0.15s',
+              borderColor: periodKey === p.key ? 'var(--accent-primary)' : 'var(--border-color)',
+              background: periodKey === p.key ? 'rgba(20,187,166,0.12)' : 'var(--bg-card)',
+              color: periodKey === p.key ? 'var(--accent-primary)' : 'var(--text-secondary)',
+            }}
+          >
+            {p.label}
+          </button>
+        ))}
+      </div>
+
       {/* En mobile: 2 cards por fila, pero compactas y con font menor para no desbordar */}
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: isMobile ? '8px' : '16px', marginBottom: '24px', flexShrink: 0 }}>
         <div className="ledger-sheet" style={{ padding: isMobile ? '10px' : '20px', position: 'relative', minWidth: 0 }}>
@@ -186,6 +244,28 @@ export default function ReportsModule() {
           <div className="ledger-label" style={{ marginBottom: isMobile ? '6px' : '12px', fontSize: isMobile ? '0.65rem' : undefined }}>Más popular</div>
           <div style={{ fontSize: isMobile ? '1rem' : '1.6rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '4px', letterSpacing: '-0.5px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{summary.productoPopular}</div>
           <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>{summary.pctProducto} ventas</div>
+        </div>
+      </div>
+
+      {/* Ganancia estimada por margen configurable */}
+      <div className="ledger-sheet" style={{ marginBottom: '20px', padding: isMobile ? '14px 16px' : '18px 24px', flexShrink: 0, border: '1px solid rgba(20,187,166,0.25)', background: 'linear-gradient(135deg, rgba(20,187,166,0.07), rgba(20,187,166,0.02) 60%)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+          <div>
+            <div className="ledger-label" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              Margen estimado · {periodLabel}
+            </div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '6px' }}>
+              Ventas {formatPesos(estimada.ventas)} × margen <strong style={{ color: 'var(--text-primary)' }}>{estimada.margen_pct}%</strong>
+              <span style={{ marginLeft: 8, fontSize: '0.72rem', color: 'var(--text-faint)' }}>(lo cambiás en Configuración → Margen de ganancia estimado)</span>
+            </div>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <div className="ledger-num" style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: 800, color: 'var(--accent-success)', fontVariantNumeric: 'tabular-nums' }}>
+              {formatPesos(estimada.ganancia_estimada)}
+            </div>
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>Tu ganancia estimada del período</div>
+          </div>
         </div>
       </div>
 

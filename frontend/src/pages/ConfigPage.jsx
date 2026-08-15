@@ -21,6 +21,7 @@ const FIELDS = [
   { key: 'logo_url',            label: 'Logo del negocio',            placeholder: 'https://ejemplo.com/logo.png', isLogo: true },
   { key: 'mensaje_ticket',      label: 'Mensaje final del ticket',    placeholder: '¡Gracias por su compra!' },
   { key: 'iva_rate',            label: 'IVA % por defecto',           placeholder: '21', options: ['21', '10.5', '27', '0'] },
+  { key: 'margen_estimado',     label: 'Margen de ganancia estimado (%)', placeholder: '35' },
   { key: 'mp_access_token',     label: 'Access Token de Mercado Pago', placeholder: 'APP_USR-...', type: 'password' },
   { key: 'mp_collector_id',     label: 'Alias / ID de Cobro de Mercado Pago', placeholder: 'TuAliasMP o ID de caja', type: 'password' },
 ];

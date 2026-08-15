@@ -433,6 +433,9 @@ async def init_db(DB_PATH: str, logger) -> None:
         await add_column_if_not_exists(db, "business_config", "price_list_d_name", "TEXT", default="'Lista D'")
         await add_column_if_not_exists(db, "business_config", "price_list_e_name", "TEXT", default="'Lista E'")
 
+        # Margen de ganancia estimado (%) para reportes (default 35)
+        await add_column_if_not_exists(db, "business_config", "margen_estimado", "TEXT", default="'35'")
+
         # Presupuestos v2: descuento global y forma de pago
         await add_column_if_not_exists(db, "quotes", "discount_pct", "REAL", default="0")
         await add_column_if_not_exists(db, "quotes", "forma_pago", "TEXT", default="'Contado'")

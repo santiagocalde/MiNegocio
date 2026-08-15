@@ -254,6 +254,82 @@ async def ganancias_report(desde: Optional[str] = None, hasta: Optional[str] = N
     }
 
 
+@router.get("/api/reports/estimada", summary="Ganancia estimada por margen configurable en un rango de fechas")
+async def ganancia_estimada(desde: Optional[str] = None, hasta: Optional[str] = None):
+    """Total facturado del rango x margen% configurado por el negocio (default 35).
+    Pensado para el dueño: elegir semana/mes y ver cuánto le queda de margen."""
+    b_id = _biz_id()
+
+    def _to_date(s, default=None):
+        if not s:
+            return default
+        try:
+            return date.fromisoformat(str(s)[:10])
+        except ValueError:
+            return default
+
+    desde_d = _to_date(desde)
+    hasta_d = _to_date(hasta)
+
+    margen_pct = 35.0
+    if USE_PG:
+        from db_helpers import get_pg_pool
+        pool = await get_pg_pool()
+        async with pool.acquire() as conn:
+            cfg = await conn.fetchval(
+                "SELECT margen_estimado FROM business_config WHERE business_id = $1", b_id)
+            try:
+                m = float(cfg or 35)
+                if 0 <= m <= 100:
+                    margen_pct = m
+            except (TypeError, ValueError):
+                pass
+            clauses = ["s.business_id = $1"]
+            params = [b_id]
+            n = 2
+            if desde_d:
+                clauses.append(f"s.timestamp >= ${n}::date"); params.append(desde_d); n += 1
+            if hasta_d:
+                clauses.append(f"s.timestamp < (${n}::date + interval '1 day')"); params.append(hasta_d); n += 1
+            where = " AND ".join(clauses)
+            row = await conn.fetchrow(
+                f"SELECT COALESCE(SUM(total),0) as ventas, COUNT(*) as tickets FROM sales s "
+                f"WHERE {where} AND s.reverted = 0", *params)
+            ventas = float(row["ventas"] or 0)
+            tickets = int(row["tickets"] or 0)
+    else:
+        import aiosqlite
+        async with aiosqlite.connect(main.DB_PATH) as db:
+            cur = await db.execute("SELECT value FROM business_config WHERE key = 'margen_estimado'")
+            r = await cur.fetchone()
+            try:
+                m = float(r[0]) if r and r[0] not in (None, '') else 35
+                if 0 <= m <= 100:
+                    margen_pct = m
+            except (TypeError, ValueError):
+                pass
+            clauses = ["reverted = 0"]
+            params = []
+            if desde_d:
+                clauses.append("date(timestamp) >= date(?)"); params.append(desde_d.isoformat())
+            if hasta_d:
+                clauses.append("date(timestamp) <= date(?)"); params.append(hasta_d.isoformat())
+            cur = await db.execute(
+                f"SELECT COALESCE(SUM(total),0), COUNT(*) FROM sales WHERE {' AND '.join(clauses)}",
+                tuple(params))
+            row = await cur.fetchone()
+            ventas = float(row[0] or 0)
+            tickets = int(row[1] or 0)
+
+    ganancia = round(ventas * margen_pct / 100.0, 2)
+    return {
+        "ventas": round(ventas, 2),
+        "tickets": tickets,
+        "margen_pct": margen_pct,
+        "ganancia_estimada": ganancia,
+    }
+
+
 @router.get("/api/reports/margins", summary="Margen de ganancia por producto")
 async def margins_report():
     """Margen por producto activo, usando price y cost_price ya cargados.

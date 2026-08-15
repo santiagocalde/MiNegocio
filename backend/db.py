@@ -655,6 +655,9 @@ async def init_pg() -> None:
             ALTER TABLE business_config ADD COLUMN IF NOT EXISTS price_list_d_name TEXT DEFAULT 'Lista D';
             ALTER TABLE business_config ADD COLUMN IF NOT EXISTS price_list_e_name TEXT DEFAULT 'Lista E';
 
+            -- Margen de ganancia estimado (%) para reportes (default 35)
+            ALTER TABLE business_config ADD COLUMN IF NOT EXISTS margen_estimado TEXT DEFAULT '35';
+
             -- Presupuestos v2: descuento global y forma de pago
             ALTER TABLE quotes ADD COLUMN IF NOT EXISTS discount_pct NUMERIC(5,2) DEFAULT 0;
             ALTER TABLE quotes ADD COLUMN IF NOT EXISTS forma_pago VARCHAR(50) DEFAULT 'Contado';
