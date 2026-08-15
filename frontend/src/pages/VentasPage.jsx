@@ -260,7 +260,8 @@ export default function VentasPage() {
         setShowDevolucionItems={backend.setShowDevolucionItems}
         lastSale={sales.lastSale} lastSaleId={sales.lastSaleId}
         devolucionQtys={backend.devolucionQtys} setDevolucionQtys={backend.setDevolucionQtys}
-        handleDevolucionItem={backend.handleDevolucionItem} handleDevolucion={backend.handleDevolucion} />
+        handleDevolucionItem={backend.handleDevolucionItem} handleDevolucion={backend.handleDevolucion}
+        singleUser={(backend.operators?.length || 0) <= 1} />
 
       <DuplicateCodeModal showDuplicateCodeModal={backend.showDuplicateCodeModal}
         setShowDuplicateCodeModal={backend.setShowDuplicateCodeModal}

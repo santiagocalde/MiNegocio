@@ -40,7 +40,14 @@ def _pin_matches(pin: str, stored: str) -> bool:
 
 async def _require_supervisor_pin_pg(conn, pin: Optional[str], b_id) -> None:
     """Exige el PIN de un operador admin/manager del negocio. Lanza 403 si falta
-    o no corresponde a ningún supervisor. Obligatorio para anular ventas."""
+    o no corresponde a ningún supervisor. Obligatorio para anular ventas.
+
+    Excepción: si el negocio tiene un solo operador (dueño único), no hay
+    separación de roles que proteger — el único usuario ES el supervisor —, así
+    que no se pide PIN (evita fricción innecesaria)."""
+    total = await conn.fetchval("SELECT COUNT(*) FROM operators WHERE business_id = $1", b_id)
+    if (total or 0) <= 1:
+        return
     pin = str(pin or "").strip()
     if not pin:
         raise HTTPException(403, detail="Se requiere el PIN de un administrador para anular")
@@ -53,6 +60,11 @@ async def _require_supervisor_pin_pg(conn, pin: Optional[str], b_id) -> None:
 
 
 async def _require_supervisor_pin_sqlite(db, pin: Optional[str]) -> None:
+    # Un solo operador (dueño único): sin separación de roles, no se pide PIN.
+    cur0 = await db.execute("SELECT COUNT(*) FROM operators")
+    total = (await cur0.fetchone())[0]
+    if (total or 0) <= 1:
+        return
     pin = str(pin or "").strip()
     if not pin:
         raise HTTPException(403, detail="Se requiere el PIN de un administrador para anular")
