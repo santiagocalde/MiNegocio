@@ -6,6 +6,7 @@ const PAYMENT_METHODS = [
   { key: 'efectivo',       label: 'Efectivo',       Icon: Icons.CashIcon },
   { key: 'tarjeta',        label: 'Tarjeta Débito', Icon: Icons.CardIcon },
   { key: 'transferencia',  label: 'Transferencia',  Icon: Icons.BankIcon },
+  { key: 'mercadopago',    label: 'Mercado Pago',   Icon: Icons.QRIcon },
 ];
 
 const SPLIT_METHODS = [
@@ -105,7 +106,7 @@ export default function ChargeModal({
             {/* Payment Method Selector */}
             <div>
               <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '1px' }}>Método de Pago</label>
-              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: isMobile ? '8px' : '12px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: isMobile ? '8px' : '12px' }}>
                 {PAYMENT_METHODS.map(m => (
                   <button
                     key={m.key}
