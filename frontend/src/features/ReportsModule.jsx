@@ -224,14 +224,14 @@ export default function ReportsModule() {
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: isMobile ? '8px' : '16px', marginBottom: '24px', flexShrink: 0 }}>
         <div className="ledger-sheet" style={{ padding: isMobile ? '10px' : '20px', position: 'relative', minWidth: 0 }}>
           <div className="ledger-label" style={{ marginBottom: isMobile ? '6px' : '12px', fontSize: isMobile ? '0.65rem' : undefined }}>Total Ventas</div>
-          <div className="ledger-num" style={{ fontSize: isMobile ? '1.4rem' : '1.7rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '4px' }}>{summary.totalVentas}</div>
-          <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', display: isMobile ? 'none' : undefined }}>Total de ventas registradas.</div>
+          <div className="ledger-num" style={{ fontSize: isMobile ? '1.4rem' : '1.7rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '4px' }}>{formatPesos(estimada.ventas)}</div>
+          <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', display: isMobile ? 'none' : undefined }}>{estimada.tickets} tickets en el período.</div>
         </div>
 
         <div className="ledger-sheet" style={{ padding: isMobile ? '10px' : '20px', position: 'relative', minWidth: 0 }}>
           <div className="ledger-label" style={{ marginBottom: isMobile ? '6px' : '12px', fontSize: isMobile ? '0.65rem' : undefined }}>Ingresos</div>
-          <div className="ledger-num" style={{ fontSize: isMobile ? '1.1rem' : '1.7rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{formatPesos(summary.ingresos)}</div>
-          <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', display: isMobile ? 'none' : undefined }}>Ingresos totales registrados.</div>
+          <div className="ledger-num" style={{ fontSize: isMobile ? '1.1rem' : '1.7rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{formatPesos(estimada.ventas)}</div>
+          <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', display: isMobile ? 'none' : undefined }}>Ingresos totales del período.</div>
         </div>
 
         <div className="ledger-sheet" style={{ padding: isMobile ? '10px' : '20px', position: 'relative', minWidth: 0 }}>

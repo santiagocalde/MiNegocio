@@ -157,6 +157,8 @@ export default function useSales(cart, effectiveTotal, payment, paymentMethod, u
       is_fiado: true,
       fiado_name: fiadoName.trim(),
       payment_method: paymentAmount > 0 ? 'split' : 'fiado',
+      // La parte pagada en efectivo viaja en payments para que el arqueo la cuente.
+      payments: paymentAmount > 0 ? [{ method: 'efectivo', amount: paymentAmount }] : [],
       client_cuit: '',
       items: cart.map(i => ({
         product_id: typeof i.id === 'number' ? i.id : null,

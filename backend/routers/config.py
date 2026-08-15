@@ -292,14 +292,14 @@ import pathlib, uuid, os
 
 LOGO_DIR = pathlib.Path(__file__).parent.parent / "static" / "logos"
 LOGO_DIR.mkdir(parents=True, exist_ok=True)
-ALLOWED_EXTS = {".png", ".jpg", ".jpeg", ".webp", ".svg"}
+ALLOWED_EXTS = {".png", ".jpg", ".jpeg", ".webp"}
 MAX_SIZE = 2 * 1024 * 1024  # 2 MB
 
 @router.post("/api/config/logo", summary="Subir logo del negocio")
 async def upload_logo(file: UploadFile = File(...)) -> dict:
     ext = pathlib.Path(file.filename or "logo.png").suffix.lower()
     if ext not in ALLOWED_EXTS:
-        raise HTTPException(400, "Formato no soportado. Usá PNG, JPG, WEBP o SVG.")
+        raise HTTPException(400, "Formato no soportado. Usá PNG, JPG o WEBP.")
     data = await file.read()
     if len(data) > MAX_SIZE:
         raise HTTPException(400, "El archivo excede el límite de 2 MB.")

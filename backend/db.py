@@ -266,6 +266,8 @@ async def init_pg() -> None:
                 sucursal_id     INTEGER DEFAULT 1
             );
             CREATE INDEX IF NOT EXISTS idx_turns_business_id ON turns(business_id);
+            -- Un solo turno abierto por negocio (evita dobles aperturas en race de logins).
+            CREATE UNIQUE INDEX IF NOT EXISTS uq_turns_open ON turns(business_id) WHERE closed_at IS NULL;
 
             CREATE TABLE IF NOT EXISTS sales (
                 id              SERIAL PRIMARY KEY,

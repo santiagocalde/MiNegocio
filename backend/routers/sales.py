@@ -188,7 +188,7 @@ async def get_active_turn() -> dict:
                 )
                 if hours and hours >= 14:
                     await conn.execute(
-                        "UPDATE turns SET closed_at = now(), sales_total = COALESCE((SELECT SUM(total) FROM sales WHERE turn_id = $1 AND business_id = $2), 0), notes = 'Cierre automatico > 14hs' WHERE id = $1",
+                        "UPDATE turns SET closed_at = now(), sales_total = COALESCE((SELECT SUM(total) FROM sales WHERE turn_id = $1 AND business_id = $2 AND reverted = 0), 0), notes = 'Cierre automatico > 14hs' WHERE id = $1",
                         row["id"], b_id
                     )
                     return {"id": None}
@@ -203,7 +203,7 @@ async def get_active_turn() -> dict:
                 cur = await db.execute("SELECT (julianday('now','localtime') - julianday(?)) * 24.0", (row[2],))
                 diff = await cur.fetchone()
                 if diff and diff[0] >= 14:
-                    await db.execute("UPDATE turns SET closed_at = datetime('now','localtime'), sales_total = COALESCE((SELECT SUM(total) FROM sales WHERE turn_id = ?), 0), notes = 'Cierre automatico > 14hs' WHERE id = ?", (row[0], row[0],))
+                    await db.execute("UPDATE turns SET closed_at = datetime('now','localtime'), sales_total = COALESCE((SELECT SUM(total) FROM sales WHERE turn_id = ? AND reverted = 0), 0), notes = 'Cierre automatico > 14hs' WHERE id = ?", (row[0], row[0],))
                     await db.commit()
                     return {"id": None}
                 return {"id": row[0], "operator": row[1], "opened_at": row[2], "initial_cash": float(row[3] or 0)}
@@ -265,9 +265,15 @@ async def close_turn(turn_id: int, body: TurnClose) -> dict:
                 expected_cash = round(float(row["initial_cash"] or 0) + float(cash_sales) - float(egresos), 2)
                 difference = round(body.counted_cash - expected_cash, 2)
 
+                # sales_total se calcula SIEMPRE del servidor (ventas no anuladas del turno),
+                # nunca del número que manda el front (que venía con el total del día).
+                server_total = await conn.fetchval(
+                    "SELECT COALESCE(SUM(total),0) FROM sales WHERE turn_id = $1 AND business_id = $2 AND reverted = 0",
+                    turn_id, b_id
+                )
                 await conn.execute(
                     "UPDATE turns SET closed_at = now(), sales_total = $1, counted_cash = $2, difference = $3, notes = $4 WHERE id = $5",
-                    body.sales_total, body.counted_cash, difference, body.notes, turn_id
+                    float(server_total or 0), body.counted_cash, difference, body.notes, turn_id
                 )
                 if difference < -0.01:
                     await conn.execute(
@@ -317,9 +323,12 @@ async def close_turn(turn_id: int, body: TurnClose) -> dict:
                 egresos = (await cur3.fetchone())[0] or 0
                 expected_cash = round(float(turn[1] or 0) + float(cash_sales) - float(egresos), 2)
                 difference = round(body.counted_cash - expected_cash, 2)
+                cur_total = await db.execute(
+                    "SELECT COALESCE(SUM(total),0) FROM sales WHERE turn_id=? AND reverted=0", (turn_id,))
+                server_total = (await cur_total.fetchone())[0] or 0
                 await db.execute(
                     "UPDATE turns SET closed_at=datetime('now','localtime'), sales_total=?, counted_cash=?, difference=?, notes=? WHERE id=?",
-                    (body.sales_total, body.counted_cash, difference, body.notes, turn_id)
+                    (server_total, body.counted_cash, difference, body.notes, turn_id)
                 )
                 if difference < -0.01:
                     await db.execute(
@@ -340,8 +349,8 @@ async def update_turn_initial_cash(turn_id: int, body: dict = Body(...)) -> dict
         monto = round(float(body.get("initial_cash")), 2)
     except (TypeError, ValueError):
         raise HTTPException(400, detail="Monto inválido")
-    if monto < 0:
-        raise HTTPException(400, detail="El monto no puede ser negativo")
+    if not (0 <= monto <= 9_999_999):
+        raise HTTPException(400, detail="El monto debe estar entre 0 y 9.999.999")
     if USE_PG:
         from db_helpers import get_pg_pool
         pool = await get_pg_pool()
@@ -444,6 +453,11 @@ async def create_sale(request: Request, body: SaleCreate, idempotency_key: Optio
                 total_sale = round(body.total, 2) if body.total is not None else round(primary_payment, 2)
                 is_cash = primary_method == 'efectivo' or any(p.method == 'efectivo' for p in body.payments)
                 change_sale = round(body.change_given, 2) if is_cash else 0
+
+                # Pago mixto: la suma de partes debe cuadrar con el total (sin cobros de más ni de menos).
+                # Los fiados parciales se eximen: la parte fiada no viaja en payments.
+                if is_split and not body.is_fiado and abs(primary_payment - total_sale) > 0.01:
+                    raise HTTPException(400, detail="La suma de los pagos no coincide con el total de la venta")
 
                 row = await conn.fetchrow(
                     """INSERT INTO sales (business_id, turn_id, total, payment, change_given, operator, is_fiado, fiado_name, payment_method, client_cuit, idempotency_key)
@@ -683,38 +697,38 @@ async def cobrar_fiado(sale_id: int) -> dict:
         from db_helpers import get_pg_pool
         pool = await get_pg_pool()
         async with pool.acquire() as conn:
-            sale = await conn.fetchrow(
-                "SELECT id, is_fiado, fiado_name, total, payment_method FROM sales WHERE id = $1 AND business_id = $2",
-                sale_id, b_id
-            )
-            if not sale:
-                raise HTTPException(404, detail="Venta no encontrada")
-            if not sale["is_fiado"]:
-                raise HTTPException(400, detail="Esta venta no es un fiado")
-            if sale["fiado_name"]:
-                await conn.execute(
-                    "UPDATE customers SET balance = balance - $1 WHERE business_id = $2 AND name = $3",
-                    sale["total"], b_id, sale["fiado_name"]
+            async with conn.transaction():
+                sale = await conn.fetchrow(
+                    "SELECT id, is_fiado, fiado_name, total, payment, payment_method FROM sales "
+                    "WHERE id = $1 AND business_id = $2 AND reverted = 0",
+                    sale_id, b_id
                 )
-            await conn.execute("UPDATE sales SET is_fiado = 0 WHERE id = $1", sale_id)
-            # Si el fiado se creó como 'fiado' (o split con parte fiada), el cobro
-            # nunca entra a cash_sales: se registra como ingreso del turno actual.
-            if sale["payment_method"] != 'efectivo':
-                already_cash = await conn.fetchval(
-                    "SELECT COALESCE(SUM(amount),0) FROM sale_payments WHERE sale_id = $1 AND method = 'efectivo'", sale_id)
-                cobro = round(float(sale["total"] or 0) - float(already_cash or 0), 2)
-                if cobro > 0:
+                if not sale:
+                    raise HTTPException(404, detail="Venta no encontrada")
+                if not sale["is_fiado"]:
+                    raise HTTPException(400, detail="Esta venta no es un fiado")
+                # Deuda real = total - lo que ya se pagó en efectivo al fiarlo.
+                fiado_debt = round(float(sale["total"] or 0) - float(sale["payment"] or 0), 2)
+                if sale["fiado_name"] and fiado_debt > 0:
+                    await conn.execute(
+                        "UPDATE customers SET balance = GREATEST(0, balance - $1) WHERE business_id = $2 AND name = $3",
+                        fiado_debt, b_id, sale["fiado_name"]
+                    )
+                await conn.execute("UPDATE sales SET is_fiado = 0 WHERE id = $1", sale_id)
+                # Si el fiado se creó como 'fiado' (o split con parte fiada), el cobro
+                # nunca entra a cash_sales: se registra como ingreso del turno actual.
+                if sale["payment_method"] != 'efectivo' and fiado_debt > 0:
                     open_turn = await _open_turn_pg(conn, b_id)
                     if open_turn:
                         await conn.execute(
                             "INSERT INTO egresos_caja (business_id, turn_id, monto, motivo, type, operator) VALUES ($1,$2,$3,$4,'ingreso','Sistema')",
-                            b_id, open_turn, -cobro, f"Cobro fiado Venta #{sale_id}"
+                            b_id, open_turn, -fiado_debt, f"Cobro fiado Venta #{sale_id}"
                         )
     else:
         import aiosqlite
         async with aiosqlite.connect(main.DB_PATH) as db:
             sale_row = await db.execute_fetchall(
-                "SELECT id, is_fiado, fiado_name, total, payment_method FROM sales WHERE id = ?",
+                "SELECT id, is_fiado, fiado_name, total, payment, payment_method FROM sales WHERE id = ? AND reverted = 0",
                 (sale_id,)
             )
             if not sale_row:
@@ -722,24 +736,20 @@ async def cobrar_fiado(sale_id: int) -> dict:
             sale = sale_row[0]
             if not sale[1]:
                 raise HTTPException(400, detail="Esta venta no es un fiado")
-            if sale[2]:
+            fiado_debt = round(float(sale[3] or 0) - float(sale[4] or 0), 2)
+            if sale[2] and fiado_debt > 0:
                 await db.execute(
-                    "UPDATE customers SET balance = balance - ? WHERE name = ?",
-                    (sale[3], sale[2])
+                    "UPDATE customers SET balance = MAX(0, balance - ?) WHERE name = ?",
+                    (fiado_debt, sale[2])
                 )
             await db.execute("UPDATE sales SET is_fiado = 0 WHERE id = ?", (sale_id,))
-            if sale[4] != 'efectivo':
-                cur_ap = await db.execute(
-                    "SELECT COALESCE(SUM(amount),0) FROM sale_payments WHERE sale_id = ? AND method = 'efectivo'", (sale_id,))
-                already_cash = (await cur_ap.fetchone())[0] or 0
-                cobro = round(float(sale[3] or 0) - float(already_cash), 2)
-                if cobro > 0:
-                    open_turn = await _open_turn_sqlite(db)
-                    if open_turn:
-                        await db.execute(
-                            "INSERT INTO egresos_caja (turn_id, monto, motivo, type, operator) VALUES (?,?,?,'ingreso','Sistema')",
-                            (open_turn, -cobro, f"Cobro fiado Venta #{sale_id}")
-                        )
+            if sale[5] != 'efectivo' and fiado_debt > 0:
+                open_turn = await _open_turn_sqlite(db)
+                if open_turn:
+                    await db.execute(
+                        "INSERT INTO egresos_caja (turn_id, monto, motivo, type, operator) VALUES (?,?,?,'ingreso','Sistema')",
+                        (open_turn, -fiado_debt, f"Cobro fiado Venta #{sale_id}")
+                    )
             await db.commit()
     return {"success": True, "message": "Fiado cobrado"}
 
@@ -1221,6 +1231,8 @@ async def customer_obras(customer_id: int) -> list:
 async def pay_customer_balance(customer_id: int, payment: dict = Body(...)) -> dict:
     b_id = _biz_id()
     amount = round(payment.get("amount", 0), 2)
+    if amount <= 0:
+        raise HTTPException(400, detail="El monto del pago debe ser mayor a cero")
     operator = payment.get("operator", "Sistema")
     desc = payment.get("description", f"Pago cliente #{customer_id}")
     if USE_PG:

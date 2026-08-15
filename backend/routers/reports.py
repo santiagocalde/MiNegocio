@@ -111,7 +111,7 @@ async def ganancias_report(desde: Optional[str] = None, hasta: Optional[str] = N
         pool = await get_pg_pool()
         async with pool.acquire() as conn:
             params = [b_id]
-            sale_clauses = ["s.business_id = $1"]
+            sale_clauses = ["s.business_id = $1", "s.reverted = 0"]
             egreso_clauses = ["e.business_id = $1"]
             n = 2
             if desde_d:
@@ -161,14 +161,18 @@ async def ganancias_report(desde: Optional[str] = None, hasta: Optional[str] = N
     else:
         import aiosqlite
         async with aiosqlite.connect(main.DB_PATH) as db:
-            clauses = []
+            clauses = ["reverted = 0"]
             params = []
+            egr_clauses = []
+            egr_params = []
             if desde_d:
                 clauses.append("s.timestamp >= date(?, 'start of month')"); params.append(desde_d.isoformat())
+                egr_clauses.append("e.timestamp >= date(?, 'start of month')"); egr_params.append(desde_d.isoformat())
             if hasta_d:
                 clauses.append("s.timestamp < date(?, '+1 day')"); params.append(hasta_d.isoformat())
+                egr_clauses.append("e.timestamp < date(?, '+1 day')"); egr_params.append(hasta_d.isoformat())
             sale_where = (" WHERE " + " AND ".join(clauses)) if clauses else ""
-            egr_where = sale_where.replace("s.timestamp", "e.timestamp")
+            egr_where = (" WHERE " + " AND ".join(egr_clauses)) if egr_clauses else ""
 
             cur = await db.execute(f"""
                 SELECT mes, COALESCE(SUM(ingresos), 0) as ingresos, COALESCE(SUM(costo), 0) as costo
@@ -192,7 +196,7 @@ async def ganancias_report(desde: Optional[str] = None, hasta: Optional[str] = N
                 FROM egresos_caja e
                 {egr_where}
                 GROUP BY 1
-            """, tuple(params))
+            """, tuple(egr_params))
             egr = [row_to_dict(r, cur.description) for r in await cur.fetchall()]
 
             cur = await db.execute(f"""

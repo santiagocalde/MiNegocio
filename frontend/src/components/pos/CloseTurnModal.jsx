@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { apiPost, apiGet } from '../../services/apiClient';
 import CategoryBreakdown from './CategoryBreakdown';
 
-export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, currentOperator, todaySalesTotal, countedCash, setCountedCash, closeCajaPin, setCloseCajaPin, calculateCajaDiff, cashRef, addToast, currentTurnId, onTurnClosed }) {
+export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, currentOperator, todaySalesTotal, countedCash, setCountedCash, closeCajaPin, setCloseCajaPin, cashRef, addToast, currentTurnId, onTurnClosed }) {
   const [closing, setClosing] = useState(false);
   const [pendingRemitos, setPendingRemitos] = useState([]);
   const [postponing, setPostponing] = useState(false);
@@ -44,27 +44,31 @@ export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, curren
     : null;
 
   // Diferencia del arqueo calculada contra el TURNO actual (igual que el backend).
-  // Si el detalle todavía no cargó, cae al cálculo diario como respaldo.
+  // Devuelve null mientras el detalle del turno no cargó: no mostramos el cálculo
+  // diario porque en días multi-turno no coincide con el backend.
   const cajaDiff = () => {
+    if (!turnResumen) return null;
     const counted = parseFloat(countedCash) || 0;
-    if (turnResumen) {
-      return Math.round(counted - turnEfectivo - (turnResumen.initial_cash || 0) + (turnResumen.egresos || 0));
-    }
-    return Math.round(calculateCajaDiff ? calculateCajaDiff() : 0);
+    return Math.round(counted - turnEfectivo - (turnResumen.initial_cash || 0) + (turnResumen.egresos || 0));
   };
 
   const handlePostponeAll = async () => {
     if (pendingRemitos.length === 0) return;
     setPostponing(true);
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const dateStr = tomorrow.toISOString().slice(0, 10);
-    await Promise.all(pendingRemitos.map(r =>
-      apiPost(`/remitos/${r.id}/status`, { status: 'postponed', scheduled_date: dateStr, operator: currentOperator?.name || 'Sistema' })
-    ));
-    setPendingRemitos([]);
-    setPostponing(false);
-    if (addToast) addToast(`${pendingRemitos.length} pedido(s) pasado(s) a mañana.`, 'success');
+    try {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const dateStr = tomorrow.toISOString().slice(0, 10);
+      await Promise.all(pendingRemitos.map(r =>
+        apiPost(`/remitos/${r.id}/status`, { status: 'postponed', scheduled_date: dateStr, operator: currentOperator?.name || 'Sistema' })
+      ));
+      setPendingRemitos([]);
+      if (addToast) addToast(`${pendingRemitos.length} pedido(s) pasado(s) a mañana.`, 'success');
+    } catch {
+      if (addToast) addToast('No se pudieron pasar los pedidos. Reintentá.', 'error');
+    } finally {
+      setPostponing(false);
+    }
   };
 
   const handleCloseTurn = async () => {
@@ -91,7 +95,7 @@ export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, curren
         counted_cash: isLogistica ? 0 : (parseFloat(countedCash) || 0),
         operator_id: isAdmin ? null : (currentOperator?.id || null),
         pin: (isAdmin || isLogistica) ? undefined : closeCajaPin,
-        notes: isLogistica ? 'Cierre de turno logística' : (diff !== 0 ? (diff > 0 ? `Sobrante: $${diff}` : `Faltante: $${Math.abs(diff)}`) : 'Caja cerrada sin diferencias.'),
+        notes: isLogistica ? 'Cierre de turno logística' : (diff === null ? 'Cierre sin arqueo en vivo' : (diff !== 0 ? (diff > 0 ? `Sobrante: $${diff}` : `Faltante: $${Math.abs(diff)}`) : 'Caja cerrada sin diferencias.')),
       });
       if (res.ok) {
         if (addToast) addToast('Turno cerrado correctamente.', 'success');
@@ -195,8 +199,8 @@ export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, curren
         </div>
       )}
       {countedCash && (isAdmin || closeCajaPin.length === 4) && (
-        <div style={{ textAlign: 'center', marginBottom: '24px', padding: '16px', borderRadius: '12px', background: cajaDiff() === 0 ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)' }}>
-          {cajaDiff() === 0 ? <span style={{ color: 'var(--accent-success)', fontWeight: 700, fontSize: '1.5rem' }}>Caja perfecta! No sobra ni falta.</span> : (
+        <div style={{ textAlign: 'center', marginBottom: '24px', padding: '16px', borderRadius: '12px', background: cajaDiff() === 0 ? 'rgba(16,185,129,0.1)' : cajaDiff() === null ? 'rgba(20,187,166,0.06)' : 'rgba(239,68,68,0.1)' }}>
+          {cajaDiff() === null ? <span style={{ color: 'var(--text-secondary)', fontWeight: 700, fontSize: '1rem' }}>Calculando arqueo del turno...</span> : cajaDiff() === 0 ? <span style={{ color: 'var(--accent-success)', fontWeight: 700, fontSize: '1.5rem' }}>Caja perfecta! No sobra ni falta.</span> : (
             <div><span style={{ color: 'var(--accent-danger)', fontWeight: 800, fontSize: '1.8rem' }}>{cajaDiff() > 0 ? `Sobra $${cajaDiff().toLocaleString('es-AR')}` : `Falta $${Math.abs(cajaDiff()).toLocaleString('es-AR')}`}</span>
               <p style={{ color: 'var(--accent-danger)', marginTop: '8px', fontSize: '0.9rem' }}>Revisa los billetes o anota el {cajaDiff() > 0 ? 'sobrante' : 'faltante'} en las observaciones.</p>
             </div>
@@ -208,7 +212,7 @@ export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, curren
       <CategoryBreakdown items={turnCats} />
 
       <div className="modal-actions">
-        <button className="btn btn-modal-cancel" onClick={() => { setIsClosingCaja(false); setCountedCash(''); setCloseCajaPin(''); }} disabled={closing}>Cancelar (Esc)</button>
+        <button className="btn btn-modal-cancel" onClick={() => { setIsClosingCaja(false); setCountedCash(''); setCloseCajaPin(''); }} disabled={closing}>Cancelar</button>
         <button className="btn btn-modal-confirm" style={{ background: 'var(--accent-danger)', opacity: !countedCash || (!isAdmin && closeCajaPin.length < 4) || closing ? 0.5 : 1 }} onClick={handleCloseTurn} disabled={!countedCash || (!isAdmin && closeCajaPin.length < 4) || closing}>
           {closing ? 'Cerrando turno...' : 'Confirmar y Reportar'}
         </button>

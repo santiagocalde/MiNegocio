@@ -51,8 +51,14 @@ export default function CajasModule() {
     setDetail(null);
     try {
       const res = await apiGet(`/turns/${turnId}/detail`);
-      if (res.ok) setDetail(await res.json());
-    } catch { /* noop */ }
+      if (res.ok) {
+        setDetail(await res.json());
+      } else if (addToast) {
+        addToast('No se pudo cargar el detalle de la caja.', 'error');
+      }
+    } catch {
+      if (addToast) addToast('Sin conexión. Reintentá.', 'error');
+    }
     setDetailLoading(false);
   };
 
@@ -63,6 +69,7 @@ export default function CajasModule() {
 
   const statusOf = (t) => {
     if (!t.closed_at) return { label: 'Abierta', color: 'var(--accent-primary)' };
+    if (t.difference === null || t.difference === undefined) return { label: 'Sin datos', color: 'var(--text-faint)' };
     const d = Number(t.difference) || 0;
     if (Math.abs(d) < 0.01) return { label: 'Perfecta', color: 'var(--accent-success)' };
     if (d > 0) return { label: 'Sobrante', color: 'var(--accent-warning)' };

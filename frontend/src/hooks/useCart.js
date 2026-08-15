@@ -85,8 +85,11 @@ export default function useCart(productsDB, ivaRate, playBeep) {
     const canonicalCode = product?.code || code;
     if (!product && !extra) { addLockRef.current = false; return; }
     setCart(prev => {
-      const ex = prev.find(item => item.code === canonicalCode);
-      if (ex) return prev.map(item => item.code === canonicalCode ? { ...item, qty: item.qty + 1 } : item);
+      // Merge por ID de variante cuando existe (dos variantes pueden compartir código).
+      const ex = extra?.id
+        ? prev.find(item => item.id === extra.id)
+        : prev.find(item => item.code === canonicalCode);
+      if (ex) return prev.map(item => item.id === ex.id ? { ...item, qty: item.qty + 1 } : item);
       const itemId = product?.id || (extra?.id || canonicalCode);
       const src = product || extra || {};
       const item = {
@@ -183,7 +186,8 @@ export default function useCart(productsDB, ivaRate, playBeep) {
   const { rawTotal, total, subtotal, iva, discount } = totals;
   const sanitizedAdjusted = adjustedTotal != null && !isNaN(adjustedTotal) && adjustedTotal >= 0 ? adjustedTotal : null;
   const effectiveTotal = sanitizedAdjusted ?? total;
-  const change = (payment != null && payment !== '') ? Math.max(0, parseFloat(payment) - effectiveTotal) : 0;
+  // El vuelto puede ser negativo: así el modal de cobro bloquea "pago incompleto".
+  const change = (payment != null && payment !== '') ? parseFloat(payment) - effectiveTotal : 0;
 
   return {
     cart, setCart,

@@ -27,23 +27,34 @@ export default function ChargeModal({
   businessConfig
 }) {
   const finalTotal = adjustedTotal ?? total;
+  const splitSum = splitPayments.reduce((s, p) => s + (parseFloat(p.amount) || 0), 0);
   const isConfirmDisabled =
     (!useSplitPayment && paymentMethod === 'efectivo' && (payment === '' || change < 0)) ||
     isProcessing ||
-    (useSplitPayment && splitPayments.reduce((s, p) => s + (parseFloat(p.amount) || 0), 0) < finalTotal);
+    (useSplitPayment && (splitSum < finalTotal - 0.01 || splitSum > finalTotal + 0.01));
 
   const transferAlias = businessConfig?.catalogo_whatsapp || businessConfig?.mp_collector_id || null;
   const isMobile = useIsMobile();
+
+  // Cerrar el modal (reseteando el pago mixto) sin tocar el carrito.
+  const cancelCharge = () => {
+    if (isProcessing) return;
+    setIsCharging(false);
+    setUseSplitPayment?.(false);
+    setSplitPayments?.([{ method: 'efectivo', amount: '' }]);
+    setPayment?.('');
+  };
 
   // El hook debe llamarse SIEMPRE (antes de cualquier return) para no violar las Reglas de Hooks
   useEffect(() => {
     if (!isCharging) return;
     const handler = (e) => {
-      if (e.key === 'Escape') { setIsCharging(false); return; }
+      if (e.key === 'Escape') { cancelCharge(); return; }
       if (e.key === 'Enter' && !isConfirmDisabled) { e.preventDefault(); confirmCharge(); }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isCharging, isConfirmDisabled, confirmCharge, setIsCharging]);
 
   if (!isCharging) return null;
@@ -58,7 +69,7 @@ export default function ChargeModal({
             <h2 style={{ fontSize: isMobile ? '1.2rem' : '1.75rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>Procesar Venta</h2>
             {!isMobile && <p style={{ color: 'var(--text-secondary)', margin: '4px 0 0 0', fontSize: '0.95rem' }}>Confirme el método de pago e importe</p>}
           </div>
-          <button onClick={() => { if(!isProcessing) setIsCharging(false); }} style={{ background: 'var(--bg-hover)', border: 'none', borderRadius: '50%', width: isMobile ? '44px' : '36px', height: isMobile ? '44px' : '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1.2rem', transition: 'all 0.2s' }}><Icons.X /></button>
+          <button onClick={cancelCharge} style={{ background: 'var(--bg-hover)', border: 'none', borderRadius: '50%', width: isMobile ? '44px' : '36px', height: isMobile ? '44px' : '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1.2rem', transition: 'all 0.2s' }}><Icons.X /></button>
         </div>
 
         {/* 2-Column Layout */}
@@ -169,8 +180,8 @@ export default function ChargeModal({
                       <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
                         Cargado: <strong style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>${cargado.toLocaleString('es-AR')}</strong> de ${finalTotal.toLocaleString('es-AR')}
                       </span>
-                      <span style={{ fontWeight: 800, fontSize: '0.95rem', fontFamily: 'var(--font-mono)', color: falta > 0.01 ? 'var(--accent-warning)' : 'var(--accent-success)' }}>
-                        {falta > 0.01 ? `Faltan $${falta.toLocaleString('es-AR')}` : '✓ Completo'}
+                      <span style={{ fontWeight: 800, fontSize: '0.95rem', fontFamily: 'var(--font-mono)', color: falta > 0.01 ? 'var(--accent-warning)' : falta < -0.01 ? 'var(--accent-danger)' : 'var(--accent-success)' }}>
+                        {falta > 0.01 ? `Faltan $${falta.toLocaleString('es-AR')}` : falta < -0.01 ? `Te pasaste $${Math.abs(falta).toLocaleString('es-AR')}` : '✓ Completo'}
                       </span>
                     </div>
                   );
@@ -251,7 +262,7 @@ export default function ChargeModal({
               </label>
 
               <div style={{ display: 'flex', gap: '16px' }}>
-                <button onClick={() => setIsCharging(false)} style={{ flex: 1, padding: isMobile ? '14px' : '20px', background: 'transparent', border: '2px solid var(--border-color)', color: 'var(--text-secondary)', borderRadius: '16px', fontSize: '1.1rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s' }}>
+                <button onClick={cancelCharge} style={{ flex: 1, padding: isMobile ? '14px' : '20px', background: 'transparent', border: '2px solid var(--border-color)', color: 'var(--text-secondary)', borderRadius: '16px', fontSize: '1.1rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s' }}>
                   Cancelar (Esc)
                 </button>
                 <button 
