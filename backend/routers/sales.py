@@ -33,7 +33,7 @@ def _sqlite_now():
 
 
 def _pg_now():
-    # datetime real: _now() se usa como parámetro bind ($1), no interpolado en SQL
+    # datetime real: _now() se usa como parÃ¡metro bind ($1), no interpolado en SQL
     return datetime.now(timezone.utc)
 
 
@@ -56,13 +56,13 @@ async def _open_turn_sqlite(db):
     return row[0] if row else None
 
 
-# ────────────────────────────────────────────────────────────
-# VENTAS POR CATEGORÍA (resumen de caja / cierre de turno)
-# ────────────────────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# VENTAS POR CATEGORÃA (resumen de caja / cierre de turno)
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async def _por_categoria_pg(conn, b_id, turn_id=None, sucursal_id=None):
-    """Totales vendidos agrupados por categoría del producto (modo PG)."""
+    """Totales vendidos agrupados por categorÃ­a del producto (modo PG)."""
     base = (
-        "SELECT COALESCE(c.name, 'Sin categoría') AS categoria, "
+        "SELECT COALESCE(c.name, 'Sin categorÃ­a') AS categoria, "
         "ROUND(SUM(si.quantity * si.unit_price)::numeric, 2) AS total, "
         "ROUND(SUM(si.quantity)::numeric, 2) AS cantidad "
         "FROM sale_items si "
@@ -73,7 +73,7 @@ async def _por_categoria_pg(conn, b_id, turn_id=None, sucursal_id=None):
     if turn_id is not None:
         rows = await conn.fetch(
             base + "WHERE s.business_id = $1 AND s.turn_id = $2 AND s.reverted = 0 "
-                   "GROUP BY COALESCE(c.name, 'Sin categoría') ORDER BY total DESC",
+                   "GROUP BY COALESCE(c.name, 'Sin categorÃ­a') ORDER BY total DESC",
             b_id, turn_id,
         )
     elif sucursal_id:
@@ -81,7 +81,7 @@ async def _por_categoria_pg(conn, b_id, turn_id=None, sucursal_id=None):
             base + "WHERE s.business_id = $1 AND s.sucursal_id = $2 AND s.reverted = 0 "
                    "AND s.timestamp >= date_trunc('day', now() AT TIME ZONE 'America/Argentina/Buenos_Aires') AT TIME ZONE 'America/Argentina/Buenos_Aires' "
                    "AND s.timestamp < date_trunc('day', now() AT TIME ZONE 'America/Argentina/Buenos_Aires') AT TIME ZONE 'America/Argentina/Buenos_Aires' + INTERVAL '1 day' "
-                   "GROUP BY COALESCE(c.name, 'Sin categoría') ORDER BY total DESC",
+                   "GROUP BY COALESCE(c.name, 'Sin categorÃ­a') ORDER BY total DESC",
             b_id, sucursal_id,
         )
     else:
@@ -89,7 +89,7 @@ async def _por_categoria_pg(conn, b_id, turn_id=None, sucursal_id=None):
             base + "WHERE s.business_id = $1 AND s.reverted = 0 "
                    "AND s.timestamp >= date_trunc('day', now() AT TIME ZONE 'America/Argentina/Buenos_Aires') AT TIME ZONE 'America/Argentina/Buenos_Aires' "
                    "AND s.timestamp < date_trunc('day', now() AT TIME ZONE 'America/Argentina/Buenos_Aires') AT TIME ZONE 'America/Argentina/Buenos_Aires' + INTERVAL '1 day' "
-                   "GROUP BY COALESCE(c.name, 'Sin categoría') ORDER BY total DESC",
+                   "GROUP BY COALESCE(c.name, 'Sin categorÃ­a') ORDER BY total DESC",
             b_id,
         )
     return [
@@ -99,9 +99,9 @@ async def _por_categoria_pg(conn, b_id, turn_id=None, sucursal_id=None):
 
 
 async def _por_categoria_sqlite(db, turn_id=None, sucursal_id=None):
-    """Totales vendidos agrupados por categoría del producto (modo SQLite)."""
+    """Totales vendidos agrupados por categorÃ­a del producto (modo SQLite)."""
     base = (
-        "SELECT COALESCE(c.name, 'Sin categoría') AS categoria, "
+        "SELECT COALESCE(c.name, 'Sin categorÃ­a') AS categoria, "
         "ROUND(SUM(si.quantity * si.unit_price), 2) AS total, "
         "ROUND(SUM(si.quantity), 2) AS cantidad "
         "FROM sale_items si "
@@ -112,19 +112,19 @@ async def _por_categoria_sqlite(db, turn_id=None, sucursal_id=None):
     if turn_id is not None:
         cur = await db.execute(
             base + "WHERE s.turn_id = ? AND s.reverted = 0 "
-                   "GROUP BY COALESCE(c.name, 'Sin categoría') ORDER BY total DESC",
+                   "GROUP BY COALESCE(c.name, 'Sin categorÃ­a') ORDER BY total DESC",
             (turn_id,),
         )
     elif sucursal_id:
         cur = await db.execute(
             base + "WHERE s.sucursal_id = ? AND s.reverted = 0 AND date(s.timestamp) = date('now','localtime') "
-                   "GROUP BY COALESCE(c.name, 'Sin categoría') ORDER BY total DESC",
+                   "GROUP BY COALESCE(c.name, 'Sin categorÃ­a') ORDER BY total DESC",
             (sucursal_id,),
         )
     else:
         cur = await db.execute(
             base + "WHERE s.reverted = 0 AND date(s.timestamp) = date('now','localtime') "
-                   "GROUP BY COALESCE(c.name, 'Sin categoría') ORDER BY total DESC",
+                   "GROUP BY COALESCE(c.name, 'Sin categorÃ­a') ORDER BY total DESC",
         )
     rows = await cur.fetchall()
     return [
@@ -133,9 +133,9 @@ async def _por_categoria_sqlite(db, turn_id=None, sucursal_id=None):
     ]
 
 
-# ────────────────────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 # TURNS ENDPOINTS
-# ────────────────────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 @router.post("/api/turns", status_code=201, summary="Abrir turno")
 async def open_turn(body: TurnOpen) -> dict:
     b_id = _biz_id()
@@ -242,10 +242,10 @@ async def close_turn(turn_id: int, body: TurnClose) -> dict:
                 if row["closed_at"] is not None:
                     raise HTTPException(400, detail="Este turno ya esta cerrado")
 
-                # Efectivo esperado en el cajón = base inicial + ventas EN EFECTIVO (no fiado,
-                # no anuladas) + porción efectivo de pagos mixtos - egresos de caja del turno.
-                # NO se cuentan tarjeta/transferencia/MP (no van al cajón) ni fiado (no se cobró).
-                # Se calcula en el backend, no se confía en el total que manda el front.
+                # Efectivo esperado en el cajÃ³n = base inicial + ventas EN EFECTIVO (no fiado,
+                # no anuladas) + porciÃ³n efectivo de pagos mixtos - egresos de caja del turno.
+                # NO se cuentan tarjeta/transferencia/MP (no van al cajÃ³n) ni fiado (no se cobrÃ³).
+                # Se calcula en el backend, no se confÃ­a en el total que manda el front.
                 cash_sales = await conn.fetchval(
                     "SELECT COALESCE(SUM(total),0) FROM sales WHERE turn_id = $1 AND business_id = $2 "
                     "AND payment_method = 'efectivo' AND is_fiado = 0 AND reverted = 0",
@@ -299,8 +299,8 @@ async def close_turn(turn_id: int, body: TurnClose) -> dict:
                 if not turn: raise HTTPException(404, detail="Turno no encontrado")
                 if turn[0] is not None: raise HTTPException(400, detail="Este turno ya esta cerrado")
                 # Efectivo esperado = base inicial + ventas EN EFECTIVO (no fiado, no anuladas)
-                # + porción efectivo de pagos mixtos - egresos.
-                # (mismo criterio que la rama PG; no se confía en el total del front)
+                # + porciÃ³n efectivo de pagos mixtos - egresos.
+                # (mismo criterio que la rama PG; no se confÃ­a en el total del front)
                 cur2 = await db.execute(
                     "SELECT COALESCE(SUM(total),0) FROM sales WHERE turn_id=? AND payment_method='efectivo' AND is_fiado=0 AND reverted=0",
                     (turn_id,)
@@ -333,13 +333,13 @@ async def close_turn(turn_id: int, body: TurnClose) -> dict:
 
 @router.patch("/api/turns/{turn_id}/initial-cash", summary="Ajustar caja inicial del turno abierto")
 async def update_turn_initial_cash(turn_id: int, body: dict = Body(...)) -> dict:
-    """Permite corregir el monto con el que se abrió la caja (solo turno abierto).
-    El arqueo del cierre usa este valor, así que ajustarlo evita sobrantes/faltantes falsos."""
+    """Permite corregir el monto con el que se abriÃ³ la caja (solo turno abierto).
+    El arqueo del cierre usa este valor, asÃ­ que ajustarlo evita sobrantes/faltantes falsos."""
     b_id = _biz_id()
     try:
         monto = round(float(body.get("initial_cash")), 2)
     except (TypeError, ValueError):
-        raise HTTPException(400, detail="Monto inválido")
+        raise HTTPException(400, detail="Monto invÃ¡lido")
     if monto < 0:
         raise HTTPException(400, detail="El monto no puede ser negativo")
     if USE_PG:
@@ -379,11 +379,11 @@ async def list_turns(limit: int = Query(30), date_from: Optional[str] = Query(No
             if date_from:
                 try: parsed_from = datetime.strptime(date_from, '%Y-%m-%d').date()
                 except Exception: parsed_from = date_from
-                clauses.append(f"closed_at::date >= ${n}::date"); params.append(parsed_from); n += 1
+                clauses.append(f"(closed_at AT TIME ZONE 'America/Argentina/Buenos_Aires')::date >= ${n}::date"); params.append(parsed_from); n += 1
             if date_to:
                 try: parsed_to = datetime.strptime(date_to, '%Y-%m-%d').date()
                 except Exception: parsed_to = date_to
-                clauses.append(f"closed_at::date <= ${n}::date"); params.append(parsed_to); n += 1
+                clauses.append(f"(closed_at AT TIME ZONE 'America/Argentina/Buenos_Aires')::date <= ${n}::date"); params.append(parsed_to); n += 1
             where = " AND ".join(clauses)
             rows = await conn.fetch(
                 f"SELECT * FROM turns WHERE {where} ORDER BY closed_at DESC NULLS LAST, opened_at DESC LIMIT ${n}",
@@ -409,9 +409,9 @@ async def list_turns(limit: int = Query(30), date_from: Optional[str] = Query(No
             return [row_to_dict(r, cur.description) for r in rows]
 
 
-# ────────────────────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 # SALES ENDPOINTS
-# ────────────────────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 @router.post("/api/sales", status_code=201, summary="Registrar venta")
 @limiter.limit("120/minute")
 async def create_sale(request: Request, body: SaleCreate, idempotency_key: Optional[str] = Query(None)) -> dict:
@@ -457,7 +457,7 @@ async def create_sale(request: Request, body: SaleCreate, idempotency_key: Optio
 
                 for item in body.items:
                     if item.is_virtual or item.product_id is None:
-                        # Producto virtual (acceso rápido, monto manual) — sin stock DB
+                        # Producto virtual (acceso rÃ¡pido, monto manual) â€” sin stock DB
                         db_price = round(item.unit_price, 2)
                         db_total += db_price * item.quantity
                         await conn.execute(
@@ -506,11 +506,11 @@ async def create_sale(request: Request, body: SaleCreate, idempotency_key: Optio
                             b_id, item.product_id, item.quantity, f"Venta #{sale_id}", body.operator, f"sale-{sale_id}-{item.product_id}"
                         )
 
-                # Nota: db_total no incluye descuentos/promos (que sí están en total_sale),
-                # así que una diferencia es normal en ventas con descuento. Se deja en debug
-                # como diagnóstico; solo es señal de alarma si el front cobró MÁS que los ítems.
+                # Nota: db_total no incluye descuentos/promos (que sÃ­ estÃ¡n en total_sale),
+                # asÃ­ que una diferencia es normal en ventas con descuento. Se deja en debug
+                # como diagnÃ³stico; solo es seÃ±al de alarma si el front cobrÃ³ MÃS que los Ã­tems.
                 if total_sale - db_total > 0.02:
-                    logger.warning(f"Venta #{sale_id}: cobrado ({total_sale}) > suma de items en DB ({db_total}) — revisar")
+                    logger.warning(f"Venta #{sale_id}: cobrado ({total_sale}) > suma de items en DB ({db_total}) â€” revisar")
                 elif abs(db_total - total_sale) > 0.02:
                     logger.debug(f"Venta #{sale_id}: total DB={db_total} vs cobrado={total_sale} (descuento/promo)")
 
@@ -548,7 +548,7 @@ async def create_sale(request: Request, body: SaleCreate, idempotency_key: Optio
                 await conn.execute(
                     "INSERT INTO audit_log (business_id, action, operator, details) VALUES ($1,$2,$3,$4)",
                     b_id, "sale_created", body.operator or "Sistema",
-                    f"Venta #{sale_id} — ${total_sale:.2f} ({primary_method})"
+                    f"Venta #{sale_id} â€” ${total_sale:.2f} ({primary_method})"
                 )
                 return {"id": sale_id, "ticket": sale_id}
 
@@ -588,7 +588,7 @@ async def create_sale(request: Request, body: SaleCreate, idempotency_key: Optio
 
                 for item in body.items:
                     if item.is_virtual or item.product_id is None:
-                        # Producto virtual — sin DB lookup ni descuento de stock
+                        # Producto virtual â€” sin DB lookup ni descuento de stock
                         db_price = round(item.unit_price, 2)
                         db_total_sql += db_price * item.quantity
                         await db.execute(
@@ -665,7 +665,7 @@ async def create_sale(request: Request, body: SaleCreate, idempotency_key: Optio
                 await db.commit()
                 await db.execute(
                     "INSERT INTO audit_log (action, operator, details) VALUES (?,?,?)",
-                    ("sale_created", body.operator or "Sistema", f"Venta #{sale_id} — ${total_sale:.2f} ({primary_method})")
+                    ("sale_created", body.operator or "Sistema", f"Venta #{sale_id} â€” ${total_sale:.2f} ({primary_method})")
                 )
                 await db.commit()
                 await events.emit("sale-created", {"id": sale_id, "business_id": b_id}, business_id=b_id)
@@ -676,8 +676,8 @@ async def create_sale(request: Request, body: SaleCreate, idempotency_key: Optio
 @router.post("/api/sales/{sale_id}/cobrar-fiado", summary="Cobrar fiado y actualizar balance")
 async def cobrar_fiado(sale_id: int) -> dict:
     """Marca un fiado como cobrado y actualiza el balance del cliente.
-    El efectivo que entra al cajón se registra como ingreso (egreso negativo)
-    en el turno abierto actual, así el arqueo del cierre cuadra."""
+    El efectivo que entra al cajÃ³n se registra como ingreso (egreso negativo)
+    en el turno abierto actual, asÃ­ el arqueo del cierre cuadra."""
     b_id = _biz_id()
     if USE_PG:
         from db_helpers import get_pg_pool
@@ -697,7 +697,7 @@ async def cobrar_fiado(sale_id: int) -> dict:
                     sale["total"], b_id, sale["fiado_name"]
                 )
             await conn.execute("UPDATE sales SET is_fiado = 0 WHERE id = $1", sale_id)
-            # Si el fiado se creó como 'fiado' (o split con parte fiada), el cobro
+            # Si el fiado se creÃ³ como 'fiado' (o split con parte fiada), el cobro
             # nunca entra a cash_sales: se registra como ingreso del turno actual.
             if sale["payment_method"] != 'efectivo':
                 already_cash = await conn.fetchval(
@@ -775,7 +775,7 @@ async def today_sales(sucursal_id: Optional[int] = Query(None)) -> dict:
                 egresos_row = await conn.fetchrow("SELECT COALESCE(SUM(monto),0) as total_egresos FROM egresos_caja WHERE business_id = $1 AND timestamp >= date_trunc('day', now() AT TIME ZONE 'America/Argentina/Buenos_Aires') AT TIME ZONE 'America/Argentina/Buenos_Aires' AND timestamp < date_trunc('day', now() AT TIME ZONE 'America/Argentina/Buenos_Aires') AT TIME ZONE 'America/Argentina/Buenos_Aires' + INTERVAL '1 day'", b_id)
             result = dict(row) if row else {"total_tickets": 0, "total_vendido": 0, "total_fiado": 0, "total_efectivo": 0, "total_tarjeta": 0, "total_transferencia": 0, "total_mp": 0}
             result["total_egresos"] = float(egresos_row["total_egresos"] or 0) if egresos_row else 0
-            # Porción en efectivo de pagos mixtos (split): esa plata sí está en el cajón.
+            # PorciÃ³n en efectivo de pagos mixtos (split): esa plata sÃ­ estÃ¡ en el cajÃ³n.
             _split_q = (
                 "SELECT COALESCE(SUM(sp.amount),0) FROM sale_payments sp "
                 "JOIN sales s2 ON s2.id = sp.sale_id "
@@ -818,7 +818,7 @@ async def today_sales(sucursal_id: Optional[int] = Query(None)) -> dict:
             egresos_row = await egresos_cur.fetchone()
             result = row_to_dict(row, cur.description)
             result["total_egresos"] = float(egresos_row[0] or 0)
-            # Porción en efectivo de pagos mixtos (split): esa plata sí está en el cajón.
+            # PorciÃ³n en efectivo de pagos mixtos (split): esa plata sÃ­ estÃ¡ en el cajÃ³n.
             if sucursal_id:
                 cur_split = await db.execute(
                     "SELECT COALESCE(SUM(sp.amount),0) FROM sale_payments sp "
@@ -847,11 +847,11 @@ async def list_sales(limit: int = Query(50), date_from: Optional[str] = Query(No
         if date_from:
             try: parsed = datetime.strptime(date_from, '%Y-%m-%d').date()
             except: parsed = date_from
-            clauses.append(f"s.timestamp::date >= ${n}::date"); params.append(parsed); n += 1
+            clauses.append(f"(s.timestamp AT TIME ZONE 'America/Argentina/Buenos_Aires')::date >= ${n}::date"); params.append(parsed); n += 1
         if date_to:
             try: parsed = datetime.strptime(date_to, '%Y-%m-%d').date()
             except: parsed = date_to
-            clauses.append(f"s.timestamp::date <= ${n}::date"); params.append(parsed); n += 1
+            clauses.append(f"(s.timestamp AT TIME ZONE 'America/Argentina/Buenos_Aires')::date <= ${n}::date"); params.append(parsed); n += 1
         if sucursal_id: clauses.append(f"s.sucursal_id = ${n}"); params.append(sucursal_id); n += 1
         where = " AND ".join(clauses)
         params.append(limit)
@@ -892,7 +892,7 @@ async def list_sales(limit: int = Query(50), date_from: Optional[str] = Query(No
 async def turn_detail(turn_id: int) -> dict:
     """Devuelve el turno con sus ventas y egresos asociados.
 
-    Antes solo devolvía la fila de `turns`, dejando vacíos los listados que
+    Antes solo devolvÃ­a la fila de `turns`, dejando vacÃ­os los listados que
     necesita el detalle de cierre de caja. Ahora adjunta `sales` y `egresos`
     scopeados por turno + tenant.
     """
@@ -916,8 +916,8 @@ async def turn_detail(turn_id: int) -> dict:
             detail = dict(row)
             detail["sales"] = [dict(r) for r in sales]
             detail["egresos"] = [dict(r) for r in egresos]
-            # Resumen de caja del TURNO (no del día) para que el arqueo en vivo
-            # del modal de cierre coincida exacto con el cálculo del backend.
+            # Resumen de caja del TURNO (no del dÃ­a) para que el arqueo en vivo
+            # del modal de cierre coincida exacto con el cÃ¡lculo del backend.
             resumen = await conn.fetchrow(
                 "SELECT "
                 "COALESCE((SELECT SUM(total) FROM sales WHERE turn_id = $1 AND business_id = $2 AND payment_method = 'efectivo' AND is_fiado = 0 AND reverted = 0), 0) AS efectivo, "
@@ -954,8 +954,8 @@ async def turn_detail(turn_id: int) -> dict:
                 (turn_id,)
             )
             detail["egresos"] = [row_to_dict(r, cur.description) for r in await cur.fetchall()]
-            # Resumen de caja del TURNO (no del día) para que el arqueo en vivo
-            # del modal de cierre coincida exacto con el cálculo del backend.
+            # Resumen de caja del TURNO (no del dÃ­a) para que el arqueo en vivo
+            # del modal de cierre coincida exacto con el cÃ¡lculo del backend.
             cur_r = await db.execute(
                 "SELECT "
                 "COALESCE((SELECT SUM(total) FROM sales WHERE turn_id = ? AND payment_method='efectivo' AND is_fiado=0 AND reverted=0), 0), "
@@ -1018,7 +1018,7 @@ async def list_customers(
             return [row_to_dict(r, cur.description) for r in await cur.fetchall()]
 
 
-# ── Direcciones de cliente ─────────────────────────────────────
+# â”€â”€ Direcciones de cliente â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @router.get("/api/customers/{customer_id}/addresses", summary="Listar direcciones de un cliente")
 async def list_customer_addresses(customer_id: int) -> list:
@@ -1043,14 +1043,14 @@ async def list_customer_addresses(customer_id: int) -> list:
             return [row_to_dict(r, cur.description) for r in await cur.fetchall()]
 
 
-@router.post("/api/customers/{customer_id}/addresses", summary="Agregar dirección a un cliente")
+@router.post("/api/customers/{customer_id}/addresses", summary="Agregar direcciÃ³n a un cliente")
 async def add_customer_address(customer_id: int, body: dict = Body(...)) -> dict:
     from main import USE_PG; import main
     b_id = _biz_id()
-    label = (body.get("label") or "Dirección").strip()
+    label = (body.get("label") or "DirecciÃ³n").strip()
     address = (body.get("address") or "").strip()
     if not address:
-        raise HTTPException(400, detail="La dirección no puede estar vacía")
+        raise HTTPException(400, detail="La direcciÃ³n no puede estar vacÃ­a")
     is_default = bool(body.get("is_default", False))
     if USE_PG:
         from db_helpers import get_pg_pool
@@ -1081,7 +1081,7 @@ async def add_customer_address(customer_id: int, body: dict = Body(...)) -> dict
             return {"id": cur.lastrowid, "success": True}
 
 
-@router.delete("/api/customers/addresses/{address_id}", summary="Eliminar dirección de un cliente")
+@router.delete("/api/customers/addresses/{address_id}", summary="Eliminar direcciÃ³n de un cliente")
 async def delete_customer_address(address_id: int) -> dict:
     from main import USE_PG; import main
     b_id = _biz_id()
@@ -1094,7 +1094,7 @@ async def delete_customer_address(address_id: int) -> dict:
                 address_id, b_id
             )
             if r == "DELETE 0":
-                raise HTTPException(404, detail="Dirección no encontrada")
+                raise HTTPException(404, detail="DirecciÃ³n no encontrada")
             return {"success": True}
     else:
         import aiosqlite
@@ -1236,7 +1236,7 @@ async def pay_customer_balance(customer_id: int, payment: dict = Body(...)) -> d
                     "INSERT INTO customer_transactions (business_id, customer_id, amount, type, description, operator) VALUES ($1,$2,$3,'payment',$4,$5)",
                     b_id, customer_id, amount, desc, operator
                 )
-                # El efectivo del abono entra al cajón: ingreso del turno abierto actual.
+                # El efectivo del abono entra al cajÃ³n: ingreso del turno abierto actual.
                 if amount > 0:
                     open_turn = await _open_turn_pg(conn, b_id)
                     if open_turn:
@@ -1258,7 +1258,7 @@ async def pay_customer_balance(customer_id: int, payment: dict = Body(...)) -> d
                 "INSERT INTO customer_transactions (customer_id, amount, type, description, operator) VALUES (?,?,?,?,?)",
                 (customer_id, amount, 'payment', desc, operator)
             )
-            # El efectivo del abono entra al cajón: ingreso del turno abierto actual.
+            # El efectivo del abono entra al cajÃ³n: ingreso del turno abierto actual.
             if amount > 0:
                 open_turn = await _open_turn_sqlite(db)
                 if open_turn:
