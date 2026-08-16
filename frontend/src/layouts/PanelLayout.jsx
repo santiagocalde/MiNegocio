@@ -58,6 +58,17 @@ export default function PanelLayout() {
     }
   }, [auth.isAuthenticated]);
 
+  // Cuando el turno se cierra automáticamente por inactividad (>14 hs), PanelContext
+  // deja un flag en localStorage y el usuario queda autenticado pero sin turno.
+  // Abrimos el modal de apertura de caja para que no quede trabado.
+  useEffect(() => {
+    if (!auth.currentTurnId && localStorage.getItem('minegocio_need_open_caja') === '1') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setShowInitialCaja(true);
+      localStorage.removeItem('minegocio_need_open_caja');
+    }
+  }, [auth.currentTurnId]);
+
   const handleCajaSubmit = async (e) => {
     e.preventDefault();
     try {

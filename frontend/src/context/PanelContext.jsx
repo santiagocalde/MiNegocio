@@ -143,13 +143,26 @@ export function PanelProvider({ children }) {
         .then(r => r.ok ? r.json() : null)
         .then(data => {
           if (!data || !data.id) {
-            auth.setIsAuthenticated(false);
-            auth.setCurrentTurnId(null);
-            auth.setTurnOpenedAt(null);
-            auth.setCurrentOperator(null);
-            localStorage.removeItem('minegocio_current_turn_id');
-            localStorage.removeItem('minegocio_current_operator');
-            localStorage.removeItem('minegocio_turn_opened_at');
+            if (data?.auto_closed) {
+              // El turno se cerró solo por inactividad (>14 hs abierto).
+              // NO hacemos logout: el usuario sigue autenticado, solo necesita
+              // abrir una nueva caja. Avisamos y dejamos que PanelLayout abra el modal.
+              addToast('Tu turno anterior se cerró automáticamente (estuvo abierto más de 14 hs). Abrí uno nuevo para continuar.', 'warning');
+              localStorage.setItem('minegocio_need_open_caja', '1');
+              auth.setCurrentTurnId(null);
+              auth.setTurnOpenedAt(null);
+              localStorage.removeItem('minegocio_current_turn_id');
+              localStorage.removeItem('minegocio_turn_opened_at');
+            } else {
+              // Turno inválido (no existe en el servidor): logout completo.
+              auth.setIsAuthenticated(false);
+              auth.setCurrentTurnId(null);
+              auth.setTurnOpenedAt(null);
+              auth.setCurrentOperator(null);
+              localStorage.removeItem('minegocio_current_turn_id');
+              localStorage.removeItem('minegocio_current_operator');
+              localStorage.removeItem('minegocio_turn_opened_at');
+            }
           } else {
             if (String(data.id) !== String(auth.currentTurnId)) {
               auth.setCurrentTurnId(data.id);
