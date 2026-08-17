@@ -14,7 +14,8 @@ const Icons = {
 };
 
 export default function FiadoModule() {
-  const { addToast, currentPlan } = usePanelContext();
+  const { addToast, currentPlan, auth } = usePanelContext();
+  const operadorActual = auth?.currentOperator?.name || 'Cajero';
   const isMobile = useIsMobile();
   const [cobranza, setCobranza] = useState(null); // {nombre, telefono, texto, loading}
   const [customers, setCustomers] = useState([]);
@@ -92,7 +93,7 @@ export default function FiadoModule() {
       return;
     }
     try {
-      const res = await apiPost(`/customers/${abonoModal.id}/pay`, { amount: Number(abonoAmount), operator: 'Cajero' });
+      const res = await apiPost(`/customers/${abonoModal.id}/pay`, { amount: Number(abonoAmount), operator: operadorActual });
       if (res.ok) {
         addToast?.('Abono registrado exitosamente.', 'success');
         setAbonoModal(null);
@@ -114,7 +115,7 @@ export default function FiadoModule() {
   const handleCreateClient = async () => {
     if (!newClientName.trim()) return;
     try {
-      const res = await apiPost('/customers', { name: newClientName, phone: newClientPhone, amount: Number(newClientAmount) || 0, operator: 'Cajero', address: newClientAddress, email: newClientEmail, dni_cuit: newClientDniCuit });
+      const res = await apiPost('/customers', { name: newClientName, phone: newClientPhone, amount: Number(newClientAmount) || 0, operator: operadorActual, address: newClientAddress, email: newClientEmail, dni_cuit: newClientDniCuit });
       if (res.ok) {
         addToast?.('Cliente creado exitosamente.', 'success');
         setNewClientModal(false);
@@ -321,7 +322,10 @@ export default function FiadoModule() {
                             <td className="ledger-num" style={{ padding: '13px 24px', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
                               {t.timestamp ? `${new Date(t.timestamp).toLocaleDateString('es-AR')} ${new Date(t.timestamp).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}` : '---'}
                             </td>
-                            <td style={{ padding: '13px 24px', color: 'var(--text-primary)', fontSize: '0.9rem' }}>{t.description}</td>
+                            <td style={{ padding: '13px 24px', color: 'var(--text-primary)', fontSize: '0.9rem' }}>
+                              {t.description}
+                              {t.operator && <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: 2 }}>por {t.operator}</div>}
+                            </td>
                             <td className="ledger-num" style={{ padding: '13px 24px', fontWeight: 700, color: t.type === 'payment' ? 'var(--accent-success)' : 'var(--accent-danger)', textAlign: 'right' }}>
                               {t.type === 'payment' ? '−' : '+'}${t.amount.toLocaleString('es-AR')}
                             </td>
