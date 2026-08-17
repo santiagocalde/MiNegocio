@@ -545,52 +545,6 @@ async def init_pg() -> None:
                 unit_price      NUMERIC(12,2) NOT NULL DEFAULT 0
             );
 
-            -- ── Facturación Electrónica ARCA (delegación multi-cliente) ──
-            -- Cache del Ticket de Acceso WSAA (uno por servicio+ambiente; sirve
-            -- para todos los comercios). Persistente para no re-pedir TA y quedar
-            -- bloqueados hasta 12h.
-            CREATE TABLE IF NOT EXISTS arca_tokens (
-                service         TEXT NOT NULL,
-                environment     TEXT NOT NULL,
-                token           TEXT NOT NULL,
-                sign            TEXT NOT NULL,
-                expiration_time TEXT,
-                updated_at      TIMESTAMPTZ DEFAULT now(),
-                UNIQUE(service, environment)
-            );
-            -- Config de ARCA por negocio.
-            CREATE TABLE IF NOT EXISTS arca_config (
-                business_id       TEXT PRIMARY KEY REFERENCES businesses(id),
-                cuit              TEXT NOT NULL DEFAULT '',
-                punto_venta       INTEGER NOT NULL DEFAULT 1,
-                condicion_iva     TEXT NOT NULL DEFAULT 'monotributo',
-                delegacion_activa BOOLEAN NOT NULL DEFAULT false,
-                environment       TEXT NOT NULL DEFAULT 'testing',
-                activo            BOOLEAN NOT NULL DEFAULT false,
-                created_at        TIMESTAMPTZ DEFAULT now()
-            );
-            -- Comprobantes emitidos o en cola. status: pending|issued|error|rejected.
-            CREATE TABLE IF NOT EXISTS arca_invoices (
-                id                SERIAL PRIMARY KEY,
-                business_id       TEXT NOT NULL REFERENCES businesses(id),
-                sale_id           INTEGER,
-                cuit_representado TEXT NOT NULL,
-                punto_venta       INTEGER NOT NULL,
-                tipo_cbte         INTEGER,
-                numero            INTEGER,
-                fecha             TEXT,
-                total             NUMERIC(12,2) NOT NULL DEFAULT 0,
-                cae               TEXT DEFAULT '',
-                cae_vto           TEXT DEFAULT '',
-                status            TEXT NOT NULL DEFAULT 'pending',
-                error_msg         TEXT DEFAULT '',
-                retry_count       INTEGER NOT NULL DEFAULT 0,
-                created_at        TIMESTAMPTZ DEFAULT now(),
-                updated_at        TIMESTAMPTZ DEFAULT now()
-            );
-            CREATE INDEX IF NOT EXISTS idx_arca_invoices_business ON arca_invoices(business_id);
-            CREATE INDEX IF NOT EXISTS idx_arca_invoices_status ON arca_invoices(status);
-
             -- Corralón V2: Hojas de Ruta (columnas en remitos)
             ALTER TABLE remitos ADD COLUMN IF NOT EXISTS zone VARCHAR(100);
             ALTER TABLE remitos ADD COLUMN IF NOT EXISTS sort_order INTEGER;

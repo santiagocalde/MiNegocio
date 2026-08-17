@@ -511,56 +511,6 @@ async def init_db(DB_PATH: str, logger) -> None:
         # Permisos por módulo para operadores (JSON array, NULL = acceso completo por rol)
         await add_column_if_not_exists(db, "operators", "permissions", "TEXT")
 
-        # ── Facturación Electrónica ARCA (modelo de delegación multi-cliente) ──
-        # Cache del Ticket de Acceso WSAA (uno por servicio+ambiente; sirve para
-        # todos los comercios). Persistente para no re-pedir TA y quedar bloqueados.
-        await db.execute("""
-            CREATE TABLE IF NOT EXISTS arca_tokens (
-                service         TEXT NOT NULL,
-                environment     TEXT NOT NULL,
-                token           TEXT NOT NULL,
-                sign            TEXT NOT NULL,
-                expiration_time TEXT,
-                updated_at      TEXT DEFAULT (datetime('now')),
-                UNIQUE(service, environment)
-            )
-        """)
-        # Config de ARCA por negocio: CUIT del comercio, punto de venta y si ya
-        # delegó nuestro CUIT como representante.
-        await db.execute("""
-            CREATE TABLE IF NOT EXISTS arca_config (
-                business_id       TEXT PRIMARY KEY,
-                cuit              TEXT NOT NULL DEFAULT '',
-                punto_venta       INTEGER NOT NULL DEFAULT 1,
-                condicion_iva     TEXT NOT NULL DEFAULT 'monotributo',
-                delegacion_activa INTEGER NOT NULL DEFAULT 0,
-                environment       TEXT NOT NULL DEFAULT 'testing',
-                activo            INTEGER NOT NULL DEFAULT 0,
-                created_at        TEXT DEFAULT (datetime('now'))
-            )
-        """)
-        # Comprobantes emitidos o en cola. status: pending|issued|error|rejected.
-        await db.execute("""
-            CREATE TABLE IF NOT EXISTS arca_invoices (
-                id                INTEGER PRIMARY KEY AUTOINCREMENT,
-                business_id       TEXT NOT NULL,
-                sale_id           INTEGER,
-                cuit_representado TEXT NOT NULL,
-                punto_venta       INTEGER NOT NULL,
-                tipo_cbte         INTEGER,
-                numero            INTEGER,
-                fecha             TEXT,
-                total             REAL NOT NULL DEFAULT 0,
-                cae               TEXT DEFAULT '',
-                cae_vto           TEXT DEFAULT '',
-                status            TEXT NOT NULL DEFAULT 'pending',
-                error_msg         TEXT DEFAULT '',
-                retry_count       INTEGER NOT NULL DEFAULT 0,
-                created_at        TEXT DEFAULT (datetime('now')),
-                updated_at        TEXT DEFAULT (datetime('now'))
-            )
-        """)
-
         await db.commit()
 
         # Punto 55: Creación de índices para performance

@@ -11,6 +11,3 @@ python-multipart>=0.0.7
 slowapi==0.1.9
 uvicorn==0.30.0
 asyncpg==0.30.0
-# Firma CMS/PKCS#7 del Login Ticket de WSAA (ARCA). Explícito y no transitivo:
-# la firma del certificado es crítica para la facturación electrónica.
-cryptography>=41.0
