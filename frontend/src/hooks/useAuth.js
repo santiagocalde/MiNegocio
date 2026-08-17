@@ -96,6 +96,18 @@ export default function useAuth(addToast) {
     }
   };
 
+  // Cambia el operador actual SIN tocar el turno (relevo liviano en pleno turno).
+  // Persiste en localStorage igual que el login para que sobreviva a un F5. La
+  // caja/turno no cambian: solo cambia con qué nombre se estampan las ventas.
+  const switchOperator = (op) => {
+    if (!op) return;
+    const operatorObj = op.id
+      ? { id: op.id, name: op.name || 'Operador', role: op.role || 'employee', permissions: op.permissions ?? null }
+      : { name: op.name || 'Operador', role: op.role || 'employee', permissions: null };
+    setCurrentOperator(operatorObj);
+    localStorage.setItem(K_OPERATOR, JSON.stringify(operatorObj));
+  };
+
   const handleSaaSCallback = (data) => {
     setIsSaaSAuthenticated(true);
     if (data.mode) setSaasMode(data.mode);
@@ -112,6 +124,7 @@ export default function useAuth(addToast) {
     pin, setPin,
     handlePin,
     openOwnerTurn,
+    switchOperator,
     handleSaaSCallback,
   };
 }
