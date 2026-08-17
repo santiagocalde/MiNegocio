@@ -12,7 +12,7 @@ const Icons = {
 };
 
 export default function UsuariosModule() {
-  const { backend, addToast } = usePanelContext();
+  const { backend, addToast, businessType } = usePanelContext();
   const operators = backend.operators;
   const onOperatorsUpdate = backend.setOperators;
   const usuarios = Array.isArray(operators) ? operators : [];
@@ -22,17 +22,32 @@ export default function UsuariosModule() {
   const [editIndex, setEditIndex] = useState(null);
   const [form, setForm] = useState({ name: '', pin: '', role: 'cashier' });
 
-  // Permisos por módulo — defaults por rol y estado editable
-  const ALL_MODULES = ['Mostrador','Presupuestos','Acopios','Lista de clientes','Cuentas corrientes','Notas de pedido','Depósito','Historial','Reportes','Configuración'];
+  // Permisos por módulo — defaults por rol y estado editable.
+  // Los módulos de corralón (Presupuestos, Acopios, Notas de pedido, Depósito)
+  // solo se ofrecen cuando el negocio es corralón; para kiosco/almacén/etc.
+  // no tiene sentido mostrar módulos que no existen en el sistema.
+  const isCorralon = businessType === 'corralon';
+  const ALL_MODULES = isCorralon
+    ? ['Mostrador', 'Presupuestos', 'Acopios', 'Lista de clientes', 'Cuentas corrientes', 'Notas de pedido', 'Depósito', 'Historial', 'Reportes', 'Configuración']
+    : ['Mostrador', 'Lista de clientes', 'Cuentas corrientes', 'Historial', 'Reportes', 'Configuración'];
 
-  const ROLE_DEFAULT_PERMS = {
-    cashier:  ['Mostrador','Presupuestos','Acopios','Lista de clientes','Cuentas corrientes'],
-    logistica: ['Notas de pedido'],
-    manager:  ['Mostrador','Presupuestos','Acopios','Lista de clientes','Cuentas corrientes','Notas de pedido','Depósito','Historial','Reportes'],
-    admin:    [...ALL_MODULES],
-    vendedor: ['Mostrador','Presupuestos','Acopios','Lista de clientes','Cuentas corrientes'],
-    employee: ['Mostrador'],
-  };
+  const ROLE_DEFAULT_PERMS = isCorralon
+    ? {
+        cashier:  ['Mostrador', 'Presupuestos', 'Acopios', 'Lista de clientes', 'Cuentas corrientes'],
+        logistica: ['Notas de pedido'],
+        manager:  ['Mostrador', 'Presupuestos', 'Acopios', 'Lista de clientes', 'Cuentas corrientes', 'Notas de pedido', 'Depósito', 'Historial', 'Reportes'],
+        admin:    [...ALL_MODULES],
+        vendedor: ['Mostrador', 'Presupuestos', 'Acopios', 'Lista de clientes', 'Cuentas corrientes'],
+        employee: ['Mostrador'],
+      }
+    : {
+        cashier:  ['Mostrador', 'Lista de clientes', 'Cuentas corrientes'],
+        logistica: ['Notas de pedido'],
+        manager:  ['Mostrador', 'Lista de clientes', 'Cuentas corrientes', 'Historial', 'Reportes'],
+        admin:    [...ALL_MODULES],
+        vendedor: ['Mostrador', 'Lista de clientes', 'Cuentas corrientes'],
+        employee: ['Mostrador'],
+      };
 
   const [customPerms, setCustomPerms] = useState(null); // null = usar defaults del rol
 
@@ -59,10 +74,10 @@ export default function UsuariosModule() {
   const [adminPin, setAdminPin] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState(null); // { id, name }
 
-  // Al pasar de 1 a 2 operadores vuelve a hacer falta el PIN para entrar. Como
-  // el dueño venía entrando sin PIN, hay que pedirle que defina el suyo ahora,
-  // si no quedaría afuera de su propia cuenta.
-  const isFirstEmployee = editIndex === null && usuarios.length === 1 && usuarios[0]?.role === 'admin';
+  // Al pasar de 1 a 2 operadores vuelve a hacer falta el PIN para entrar. Si el
+  // dueño YA definió su PIN (has_pin del backend), no se lo volvemos a pedir:
+  // solo se pide la primera vez, que es cuando podría quedarse afuera.
+  const isFirstEmployee = editIndex === null && usuarios.length === 1 && usuarios[0]?.role === 'admin' && !usuarios[0]?.has_pin;
 
   const openNew = () => {
     setEditIndex(null);
@@ -249,7 +264,7 @@ export default function UsuariosModule() {
               <select value={form.role} onChange={e => handleRoleChange(e.target.value)}
                 style={{ width: '100%', padding: '10px 12px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '8px', outline: 'none', fontSize: '0.95rem', boxSizing: 'border-box' }}>
                 <option value="cashier">Cajero</option>
-                <option value="logistica">Logística (solo despacho)</option>
+                {isCorralon && <option value="logistica">Logística (solo despacho)</option>}
                 <option value="manager">Encargado</option>
                 <option value="admin">Admin</option>
               </select>

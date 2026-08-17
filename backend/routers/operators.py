@@ -289,21 +289,23 @@ async def list_operators() -> list:
         pool = await get_pg_pool()
         async with pool.acquire() as conn:
             rows = await conn.fetch(
-                "SELECT id, name, role, permissions FROM operators WHERE business_id = $1 ORDER BY name",
+                "SELECT id, name, role, permissions, (pin IS NOT NULL AND pin != '') AS has_pin "
+                "FROM operators WHERE business_id = $1 ORDER BY name",
                 business_id_ctx.get(),
             )
             out = []
             for r in rows:
                 d = dict(r)
                 d["permissions"] = _parse_permissions(d.get("permissions"))
+                d["has_pin"] = bool(d.get("has_pin"))
                 out.append(d)
             return out
     else:
         async with aiosqlite.connect(main.DB_PATH) as db:
             db.row_factory = aiosqlite.Row
-            async with db.execute("SELECT id, name, role, permissions FROM operators") as cur:
+            async with db.execute("SELECT id, name, role, permissions, CASE WHEN (pin IS NOT NULL AND pin != '') THEN 1 ELSE 0 END AS has_pin FROM operators") as cur:
                 rows = await cur.fetchall()
-                return [{"id": r["id"], "name": r["name"], "role": r["role"], "permissions": _parse_permissions(r["permissions"])} for r in rows]
+                return [{"id": r["id"], "name": r["name"], "role": r["role"], "permissions": _parse_permissions(r["permissions"]), "has_pin": bool(r["has_pin"])} for r in rows]
 
 
 @router.put("/api/operators", summary="Reemplazar todos los operadores")

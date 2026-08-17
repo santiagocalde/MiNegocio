@@ -15,10 +15,10 @@ const NAV_ITEMS = [
   {
     category: 'OPERACIÓN',
     items: [
-      { label: 'Inicio', path: '/panel/inicio', icon: 'Home', roles: ['admin', 'manager', 'operator', 'vendedor'] },
-      { label: 'Punto de Venta', short: 'Vender', path: '/panel/ventas', icon: 'ShoppingCart', roles: ['admin', 'manager', 'operator', 'vendedor'] },
+      { label: 'Inicio', path: '/panel/inicio', icon: 'Home', roles: ['admin', 'manager', 'operator', 'vendedor', 'cashier'] },
+      { label: 'Punto de Venta', short: 'Vender', path: '/panel/ventas', icon: 'ShoppingCart', roles: ['admin', 'manager', 'operator', 'vendedor', 'cashier'] },
       { label: 'Compras', path: '/panel/compras', icon: 'Truck', roles: ['admin', 'manager'], minPlan: 'simple', featureKey: 'compras' },
-      { label: 'Fiados', path: '/panel/clientes', icon: 'Book', roles: ['admin', 'manager', 'operator', 'vendedor'], featureKey: 'fiados' },
+      { label: 'Fiados', path: '/panel/clientes', icon: 'Book', roles: ['admin', 'manager', 'operator', 'vendedor', 'cashier'], featureKey: 'fiados' },
     ],
   },
   {
@@ -33,7 +33,7 @@ const NAV_ITEMS = [
   {
     category: 'CLIENTES',
     items: [
-      { label: 'Lista de clientes', path: '/panel/lista-clientes', icon: 'Users', roles: ['admin', 'manager', 'operator', 'vendedor'] },
+      { label: 'Lista de clientes', path: '/panel/lista-clientes', icon: 'Users', roles: ['admin', 'manager', 'operator', 'vendedor', 'cashier'] },
     ],
   },
   {
