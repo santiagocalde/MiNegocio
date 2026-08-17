@@ -81,15 +81,17 @@ async def get_user_id(token: str) -> str:
     return str(r.json().get("id", ""))
 
 
-async def create_store(token: str, user_id: str, *, external_store_id: str, name: str) -> dict:
-    """Crea (o devuelve) una sucursal. Devuelve {id, external_id}."""
+async def create_store(token: str, user_id: str, *, external_store_id: str, name: str,
+                       state_name: str = "Buenos Aires", city_name: str = "La Plata") -> dict:
+    """Crea (o devuelve) una sucursal. Devuelve {id, external_id}.
+    MP valida provincia y ciudad contra listas cerradas: por defecto usamos
+    Buenos Aires / La Plata; se pueden pasar otros valores válidos desde la
+    config del negocio cuando la tengamos."""
     payload = {
         "name": name[:60],
         "external_id": external_store_id,
-        # location mínima: MP exige el objeto pero tolera datos genéricos para
-        # comercios sin dirección cargada. Se puede refinar con la config del negocio.
-        "location": {"street_number": "0", "street_name": name[:50], "city_name": "N/D",
-                     "state_name": "N/D", "latitude": 0, "longitude": 0, "reference": ""},
+        "location": {"street_number": "0", "street_name": name[:50], "city_name": city_name,
+                     "state_name": state_name, "latitude": -34.6, "longitude": -58.4, "reference": ""},
     }
     async with httpx.AsyncClient(timeout=TIMEOUT) as c:
         r = await c.post(f"{MP_API}/users/{user_id}/stores", json=payload,
