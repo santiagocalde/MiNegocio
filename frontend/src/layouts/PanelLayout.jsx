@@ -27,7 +27,14 @@ export default function PanelLayout() {
   const [initialCajaMonto, setInitialCajaMonto] = React.useState('');
   const [newPassword, setNewPassword] = React.useState('');
   const [confirmPassword, setConfirmPassword] = React.useState('');
+  // Apertura de caja con varios operadores: quién abre + su PIN (evita que el
+  // turno quede estampado con la persona equivocada de la sesión anterior).
+  const [cajaOperatorId, setCajaOperatorId] = React.useState('');
+  const [cajaPin, setCajaPin] = React.useState('');
+  const [cajaError, setCajaError] = React.useState('');
   const navigate = useNavigate();
+
+  const multiOperator = (backend.operators?.length || 0) > 1;
 
   // Aplicar el tema del panel apenas monta el shell (evita flash antes de que
   // el toggle del sidebar se renderice). La fuente de verdad vive en ThemeToggle.
@@ -71,10 +78,26 @@ export default function PanelLayout() {
 
   const handleCajaSubmit = async (e) => {
     e.preventDefault();
+    setCajaError('');
     try {
       const { apiPost } = await import('../services/apiClient');
+      // Con varios operadores, quien abre confirma con su PIN. El PIN es la
+      // identidad: verify-pin devuelve a quién corresponde y con ese nombre se
+      // estampa el turno (y pasa a ser el operador actual).
+      let operatorName = auth.currentOperator?.name || 'Dueño';
+      if (multiOperator) {
+        if (!/^\d{4}$/.test(cajaPin)) { setCajaError('Ingresá tu PIN (4 dígitos)'); return; }
+        const vr = await apiPost('/operators/verify-pin', { pin: cajaPin });
+        if (!vr.ok) { setCajaError('PIN incorrecto'); setCajaPin(''); return; }
+        const op = await vr.json();
+        if (cajaOperatorId && String(op.id) !== String(cajaOperatorId)) {
+          setCajaError('Ese PIN no corresponde a la persona elegida'); setCajaPin(''); return;
+        }
+        operatorName = op.name;
+        auth.switchOperator(op);
+      }
       const res = await apiPost('/turns', {
-        operator: auth.currentOperator?.name || 'Dueño',
+        operator: operatorName,
         sucursal_id: 1,
         initial_cash: parseFloat(initialCajaMonto) || 0
       });
@@ -87,6 +110,7 @@ export default function PanelLayout() {
       }
     } catch { addToast('Error al abrir la caja. Reintentá.', 'error'); return; }
     setShowInitialCaja(false);
+    setCajaPin(''); setCajaOperatorId('');
     addToast('Caja abierta. ¡A vender!', 'success');
   };
 
@@ -250,10 +274,29 @@ export default function PanelLayout() {
             </h2>
             <form onSubmit={handleCajaSubmit}>
               <p style={{ color: 'var(--lp-text-muted)', marginBottom: 32, fontSize: '0.95rem', lineHeight: 1.5 }}>Para comenzar a vender, ingresá el monto de dinero en efectivo (cambio) con el que empezás el día.</p>
-              <div style={{ textAlign: 'left', marginBottom: 32 }}>
+              {multiOperator && (
+                <>
+                  <div style={{ textAlign: 'left', marginBottom: 16 }}>
+                    <label style={{ display: 'block', color: '#fff', marginBottom: 8, fontWeight: 600 }}>¿Quién abre la caja?</label>
+                    <select value={cajaOperatorId} onChange={e => { setCajaOperatorId(e.target.value); setCajaError(''); }}
+                      style={{ width: '100%', padding: '14px 16px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, color: '#fff', fontSize: '1rem', outline: 'none' }}>
+                      <option value="">Elegí tu nombre…</option>
+                      {(backend.operators || []).map(o => <option key={o.id} value={o.id} style={{ color: '#000' }}>{o.name}</option>)}
+                    </select>
+                  </div>
+                  <div style={{ textAlign: 'left', marginBottom: 16 }}>
+                    <label style={{ display: 'block', color: '#fff', marginBottom: 8, fontWeight: 600 }}>Tu PIN</label>
+                    <input type="password" inputMode="numeric" maxLength={4} value={cajaPin}
+                      onChange={e => { setCajaPin(e.target.value.replace(/\D/g, '').slice(0, 4)); setCajaError(''); }}
+                      placeholder="••••" style={{ width: '100%', padding: '14px 16px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, color: '#fff', fontSize: '1.2rem', letterSpacing: 8, textAlign: 'center', outline: 'none', fontFamily: 'var(--lp-font-mono, monospace)' }} />
+                  </div>
+                </>
+              )}
+              <div style={{ textAlign: 'left', marginBottom: cajaError ? 12 : 32 }}>
                 <label style={{ display: 'block', color: '#fff', marginBottom: 8, fontWeight: 600 }}>Monto inicial ($)</label>
-                <input type="number" min="0" step="1" required autoFocus value={initialCajaMonto} onChange={e => setInitialCajaMonto(e.target.value)} placeholder="Ej. 15000" style={{ width: '100%', padding: '16px 20px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, color: '#fff', fontSize: '1.2rem', outline: 'none', transition: 'all 0.2s', fontFamily: 'var(--lp-font-body)' }} onFocus={e => e.target.style.borderColor = 'var(--lp-primary)'} onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'} />
+                <input type="number" min="0" step="1" required autoFocus={!multiOperator} value={initialCajaMonto} onChange={e => setInitialCajaMonto(e.target.value)} placeholder="Ej. 15000" style={{ width: '100%', padding: '16px 20px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, color: '#fff', fontSize: '1.2rem', outline: 'none', transition: 'all 0.2s', fontFamily: 'var(--lp-font-body)' }} onFocus={e => e.target.style.borderColor = 'var(--lp-primary)'} onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'} />
               </div>
+              {cajaError && <p style={{ color: '#f87171', textAlign: 'center', marginBottom: 20, fontSize: '0.85rem' }}>{cajaError}</p>}
               <button type="submit" className="lp-btn lp-btn--primary" style={{ width: '100%', padding: '16px', fontSize: '1.1rem', boxShadow: '0 0 30px rgba(15,138,125, 0.4)' }}>Abrir Caja</button>
             </form>
           </div>

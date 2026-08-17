@@ -17,6 +17,7 @@ import CancelConfirmModal from '../components/pos/CancelConfirmModal';
 import DevolucionModal from '../components/pos/DevolucionModal';
 import DuplicateCodeModal from '../components/pos/DuplicateCodeModal';
 import PriceCheckModal from '../components/pos/PriceCheckModal';
+import OperatorSwitchModal from '../components/pos/OperatorSwitchModal';
 import TicketPrint from '../components/TicketPrint';
 
 export default function VentasPage() {
@@ -42,6 +43,9 @@ export default function VentasPage() {
   const searchRef = useRef(null);
   const paymentRef = useRef(null);
   const fiadoRef = useRef(null);
+
+  // Cambio de operador en pleno turno (relevo liviano, sin cerrar caja)
+  const [showOperatorSwitch, setShowOperatorSwitch] = useState(false);
 
   // Pedido de envío desde mostrador — con split por ítem retira/envío
   const [showShipModal, setShowShipModal] = useState(false);
@@ -160,7 +164,9 @@ export default function VentasPage() {
   return (
     <>
       <TopBar currentOperator={auth.currentOperator} sucursales={backend.sucursales}
-        currentSucursalId={currentSucursalId} setCurrentSucursalId={setCurrentSucursalId} />
+        currentSucursalId={currentSucursalId} setCurrentSucursalId={setCurrentSucursalId}
+        canSwitchOperator={(backend.operators?.length || 0) > 1}
+        onSwitchOperator={() => setShowOperatorSwitch(true)} />
 
       <div style={{ padding: isMobile ? '8px 16px' : '16px 24px', width: '100%', height: isMobile ? 'calc(100dvh - 60px)' : 'calc(100% - 72px)', display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '8px' : '16px', alignItems: isMobile ? 'stretch' : 'flex-start', boxSizing: 'border-box', overflowY: isMobile ? 'auto' : undefined }}>
         <div style={{ flex: isMobile ? '0 0 auto' : '2', display: 'flex', flexDirection: 'column', gap: isMobile ? '8px' : '16px', minHeight: 0, height: isMobile ? 'auto' : '100%', maxHeight: isMobile ? '55vh' : undefined }}>
@@ -281,6 +287,18 @@ export default function VentasPage() {
           change={sales.lastSale.change} operator={auth.currentOperator?.name} ticketNumber={sales.ticketNumber}
           config={backend.businessConfig} isClosingShift={false} tipoFactura={sales.lastSale.tipoFactura} afip={sales.lastSale.afip} paymentMethod={sales.lastSale.paymentMethod || cart.paymentMethod} />,
         document.body
+      )}
+
+      {showOperatorSwitch && (
+        <OperatorSwitchModal
+          operators={backend.operators || []}
+          onClose={() => setShowOperatorSwitch(false)}
+          onConfirm={(op) => {
+            auth.switchOperator(op);
+            setShowOperatorSwitch(false);
+            addToast(`Ahora atiende ${op.name}. La caja sigue abierta.`, 'success');
+          }}
+        />
       )}
 
       {/* F7: Modal pedido de envío */}

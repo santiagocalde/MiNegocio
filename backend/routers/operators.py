@@ -229,6 +229,57 @@ async def login_owner(request: Request) -> dict:
         return {**_base_op(row), **t}
 
 
+# ── Verificar PIN sin abrir turno ─────────────────────────────
+
+@router.post("/api/operators/verify-pin", summary="Validar PIN de un operador sin abrir turno")
+@limiter.limit("10/minute")
+async def verify_pin(request: Request, data: dict) -> dict:
+    """Valida el PIN de un operador y devuelve sus datos, SIN tocar el turno.
+
+    Se usa para elegir/cambiar de operador (apertura de caja con selector,
+    cambio de operador en pleno turno). A diferencia de /api/login NO abre ni
+    recupera turno: solo identifica a la persona. Misma lógica de match que el
+    login (bcrypt + upgrade de PIN legacy en el acto) para no divergir.
+    """
+    pin = str(data.get("pin", ""))
+    if not pin.isdigit() or len(pin) != 4:
+        raise HTTPException(status_code=400, detail="El PIN debe tener exactamente 4 digitos numericos")
+
+    if USE_PG:
+        from db_helpers import get_pg_pool
+        pool = await get_pg_pool()
+        async with pool.acquire() as conn:
+            b_id = business_id_ctx.get()
+            rows = await conn.fetch("SELECT id, name, pin, role, permissions FROM operators WHERE business_id = $1", b_id)
+            for row in rows:
+                stored = row["pin"] or ""
+                if stored.startswith("$2b$"):
+                    if bcrypt.checkpw(pin.encode(), stored.encode()):
+                        return _base_op(row)
+                elif hmac.compare_digest(pin, stored):
+                    new_hash = bcrypt.hashpw(pin.encode(), bcrypt.gensalt()).decode()
+                    await conn.execute("UPDATE operators SET pin = $1 WHERE id = $2", new_hash, row["id"])
+                    return _base_op(row)
+        raise HTTPException(status_code=401, detail="PIN incorrecto")
+    else:
+        async with aiosqlite.connect(main.DB_PATH) as db:
+            db.row_factory = aiosqlite.Row
+            async with db.execute("SELECT id, name, pin, role, permissions FROM operators") as cur:
+                rows = await cur.fetchall()
+        for row in rows:
+            stored = row["pin"] or ""
+            if stored.startswith("$2b$"):
+                if bcrypt.checkpw(pin.encode(), stored.encode()):
+                    return _base_op(row)
+            elif hmac.compare_digest(pin, stored):
+                new_hash = bcrypt.hashpw(pin.encode(), bcrypt.gensalt()).decode()
+                async with aiosqlite.connect(main.DB_PATH) as db2:
+                    await db2.execute("UPDATE operators SET pin = ? WHERE id = ?", (new_hash, row["id"]))
+                    await db2.commit()
+                return _base_op(row)
+        raise HTTPException(status_code=401, detail="PIN incorrecto")
+
+
 # ── CRUD Operadores ───────────────────────────────────────────
 
 @router.get("/api/operators", summary="Listar operadores")
