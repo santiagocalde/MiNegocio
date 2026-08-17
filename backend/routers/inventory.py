@@ -14,6 +14,18 @@ def _biz_id():
     return main.business_id_ctx.get() if hasattr(main, 'business_id_ctx') else None
 
 
+async def _open_turn_pg(conn, b_id):
+    """Turno abierto actual del negocio (o None)."""
+    return await conn.fetchval(
+        "SELECT id FROM turns WHERE closed_at IS NULL AND business_id = $1 ORDER BY id DESC LIMIT 1", b_id)
+
+
+async def _open_turn_sqlite(db):
+    cur = await db.execute("SELECT id FROM turns WHERE closed_at IS NULL ORDER BY id DESC LIMIT 1")
+    row = await cur.fetchone()
+    return row[0] if row else None
+
+
 def _pin_matches(pin: str, stored: str) -> bool:
     """Compara un PIN contra el hash guardado (bcrypt), con fallback constant-time
     para PINs legacy en texto plano."""
@@ -28,7 +40,14 @@ def _pin_matches(pin: str, stored: str) -> bool:
 
 async def _require_supervisor_pin_pg(conn, pin: Optional[str], b_id) -> None:
     """Exige el PIN de un operador admin/manager del negocio. Lanza 403 si falta
-    o no corresponde a ningún supervisor. Obligatorio para anular ventas."""
+    o no corresponde a ningún supervisor. Obligatorio para anular ventas.
+
+    Excepción: si el negocio tiene un solo operador (dueño único), no hay
+    separación de roles que proteger — el único usuario ES el supervisor —, así
+    que no se pide PIN (evita fricción innecesaria)."""
+    total = await conn.fetchval("SELECT COUNT(*) FROM operators WHERE business_id = $1", b_id)
+    if (total or 0) <= 1:
+        return
     pin = str(pin or "").strip()
     if not pin:
         raise HTTPException(403, detail="Se requiere el PIN de un administrador para anular")
@@ -41,6 +60,11 @@ async def _require_supervisor_pin_pg(conn, pin: Optional[str], b_id) -> None:
 
 
 async def _require_supervisor_pin_sqlite(db, pin: Optional[str]) -> None:
+    # Un solo operador (dueño único): sin separación de roles, no se pide PIN.
+    cur0 = await db.execute("SELECT COUNT(*) FROM operators")
+    total = (await cur0.fetchone())[0]
+    if (total or 0) <= 1:
+        return
     pin = str(pin or "").strip()
     if not pin:
         raise HTTPException(403, detail="Se requiere el PIN de un administrador para anular")
@@ -78,31 +102,15 @@ async def list_fiados() -> list:
         pool = await get_pg_pool()
         async with pool.acquire() as conn:
             rows = await conn.fetch(
-                "SELECT * FROM sales WHERE business_id = $1 AND is_fiado = 1 AND cobrado = 0 ORDER BY timestamp DESC",
+                "SELECT * FROM sales WHERE business_id = $1 AND is_fiado = 1 AND cobrado = 0 AND reverted = 0 ORDER BY timestamp DESC",
                 b_id
             )
             return [dict(r) for r in rows]
     else:
         async with aiosqlite.connect(main.DB_PATH) as db:
-            cur = await db.execute("SELECT * FROM sales WHERE is_fiado = 1 AND cobrado = 0 ORDER BY timestamp DESC")
+            cur = await db.execute("SELECT * FROM sales WHERE is_fiado = 1 AND cobrado = 0 AND reverted = 0 ORDER BY timestamp DESC")
             rows = await cur.fetchall()
             return [row_to_dict(r, cur.description) for r in rows]
-
-
-@router.post("/api/sales/{sale_id}/cobrar-fiado", summary="Marcar fiado como cobrado")
-async def cobrar_fiado(sale_id: int) -> dict:
-    if USE_PG:
-        b_id = _biz_id()
-        from db_helpers import get_pg_pool
-        pool = await get_pg_pool()
-        async with pool.acquire() as conn:
-            await conn.execute("UPDATE sales SET cobrado = 1 WHERE id = $1 AND business_id = $2", sale_id, b_id)
-            return {"success": True}
-    else:
-        async with aiosqlite.connect(main.DB_PATH) as db:
-            await db.execute("UPDATE sales SET cobrado = 1 WHERE id = ?", (sale_id,))
-            await db.commit()
-            return {"success": True}
 
 
 @router.post("/api/sales/{sale_id}/revert-item", summary="Revertir item de venta")
@@ -118,7 +126,7 @@ async def revert_sale_item(sale_id: int, body: dict) -> dict:
             await _require_supervisor_pin_pg(conn, body.get("supervisor_pin") or body.get("operator_pin"), b_id)
 
             async with conn.transaction():
-                sale = await conn.fetchrow("SELECT id, reverted FROM sales WHERE id = $1 AND business_id = $2", sale_id, b_id)
+                sale = await conn.fetchrow("SELECT id, reverted, payment_method, is_fiado, turn_id FROM sales WHERE id = $1 AND business_id = $2", sale_id, b_id)
                 if not sale: raise HTTPException(404, detail="Venta no encontrada")
                 if sale["reverted"] == 1: raise HTTPException(400, detail="Venta ya anulada")
 
@@ -135,6 +143,23 @@ async def revert_sale_item(sale_id: int, body: dict) -> dict:
                     b_id, body.get("product_id"), qty, f"Devolucion parcial Venta #{sale_id}", body.get("operator", "Sistema"),
                     f"revert-{sale_id}-{body.get('product_id')}"
                 )
+
+                # Devolución en efectivo: la plata sale del cajón, se registra como egreso
+                # del turno abierto actual para que el arqueo no marque faltante falso.
+                if sale["payment_method"] == 'efectivo' and not sale["is_fiado"]:
+                    price_row = await conn.fetchrow(
+                        "SELECT unit_price FROM sale_items WHERE sale_id = $1 AND product_id = $2",
+                        sale_id, body.get("product_id")
+                    )
+                    if price_row:
+                        refund_cash = round(float(price_row["unit_price"] or 0) * qty, 2)
+                        if refund_cash > 0:
+                            open_turn = await _open_turn_pg(conn, b_id)
+                            if open_turn:
+                                await conn.execute(
+                                    "INSERT INTO egresos_caja (business_id, turn_id, monto, motivo, type, operator) VALUES ($1,$2,$3,$4,'gasto',$5)",
+                                    b_id, open_turn, refund_cash, f"Devolucion parcial Venta #{sale_id}", body.get("operator", "Sistema")
+                                )
 
                 fiado = await conn.fetchrow("SELECT is_fiado, fiado_name FROM sales WHERE id = $1", sale_id)
                 if fiado and fiado["is_fiado"] == 1 and fiado["fiado_name"]:
@@ -157,7 +182,7 @@ async def revert_sale_item(sale_id: int, body: dict) -> dict:
             async with aiosqlite.connect(main.DB_PATH) as db:
                 await _require_supervisor_pin_sqlite(db, body.get("supervisor_pin") or body.get("operator_pin"))
                 await db.execute("BEGIN IMMEDIATE")
-                cur = await db.execute("SELECT id, reverted FROM sales WHERE id = ?", (sale_id,))
+                cur = await db.execute("SELECT id, reverted, payment_method, is_fiado, turn_id FROM sales WHERE id = ?", (sale_id,))
                 sale = await cur.fetchone()
                 if not sale: raise HTTPException(404, detail="Venta no encontrada")
                 if sale[1] == 1: raise HTTPException(400, detail="Venta ya anulada")
@@ -170,6 +195,21 @@ async def revert_sale_item(sale_id: int, body: dict) -> dict:
                     "INSERT INTO stock_movements (product_id, movement_type, quantity, reason, operator) VALUES (?,?,?,?,?)",
                     (body.get("product_id"), "devolucion", qty, f"Devolucion parcial Venta #{sale_id}", body.get("operator", "Sistema"))
                 )
+                # Devolución en efectivo: la plata sale del cajón, se registra como egreso
+                # del turno abierto actual para que el arqueo no marque faltante falso.
+                if sale[2] == 'efectivo' and not sale[3]:
+                    cur_px = await db.execute(
+                        "SELECT unit_price FROM sale_items WHERE sale_id = ? AND product_id = ?", (sale_id, body.get("product_id")))
+                    p_row = await cur_px.fetchone()
+                    if p_row:
+                        refund_cash = round(float(p_row[0] or 0) * qty, 2)
+                        if refund_cash > 0:
+                            open_turn = await _open_turn_sqlite(db)
+                            if open_turn:
+                                await db.execute(
+                                    "INSERT INTO egresos_caja (turn_id, monto, motivo, type, operator) VALUES (?,?,?,'gasto',?)",
+                                    (open_turn, refund_cash, f"Devolucion parcial Venta #{sale_id}", body.get("operator", "Sistema"))
+                                )
                 await db.commit()
             return {"success": True}
 
@@ -193,6 +233,24 @@ async def revert_sale(sale_id: int, body: dict = Body(default={}), operator: str
                 for it in items:
                     await conn.execute("UPDATE products SET stock = stock + $1 WHERE id = $2", it["quantity"], it["product_id"])
                 await conn.execute("UPDATE sales SET reverted = 1 WHERE id = $1", sale_id)
+                # Si era un fiado, la deuda del cliente se cancela (nunca se cobró).
+                if sale["is_fiado"] == 1 and sale["fiado_name"]:
+                    fiado_debt = round(float(sale["total"] or 0) - float(sale["payment"] or 0), 2)
+                    if fiado_debt > 0:
+                        await conn.execute(
+                            "UPDATE customers SET balance = GREATEST(0, balance - $1) WHERE business_id = $2 AND name = $3",
+                            fiado_debt, b_id, sale["fiado_name"]
+                        )
+                # Anulación de una venta en efectivo de OTRO turno (ya cerrado): la plata
+                # sale del cajón actual y se registra como egreso del turno abierto.
+                # Si es del turno actual, el filtro reverted=0 del cierre ya la descuenta.
+                if sale["payment_method"] == 'efectivo' and not sale["is_fiado"]:
+                    open_turn = await _open_turn_pg(conn, b_id)
+                    if open_turn and open_turn != sale["turn_id"]:
+                        await conn.execute(
+                            "INSERT INTO egresos_caja (business_id, turn_id, monto, motivo, type, operator) VALUES ($1,$2,$3,$4,'gasto',$5)",
+                            b_id, open_turn, round(float(sale["total"] or 0), 2), f"Anulacion Venta #{sale_id}", body.get("operator", "Sistema")
+                        )
             return {"success": True}
     else:
         async with main.db_write_lock:
@@ -204,8 +262,25 @@ async def revert_sale(sale_id: int, body: dict = Body(default={}), operator: str
                 if not s: raise HTTPException(404, detail="Venta no encontrada")
                 items = await db.execute("SELECT * FROM sale_items WHERE sale_id = ?", (sale_id,))
                 for it in await items.fetchall():
-                    await db.execute("UPDATE products SET stock = stock + ? WHERE id = ?", (it[4], it[3]))
+                    # columnas sale_items (SQLite): 3=product_id, 5=quantity
+                    await db.execute("UPDATE products SET stock = stock + ? WHERE id = ?", (it[5], it[3]))
                 await db.execute("UPDATE sales SET reverted = 1 WHERE id = ?", (sale_id,))
+                # Si era un fiado, la deuda del cliente se cancela (nunca se cobró).
+                s_dict = row_to_dict(s, sale.description)
+                if s_dict.get("is_fiado") and s_dict.get("fiado_name"):
+                    fiado_debt = round(float(s_dict.get("total") or 0) - float(s_dict.get("payment") or 0), 2)
+                    if fiado_debt > 0:
+                        await db.execute(
+                            "UPDATE customers SET balance = MAX(0, balance - ?) WHERE name = ?",
+                            (fiado_debt, s_dict.get("fiado_name"))
+                        )
+                if s_dict.get("payment_method") == 'efectivo' and not s_dict.get("is_fiado"):
+                    open_turn = await _open_turn_sqlite(db)
+                    if open_turn and open_turn != s_dict.get("turn_id"):
+                        await db.execute(
+                            "INSERT INTO egresos_caja (turn_id, monto, motivo, type, operator) VALUES (?,?,?,'gasto',?)",
+                            (open_turn, round(float(s_dict.get("total") or 0), 2), f"Anulacion Venta #{sale_id}", body.get("operator", "Sistema"))
+                        )
                 await db.commit()
             return {"success": True}
 
@@ -224,9 +299,20 @@ async def create_egreso(body: dict = Body(...)) -> dict:
             turn_id = body.get("turn_id")
             try: turn_id = int(turn_id) if turn_id is not None else None
             except (ValueError, TypeError): turn_id = None
+            try:
+                monto_f = float(monto)
+            except (TypeError, ValueError):
+                raise HTTPException(400, detail="Monto inválido")
+            if not (0 < monto_f <= 9_999_999):
+                raise HTTPException(400, detail="El monto debe estar entre 0 y 9.999.999")
+            if turn_id is not None:
+                own = await conn.fetchval(
+                    "SELECT 1 FROM turns WHERE id = $1 AND business_id = $2", turn_id, b_id)
+                if not own:
+                    raise HTTPException(400, detail="El turno indicado no pertenece a este negocio")
             await conn.execute(
                 "INSERT INTO egresos_caja (business_id, turn_id, monto, motivo, type, operator) VALUES ($1,$2,$3,$4,$5,$6)",
-                b_id, turn_id, monto, motivo, tipo, operador
+                b_id, turn_id, monto_f, motivo, tipo, operador
             )
             await conn.execute(
                 "INSERT INTO audit_log (business_id, action, operator, details) VALUES ($1,$2,$3,$4)",
@@ -243,9 +329,19 @@ async def create_egreso(body: dict = Body(...)) -> dict:
             turn_id = body.get("turn_id")
             try: turn_id = int(turn_id) if turn_id is not None else None
             except (ValueError, TypeError): turn_id = None
+            try:
+                monto_f = float(monto)
+            except (TypeError, ValueError):
+                raise HTTPException(400, detail="Monto inválido")
+            if not (0 < monto_f <= 9_999_999):
+                raise HTTPException(400, detail="El monto debe estar entre 0 y 9.999.999")
+            if turn_id is not None:
+                cur_t = await db.execute("SELECT 1 FROM turns WHERE id = ?", (turn_id,))
+                if not await cur_t.fetchone():
+                    raise HTTPException(400, detail="El turno indicado no existe")
             await db.execute(
                 "INSERT INTO egresos_caja (turn_id, monto, motivo, type, operator) VALUES (?,?,?,?,?)",
-                (turn_id, monto, motivo, tipo, operador)
+                (turn_id, monto_f, motivo, tipo, operador)
             )
             await db.execute(
                 "INSERT INTO audit_log (action, operator, details) VALUES (?,?,?)",

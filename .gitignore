@@ -36,6 +36,13 @@ __pycache__/
 .env.*
 !.env.example
 
+# Material criptográfico (certificados/claves) — NUNCA commitear
+backend/secrets/
+*.key
+*.crt
+*.csr
+*.pem
+
 # Entornos Virtuales y Docker
 venv/
 .venv/

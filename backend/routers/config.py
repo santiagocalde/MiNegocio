@@ -130,6 +130,8 @@ async def update_config(request: Request, data: dict) -> dict:
             data["catalogo_slug"] = re.sub(r"[^a-z0-9-]", "", str(data["catalogo_slug"]).strip().lower())[:60]
         if "catalogo_activo" in data:
             data["catalogo_activo"] = 1 if data["catalogo_activo"] in (True, 1, "1", "true", "True") else 0
+        if "mp_auto_confirm" in data:
+            data["mp_auto_confirm"] = 1 if data["mp_auto_confirm"] in (True, 1, "1", "true", "True") else 0
         # Tema del catálogo: solo 5 paletas fijas (whitelist), nunca CSS arbitrario.
         if "catalogo_tema" in data:
             tema = str(data["catalogo_tema"]).strip().lower()
@@ -139,10 +141,10 @@ async def update_config(request: Request, data: dict) -> dict:
 
         COLS = ["nombre", "subtitulo", "direccion", "telefono", "cuit", "condicion_iva",
                 "numero_caja", "mensaje_ticket", "iva_rate", "mp_access_token", "mp_collector_id",
-                "catalogo_activo", "catalogo_slug", "catalogo_whatsapp", "catalogo_tema",
+                "mp_qr_url", "mp_auto_confirm", "catalogo_activo", "catalogo_slug", "catalogo_whatsapp", "catalogo_tema",
                 "instagram", "propietario", "ing_brutos", "inicio_actividades", "logo_url",
                 "price_list_a_name", "price_list_b_name", "price_list_c_name",
-                "price_list_d_name", "price_list_e_name"]
+                "price_list_d_name", "price_list_e_name", "margen_estimado"]
         pool = await get_pg_pool()
         async with pool.acquire() as conn:
             b_id = _biz_id()
@@ -193,9 +195,9 @@ async def update_config(request: Request, data: dict) -> dict:
         # lo no enviado se conserva), igual que la rama Postgres de arriba.
         COLS = ["nombre", "subtitulo", "direccion", "telefono", "cuit", "condicion_iva",
                 "numero_caja", "mensaje_ticket", "iva_rate", "mp_access_token", "mp_collector_id",
-                "instagram", "propietario", "ing_brutos", "inicio_actividades", "logo_url",
+                "mp_qr_url", "mp_auto_confirm", "instagram", "propietario", "ing_brutos", "inicio_actividades", "logo_url",
                 "price_list_a_name", "price_list_b_name", "price_list_c_name",
-                "price_list_d_name", "price_list_e_name"]
+                "price_list_d_name", "price_list_e_name", "margen_estimado"]
         async with aiosqlite.connect(main.DB_PATH) as db:
             # business_config key-value: upsert no destructivo. mp_access_token ya
             # fue removido de data arriba si llegó vacío, así se conserva el guardado.
@@ -292,14 +294,14 @@ import pathlib, uuid, os
 
 LOGO_DIR = pathlib.Path(__file__).parent.parent / "static" / "logos"
 LOGO_DIR.mkdir(parents=True, exist_ok=True)
-ALLOWED_EXTS = {".png", ".jpg", ".jpeg", ".webp", ".svg"}
+ALLOWED_EXTS = {".png", ".jpg", ".jpeg", ".webp"}
 MAX_SIZE = 2 * 1024 * 1024  # 2 MB
 
 @router.post("/api/config/logo", summary="Subir logo del negocio")
 async def upload_logo(file: UploadFile = File(...)) -> dict:
     ext = pathlib.Path(file.filename or "logo.png").suffix.lower()
     if ext not in ALLOWED_EXTS:
-        raise HTTPException(400, "Formato no soportado. Usá PNG, JPG, WEBP o SVG.")
+        raise HTTPException(400, "Formato no soportado. Usá PNG, JPG o WEBP.")
     data = await file.read()
     if len(data) > MAX_SIZE:
         raise HTTPException(400, "El archivo excede el límite de 2 MB.")

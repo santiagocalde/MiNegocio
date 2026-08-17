@@ -44,8 +44,9 @@ export default function useAuth(addToast) {
         localStorage.setItem(K_OPERATOR, JSON.stringify(operatorObj));
         localStorage.setItem(K_TURN_ID, String(data.turn_id || ''));
         localStorage.removeItem('minegocio_onboarding_pin');
-        if (data.turn_auto_opened) {
-          localStorage.setItem('minegocio_onboarding_pending', 'true');
+        if (data.initial_cash != null) setInitialCash(Number(data.initial_cash) || 0);
+        if (data.turn_auto_opened && (data.suggested_initial_cash || 0) > 0) {
+          addToast(`Caja abierta con $${Number(data.suggested_initial_cash).toLocaleString('es-AR')} (igual al arqueo de ayer). Si arrancás con otro monto, editá "Caja inicial" en el panel.`, 'info', 7000);
         }
         setIsAuthenticated(true);
       } else {
@@ -58,12 +59,16 @@ export default function useAuth(addToast) {
   };
 
   // Abre turno sin PIN para cuentas de un solo operador (el dueño). El backend
-  // autoriza por el JWT de la cuenta y responde 409 si hay más de un operador
-  // (ahí sí hace falta el PIN). Devuelve true si abrió turno, false si no.
+  // autoriza por el JWT de la cuenta y responde:
+  //   409 → hay más de un operador (ahí sí hace falta el PIN)
+  //   401 → la sesión SaaS no es válida (hay que volver al login, nunca PIN)
+  // Devuelve 'ok' | 'multi' | 'auth' | 'error'.
   const openOwnerTurn = async () => {
     try {
       const res = await apiPost(`/login/owner`);
-      if (!res.ok) return false;
+      if (res.status === 409) return 'multi';
+      if (res.status === 401) return 'auth';
+      if (!res.ok) return 'error';
       const data = await res.json();
       const operatorObj = data.operator_id
         ? { id: data.operator_id, name: data.name || data.operator_name || 'Dueño', role: data.role || 'admin', permissions: data.permissions ?? null }
@@ -80,13 +85,14 @@ export default function useAuth(addToast) {
       localStorage.setItem(K_OPERATOR, JSON.stringify(operatorObj));
       localStorage.setItem(K_TURN_ID, String(data.turn_id || ''));
       localStorage.removeItem('minegocio_onboarding_pin');
-      if (data.turn_auto_opened) {
-        localStorage.setItem('minegocio_onboarding_pending', 'true');
+      if (data.initial_cash != null) setInitialCash(Number(data.initial_cash) || 0);
+      if (data.turn_auto_opened && (data.suggested_initial_cash || 0) > 0) {
+        addToast(`Caja abierta con $${Number(data.suggested_initial_cash).toLocaleString('es-AR')} (igual al arqueo de ayer). Si arrancás con otro monto, editá "Caja inicial" en el panel.`, 'info', 7000);
       }
       setIsAuthenticated(true);
-      return true;
+      return 'ok';
     } catch {
-      return false;
+      return 'error';
     }
   };
 

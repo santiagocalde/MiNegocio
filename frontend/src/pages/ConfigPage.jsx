@@ -7,23 +7,28 @@ import useIsMobile from '../hooks/useIsMobile';
 import { API_BASE } from '../config';
 
 const FIELDS = [
-  { key: 'nombre',              label: 'Nombre del negocio',          placeholder: 'Kiosco Don Julio' },
-  { key: 'subtitulo',           label: 'Subtítulo / Slogan',          placeholder: 'Atención 7 días de la semana' },
-  { key: 'direccion',           label: 'Dirección',                   placeholder: 'Av. Corrientes 1234, CABA' },
-  { key: 'telefono',            label: 'Teléfono / WhatsApp',         placeholder: '1123063167' },
-  { key: 'instagram',           label: 'Instagram',                   placeholder: '@tunegocio' },
-  { key: 'propietario',         label: 'Propietario / Responsable',   placeholder: 'De López Juan Manuel' },
-  { key: 'cuit',                label: 'CUIT / CUIL',                 placeholder: '20-12345678-9' },
-  { key: 'ing_brutos',          label: 'Ing. Brutos (Nº)',            placeholder: '(902)-20-18423262-7' },
-  { key: 'inicio_actividades',  label: 'Inicio de Actividades',       placeholder: '01/07/2025' },
-  { key: 'condicion_iva',       label: 'Condición IVA',               placeholder: 'Monotributista', options: ['Monotributista', 'Responsable Inscripto', 'Exento', 'Consumidor Final'] },
-  { key: 'numero_caja',         label: 'Nombre de la caja',           placeholder: 'CAJA 1' },
-  { key: 'logo_url',            label: 'Logo del negocio',            placeholder: 'https://ejemplo.com/logo.png', isLogo: true },
-  { key: 'mensaje_ticket',      label: 'Mensaje final del ticket',    placeholder: '¡Gracias por su compra!' },
-  { key: 'iva_rate',            label: 'IVA % por defecto',           placeholder: '21', options: ['21', '10.5', '27', '0'] },
-  { key: 'mp_access_token',     label: 'Access Token de Mercado Pago', placeholder: 'APP_USR-...', type: 'password' },
-  { key: 'mp_collector_id',     label: 'Alias / ID de Cobro de Mercado Pago', placeholder: 'TuAliasMP o ID de caja', type: 'password' },
+  { key: 'nombre',              label: 'Nombre del negocio',          placeholder: 'Kiosco Don Julio', section: 'Negocio' },
+  { key: 'subtitulo',           label: 'Subtítulo / Slogan',          placeholder: 'Atención 7 días de la semana', section: 'Negocio' },
+  { key: 'direccion',           label: 'Dirección',                   placeholder: 'Av. Corrientes 1234, CABA', section: 'Negocio' },
+  { key: 'telefono',            label: 'Teléfono / WhatsApp',         placeholder: '1123063167', section: 'Negocio' },
+  { key: 'instagram',           label: 'Instagram',                   placeholder: '@tunegocio', section: 'Negocio' },
+  { key: 'propietario',         label: 'Propietario / Responsable',   placeholder: 'De López Juan Manuel', section: 'Negocio' },
+  { key: 'numero_caja',         label: 'Nombre de la caja',           placeholder: 'CAJA 1', section: 'Negocio' },
+  { key: 'logo_url',            label: 'Logo del negocio',            placeholder: 'https://ejemplo.com/logo.png', isLogo: true, section: 'Negocio' },
+  { key: 'cuit',                label: 'CUIT / CUIL',                 placeholder: '20-12345678-9', section: 'Fiscal' },
+  { key: 'ing_brutos',          label: 'Ing. Brutos (Nº)',            placeholder: '(902)-20-18423262-7', section: 'Fiscal' },
+  { key: 'inicio_actividades',  label: 'Inicio de Actividades',       placeholder: '01/07/2025', section: 'Fiscal' },
+  { key: 'condicion_iva',       label: 'Condición IVA',               placeholder: 'Monotributista', options: ['Monotributista', 'Responsable Inscripto', 'Exento', 'Consumidor Final'], section: 'Fiscal' },
+  { key: 'iva_rate',            label: 'IVA % por defecto',           placeholder: '21', options: ['21', '10.5', '27', '0'], section: 'Fiscal' },
+  { key: 'mp_access_token',     label: 'Access Token de Mercado Pago', placeholder: 'APP_USR-...', type: 'password', section: 'Medios de Pago' },
+  { key: 'mp_collector_id',     label: 'Alias / ID de Cobro de Mercado Pago', placeholder: 'TuAliasMP o ID de caja', type: 'password', section: 'Medios de Pago' },
+  { key: 'mp_qr_url',           label: 'QR de Mercado Pago (cobro en el mostrador)', isMpQr: true, section: 'Medios de Pago' },
+  { key: 'mp_auto_confirm',     label: 'Auto-confirmación de pagos con QR', isMpAuto: true, section: 'Medios de Pago' },
+  { key: 'mensaje_ticket',      label: 'Mensaje final del ticket',    placeholder: '¡Gracias por su compra!', section: 'Ticket' },
+  { key: 'margen_estimado',     label: 'Margen de ganancia estimado (%)', placeholder: '35', section: 'Análisis' },
 ];
+
+const SECTIONS = ['Negocio', 'Fiscal', 'Medios de Pago', 'Ticket', 'Análisis'];
 
 const inputStyle = {
   width: '100%', background: 'var(--bg-main)', border: '1px solid var(--border-color)',
@@ -122,6 +127,120 @@ export default function ConfigPage() {
     setSaving(false);
   };
 
+  const renderField = (f) => (
+    <div key={f.key}>
+      <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px' }}>
+        {f.label}
+      </label>
+      {f.isLogo ? (
+        <div>
+          <input ref={logoInputRef} type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" style={{ display: 'none' }} onChange={handleLogoUpload} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            {config.logo_url && (
+              <div style={{ width: 72, height: 72, border: '1px solid var(--border-color)', borderRadius: 8, overflow: 'hidden', background: 'var(--bg-card)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <img src={config.logo_url} alt="Logo" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+              </div>
+            )}
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <button
+                type="button"
+                onClick={() => logoInputRef.current?.click()}
+                disabled={uploadingLogo}
+                style={{ ...inputStyle, cursor: 'pointer', background: 'var(--bg-card)', border: '1px dashed var(--border-color)', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.9rem', padding: '10px 16px' }}
+              >
+                {uploadingLogo ? 'Subiendo...' : config.logo_url ? '🖼️ Cambiar logo' : '📁 Subir logo (PNG, JPG, WebP)'}
+              </button>
+              <input
+                type="text"
+                value={config.logo_url || ''}
+                placeholder="O pegá una URL: https://ejemplo.com/logo.png"
+                onChange={e => setConfig(prev => ({ ...prev, logo_url: e.target.value }))}
+                style={{ ...inputStyle, fontSize: '0.8rem', padding: '8px 12px', color: 'var(--text-secondary)' }}
+              />
+            </div>
+          </div>
+        </div>
+      ) : f.isMpQr ? (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          {config.mp_qr_url && (
+            <div style={{ width: 72, height: 72, border: '1px solid var(--border-color)', borderRadius: 8, overflow: 'hidden', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <img src={config.mp_qr_url} alt="QR MP" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+            </div>
+          )}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              style={{ ...inputStyle, padding: '8px', fontSize: '0.85rem', cursor: 'pointer' }}
+              onChange={e => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                if (file.size > 500 * 1024) { addToast('La imagen es muy grande (máx 500KB).', 'error'); return; }
+                const reader = new FileReader();
+                reader.onload = () => setConfig(prev => ({ ...prev, mp_qr_url: reader.result }));
+                reader.readAsDataURL(file);
+              }}
+            />
+            <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: 0 }}>
+              Subí tu "Mi QR" de Mercado Pago. El cliente lo escanea en el mostrador y paga. El pago lo confirmás vos, como con efectivo.
+              {config.mp_qr_url && <button type="button" onClick={() => setConfig(prev => ({ ...prev, mp_qr_url: '' }))} style={{ marginLeft: 8, background: 'none', border: 'none', color: 'var(--accent-danger)', cursor: 'pointer', fontSize: '0.75rem' }}>Quitar</button>}
+            </p>
+            <p style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', margin: '2px 0 0' }}>
+              ¿Querés que se confirme solo y aparezca "pago recibido"? Activá la auto-confirmación acá abajo (necesita tu Access Token de arriba).
+            </p>
+          </div>
+        </div>
+      ) : f.isMpAuto ? (
+        <div>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
+            <input type="checkbox"
+              checked={[1, '1', true, 'true'].includes(config.mp_auto_confirm)}
+              onChange={e => setConfig(prev => ({ ...prev, mp_auto_confirm: e.target.checked ? 1 : 0 }))}
+              style={{ width: 20, height: 20, accentColor: 'var(--accent-primary)', cursor: 'pointer' }} />
+            <span style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: '0.95rem' }}>Confirmar los pagos con QR automáticamente</span>
+          </label>
+          <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: '6px 0 0 32px' }}>
+            Cuando el cliente paga, la notebook muestra "PAGO RECIBIDO" y cierra la venta sola. Necesita tu Access Token de Mercado Pago (cargado arriba).
+          </p>
+        </div>
+      ) : f.options ? (
+        <select
+          value={config[f.key] || ''}
+          onChange={e => setConfig(prev => ({ ...prev, [f.key]: e.target.value }))}
+          style={{ ...inputStyle, cursor: 'pointer', transition: 'all 0.15s' }}
+        >
+          {f.options.map(o => <option key={o} value={o}>{o}</option>)}
+        </select>
+      ) : (
+        <div style={{ position: 'relative' }}>
+          <input
+            type={f.type === 'password' ? (showMpToken ? 'text' : 'password') : 'text'}
+            value={config[f.key] || ''}
+            placeholder={f.key === 'mp_access_token' && config.mp_access_token_set
+              ? '•••••••• ya configurado (dejá vacío para no cambiarlo)'
+              : f.placeholder}
+            onChange={e => setConfig(prev => ({ ...prev, [f.key]: e.target.value }))}
+            style={inputStyle}
+          />
+          {f.type === 'password' && (
+            <span onClick={() => setShowMpToken(!showMpToken)} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: '0.8rem', userSelect: 'none' }}>
+              {showMpToken ? 'Ocultar' : 'Mostrar'}
+            </span>
+          )}
+        </div>
+      )}
+    </div>
+  );
+
+  const sectionCard = (title, children) => (
+    <div key={title} style={{ background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '12px', overflow: 'hidden' }}>
+      <div style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--accent-primary)', textTransform: 'uppercase', letterSpacing: '1px', padding: '12px 16px', background: 'var(--bg-card)', borderBottom: '1px solid var(--border-color)' }}>{title}</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '16px' }}>
+        {children}
+      </div>
+    </div>
+  );
+
   return (
     <div style={{ padding: isMobile ? '10px 12px' : '12px 20px', width: '100%', height: '100%', overflowY: 'auto', boxSizing: 'border-box' }}>
       <div className="ledger-sheet" style={{ maxWidth: '800px', margin: '0 auto', padding: isMobile ? '16px 14px' : '28px', boxShadow: 'var(--shadow-md)', boxSizing: 'border-box' }}>
@@ -135,67 +254,7 @@ export default function ConfigPage() {
           <div style={{ textAlign: 'center', padding: '32px', color: 'var(--text-secondary)' }}>Cargando...</div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {FIELDS.map(f => (
-              <div key={f.key}>
-                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px' }}>
-                  {f.label}
-                </label>
-                {f.isLogo ? (
-                  <div>
-                    <input ref={logoInputRef} type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" style={{ display: 'none' }} onChange={handleLogoUpload} />
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      {config.logo_url && (
-                        <div style={{ width: 72, height: 72, border: '1px solid var(--border-color)', borderRadius: 8, overflow: 'hidden', background: 'var(--bg-card)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                          <img src={config.logo_url} alt="Logo" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
-                        </div>
-                      )}
-                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                        <button
-                          type="button"
-                          onClick={() => logoInputRef.current?.click()}
-                          disabled={uploadingLogo}
-                          style={{ ...inputStyle, cursor: 'pointer', background: 'var(--bg-card)', border: '1px dashed var(--border-color)', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.9rem', padding: '10px 16px' }}
-                        >
-                          {uploadingLogo ? 'Subiendo...' : config.logo_url ? '🖼️ Cambiar logo' : '📁 Subir logo (PNG, JPG, WebP)'}
-                        </button>
-                        <input
-                          type="text"
-                          value={config.logo_url || ''}
-                          placeholder="O pegá una URL: https://ejemplo.com/logo.png"
-                          onChange={e => setConfig(prev => ({ ...prev, logo_url: e.target.value }))}
-                          style={{ ...inputStyle, fontSize: '0.8rem', padding: '8px 12px', color: 'var(--text-secondary)' }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ) : f.options ? (
-                  <select
-                    value={config[f.key] || ''}
-                    onChange={e => setConfig(prev => ({ ...prev, [f.key]: e.target.value }))}
-                    style={{ ...inputStyle, cursor: 'pointer', transition: 'all 0.15s' }}
-                  >
-                    {f.options.map(o => <option key={o} value={o}>{o}</option>)}
-                  </select>
-                ) : (
-                  <div style={{ position: 'relative' }}>
-                    <input
-                      type={f.type === 'password' ? (showMpToken ? 'text' : 'password') : 'text'}
-                      value={config[f.key] || ''}
-                      placeholder={f.key === 'mp_access_token' && config.mp_access_token_set
-                        ? '•••••••• ya configurado (dejá vacío para no cambiarlo)'
-                        : f.placeholder}
-                      onChange={e => setConfig(prev => ({ ...prev, [f.key]: e.target.value }))}
-                      style={inputStyle}
-                    />
-                    {f.type === 'password' && (
-                      <span onClick={() => setShowMpToken(!showMpToken)} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: '0.8rem', userSelect: 'none' }}>
-                        {showMpToken ? 'Ocultar' : 'Mostrar'}
-                      </span>
-                    )}
-                  </div>
-                )}
-              </div>
-            ))}
+            {SECTIONS.map(s => sectionCard(s, FIELDS.filter(f => f.section === s).map(renderField)))}
 
             <div style={{ background: 'var(--bg-main)', border: '1px dashed var(--border-color)', borderRadius: '8px', padding: '16px', marginTop: '8px' }}>
               <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '1px' }}>

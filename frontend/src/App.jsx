@@ -28,6 +28,7 @@ const ProveedoresModule = lazy(() => import('./features/ProveedoresModule'));
 const EtiquetasModule = lazy(() => import('./features/EtiquetasModule'));
 const CatalogoModule = lazy(() => import('./features/CatalogoModule'));
 const ReportsModule = lazy(() => import('./features/ReportsModule'));
+const CajasModule = lazy(() => import('./features/CajasModule'));
 const PromotionModule = lazy(() => import('./features/PromotionModule'));
 const RecomendacionesModule = lazy(() => import('./features/RecomendacionesModule'));
 const UsuariosModule = lazy(() => import('./features/UsuariosModule'));
@@ -140,6 +141,7 @@ function App() {
           <Route path="etiquetas" element={<PanelSuspense><EtiquetasModule /></PanelSuspense>} />
           <Route path="catalogo-web" element={<PanelSuspense><CatalogoModule /></PanelSuspense>} />
           <Route path="reportes" element={<PanelSuspense><ReportsModule /></PanelSuspense>} />
+          <Route path="cajas" element={<RoleGuard adminOnly><PanelSuspense><CajasModule /></PanelSuspense></RoleGuard>} />
           <Route path="promociones" element={<PanelSuspense><PromotionModule /></PanelSuspense>} />
           <Route path="recomendaciones" element={<PanelSuspense><RecomendacionesModule /></PanelSuspense>} />
           <Route path="usuarios" element={<RoleGuard adminOnly><PanelSuspense><UsuariosModule /></PanelSuspense></RoleGuard>} />

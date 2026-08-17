@@ -1,5 +1,6 @@
 
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Icons } from '../ui/Icons';
 import ProductThumb from '../ui/ProductThumb';
 import { formatMoney } from '../../utils/format';
@@ -13,7 +14,7 @@ const stockTone = (stock, min) => {
   return { bg: 'var(--wash-success)', bd: 'var(--border-color)', fg: 'var(--accent-success)' };
 };
 
-export default function CartPanel({ cart, total, adjustedTotal, updateQty, setItemQty, removeItem, listType, setListType, businessType, canEditPrice, setItemPrice }) {
+export default function CartPanel({ cart, total, adjustedTotal, updateQty, setItemQty, removeItem, listType, setListType, canEditPrice, setItemPrice, setItemList, priceLists }) {
   const isMobile = useIsMobile();
   const displayTotal = adjustedTotal ?? total;
 
@@ -24,6 +25,24 @@ export default function CartPanel({ cart, total, adjustedTotal, updateQty, setIt
   // Descuento porcentual por ítem
   const [editingDiscountId, setEditingDiscountId] = useState(null);
   const [editingDiscountVal, setEditingDiscountVal] = useState('');
+
+  // Ítem con el menú de listas de precio abierto (3 puntitos)
+  const [listMenuFor, setListMenuFor] = useState(null);
+
+  // Listas de precio disponibles para un ítem (solo las que tienen valor cargado).
+  const availableLists = (item) => {
+    const defs = [
+      { v: 'a', key: 'price_a', label: priceLists?.[0]?.label || 'Lista A — Minorista' },
+      { v: 'b', key: 'price_b', label: priceLists?.[1]?.label || 'Lista B — Mayorista' },
+      { v: 'c', key: 'price_c', label: priceLists?.[2]?.label || 'Lista C' },
+      { v: 'd', key: 'price_d', label: priceLists?.[3]?.label || 'Lista D' },
+      { v: 'e', key: 'price_e', label: priceLists?.[4]?.label || 'Lista E' },
+    ];
+    return defs.filter(l => {
+      const val = item[l.key];
+      return val !== undefined && val !== null && val !== '' && !isNaN(parseFloat(val));
+    }).map(l => ({ ...l, value: parseFloat(item[l.key]) }));
+  };
 
   const confirmPrice = (id) => {
     const v = parseFloat(editingPriceVal);
@@ -119,6 +138,45 @@ export default function CartPanel({ cart, total, adjustedTotal, updateQty, setIt
                       >
                         {formatMoney(item.price)}
                       </span>
+                    )}
+
+                    {/* 3 puntitos: elegir lista de precio del producto (solo si hay más de una lista cargada) */}
+                    {availableLists(item).length > 1 && (
+                      <button
+                        onClick={() => setListMenuFor(listMenuFor === item.id ? null : item.id)}
+                        title="Cambiar lista de precio"
+                        aria-label="Cambiar lista de precio"
+                        style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1rem', fontWeight: 700, letterSpacing: '1px', lineHeight: 1, padding: '0 2px', opacity: listMenuFor === item.id ? 1 : 0.65, borderRadius: '4px' }}
+                        onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-hover)'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                      >⋮</button>
+                    )}
+
+                    {listMenuFor === item.id && createPortal(
+                      <div style={{ position: 'fixed', inset: 0, zIndex: 1100 }} onClick={() => setListMenuFor(null)}>
+                        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)' }} />
+                        <div onClick={e => e.stopPropagation()} style={{ position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 1, background: 'var(--bg-card)', borderTopLeftRadius: '16px', borderTopRightRadius: '16px', padding: '6px 12px 18px', boxShadow: '0 -4px 24px rgba(0,0,0,0.4)', maxHeight: '80vh', overflowY: 'auto' }}>
+                          <div style={{ textAlign: 'center', padding: '10px 0', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)' }}>{item.name} — Lista de precios</div>
+                          {availableLists(item).map((l, i) => (
+                            <button
+                              key={l.v}
+                              onClick={() => { setListMenuFor(null); setItemList && setItemList(item.id, l.v, l.value); }}
+                              style={{
+                                display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', textAlign: 'left',
+                                background: item.listType === l.v ? 'var(--wash-primary, rgba(20,187,166,0.1))' : 'transparent',
+                                border: 'none', borderTop: i > 0 ? '1px solid var(--border-color)' : 'none',
+                                color: item.listType === l.v ? 'var(--accent-primary)' : 'var(--text-primary)',
+                                padding: '14px 8px', fontSize: '1rem', fontWeight: 600, cursor: 'pointer', borderRadius: '6px',
+                              }}
+                            >
+                              <span>{l.label}{item.listType === l.v ? ' ✓' : ''}</span>
+                              <span style={{ fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>{formatMoney(l.value)}</span>
+                            </button>
+                          ))}
+                          <button onClick={() => setListMenuFor(null)} style={{ display: 'block', width: '100%', textAlign: 'center', background: 'var(--bg-hover)', border: 'none', borderRadius: '8px', color: 'var(--text-secondary)', padding: '12px', fontSize: '0.95rem', fontWeight: 700, cursor: 'pointer', marginTop: '8px' }}>Cancelar</button>
+                        </div>
+                      </div>,
+                      document.body
                     )}
 
                     {/* Botón / input de descuento % */}

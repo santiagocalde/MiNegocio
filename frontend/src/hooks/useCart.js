@@ -85,10 +85,34 @@ export default function useCart(productsDB, ivaRate, playBeep) {
     const canonicalCode = product?.code || code;
     if (!product && !extra) { addLockRef.current = false; return; }
     setCart(prev => {
-      const ex = prev.find(item => item.code === canonicalCode);
-      if (ex) return prev.map(item => item.code === canonicalCode ? { ...item, qty: item.qty + 1 } : item);
+      // Merge por ID de variante cuando existe (dos variantes pueden compartir código).
+      const ex = extra?.id
+        ? prev.find(item => item.id === extra.id)
+        : prev.find(item => item.code === canonicalCode);
+      if (ex) return prev.map(item => item.id === ex.id ? { ...item, qty: item.qty + 1 } : item);
       const itemId = product?.id || (extra?.id || canonicalCode);
-      return [...prev, { id: itemId, code: canonicalCode, name, price, stock: product?.stock || 0, qty: 1, ...extra }];
+      const src = product || extra || {};
+      const item = {
+        id: itemId, code: canonicalCode, name, price,
+        stock: product?.stock || 0, qty: 1,
+        price_a: src.price != null ? src.price : price,
+        price_b: src.price_b,
+        price_c: src.price_c,
+        price_d: src.price_d,
+        price_e: src.price_e,
+        ...extra,
+      };
+      // Inferir la lista activa comparando el precio final contra las listas cargadas
+      // (el precio puede venir de la lista global A/B/C, de balanza o de un manual).
+      const finalPrice = Math.round(parseFloat(item.price) || 0);
+      const listKeys = { a: 'price_a', b: 'price_b', c: 'price_c', d: 'price_d', e: 'price_e' };
+      let appliedList = 'a';
+      for (const k of ['a', 'b', 'c', 'd', 'e']) {
+        const v = item[listKeys[k]];
+        if (v !== undefined && v !== null && v !== '' && Math.round(parseFloat(v)) === finalPrice) { appliedList = k; break; }
+      }
+      item.listType = appliedList;
+      return [...prev, item];
     });
     setTimeout(() => { addLockRef.current = false; }, 300);
     if (playBeep) playBeep();
@@ -114,6 +138,11 @@ export default function useCart(productsDB, ivaRate, playBeep) {
 
   const setItemPrice = useCallback((id, newPrice) => {
     setCart(prev => prev.map(item => item.id === id ? { ...item, price: Math.round(newPrice) } : item));
+  }, []);
+
+  // Cambia el precio de un ítem al valor de una lista de precios (A/B/C/D/E)
+  const setItemList = useCallback((id, listType, newPrice) => {
+    setCart(prev => prev.map(item => item.id === id ? { ...item, listType, price: Math.round(newPrice) } : item));
   }, []);
 
   const removeItem = useCallback((id) => {
@@ -157,7 +186,8 @@ export default function useCart(productsDB, ivaRate, playBeep) {
   const { rawTotal, total, subtotal, iva, discount } = totals;
   const sanitizedAdjusted = adjustedTotal != null && !isNaN(adjustedTotal) && adjustedTotal >= 0 ? adjustedTotal : null;
   const effectiveTotal = sanitizedAdjusted ?? total;
-  const change = (payment != null && payment !== '') ? Math.max(0, parseFloat(payment) - effectiveTotal) : 0;
+  // El vuelto puede ser negativo: así el modal de cobro bloquea "pago incompleto".
+  const change = (payment != null && payment !== '') ? parseFloat(payment) - effectiveTotal : 0;
 
   return {
     cart, setCart,
@@ -186,6 +216,7 @@ export default function useCart(productsDB, ivaRate, playBeep) {
     updateQty,
     setItemQty,
     setItemPrice,
+    setItemList,
     removeItem,
     clearCart,
     lastSaleItems,

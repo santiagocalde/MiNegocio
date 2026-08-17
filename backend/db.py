@@ -266,6 +266,8 @@ async def init_pg() -> None:
                 sucursal_id     INTEGER DEFAULT 1
             );
             CREATE INDEX IF NOT EXISTS idx_turns_business_id ON turns(business_id);
+            -- Un solo turno abierto por negocio (evita dobles aperturas en race de logins).
+            CREATE UNIQUE INDEX IF NOT EXISTS uq_turns_open ON turns(business_id) WHERE closed_at IS NULL;
 
             CREATE TABLE IF NOT EXISTS sales (
                 id              SERIAL PRIMARY KEY,
@@ -298,6 +300,17 @@ async def init_pg() -> None:
             -- Autovacuum más agresivo: 'sales' sufre churn (rollbacks/idempotencia) y
             -- los índices se hinchan si el vacuum no corre seguido.
             ALTER TABLE sales SET (autovacuum_vacuum_scale_factor=0.05, autovacuum_analyze_scale_factor=0.02);
+
+            -- Detalle de pagos mixtos (efectivo + tarjeta/transferencia) para que el
+            -- arqueo del cierre de caja pueda sumar la porción en efectivo.
+            CREATE TABLE IF NOT EXISTS sale_payments (
+                id         SERIAL PRIMARY KEY,
+                sale_id    INTEGER NOT NULL REFERENCES sales(id) ON DELETE CASCADE,
+                method     TEXT NOT NULL,
+                amount     NUMERIC(12,2) NOT NULL DEFAULT 0,
+                created_at TIMESTAMPTZ DEFAULT now()
+            );
+            CREATE INDEX IF NOT EXISTS idx_sale_payments_sale ON sale_payments(sale_id);
 
             CREATE TABLE IF NOT EXISTS sale_items (
                 id              SERIAL PRIMARY KEY,
@@ -689,6 +702,41 @@ async def init_pg() -> None:
             ALTER TABLE business_config ADD COLUMN IF NOT EXISTS price_list_c_name TEXT DEFAULT 'Lista C';
             ALTER TABLE business_config ADD COLUMN IF NOT EXISTS price_list_d_name TEXT DEFAULT 'Lista D';
             ALTER TABLE business_config ADD COLUMN IF NOT EXISTS price_list_e_name TEXT DEFAULT 'Lista E';
+
+            -- Margen de ganancia estimado (%) para reportes (default 35)
+            ALTER TABLE business_config ADD COLUMN IF NOT EXISTS margen_estimado TEXT DEFAULT '35';
+            -- Auto-confirmación de pagos con QR de Mercado Pago (función avanzada).
+            ALTER TABLE business_config ADD COLUMN IF NOT EXISTS mp_auto_confirm INTEGER DEFAULT 0;
+            -- QR de cobro de Mercado Pago del comercio (imagen "Mi QR", data URL).
+            ALTER TABLE business_config ADD COLUMN IF NOT EXISTS mp_qr_url TEXT DEFAULT '';
+
+            -- Resincronizar secuencias de las tablas con ids seriales: cargas
+            -- masivas con ids explícitos (p.ej. simulaciones o migraciones)
+            -- dejan la secuencia atrás y el próximo INSERT choca con un id
+            -- existente (UniqueViolation). Al arrancar, siempre las ponemos al
+            -- menos al max(id). Es idempotente y barato.
+            DO $$
+            DECLARE t RECORD;
+            BEGIN
+              FOR t IN
+                SELECT c.relname AS tbl
+                FROM pg_catalog.pg_class c
+                JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+                WHERE c.relkind = 'r' AND n.nspname = 'public'
+              LOOP
+                BEGIN
+                  EXECUTE format(
+                    'SELECT setval(pg_get_serial_sequence(''%I'', ''id''), '
+                    'GREATEST((SELECT max(id) FROM %I), '
+                    'COALESCE((SELECT last_value FROM pg_get_serial_sequence(''%I'', ''id'')), 0)))',
+                    t.tbl, t.tbl, t.tbl
+                  );
+                EXCEPTION WHEN OTHERS THEN
+                  NULL;
+                END;
+              END LOOP;
+            END
+            $$;
 
             -- Presupuestos v2: descuento global y forma de pago
             ALTER TABLE quotes ADD COLUMN IF NOT EXISTS discount_pct NUMERIC(5,2) DEFAULT 0;

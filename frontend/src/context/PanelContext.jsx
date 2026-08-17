@@ -91,28 +91,48 @@ export function PanelProvider({ children }) {
   }, []);
 
   // Decidir el gate de apertura de turno: si la cuenta tiene un solo operador
-  // (el dueño) se abre sin PIN; con dos o más se mantiene el PIN (atribución +
+  // (el dueño) se abre sin PIN; con dos o más se pide PIN (atribución +
   // anti-robo). Se re-chequea cada vez que se vuelve a la pantalla de apertura
   // (p. ej. tras un cierre de caja) para que el conteo esté siempre al día.
+  // Regla dura: NUNCA caer en la pantalla de PIN si la cuenta tiene un solo
+  // operador. Si la sesión SaaS está vencida (401), se vuelve al login.
   useEffect(() => {
     if (!auth.isSaaSAuthenticated || auth.isAuthenticated) return;
     let cancelled = false;
-    apiGet('/operators')
-      .then(r => r.ok ? r.json() : null)
-      .then(async (list) => {
-        if (cancelled) return;
-        if (!Array.isArray(list) || list.length <= 1) {
-          const ok = await auth.openOwnerTurn();
-          if (!cancelled && !ok) setOwnerGate('owner');
-        } else {
-          setOwnerGate('pin');
-        }
-      })
-      .catch(async () => {
-        if (cancelled) return;
-        const ok = await auth.openOwnerTurn();
-        if (!cancelled && !ok) setOwnerGate('owner');
-      });
+
+    const forceLogin = () => {
+      localStorage.removeItem('saas_token');
+      localStorage.removeItem('saas_refresh_token');
+      localStorage.removeItem('saas_mode');
+      window.location.href = '/';
+    };
+
+    const resolveGate = async () => {
+      // Recién se cerró un turno: no auto-abrir la caja, mostrar el botón
+      // "Abrir Caja" para que quede claro que el turno anterior ya se cerró.
+      if (localStorage.getItem('minegocio_just_closed') === '1') {
+        localStorage.removeItem('minegocio_just_closed');
+        setOwnerGate('owner');
+        return;
+      }
+      let list = null;
+      try {
+        const r = await apiGet('/operators');
+        if (r.status === 401) { forceLogin(); return; }
+        if (r.ok) list = await r.json();
+      } catch { list = null; }
+
+      // Solo se pide PIN cuando hay más de un operador (dueño + cajero/empleado).
+      if (Array.isArray(list) && list.length > 1) { setOwnerGate('pin'); return; }
+
+      const st = await auth.openOwnerTurn();
+      if (cancelled) return;
+      if (st === 'multi') { setOwnerGate('pin'); return; }
+      if (st === 'auth') { forceLogin(); return; }
+      setOwnerGate('owner');
+    };
+
+    resolveGate();
     return () => { cancelled = true; };
   }, [auth.isSaaSAuthenticated, auth.isAuthenticated]);
 
@@ -203,7 +223,19 @@ export function PanelProvider({ children }) {
             <div className="brand-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 80, height: 80, marginBottom: 24 }}><Icons.Store /></div>
             <h1 style={{ fontSize: '2rem', marginBottom: '8px' }}>{businessName}</h1>
             <p style={{ color: 'var(--text-secondary)', marginBottom: '24px' }}>Abrí la caja para empezar a vender</p>
-            <button onClick={async () => { setOpeningTurn(true); const ok = await auth.openOwnerTurn(); if (!ok) { setOpeningTurn(false); setOwnerGate('pin'); } }} disabled={openingTurn} style={{ background: 'var(--gradient-primary)', border: 'none', color: 'white', padding: '16px 56px', borderRadius: 12, fontSize: '1.1rem', fontWeight: 700, cursor: openingTurn ? 'default' : 'pointer', opacity: openingTurn ? 0.6 : 1 }}>
+            <button onClick={async () => {
+              setOpeningTurn(true);
+              const st = await auth.openOwnerTurn();
+              if (st === 'multi') { setOpeningTurn(false); setOwnerGate('pin'); }
+              else if (st === 'auth') {
+                localStorage.removeItem('saas_token');
+                localStorage.removeItem('saas_refresh_token');
+                localStorage.removeItem('saas_mode');
+                window.location.href = '/';
+              } else {
+                setOpeningTurn(false);
+              }
+            }} disabled={openingTurn} style={{ background: 'var(--gradient-primary)', border: 'none', color: 'white', padding: '16px 56px', borderRadius: 12, fontSize: '1.1rem', fontWeight: 700, cursor: openingTurn ? 'default' : 'pointer', opacity: openingTurn ? 0.6 : 1 }}>
               {openingTurn ? 'Abriendo...' : 'Abrir Caja'}
             </button>
           </div>

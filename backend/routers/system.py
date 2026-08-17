@@ -219,54 +219,6 @@ async def get_logs(request: Request, limit: int = 50) -> dict:
 # ────────────────────────────────────────────────────────────
 # MERCADO PAGO
 # ────────────────────────────────────────────────────────────
-@router.post("/api/mercadopago/create-payment", summary="Crear pago MP")
-async def mercadopago_create_payment(data: dict = Body(...)) -> dict:
-    monto = data.get("total", 0)
-    descripcion = data.get("description", "Venta en kiosco")
-    access_token = os.getenv("MP_ACCESS_TOKEN", "")
-    if not access_token:
-        raise HTTPException(400, detail="Mercado Pago no configurado")
-    collector_id = os.getenv("MP_COLLECTOR_ID", "")
-    headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
-    ext_ref = f"minegocio_{int(datetime.now().timestamp())}"
-    intent_id = str(uuid.uuid4())
-    async with httpx.AsyncClient(timeout=10.0) as client:
-        try:
-            resp = await client.post("https://api.mercadopago.com/checkout/preferences", json={
-                "items": [{"title": descripcion, "quantity": 1, "unit_price": float(monto), "currency_id": "ARS"}],
-                "external_reference": ext_ref, "auto_return": "approved",
-            }, headers=headers, timeout=10)
-            if resp.status_code in (200, 201):
-                r = resp.json()
-                return {"success": True, "mode": "checkout_link", "payment_url": r.get("init_point", ""), "payment_id": str(r.get("id", "")), "intent_id": intent_id}
-            if resp.status_code == 429:
-                raise HTTPException(429, detail="Demasiadas solicitudes a Mercado Pago. Reintenta en unos segundos.")
-            raise HTTPException(500, detail=f"Error de Mercado Pago: {resp.status_code}")
-        except httpx.HTTPStatusError as e:
-            raise HTTPException(500, detail=f"Error de Mercado Pago: {e.response.status_code}")
-
-
-@router.get("/api/mercadopago/payment-status/{intent_id}", summary="Estado de pago MP")
-async def mercadopago_payment_status(intent_id: str) -> dict:
-    access_token = os.getenv("MP_ACCESS_TOKEN", "")
-    if not access_token:
-        return {"status": "pending", "intent_id": intent_id, "detail": "MP no configurado"}
-    try:
-        async with httpx.AsyncClient() as client:
-            resp = await client.get(
-                f"https://api.mercadopago.com/v1/payments/{intent_id}",
-                headers={"Authorization": f"Bearer {access_token}"}
-            )
-            if resp.status_code == 200:
-                data = resp.json()
-                return {"status": data.get("status", "pending"), "intent_id": intent_id, "detail": data.get("status_detail", "")}
-            if resp.status_code == 404:
-                return {"status": "not_found", "intent_id": intent_id}
-            return {"status": "pending", "intent_id": intent_id}
-    except Exception:
-        return {"status": "pending", "intent_id": intent_id, "detail": "error consultando MP"}
-
-
 # ────────────────────────────────────────────────────────────
 # CONTACTO
 # ────────────────────────────────────────────────────────────

@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { apiGet, apiPost } from '../services/apiClient';
 
-export default function useSales(cart, effectiveTotal, payment, paymentMethod, useSplitPayment, splitPayments, clientCuit, emitirFactura, tipoFactura, vueltoEnCuenta, clienteVuelto, adjustedTotal, currentTurnId, currentOperator, setCart, clearCart, setPayment, setPaymentMethod, setUseSplitPayment, setSplitPayments, setClientCuit, setAdjustedTotal, setEditingTotal, setItemDiscounts, setDiscountInputActive, setVueltoEnCuenta, setClienteVuelto, setEmitirFactura, setTipoFactura, mpPaymentStatus, addToast) {
+export default function useSales(cart, effectiveTotal, payment, paymentMethod, useSplitPayment, splitPayments, clientCuit, emitirFactura, tipoFactura, vueltoEnCuenta, clienteVuelto, adjustedTotal, currentTurnId, currentOperator, setCart, clearCart, setPayment, setPaymentMethod, setUseSplitPayment, setSplitPayments, setClientCuit, setAdjustedTotal, setEditingTotal, setItemDiscounts, setDiscountInputActive, setVueltoEnCuenta, setClienteVuelto, setEmitirFactura, setTipoFactura, addToast) {
   const [isCharging, setIsCharging] = useState(false);
   const [lastSale, setLastSale] = useState(null);
   const [lastSaleId, setLastSaleId] = useState(null);
@@ -157,6 +157,8 @@ export default function useSales(cart, effectiveTotal, payment, paymentMethod, u
       is_fiado: true,
       fiado_name: fiadoName.trim(),
       payment_method: paymentAmount > 0 ? 'split' : 'fiado',
+      // La parte pagada en efectivo viaja en payments para que el arqueo la cuente.
+      payments: paymentAmount > 0 ? [{ method: 'efectivo', amount: paymentAmount }] : [],
       client_cuit: '',
       items: cart.map(i => ({
         product_id: typeof i.id === 'number' ? i.id : null,

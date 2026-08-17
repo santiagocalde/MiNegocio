@@ -2,28 +2,36 @@ import { useState } from 'react';
 import ConfirmModal from '../ui/ConfirmModal';
 import SupervisorPinModal from './SupervisorPinModal';
 
-export default function DevolucionModal({ showDevolucionItems, setShowDevolucionItems, lastSale, lastSaleId, devolucionQtys, setDevolucionQtys, handleDevolucionItem, handleDevolucion }) {
+export default function DevolucionModal({ showDevolucionItems, setShowDevolucionItems, lastSale, lastSaleId, devolucionQtys, setDevolucionQtys, handleDevolucionItem, handleDevolucion, singleUser = false }) {
   const [showVoidConfirm, setShowVoidConfirm] = useState(false);
   // Acción pendiente de autorización por PIN: { type: 'item', item } | { type: 'void' }
   const [pendingAction, setPendingAction] = useState(null);
   if (!showDevolucionItems || !lastSale?.cart) return null;
 
-  const onPinConfirm = async (pin) => {
-    if (!pendingAction) return false;
-    if (pendingAction.type === 'item') {
-      const ok = await handleDevolucionItem(pendingAction.item.id, pendingAction.item.name, lastSaleId, devolucionQtys, pin);
-      if (ok) {
-        setDevolucionQtys(prev => ({ ...prev, [pendingAction.item.id]: '' }));
-        setPendingAction(null);
-      }
+  // Ejecuta la devolución/anulación. El PIN puede ir vacío: el backend no lo
+  // exige si el negocio tiene un solo usuario (no hay supervisor que autorizar).
+  const runAction = async (action, pin) => {
+    if (action.type === 'item') {
+      const ok = await handleDevolucionItem(action.item.id, action.item.name, lastSaleId, devolucionQtys, pin);
+      if (ok) setDevolucionQtys(prev => ({ ...prev, [action.item.id]: '' }));
       return ok;
     }
-    // type === 'void'
     const ok = await handleDevolucion(lastSaleId, pin);
-    if (ok) {
-      setPendingAction(null);
-      setShowDevolucionItems(false);
-    }
+    if (ok) setShowDevolucionItems(false);
+    return ok;
+  };
+
+  // Con un solo usuario se ejecuta directo (sin pedir PIN). Con 2+ usuarios se
+  // pide el PIN de un admin/encargado para autorizar.
+  const requestAction = (action) => {
+    if (singleUser) runAction(action, '');
+    else setPendingAction(action);
+  };
+
+  const onPinConfirm = async (pin) => {
+    if (!pendingAction) return false;
+    const ok = await runAction(pendingAction, pin);
+    if (ok) setPendingAction(null);
     return ok;
   };
 
@@ -43,7 +51,7 @@ export default function DevolucionModal({ showDevolucionItems, setShowDevolucion
                   <input type="number" min="0" max={item.qty} step="0.01" style={{ width: '60px', padding: '6px', background: 'var(--bg-main)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '6px', textAlign: 'center', fontSize: '0.9rem' }}
                     value={devolucionQtys[item.id] || ''}
                     onChange={e => setDevolucionQtys(prev => ({ ...prev, [item.id]: e.target.value }))} placeholder="0" />
-                  <button onClick={() => setPendingAction({ type: 'item', item })}
+                  <button onClick={() => requestAction({ type: 'item', item })}
                     disabled={!devolucionQtys[item.id] || parseFloat(devolucionQtys[item.id]) <= 0}
                     style={{ background: 'var(--accent-danger)', border: 'none', color: 'white', padding: '6px 12px', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', opacity: (!devolucionQtys[item.id] || parseFloat(devolucionQtys[item.id]) <= 0) ? 0.5 : 1 }}>Devolver</button>
                 </div>
@@ -59,7 +67,7 @@ export default function DevolucionModal({ showDevolucionItems, setShowDevolucion
       <ConfirmModal
         isOpen={showVoidConfirm}
         onClose={() => setShowVoidConfirm(false)}
-        onConfirm={() => { setShowVoidConfirm(false); setPendingAction({ type: 'void' }); }}
+        onConfirm={() => { setShowVoidConfirm(false); requestAction({ type: 'void' }); }}
         title="¿Anular venta completa?"
         message="Se revertirá toda la venta seleccionada y los productos volverán al inventario. Esta acción no se puede deshacer."
         confirmLabel="Sí, anular todo"

@@ -5,7 +5,7 @@ import useCart from '../hooks/useCart';
 import useSales from '../hooks/useSales';
 import usePromotions from '../hooks/usePromotions';
 import { usePanelContext } from '../context/PanelContext';
-import { apiGet, apiPost } from '../services/apiClient';
+import { apiPost } from '../services/apiClient';
 import ClientePicker from '../components/corralon/ClientePicker';
 import TopBar from '../components/pos/TopBar';
 import SearchBar from '../components/pos/SearchBar';
@@ -25,6 +25,16 @@ export default function VentasPage() {
   const ivaRate = backend.businessConfig?.iva_rate ?? 0;
   const cart = useCart(backend.productsDB, ivaRate, playBeep);
   const promos = usePromotions(cart.cart);
+
+  // Nombres configurables de las listas de precio (A/B/C/D/E) para el selector por ítem
+  const cfg = backend.businessConfig || {};
+  const priceLists = [
+    { v: 'a', label: cfg.price_list_a_name || 'Lista A — Minorista' },
+    { v: 'b', label: cfg.price_list_b_name || 'Lista B — Mayorista' },
+    { v: 'c', label: cfg.price_list_c_name || 'Lista C' },
+    { v: 'd', label: cfg.price_list_d_name || 'Lista D' },
+    { v: 'e', label: cfg.price_list_e_name || 'Lista E' },
+  ];
 
   useEffect(() => { cart.setPromotionSavings(promos.promotionSavings); // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [promos.promotionSavings]);
@@ -124,7 +134,7 @@ export default function VentasPage() {
     cart.setAdjustedTotal, cart.setEditingTotal, cart.setItemDiscounts,
     cart.setDiscountInputActive, cart.setVueltoEnCuenta, cart.setClienteVuelto,
     cart.setEmitirFactura, cart.setTipoFactura,
-    backend.mpPaymentStatus, addToast
+    addToast
   );
 
   useEffect(() => {
@@ -147,19 +157,6 @@ export default function VentasPage() {
     }
   }, [sales.lastSale, cart.autoPrint]);
 
-  useEffect(() => {
-    if (!backend.mpIntentId || backend.mpPaymentStatus === 'approved') return;
-    const checkStatus = async () => {
-      try {
-        const res = await apiGet(`/mercadopago/payment-status/${backend.mpIntentId}`);
-        if (res.ok) { const data = await res.json(); if (data.status === 'approved') backend.setMpPaymentStatus('approved'); }
-      } catch (e) { console.error(e) }
-    };
-    const interval = setInterval(checkStatus, 3000);
-    return () => clearInterval(interval);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [backend.mpIntentId, backend.mpPaymentStatus]);
-
   return (
     <>
       <TopBar currentOperator={auth.currentOperator} sucursales={backend.sucursales}
@@ -179,8 +176,10 @@ export default function VentasPage() {
           <CartPanel cart={cart.cart} total={cart.total} adjustedTotal={cart.adjustedTotal}
             updateQty={cart.updateQty} setItemQty={cart.setItemQty} removeItem={cart.removeItem}
             setItemPrice={cart.setItemPrice}
+            setItemList={cart.setItemList}
+            priceLists={priceLists}
             canEditPrice={true}
-            listType={cart.listType} setListType={cart.setListType} businessType={businessType} />
+            listType={cart.listType} setListType={cart.setListType} />
           </div>
         </div>
         <div data-tour="payment-panel" style={{ flex: 1, minHeight: 0, overflowY: "auto", width: isMobile ? '100%' : undefined }}>
@@ -221,11 +220,7 @@ export default function VentasPage() {
           setIsCancelConfirm={cart.setIsCancelConfirm} searchRef={searchRef}
           autoPrint={cart.autoPrint} setAutoPrint={cart.setAutoPrint}
           saleConfirm={sales.saleConfirm}
-          mpQrData={backend.mpQrData} setMpQrData={backend.setMpQrData}
-          mpPaymentUrl={backend.mpPaymentUrl} setMpPaymentUrl={backend.setMpPaymentUrl}
-          mpLoading={backend.mpLoading} setMpLoading={backend.setMpLoading}
-          mpPaymentStatus={backend.mpPaymentStatus} setMpPaymentStatus={backend.setMpPaymentStatus}
-          setMpIntentId={backend.setMpIntentId} handleQuickAdd={cart.handleQuickAdd}
+          handleQuickAdd={cart.handleQuickAdd}
           handleRepeatSale={cart.handleRepeatSale}
           businessConfig={backend.businessConfig} setBusinessConfig={backend.setBusinessConfig} addToast={addToast}
           currentOperator={auth.currentOperator} promotionSavings={promos.promotionSavings} />
@@ -248,11 +243,6 @@ export default function VentasPage() {
         cart={cart.cart} autoPrint={cart.autoPrint} setAutoPrint={cart.setAutoPrint}
         isProcessing={sales.isProcessing} confirmCharge={sales.confirmCharge}
         paymentRef={paymentRef}
-        mpQrData={backend.mpQrData} setMpQrData={backend.setMpQrData}
-        mpPaymentUrl={backend.mpPaymentUrl} setMpPaymentUrl={backend.setMpPaymentUrl}
-        mpLoading={backend.mpLoading} setMpLoading={backend.setMpLoading}
-        mpPaymentStatus={backend.mpPaymentStatus} setMpPaymentStatus={backend.setMpPaymentStatus}
-        setMpIntentId={backend.setMpIntentId}
         businessConfig={backend.businessConfig} addToast={addToast}
         currentOperator={auth.currentOperator} />
 
@@ -270,7 +260,8 @@ export default function VentasPage() {
         setShowDevolucionItems={backend.setShowDevolucionItems}
         lastSale={sales.lastSale} lastSaleId={sales.lastSaleId}
         devolucionQtys={backend.devolucionQtys} setDevolucionQtys={backend.setDevolucionQtys}
-        handleDevolucionItem={backend.handleDevolucionItem} handleDevolucion={backend.handleDevolucion} />
+        handleDevolucionItem={backend.handleDevolucionItem} handleDevolucion={backend.handleDevolucion}
+        singleUser={(backend.operators?.length || 0) <= 1} />
 
       <DuplicateCodeModal showDuplicateCodeModal={backend.showDuplicateCodeModal}
         setShowDuplicateCodeModal={backend.setShowDuplicateCodeModal}
