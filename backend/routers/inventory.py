@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends, Query, Body, Request
 from pydantic import BaseModel
 from typing import Optional, List
 import hmac
+import uuid
 import aiosqlite
 import bcrypt
 import main
@@ -486,21 +487,35 @@ async def create_purchase(request: Request, body: dict) -> dict:
                 )
                 purchase_id = row["id"]
                 for item in body.get("items", []):
+                    product_id = item.get("product_id")
+                    # Producto nuevo (id 0 o negativo, viene del quick-add del
+                    # frontend): lo CREAMOS de verdad, vinculado al proveedor de
+                    # la compra, y el stock entra por el mismo camino que los
+                    # existentes (UPDATE de abajo).
+                    if not product_id or int(product_id) <= 0:
+                        name = (item.get("product_name") or "Producto").strip()[:200]
+                        code = f"AUTO-{uuid.uuid4().hex[:8].upper()}"
+                        new_row = await conn.fetchrow(
+                            "INSERT INTO products (business_id, code, name, price, cost_price, stock, min_stock, iva, supplier_id, is_virtual, is_active) "
+                            "VALUES ($1,$2,$3,0,$4,0,5,'21%',$5,0,1) RETURNING id",
+                            b_id, code, name, item.get("unit_cost", 0) or 0, body.get("supplier_id")
+                        )
+                        product_id = new_row["id"]
                     await conn.execute(
                         "INSERT INTO purchase_items (business_id, purchase_id, product_id, product_name, quantity, unit_cost) VALUES ($1,$2,$3,$4,$5,$6)",
-                        b_id, purchase_id, item.get("product_id"), item.get("product_name"),
+                        b_id, purchase_id, product_id, item.get("product_name"),
                         item.get("quantity"), item.get("unit_cost", 0)
                     )
-                    if not is_pending and item.get("product_id"):
+                    if not is_pending:
                         qty = item.get("quantity", 0)
                         cost_val = item.get("unit_cost", 0)
                         await conn.execute(
                             "UPDATE products SET stock = stock + $1, cost_price = $2, updated_at = now() WHERE id = $3",
-                            qty, cost_val, item.get("product_id")
+                            qty, cost_val, product_id
                         )
                         await conn.execute(
                             "INSERT INTO stock_movements (business_id, product_id, movement_type, quantity, reason, operator) VALUES ($1,$2,'entrada',$3,$4,$5)",
-                            b_id, item["product_id"], qty,
+                            b_id, product_id, qty,
                             f"Compra #{purchase_id} — {item.get('product_name', '')}",
                             body.get("operator", "Sistema"),
                         )
@@ -536,20 +551,33 @@ async def create_purchase(request: Request, body: dict) -> dict:
                 )
                 purchase_id = cur.lastrowid
                 for item in body.get("items", []):
+                    product_id = item.get("product_id")
+                    # Producto nuevo (id 0 o negativo, quick-add del frontend):
+                    # se crea vinculado al proveedor de la compra; el stock entra
+                    # por el UPDATE de abajo igual que los existentes.
+                    if not product_id or int(product_id) <= 0:
+                        name = (item.get("product_name") or "Producto").strip()[:200]
+                        code = f"AUTO-{uuid.uuid4().hex[:8].upper()}"
+                        curp = await db.execute(
+                            "INSERT INTO products (code, name, price, cost_price, stock, min_stock, iva, supplier_id, is_virtual, is_active) "
+                            "VALUES (?,?,0,?,0,5,'21%',?,0,1)",
+                            (code, name, item.get("unit_cost", 0) or 0, body.get("supplier_id"))
+                        )
+                        product_id = curp.lastrowid
                     await db.execute(
                         "INSERT INTO purchase_items (purchase_id, product_id, product_name, quantity, unit_cost) VALUES (?,?,?,?,?)",
-                        (purchase_id, item.get("product_id"), item.get("product_name"),
+                        (purchase_id, product_id, item.get("product_name"),
                          item.get("quantity"), item.get("unit_cost", 0))
                     )
-                    if not is_pending and item.get("product_id"):
+                    if not is_pending:
                         qty = item.get("quantity", 0)
                         await db.execute(
                             "UPDATE products SET stock = stock + ?, cost_price = ?, updated_at = datetime('now','localtime') WHERE id = ?",
-                            (qty, item.get("unit_cost", 0), item.get("product_id"))
+                            (qty, item.get("unit_cost", 0), product_id)
                         )
                         await db.execute(
                             "INSERT INTO stock_movements (product_id, movement_type, quantity, reason, operator) VALUES (?,?,?,?,?)",
-                            (item["product_id"], "entrada", qty,
+                            (product_id, "entrada", qty,
                              f"Compra #{purchase_id} — {item.get('product_name', '')}",
                              body.get("operator", "Sistema")),
                         )
@@ -688,7 +716,11 @@ async def list_purchases(limit: int = 50) -> list:
         from db_helpers import get_pg_pool
         pool = await get_pg_pool()
         async with pool.acquire() as conn:
-            rows = await conn.fetch("SELECT * FROM purchases WHERE business_id = $1 ORDER BY created_at DESC LIMIT $2", b_id, limit)
+            rows = await conn.fetch(
+                "SELECT p.*, s.name AS supplier_name FROM purchases p "
+                "LEFT JOIN suppliers s ON s.id = p.supplier_id "
+                "WHERE p.business_id = $1 ORDER BY p.created_at DESC LIMIT $2", b_id, limit
+            )
             purchases = [dict(r) for r in rows]
             for p in purchases:
                 items = await conn.fetch("SELECT * FROM purchase_items WHERE purchase_id = $1", p["id"])
@@ -698,7 +730,11 @@ async def list_purchases(limit: int = 50) -> list:
         async with aiosqlite.connect(main.DB_PATH) as db:
             # SQLite usa 'timestamp'; PG usa 'created_at'. Aliaseamos para que el
             # frontend reciba created_at igual y no crashee en modo local/offline.
-            cur = await db.execute("SELECT *, timestamp AS created_at FROM purchases ORDER BY timestamp DESC LIMIT ?", (limit,))
+            cur = await db.execute(
+                "SELECT p.*, p.timestamp AS created_at, s.name AS supplier_name "
+                "FROM purchases p LEFT JOIN suppliers s ON s.id = p.supplier_id "
+                "ORDER BY p.timestamp DESC LIMIT ?", (limit,)
+            )
             rows = await cur.fetchall()
             purchases = [row_to_dict(r, cur.description) for r in rows]
             for p in purchases:

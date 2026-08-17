@@ -15,6 +15,7 @@ export default function NewInvoiceForm({
   searchQuery,
   setSearchQuery,
   handleProductSearch,
+  onPickSuggestion,
   globalProductsDB,
   showQuickAdd,
   handleQuickAddNew,
@@ -56,7 +57,7 @@ export default function NewInvoiceForm({
               {(searchQuery.trim().length > 0 && globalProductsDB) || showQuickAdd ? (
                 <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', zIndex: 100, marginTop: '8px', boxShadow: '0 4px 12px rgba(30,58,95,0.5)' }}>
                   {!showQuickAdd && globalProductsDB && globalProductsDB.filter(p => String(p.code || '').toUpperCase().startsWith(searchQuery.toUpperCase()) || p.name.toLowerCase().includes(searchQuery.toLowerCase())).slice(0, 5).map((p) => (
-                    <button key={p.id} type="button" onClick={() => { setSearchQuery(p.code); setTimeout(() => handleProductSearch(), 50); }} style={{ display: 'flex', justifyContent: 'space-between', width: '100%', padding: '12px 16px', background: 'transparent', border: 'none', borderBottom: '1px solid rgba(255,255,255,0.05)', color: 'var(--text-primary)', cursor: 'pointer', textAlign: 'left', transition: 'background 0.15s' }} onFocus={e => e.target.style.background = 'var(--bg-hover)'} onBlur={e => e.target.style.background = 'transparent'} onMouseEnter={e => e.target.style.background = 'var(--bg-hover)'} onMouseLeave={e => e.target.style.background = 'transparent'}>
+                    <button key={p.id} type="button" onClick={() => { onPickSuggestion?.(p); setSearchQuery(''); searchInputRef.current?.focus(); }} style={{ display: 'flex', justifyContent: 'space-between', width: '100%', padding: '12px 16px', background: 'transparent', border: 'none', borderBottom: '1px solid rgba(255,255,255,0.05)', color: 'var(--text-primary)', cursor: 'pointer', textAlign: 'left', transition: 'background 0.15s' }} onFocus={e => e.target.style.background = 'var(--bg-hover)'} onBlur={e => e.target.style.background = 'transparent'} onMouseEnter={e => e.target.style.background = 'var(--bg-hover)'} onMouseLeave={e => e.target.style.background = 'transparent'}>
                       <span style={{ fontWeight: 600 }}>{p.name}</span><span style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>{p.code}</span>
                     </button>
                   ))}

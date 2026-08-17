@@ -1,11 +1,11 @@
-import { SkeletonCard } from '../../components/ui/Skeleton';
+﻿import { SkeletonCard } from '../../components/ui/Skeleton';
 import EmptyState from '../../components/ui/EmptyState';
 import { Icons, formatPesos } from './shared';
 
 /**
- * Pestaña "Historial" de Compras. Presentacional: recibe los datos ya filtrados
- * y los callbacks. Extraído de PurchasesModule replicando la MISMA estructura de
- * divs del original (no se tocó el layout).
+ * PestaÃ±a "Historial" de Compras. Presentacional: recibe los datos ya filtrados
+ * y los callbacks. ExtraÃ­do de PurchasesModule replicando la MISMA estructura de
+ * divs del original (no se tocÃ³ el layout).
  */
 export default function PurchasesHistory({
   loading,
@@ -34,7 +34,7 @@ export default function PurchasesHistory({
           ) : purchases.length === 0 ? (
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', paddingTop: '60px', minHeight: '300px' }}>
               <EmptyState icon="Truck" title={searchTerm.trim() ? 'Sin resultados' : 'Sin compras'}
-                description={searchTerm.trim() ? 'No hay compras que coincidan con la búsqueda.' : 'Todavía no registraste ninguna compra. Cargá tu primera factura manualmente o escaneala con IA.'}
+                description={searchTerm.trim() ? 'No hay compras que coincidan con la bÃºsqueda.' : 'TodavÃ­a no registraste ninguna compra. CargÃ¡ tu primera factura manualmente o escaneala con IA.'}
                 actionLabel="+ Carga Manual" actionOnClick={onNewInvoice} />
             </div>
           ) : (
@@ -46,10 +46,10 @@ export default function PurchasesHistory({
                       <Icons.Box />
                     </div>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.92rem', marginBottom: '3px' }}>{p.supplier_name || 'Proveedor General'}</div>
+                      <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.92rem', marginBottom: '3px' }}>{p.supplier_name || 'Sin proveedor'}</div>
                       <div style={{ color: 'var(--text-faint)', fontSize: '0.82rem', display: 'flex', gap: '10px' }}>
                         <span className="ledger-num">{p.created_at ? new Date(p.created_at).toLocaleDateString('es-AR') : '---'}</span>
-                        <span>·</span>
+                        <span>Â·</span>
                         <span>Factura {p.invoice_number || 'S/N'}</span>
                       </div>
                     </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+﻿import { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { usePanelContext } from '../context/PanelContext';
 import { apiGet, apiPost } from '../services/apiClient';
@@ -79,7 +79,7 @@ export default function PurchasesModule() {
         })),
       });
       if (res.ok) {
-        addToast?.('Mercadería confirmada. Stock y costos actualizados.', 'success');
+        addToast?.('MercaderÃ­a confirmada. Stock y costos actualizados.', 'success');
         setConfirmModal(null);
         fetchPendingPurchases();
         if (onProductsUpdated) onProductsUpdated();
@@ -87,7 +87,7 @@ export default function PurchasesModule() {
         const data = await res.json().catch(() => ({}));
         addToast?.(data.detail || 'Error al confirmar.', 'error');
       }
-    } catch { addToast?.('Error de conexión.', 'error'); }
+    } catch { addToast?.('Error de conexiÃ³n.', 'error'); }
     setConfirmSaving(false);
   };
 
@@ -160,14 +160,20 @@ export default function PurchasesModule() {
   const handleQuickAddNew = () => {
     const name = searchQuery.trim();
     if (!name) return;
-    // id negativo: unico en el carrito y el backend lo trata como producto nuevo
-    // (product_id 0), sin pisar el stock de un producto real con ese id.
-    quickAddCounter.current -= 1;
-    setCart([{ product_id: quickAddCounter.current, product_name: name, quantity: 1, unit_cost: 0, is_new: true }, ...cart]);
+    // Si ya hay una lÃ­nea nueva con el mismo nombre, sumamos cantidad en vez
+    // de duplicar la lÃ­nea (id negativo: unico en el carrito; el backend lo
+    // crea como producto real al confirmar la compra).
+    const existingIdx = cart.findIndex(i => i.is_new && String(i.product_name || '').toLowerCase() === name.toLowerCase());
+    if (existingIdx >= 0) {
+      setCart(cart.map((i, idx) => idx === existingIdx ? { ...i, quantity: (parseInt(i.quantity) || 1) + 1 } : i));
+    } else {
+      quickAddCounter.current -= 1;
+      setCart([{ product_id: quickAddCounter.current, product_name: name, quantity: 1, unit_cost: 0, is_new: true }, ...cart]);
+    }
     setSearchQuery('');
     setShowQuickAdd(false);
     searchInputRef.current?.focus();
-    if (addToast) addToast('Producto nuevo agregado — asigná costo y cantidad');
+    if (addToast) addToast('Producto nuevo agregado â€” asignÃ¡ costo y cantidad');
   };
 
   const handleCartItemUpdate = (productId, field, value) => {
@@ -178,7 +184,7 @@ export default function PurchasesModule() {
   const cartTotal = cart.reduce((sum, item) => sum + (item.quantity * item.unit_cost), 0);
 
   const filteredPurchases = purchases.filter(p => {
-    if (p.status === 'pending') return false; // los pendientes van a la pestaña dedicada
+    if (p.status === 'pending') return false; // los pendientes van a la pestaÃ±a dedicada
     if (!searchTerm.trim()) return true;
     const term = searchTerm.toLowerCase();
     return (p.supplier_name && p.supplier_name.toLowerCase().includes(term)) || (p.invoice_number && p.invoice_number.toLowerCase().includes(term));
@@ -186,7 +192,7 @@ export default function PurchasesModule() {
 
   const handleConfirmPurchase = async () => {
     if (cart.length === 0) return addToast?.("Debe agregar productos a la factura.", "error");
-    if (!selectedSupplier || isNaN(parseInt(selectedSupplier))) return addToast?.("Debe seleccionar un proveedor válido.", "error");
+    if (!selectedSupplier || isNaN(parseInt(selectedSupplier))) return addToast?.("Debe seleccionar un proveedor vÃ¡lido.", "error");
 
     try {
       const payload = {
@@ -208,7 +214,7 @@ export default function PurchasesModule() {
         addToast?.("No se pudo registrar la compra.", "error");
       }
     } catch {
-      addToast?.("Error de conexión.", "error");
+      addToast?.("Error de conexiÃ³n.", "error");
     }
   };
 
@@ -216,7 +222,7 @@ export default function PurchasesModule() {
     setShowAIScanner(false);
     setCart(items);
     setActiveTab('new_invoice');
-    addToast?.("Factura procesada con éxito por la IA.");
+    addToast?.("Factura procesada con Ã©xito por la IA.");
   };
 
   return (
@@ -227,7 +233,7 @@ export default function PurchasesModule() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: '12px', flexWrap: 'wrap', marginBottom: '16px', flexShrink: 0 }}>
         <div>
           <div className="ledger-label">Libro de compras</div>
-          <h1 className="ledger-title" style={{ fontSize: '1.6rem', marginTop: 4 }}>Lo que entró</h1>
+          <h1 className="ledger-title" style={{ fontSize: '1.6rem', marginTop: 4 }}>Lo que entrÃ³</h1>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
@@ -251,7 +257,7 @@ export default function PurchasesModule() {
                   </button>
                 ))}
               </div>
-              {/* Separador + botón de acción distinto */}
+              {/* Separador + botÃ³n de acciÃ³n distinto */}
               {businessType === 'corralon' && (
                 <>
                   <div style={{ width: 1, height: 28, background: 'var(--border-color)' }} />
@@ -259,7 +265,7 @@ export default function PurchasesModule() {
                     style={{ padding: '7px 14px', borderRadius: 6, border: 'none', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s',
                       background: activeTab === 'pedido' ? 'rgba(20,187,166,0.15)' : 'transparent',
                       color: activeTab === 'pedido' ? 'var(--accent-primary)' : 'var(--text-secondary)' }}>
-                    📋 Pedir a proveedor
+                    ðŸ“‹ Pedir a proveedor
                   </button>
                 </>
               )}
@@ -273,7 +279,7 @@ export default function PurchasesModule() {
                 + Carga manual
               </button>
               <button
-                onClick={() => canUseIA ? setShowAIScanner(true) : addToast('Esta función requiere el Plan IA.', 'info')}
+                onClick={() => canUseIA ? setShowAIScanner(true) : addToast('Esta funciÃ³n requiere el Plan IA.', 'info')}
                 style={{ background: canUseIA ? 'var(--accent-primary)' : 'var(--surface-veil)', border: canUseIA ? 'none' : '1px solid var(--border-color)', color: canUseIA ? 'var(--sheet)' : 'var(--text-secondary)', padding: '10px 18px', borderRadius: 'var(--radius-sm)', fontSize: '0.92rem', fontWeight: 800, cursor: canUseIA ? 'pointer' : 'not-allowed', height: '44px', display: 'flex', alignItems: 'center', gap: '8px', transition: 'filter 0.15s' }}
                 onMouseEnter={e => { if (canUseIA) e.currentTarget.style.filter = 'brightness(1.08)'; }}
                 onMouseLeave={e => { if (canUseIA) e.currentTarget.style.filter = 'brightness(1)'; }}>
@@ -283,22 +289,22 @@ export default function PurchasesModule() {
           )}
           {activeTab === 'new_invoice' && (
             <button onClick={() => setActiveTab('history')} style={{ background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '10px 16px', borderRadius: 'var(--radius-sm)', fontSize: '0.92rem', fontWeight: 700, cursor: 'pointer', height: '44px' }}>
-              ← Volver al historial
+              â† Volver al historial
             </button>
           )}
         </div>
       </div>
 
-      {/* ── TAB: PEDIDOS PENDIENTES ── */}
+      {/* â”€â”€ TAB: PEDIDOS PENDIENTES â”€â”€ */}
       {activeTab === 'pending' && (
         <div style={{ flex: 1, overflow: 'auto' }}>
           {loadingPending ? (
             <div style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: 40 }}>Cargando...</div>
           ) : pendingPurchases.length === 0 ? (
             <div style={{ textAlign: 'center', padding: 60, color: 'var(--text-secondary)' }}>
-              <div style={{ fontSize: '2.5rem', marginBottom: 12 }}>📭</div>
+              <div style={{ fontSize: '2.5rem', marginBottom: 12 }}>ðŸ“­</div>
               <div style={{ fontWeight: 700, marginBottom: 6 }}>Sin pedidos pendientes</div>
-              <div style={{ fontSize: '0.85rem' }}>Los pedidos guardados desde Proveedores aparecen acá hasta que llegue la mercadería.</div>
+              <div style={{ fontSize: '0.85rem' }}>Los pedidos guardados desde Proveedores aparecen acÃ¡ hasta que llegue la mercaderÃ­a.</div>
             </div>
           ) : (
             <div className="ledger-sheet" style={{ overflow: 'hidden' }}>
@@ -306,11 +312,11 @@ export default function PurchasesModule() {
                 <div key={p.id} className="ledger-row" style={{ flexWrap: 'wrap', gap: 10 }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontWeight: 700, fontSize: '0.92rem', color: 'var(--text-primary)' }}>
-                      {p.supplier_name || 'Proveedor General'}
+                      {p.supplier_name || 'Sin proveedor'}
                     </div>
                     <div style={{ fontSize: '0.78rem', color: 'var(--text-faint)', marginTop: 2 }}>
-                      Pedido #{p.id} · {p.created_at ? new Date(p.created_at).toLocaleDateString('es-AR') : '—'}
-                      {p.items && ` · ${p.items.length} ítem${p.items.length !== 1 ? 's' : ''}`}
+                      Pedido #{p.id} Â· {p.created_at ? new Date(p.created_at).toLocaleDateString('es-AR') : 'â€”'}
+                      {p.items && ` Â· ${p.items.length} Ã­tem${p.items.length !== 1 ? 's' : ''}`}
                     </div>
                     {p.items && p.items.length > 0 && (
                       <div style={{ fontSize: '0.73rem', color: 'var(--text-secondary)', marginTop: 4 }}>
@@ -324,7 +330,7 @@ export default function PurchasesModule() {
                   <button
                     onClick={() => setConfirmModal({ purchase: p, editItems: (p.items || []).map(it => ({ ...it, quantity: it.quantity, unit_cost: it.unit_cost || 0 })) })}
                     style={{ padding: '8px 14px', background: 'var(--accent-primary)', border: 'none', borderRadius: 8, color: '#fff', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer', alignSelf: 'center', flexShrink: 0 }}>
-                    ✓ Confirmar entrada
+                    âœ“ Confirmar entrada
                   </button>
                 </div>
               ))}
@@ -333,7 +339,7 @@ export default function PurchasesModule() {
         </div>
       )}
 
-      {/* ── TAB: HACER PEDIDO A PROVEEDOR ── */}
+      {/* â”€â”€ TAB: HACER PEDIDO A PROVEEDOR â”€â”€ */}
       {activeTab === 'pedido' && (
         <PedidoProveedorTab addToast={addToast} />
       )}
@@ -360,6 +366,7 @@ export default function PurchasesModule() {
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           handleProductSearch={handleProductSearch}
+          onPickSuggestion={addToCart}
           globalProductsDB={globalProductsDB}
           showQuickAdd={showQuickAdd}
           handleQuickAddNew={handleQuickAddNew}
@@ -392,16 +399,16 @@ export default function PurchasesModule() {
           <div onMouseDown={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 500, maxHeight: '90vh', overflow: 'auto', background: 'var(--sheet)', border: '1px solid var(--border-color)', borderRadius: 12, padding: 24, boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
               <h3 style={{ margin: 0, fontWeight: 800, color: 'var(--text-primary)', fontSize: '1.05rem' }}>
-                ✓ Confirmar entrada de mercadería
+                âœ“ Confirmar entrada de mercaderÃ­a
               </h3>
-              <button onClick={() => setConfirmModal(null)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1.3rem' }}>✕</button>
+              <button onClick={() => setConfirmModal(null)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1.3rem' }}>âœ•</button>
             </div>
             <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: 16 }}>
-              <strong style={{ color: 'var(--text-primary)' }}>{confirmModal.purchase.supplier_name || 'Proveedor General'}</strong>
-              {' — '}Pedido #{confirmModal.purchase.id}
+              <strong style={{ color: 'var(--text-primary)' }}>{confirmModal.purchase.supplier_name || 'Sin proveedor'}</strong>
+              {' â€” '}Pedido #{confirmModal.purchase.id}
             </div>
             <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
-              Revisá cantidades y costos recibidos:
+              RevisÃ¡ cantidades y costos recibidos:
             </div>
             {confirmModal.editItems.map((it, idx) => (
               <div key={it.product_id || idx} style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '7px 0', borderBottom: '1px solid var(--border-color)' }}>
@@ -423,12 +430,12 @@ export default function PurchasesModule() {
               </div>
             ))}
             <div style={{ marginTop: 12, fontSize: '0.8rem', color: 'var(--text-secondary)', padding: '8px 12px', background: 'var(--surface-veil)', borderRadius: 6 }}>
-              ℹ️ Al confirmar se actualiza el stock y el costo de cada producto, y se registra la deuda con el proveedor.
+              â„¹ï¸ Al confirmar se actualiza el stock y el costo de cada producto, y se registra la deuda con el proveedor.
             </div>
             <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
               <button onClick={() => setConfirmModal(null)} style={{ flex: 1, padding: '10px 16px', background: 'transparent', border: '1px solid var(--border-color)', borderRadius: 8, color: 'var(--text-primary)', fontWeight: 700, cursor: 'pointer' }}>Cancelar</button>
               <button onClick={handleConfirmPending} disabled={confirmSaving} style={{ flex: 2, padding: '10px 16px', background: 'var(--accent-primary)', border: 'none', borderRadius: 8, color: '#fff', fontWeight: 800, cursor: confirmSaving ? 'default' : 'pointer', opacity: confirmSaving ? 0.7 : 1 }}>
-                {confirmSaving ? 'Confirmando...' : '✓ Confirmar entrada'}
+                {confirmSaving ? 'Confirmando...' : 'âœ“ Confirmar entrada'}
               </button>
             </div>
           </div>
