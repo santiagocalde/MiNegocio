@@ -145,6 +145,15 @@ async def open_turn(body: TurnOpen) -> dict:
         pool = await get_pg_pool()
         async with pool.acquire() as conn:
             async with conn.transaction():
+                # Evitar doble-turno por race condition: si ya hay uno abierto creado
+                # en los últimos 5 segundos (otro request ganó la carrera), lo devolvemos.
+                existing = await conn.fetchrow(
+                    "SELECT id, operator FROM turns WHERE closed_at IS NULL AND business_id = $1 "
+                    "AND opened_at > now() - interval '5 seconds' ORDER BY id DESC LIMIT 1",
+                    b_id
+                )
+                if existing:
+                    return {"id": existing["id"], "operator": existing["operator"]}
                 await conn.execute(
                     "UPDATE turns SET closed_at = $1, notes = 'Cierre automatico por abandono de caja' WHERE closed_at IS NULL AND business_id = $2",
                     now, b_id
@@ -191,7 +200,8 @@ async def get_active_turn() -> dict:
                         "UPDATE turns SET closed_at = now(), sales_total = COALESCE((SELECT SUM(total) FROM sales WHERE turn_id = $1 AND business_id = $2 AND reverted = 0), 0), notes = 'Cierre automatico > 14hs' WHERE id = $1",
                         row["id"], b_id
                     )
-                    return {"id": None}
+                    # Avisamos al frontend para que muestre un toast y abra el modal de apertura.
+                    return {"id": None, "auto_closed": True}
                 return {"id": row["id"], "operator": row["operator"], "opened_at": str(row["opened_at"]), "initial_cash": float(row["initial_cash"] or 0)}
             return {"id": None}
     else:
@@ -205,7 +215,7 @@ async def get_active_turn() -> dict:
                 if diff and diff[0] >= 14:
                     await db.execute("UPDATE turns SET closed_at = datetime('now','localtime'), sales_total = COALESCE((SELECT SUM(total) FROM sales WHERE turn_id = ? AND reverted = 0), 0), notes = 'Cierre automatico > 14hs' WHERE id = ?", (row[0], row[0],))
                     await db.commit()
-                    return {"id": None}
+                    return {"id": None, "auto_closed": True}
                 return {"id": row[0], "operator": row[1], "opened_at": row[2], "initial_cash": float(row[3] or 0)}
             return {"id": None}
 
@@ -276,9 +286,10 @@ async def close_turn(turn_id: int, body: TurnClose) -> dict:
                     float(server_total or 0), body.counted_cash, difference, body.notes, turn_id
                 )
                 if difference < -0.01:
+                    # Tipo 'ajuste_arqueo' para diferenciarlo de egresos reales en el historial.
                     await conn.execute(
                         "INSERT INTO egresos_caja (business_id, monto, motivo, type, turn_id) VALUES ($1,$2,$3,$4,$5)",
-                        b_id, abs(difference), f"Ajuste por Faltante de Caja (Turno {turn_id})", "gasto", turn_id
+                        b_id, abs(difference), f"Ajuste por Faltante de Caja (Turno {turn_id})", "ajuste_arqueo", turn_id
                     )
         return {"success": True, "difference": difference, "expected_cash": expected_cash,
                 "status": "perfecto" if abs(difference) < 0.01 else ("sobrante" if difference > 0 else "faltante")}
@@ -331,9 +342,10 @@ async def close_turn(turn_id: int, body: TurnClose) -> dict:
                     (server_total, body.counted_cash, difference, body.notes, turn_id)
                 )
                 if difference < -0.01:
+                    # Tipo 'ajuste_arqueo' para diferenciarlo de egresos reales en el historial.
                     await db.execute(
                         "INSERT INTO egresos_caja (monto, motivo, type, turn_id) VALUES (?,?,?,?)",
-                        (abs(difference), f"Ajuste por Faltante de Caja (Turno {turn_id})", "gasto", turn_id)
+                        (abs(difference), f"Ajuste por Faltante de Caja (Turno {turn_id})", "ajuste_arqueo", turn_id)
                     )
                 await db.commit()
         return {"success": True, "difference": difference, "expected_cash": expected_cash,
@@ -965,7 +977,7 @@ async def turn_detail(turn_id: int) -> dict:
                 "COALESCE((SELECT SUM(sp.amount) FROM sale_payments sp JOIN sales s2 ON s2.id = sp.sale_id WHERE s2.turn_id = $1 AND s2.business_id = $2 AND sp.method = 'transferencia' AND s2.reverted = 0), 0) AS split_transferencia, "
                 "COALESCE((SELECT SUM(total) FROM sales WHERE turn_id = $1 AND business_id = $2 AND payment_method = 'mercadopago' AND is_fiado = 0 AND reverted = 0), 0) AS mercadopago, "
                 "COALESCE((SELECT SUM(sp.amount) FROM sale_payments sp JOIN sales s2 ON s2.id = sp.sale_id WHERE s2.turn_id = $1 AND s2.business_id = $2 AND sp.method = 'mercadopago' AND s2.reverted = 0), 0) AS split_mercadopago, "
-                "COALESCE((SELECT SUM(monto) FROM egresos_caja WHERE turn_id = $1 AND business_id = $2), 0) AS egresos, "
+                "COALESCE((SELECT SUM(monto) FROM egresos_caja WHERE turn_id = $1 AND business_id = $2 AND type != 'ajuste_arqueo'), 0) AS egresos, "
                 "COALESCE((SELECT SUM(total) FROM sales WHERE turn_id = $1 AND business_id = $2 AND reverted = 0), 0) AS total",
                 turn_id, b_id
             )
@@ -1019,7 +1031,7 @@ async def turn_detail(turn_id: int) -> dict:
                 "COALESCE((SELECT SUM(sp.amount) FROM sale_payments sp JOIN sales s2 ON s2.id = sp.sale_id WHERE s2.turn_id = ? AND sp.method='transferencia' AND s2.reverted=0), 0), "
                 "COALESCE((SELECT SUM(total) FROM sales WHERE turn_id = ? AND payment_method='mercadopago' AND is_fiado=0 AND reverted=0), 0), "
                 "COALESCE((SELECT SUM(sp.amount) FROM sale_payments sp JOIN sales s2 ON s2.id = sp.sale_id WHERE s2.turn_id = ? AND sp.method='mercadopago' AND s2.reverted=0), 0), "
-                "COALESCE((SELECT SUM(monto) FROM egresos_caja WHERE turn_id = ?), 0), "
+                "COALESCE((SELECT SUM(monto) FROM egresos_caja WHERE turn_id = ? AND type != 'ajuste_arqueo'), 0), "
                 "COALESCE((SELECT SUM(total) FROM sales WHERE turn_id = ? AND reverted=0), 0)",
                 (turn_id, turn_id, turn_id, turn_id, turn_id, turn_id, turn_id, turn_id, turn_id, turn_id)
             )

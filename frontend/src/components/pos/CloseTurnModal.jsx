@@ -78,7 +78,7 @@ export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, curren
     }
     // Para logística no se pide efectivo ni PIN
     if (!isLogistica) {
-      if (!countedCash) {
+      if (countedCash === '') {
         if (addToast) addToast('Ingresa cuánto efectivo contaste.', 'error');
         return;
       }
@@ -233,12 +233,20 @@ export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, curren
       <div className="input-group"><label style={{ fontSize: '1.1rem', color: 'var(--accent-primary)', fontWeight: 600 }}>Cuanto efectivo contaste en el cajon fisico?</label>
         <input ref={cashRef} type="number" value={countedCash} onChange={e => setCountedCash(e.target.value)} autoFocus />
       </div>
+      {countedCash !== '' && parseFloat(countedCash) === 0 && (
+        <div style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.4)', borderRadius: 10, padding: '12px 16px', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontSize: '1.2rem' }}>⚠️</span>
+          <span style={{ color: 'var(--accent-warning)', fontSize: '0.88rem', fontWeight: 600 }}>
+            Ingresaste $0 en el cajón. Si el cajón está vacío está bien, pero verificá antes de confirmar — esto registrará un faltante por todo el efectivo del turno.
+          </span>
+        </div>
+      )}
       {!isAdmin && (
         <div className="input-group"><label style={{ fontSize: '1.1rem', color: 'var(--text-secondary)' }}>Firma del Cierre (PIN 4 digitos)</label>
           <input type="password" value={closeCajaPin} onChange={e => setCloseCajaPin(e.target.value.replace(/[^0-9]/g, '').slice(0, 4))} placeholder="****" />
         </div>
       )}
-      {countedCash && (isAdmin || closeCajaPin.length === 4) && (
+      {countedCash !== '' && (isAdmin || closeCajaPin.length === 4) && (
         <div style={{ textAlign: 'center', marginBottom: '24px', padding: '16px', borderRadius: '12px', background: cajaDiff() === 0 ? 'rgba(16,185,129,0.1)' : cajaDiff() === null ? 'rgba(20,187,166,0.06)' : 'rgba(239,68,68,0.1)' }}>
           {cajaDiff() === null ? <span style={{ color: 'var(--text-secondary)', fontWeight: 700, fontSize: '1rem' }}>Calculando arqueo del turno...</span> : cajaDiff() === 0 ? <span style={{ color: 'var(--accent-success)', fontWeight: 700, fontSize: '1.5rem' }}>Caja perfecta! No sobra ni falta.</span> : (
             <div><span style={{ color: 'var(--accent-danger)', fontWeight: 800, fontSize: '1.8rem' }}>{cajaDiff() > 0 ? `Sobra $${cajaDiff().toLocaleString('es-AR')}` : `Falta $${Math.abs(cajaDiff()).toLocaleString('es-AR')}`}</span>
@@ -253,7 +261,7 @@ export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, curren
 
       <div className="modal-actions">
         <button className="btn btn-modal-cancel" onClick={() => { setIsClosingCaja(false); setCountedCash(''); setCloseCajaPin(''); }} disabled={closing}>Cancelar</button>
-        <button className="btn btn-modal-confirm" style={{ background: 'var(--accent-danger)', opacity: !countedCash || (!isAdmin && closeCajaPin.length < 4) || closing ? 0.5 : 1 }} onClick={handleCloseTurn} disabled={!countedCash || (!isAdmin && closeCajaPin.length < 4) || closing}>
+        <button className="btn btn-modal-confirm" style={{ background: 'var(--accent-danger)', opacity: countedCash === '' || (!isAdmin && closeCajaPin.length < 4) || closing ? 0.5 : 1 }} onClick={handleCloseTurn} disabled={countedCash === '' || (!isAdmin && closeCajaPin.length < 4) || closing}>
           {closing ? 'Cerrando turno...' : 'Confirmar y Reportar'}
         </button>
       </div>
