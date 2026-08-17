@@ -97,6 +97,36 @@ export default function ConfigPage() {
     setSettingUpCaja(false);
   };
 
+  // Tarjeta imprimible con el QR fijo: nombre del negocio, bordes, instrucciones.
+  const handlePrintQr = () => {
+    const esc = (s) => String(s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const nombre = esc(config.nombre || 'Mi Negocio');
+    const w = window.open('', '_blank', 'width=460,height=620');
+    if (!w) { addToast?.('Permití ventanas emergentes para imprimir.', 'error'); return; }
+    w.document.write('<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>QR de pago — ' + nombre + '</title><style>' +
+      '@page { size: A5; margin: 10mm; }' +
+      '* { box-sizing: border-box; }' +
+      'body { font-family: Arial, Helvetica, sans-serif; margin: 0; background: #fff; display: flex; justify-content: center; align-items: center; min-height: 100vh; }' +
+      '.card { width: 330px; border: 2px dashed #b0b0b0; border-radius: 18px; padding: 26px 22px; text-align: center; background: #ffffff; }' +
+      '.name { font-size: 24px; font-weight: 800; color: #0B132B; margin: 0 0 2px; }' +
+      '.sub { font-size: 13px; color: #777; margin: 0 0 18px; letter-spacing: 1px; text-transform: uppercase; }' +
+      '.qrbox { border: 1px solid #e3e3e3; border-radius: 14px; padding: 12px; width: 216px; height: 216px; margin: 0 auto 18px; display: flex; align-items: center; justify-content: center; }' +
+      '.qrbox img { width: 100%; height: 100%; object-fit: contain; }' +
+      '.pay { font-size: 18px; font-weight: 800; color: #009EE3; margin: 0 0 8px; }' +
+      '.hint { font-size: 13px; color: #444; line-height: 1.5; margin: 0 0 16px; }' +
+      '.foot { font-size: 11px; color: #999; border-top: 1px solid #eee; padding-top: 10px; }' +
+      '@media print { body { background: #fff; } .card { border: 1px dashed #b0b0b0; } }' +
+      '</style></head><body><div class="card">' +
+      '<h1 class="name">' + nombre + '</h1>' +
+      '<div class="sub">Pago con QR</div>' +
+      '<div class="qrbox"><img src="' + esc(config.mp_qr_pos_url) + '" alt="QR de pago" /></div>' +
+      '<div class="pay">Escaneá y pagá</div>' +
+      '<p class="hint">Abrí la app de <strong>Mercado Pago</strong>, tocá <strong>Escanear</strong> y apuntá a este código.<br />El monto lo carga el cajero en la caja.</p>' +
+      '<div class="foot">MiNegocio · Punto de venta para kioscos</div>' +
+      '</div><script>window.onload = function () { setTimeout(function () { window.print(); }, 500); };<\/script></body></html>');
+    w.document.close();
+  };
+
   useEffect(() => {
     apiGet('/config')
       .then(r => r.json())
@@ -232,10 +262,10 @@ export default function ConfigPage() {
                 <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: '0 0 10px', lineHeight: 1.5 }}>
                   Imprimí este QR y pegalo en el mostrador. El cliente lo escanea, paga, y la venta se confirma sola con el monto exacto.
                 </p>
-                <a href={config.mp_qr_pos_url} target="_blank" rel="noopener noreferrer"
-                  style={{ display: 'inline-block', background: 'var(--accent-primary)', color: '#fff', padding: '8px 16px', borderRadius: 8, fontWeight: 700, fontSize: '0.82rem', textDecoration: 'none' }}>
+                <button type="button" onClick={handlePrintQr}
+                  style={{ display: 'inline-block', background: 'var(--accent-primary)', color: '#fff', padding: '8px 16px', borderRadius: 8, fontWeight: 700, fontSize: '0.82rem', border: 'none', cursor: 'pointer' }}>
                   Abrir / Imprimir QR
-                </a>
+                </button>
               </div>
             </div>
           ) : (
