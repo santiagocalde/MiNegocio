@@ -16,7 +16,22 @@
     <meta name="theme-color" content="#060913" />
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
 
-    <link rel="canonical" href="https://mi-negocio.app/" />
+    <!-- Canonical dinámico por ruta: cada URL del SPA se canonica a sí misma
+         (con barra final), evitando que Google las marque como "alternativa"
+         de la home. Se reemplaza el <link> estático apenas carga la página. -->
+    <link id="dynamic-canonical" rel="canonical" href="https://mi-negocio.app/" />
+    <script>
+      (function () {
+        try {
+          var base = 'https://mi-negocio.app';
+          var path = window.location.pathname.toLowerCase();
+          if (path.indexOf('/panel') === 0) return; // rutas de la app: no indexar
+          if (path !== '/' && !/\/$/.test(path)) path += '/';
+          var link = document.getElementById('dynamic-canonical');
+          if (link) link.href = base + path;
+        } catch (e) { /* noop */ }
+      })();
+    </script>
 
     <!-- Security headers (reforzados por nginx en producción) -->
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://connect.facebook.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: http:; connect-src 'self' https://mi-negocio.app https://*.mercadopago.com https://*.mercadolibre.com https://*.google-analytics.com https://*.analytics.google.com https://*.facebook.com; frame-src 'none'; object-src 'none'; base-uri 'self';" />
