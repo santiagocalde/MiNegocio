@@ -663,6 +663,11 @@ async def init_pg() -> None:
             ALTER TABLE business_config ADD COLUMN IF NOT EXISTS mp_auto_confirm INTEGER DEFAULT 0;
             -- QR de cobro de Mercado Pago del comercio (imagen "Mi QR", data URL).
             ALTER TABLE business_config ADD COLUMN IF NOT EXISTS mp_qr_url TEXT DEFAULT '';
+            -- QR Presencial (caja fija): ids externos de sucursal/caja + URL del
+            -- QR fijo imprimible que devuelve MP al crear la caja.
+            ALTER TABLE business_config ADD COLUMN IF NOT EXISTS mp_external_store_id TEXT DEFAULT '';
+            ALTER TABLE business_config ADD COLUMN IF NOT EXISTS mp_external_pos_id TEXT DEFAULT '';
+            ALTER TABLE business_config ADD COLUMN IF NOT EXISTS mp_qr_pos_url TEXT DEFAULT '';
 
             -- Resincronizar secuencias de las tablas con ids seriales: cargas
             -- masivas con ids explícitos (p.ej. simulaciones o migraciones)

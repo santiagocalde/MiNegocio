@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import useIsMobile from '../../hooks/useIsMobile';
 import { Icons } from '../ui/Icons';
-import MpQrCobro from './MpQrCobro';
+import MpQrFijoCobro from './MpQrFijoCobro';
 
 const PAYMENT_METHODS = [
   { key: 'efectivo',       label: 'Efectivo',      Icon: Icons.CashIcon },
@@ -285,9 +285,9 @@ export default function ChargeModal({
               </div>
             )}
 
-            {/* Mercado Pago con auto-confirmación: QR dinámico que se confirma solo */}
+            {/* Mercado Pago con auto-confirmación: QR fijo del mostrador que se confirma solo */}
             {!useSplitPayment && paymentMethod === 'mercadopago' && mpAutoConfirm && (
-              <MpQrCobro total={finalTotal} onPaid={() => setMpPaid(true)} addToast={addToast} />
+              <MpQrFijoCobro total={finalTotal} onPaid={() => setMpPaid(true)} addToast={addToast} />
             )}
 
             {/* Mercado Pago simple - QR del comercio (el cajero confirma a mano) */}

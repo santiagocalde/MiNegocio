@@ -24,6 +24,7 @@ const FIELDS = [
   { key: 'mp_collector_id',     label: 'Alias / ID de Cobro de Mercado Pago', placeholder: 'TuAliasMP o ID de caja', type: 'password', section: 'Medios de Pago' },
   { key: 'mp_qr_url',           label: 'QR de Mercado Pago (cobro en el mostrador)', isMpQr: true, section: 'Medios de Pago' },
   { key: 'mp_auto_confirm',     label: 'Auto-confirmación de pagos con QR', isMpAuto: true, section: 'Medios de Pago' },
+  { key: 'mp_qr_pos',           label: 'Caja con QR fijo del mostrador', isMpQrPos: true, section: 'Medios de Pago' },
   { key: 'mensaje_ticket',      label: 'Mensaje final del ticket',    placeholder: '¡Gracias por su compra!', section: 'Ticket' },
   { key: 'margen_estimado',     label: 'Margen de ganancia estimado (%)', placeholder: '35', section: 'Análisis' },
 ];
@@ -44,6 +45,7 @@ export default function ConfigPage() {
   const [saved, setSaved] = useState(false);
   const [operators, setOperators] = useState([]);
   const [showMpToken, setShowMpToken] = useState(false);
+  const [settingUpCaja, setSettingUpCaja] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const logoInputRef = useRef(null);
   const isMobile = useIsMobile();
@@ -76,6 +78,23 @@ export default function ConfigPage() {
     } catch { addToast?.('Error de red al subir el logo.', 'error'); }
     setUploadingLogo(false);
     e.target.value = '';
+  };
+
+  // Crea la caja fija en Mercado Pago y trae el QR imprimible. Requiere que el
+  // Access Token ya esté GUARDADO (el backend lo lee de la config del negocio).
+  const handleSetupCaja = async () => {
+    setSettingUpCaja(true);
+    try {
+      const res = await apiPost('/mp/setup-caja', { name: config.nombre || 'MiNegocio' });
+      const d = await res.json().catch(() => ({}));
+      if (res.ok && d.qr_pos_url) {
+        setConfig(prev => ({ ...prev, mp_qr_pos_url: d.qr_pos_url }));
+        addToast?.(d.already ? 'Tu caja QR ya estaba creada.' : '¡Caja QR creada! Imprimí el QR y pegalo en el mostrador.', 'success');
+      } else {
+        addToast?.(d.detail || 'No se pudo crear la caja QR.', 'error');
+      }
+    } catch { addToast?.('Error de red al crear la caja QR.', 'error'); }
+    setSettingUpCaja(false);
   };
 
   useEffect(() => {
@@ -200,8 +219,38 @@ export default function ConfigPage() {
             <span style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: '0.95rem' }}>Confirmar los pagos con QR automáticamente</span>
           </label>
           <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: '6px 0 0 32px' }}>
-            Cuando el cliente paga, la notebook muestra "PAGO RECIBIDO" y cierra la venta sola. Necesita tu Access Token de Mercado Pago (cargado arriba).
+            Cuando el cliente paga, la notebook muestra "PAGO RECIBIDO" y cierra la venta sola. Necesita tu Access Token de Mercado Pago (cargado arriba) y la caja QR de acá abajo.
           </p>
+        </div>
+      ) : f.isMpQrPos ? (
+        <div>
+          {config.mp_qr_pos_url ? (
+            <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+              <img src={config.mp_qr_pos_url} alt="QR fijo del mostrador" style={{ width: 150, height: 150, background: '#fff', borderRadius: 10, padding: 8, objectFit: 'contain' }} />
+              <div style={{ flex: 1, minWidth: 200 }}>
+                <p style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: '0.9rem', margin: '0 0 6px' }}>✅ Caja QR lista</p>
+                <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: '0 0 10px', lineHeight: 1.5 }}>
+                  Imprimí este QR y pegalo en el mostrador. El cliente lo escanea, paga, y la venta se confirma sola con el monto exacto.
+                </p>
+                <a href={config.mp_qr_pos_url} target="_blank" rel="noopener noreferrer"
+                  style={{ display: 'inline-block', background: 'var(--accent-primary)', color: '#fff', padding: '8px 16px', borderRadius: 8, fontWeight: 700, fontSize: '0.82rem', textDecoration: 'none' }}>
+                  Abrir / Imprimir QR
+                </a>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <button type="button" onClick={handleSetupCaja} disabled={settingUpCaja || !config.mp_access_token_set}
+                style={{ background: config.mp_access_token_set ? 'var(--accent-primary)' : 'var(--border-color)', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: 8, fontWeight: 700, fontSize: '0.9rem', cursor: config.mp_access_token_set ? 'pointer' : 'not-allowed' }}>
+                {settingUpCaja ? 'Creando caja…' : 'Crear mi caja con QR fijo'}
+              </button>
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: '8px 0 0' }}>
+                {config.mp_access_token_set
+                  ? 'Crea un QR fijo para imprimir y pegar en el mostrador. Guardá primero la configuración si acabás de cargar el Access Token.'
+                  : 'Cargá y guardá tu Access Token de Mercado Pago arriba para poder crear la caja.'}
+              </p>
+            </div>
+          )}
         </div>
       ) : f.options ? (
         <select
