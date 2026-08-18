@@ -155,8 +155,12 @@ export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, curren
 
   // Sobrante grande: probable efectivo de turno anterior no contado
   const diff = cajaDiff();
-  const turnEfectivo = turnResumen ? (turnResumen.efectivo || 0) : 0;
-  const sobrante_de_turno_anterior = diff !== null && diff > 0 && diff > turnEfectivo * 0.5;
+  const sobrante_de_turno_anterior = diff !== null && diff > 0 && diff > (turnEfectivo || 0) * 0.5;
+
+  // Cuánto debería haber en el cajón (lo que el backend va a calcular al cierre)
+  const expectedCash = turnResumen
+    ? (turnResumen.initial_cash || 0) + (turnResumen.efectivo || 0) - (turnResumen.egresos || 0)
+    : null;
 
   return (
     <div className="modal-overlay"><div className="modal-content" style={{ width: '580px', maxWidth: '95vw', maxHeight: '92vh', overflowY: 'auto' }}>
@@ -233,9 +237,28 @@ export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, curren
         </div>
       )}
 
+      {/* Cuánto debería haber — el operador lo ve ANTES de contar, no después */}
+      {expectedCash !== null && (
+        <div style={{ background: 'rgba(20,187,166,0.08)', border: '1px solid rgba(20,187,166,0.25)', borderRadius: 12, padding: '14px 18px', marginBottom: 14 }}>
+          <div style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 6 }}>
+            El cajón debería tener
+          </div>
+          <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--accent-primary)', fontFamily: 'var(--font-mono)', lineHeight: 1 }}>
+            ${expectedCash.toLocaleString('es-AR')}
+          </div>
+          <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: 6, lineHeight: 1.4 }}>
+            {[
+              turnResumen.initial_cash > 0 && `$${Number(turnResumen.initial_cash).toLocaleString('es-AR')} que había al empezar`,
+              turnResumen.efectivo > 0 && `+ $${Number(turnResumen.efectivo).toLocaleString('es-AR')} cobrado en efectivo`,
+              turnResumen.egresos > 0 && `− $${Number(turnResumen.egresos).toLocaleString('es-AR')} retirado`,
+            ].filter(Boolean).join(' ')}
+          </div>
+        </div>
+      )}
+
       <div className="input-group">
-        <label style={{ fontSize: '1.1rem', color: 'var(--accent-primary)', fontWeight: 600 }}>¿Cuánto hay en el cajón físico ahora?</label>
-        <input ref={cashRef} type="number" value={countedCash} onChange={e => setCountedCash(e.target.value)} autoFocus placeholder="Contá todos los billetes y monedas" />
+        <label style={{ fontSize: '1.1rem', color: 'var(--accent-primary)', fontWeight: 600 }}>¿Cuánto contás en el cajón ahora?</label>
+        <input ref={cashRef} type="number" value={countedCash} onChange={e => setCountedCash(e.target.value)} autoFocus placeholder="Abrí el cajón, contá los billetes y escribí el total" />
       </div>
       {countedCash !== '' && parseFloat(countedCash) === 0 && (
         <div style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.4)', borderRadius: 10, padding: '12px 16px', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 10 }}>
