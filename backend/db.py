@@ -640,6 +640,10 @@ async def init_pg() -> None:
             ALTER TABLE sale_items ALTER COLUMN product_id DROP NOT NULL;
             ALTER TABLE sale_items ADD COLUMN IF NOT EXISTS unit_cost NUMERIC(12,2) DEFAULT 0;
             ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS debt NUMERIC(12,2) DEFAULT 0;
+            -- Proveedor de cada producto (para JOINs en compras y aumento masivo por
+            -- proveedor). Ya existia en produccion, faltaba versionarlo aca.
+            ALTER TABLE products ADD COLUMN IF NOT EXISTS supplier_id INTEGER REFERENCES suppliers(id);
+            CREATE INDEX IF NOT EXISTS idx_products_supplier ON products(supplier_id);
 
             -- Rubro Corralón: precio mayorista/contratista (Lista B) y unidad de medida
             ALTER TABLE products ADD COLUMN IF NOT EXISTS price_b NUMERIC(12,2);

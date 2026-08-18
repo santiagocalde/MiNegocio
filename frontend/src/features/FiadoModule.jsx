@@ -26,6 +26,10 @@ export default function FiadoModule() {
   const [loadingTransactions, setLoadingTransactions] = useState(new Set());
   const [abonoModal, setAbonoModal] = useState(null); // {id, name, balance}
   const [abonoAmount, setAbonoAmount] = useState('');
+  const [cargarModal, setCargarModal] = useState(null); // {id, name, balance}
+  const [cargarAmount, setCargarAmount] = useState('');
+  const [cargarDesc, setCargarDesc] = useState('');
+  const [cargarBusy, setCargarBusy] = useState(false);
   const [newClientModal, setNewClientModal] = useState(false);
   const [newClientName, setNewClientName] = useState('');
   const [showObraForm, setShowObraForm] = useState(null); // {customer_id}
@@ -109,6 +113,37 @@ export default function FiadoModule() {
       }
     } catch {
       addToast?.('Error de conexión.', 'error');
+    }
+  };
+
+  const handleCargar = async () => {
+    if (!cargarAmount || isNaN(cargarAmount) || Number(cargarAmount) <= 0) return;
+    setCargarBusy(true);
+    try {
+      const res = await apiPost(`/customers/${cargarModal.id}/charge`, {
+        amount: Number(cargarAmount),
+        description: cargarDesc.trim(),
+        operator: operadorActual,
+      });
+      if (res.ok) {
+        addToast?.('Fiado cargado.', 'success');
+        setCargarModal(null);
+        setCargarAmount('');
+        setCargarDesc('');
+        fetchCustomers();
+        // refrescar el historial si el cliente esta abierto
+        const tRes = await apiGet(`/customers/${cargarModal.id}/transactions`);
+        if (tRes.ok) {
+          const tData = await tRes.json();
+          setTransactionsMap(prev => ({ ...prev, [cargarModal.id]: tData }));
+        }
+      } else {
+        addToast?.('No se pudo cargar el fiado.', 'error');
+      }
+    } catch {
+      addToast?.('Error de conexión.', 'error');
+    } finally {
+      setCargarBusy(false);
     }
   };
 
@@ -288,6 +323,15 @@ export default function FiadoModule() {
                     </button>
                   )}
                   <button
+                    onClick={(e) => { e.stopPropagation(); setCargarModal(c); }}
+                    title="Sumar deuda a este cliente (fiado con descripción)"
+                    style={{ background: 'transparent', color: 'var(--accent-warning)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', padding: '8px 13px', fontSize: '0.86rem', fontWeight: 700, cursor: 'pointer', transition: 'border-color 0.15s', display: 'flex', alignItems: 'center', gap: '6px' }}
+                    onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--accent-warning)'}
+                    onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border-color)'}
+                  >
+                    <span style={{ fontSize: '1.05rem', lineHeight: 1 }}>+</span> Cargar fiado
+                  </button>
+                  <button
                     onClick={(e) => { e.stopPropagation(); setAbonoModal(c); }}
                     style={{ background: 'var(--accent-primary)', color: 'var(--sheet)', border: 'none', borderRadius: 'var(--radius-sm)', padding: '8px 15px', fontSize: '0.86rem', fontWeight: 800, cursor: 'pointer', transition: 'filter 0.15s', display: 'flex', alignItems: 'center', gap: '6px' }}
                     onMouseEnter={e => e.currentTarget.style.filter = 'brightness(1.08)'}
@@ -436,6 +480,46 @@ export default function FiadoModule() {
           </div>
         </div>
       )}
+      {/* MODAL CARGAR FIADO */}
+      {cargarModal && (
+        <div className="modal-overlay" onClick={() => setCargarModal(null)}>
+          <div onClick={e => e.stopPropagation()} className="ledger-sheet" style={{ padding: '28px', width: '400px', maxWidth: '90vw', boxShadow: 'var(--shadow-lg)' }}>
+            <h3 className="ledger-title" style={{ margin: '0 0 8px 0', fontSize: '1.5rem' }}>Cargar fiado</h3>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '24px' }}>Cliente: <strong>{cargarModal.name}</strong><br/>Deuda actual: <strong style={{ color: 'var(--accent-warning)' }}>${(cargarModal.balance ?? 0).toLocaleString('es-AR')}</strong></p>
+
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>¿Cuánto se lleva? ($)</label>
+              <input
+                type="number"
+                inputMode="numeric"
+                value={cargarAmount}
+                onChange={e => setCargarAmount(e.target.value)}
+                autoFocus
+                placeholder="Ej: 2800"
+                style={{ width: '100%', background: 'var(--bg-main)', border: '2px solid var(--accent-warning)', color: 'var(--text-primary)', padding: '16px', borderRadius: '12px', fontSize: '1.5rem', fontFamily: 'var(--font-mono)', textAlign: 'center', outline: 'none', boxSizing: 'border-box' }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>¿Qué se llevó? (opcional)</label>
+              <input
+                type="text"
+                value={cargarDesc}
+                onChange={e => setCargarDesc(e.target.value)}
+                placeholder="Ej: dos pan y una coca"
+                onKeyDown={e => { if (e.key === 'Enter' && cargarAmount && !cargarBusy) handleCargar(); }}
+                style={{ width: '100%', background: 'var(--bg-main)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '12px 16px', borderRadius: '12px', fontSize: '1rem', outline: 'none', boxSizing: 'border-box' }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button onClick={() => setCargarModal(null)} style={{ flex: 1, padding: '15px', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', borderRadius: 'var(--radius-sm)', fontWeight: 700, cursor: 'pointer' }}>Cancelar</button>
+              <button onClick={handleCargar} disabled={!cargarAmount || cargarBusy} style={{ flex: 1, padding: '15px', background: 'var(--accent-warning)', border: 'none', color: 'var(--sheet)', borderRadius: 'var(--radius-sm)', fontWeight: 800, cursor: (cargarAmount && !cargarBusy) ? 'pointer' : 'not-allowed', opacity: (cargarAmount && !cargarBusy) ? 1 : 0.5 }}>{cargarBusy ? 'Cargando…' : 'Cargar deuda'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* MODAL NUEVO CLIENTE */}
       {newClientModal && (
         <div className="modal-overlay" onClick={() => setNewClientModal(false)}>

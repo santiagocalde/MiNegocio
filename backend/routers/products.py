@@ -450,13 +450,14 @@ async def create_product(request: Request, product: dict = Body(...)) -> Dict[st
         pool = await get_pg_pool()
         async with pool.acquire() as conn:
             row = await conn.fetchrow("""
-                INSERT INTO products (business_id, code, name, price, cost_price, stock, min_stock, iva, category_id, is_virtual, parent_id, pack_size, expiry_date, price_b, unit_label)
-                VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) RETURNING id
+                INSERT INTO products (business_id, code, name, price, cost_price, stock, min_stock, iva, category_id, is_virtual, parent_id, pack_size, expiry_date, price_b, price_c, price_d, price_e, unit_label, supplier_id)
+                VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19) RETURNING id
             """, b_id, code, product.get("name"), product.get("price", 0), product.get("cost_price", 0),
                 product.get("stock", 0), product.get("min_stock", 5), product.get("iva", "21%"),
                 product.get("category_id"), 1 if product.get("is_virtual") else 0,
                 product.get("parent_id"), product.get("pack_size", 1), product.get("expiry_date", ""),
-                product.get("price_b"), product.get("unit_label", "unidad"))
+                product.get("price_b"), product.get("price_c"), product.get("price_d"), product.get("price_e"),
+                product.get("unit_label", "unidad"), product.get("supplier_id"))
             extra = _parse_extra_codes(product.get("extra_codes"), code)
             if extra:
                 await conn.executemany(
@@ -471,12 +472,13 @@ async def create_product(request: Request, product: dict = Body(...)) -> Dict[st
     else:
         async with aiosqlite.connect(main.DB_PATH) as db:
             cur = await db.execute(
-                "INSERT INTO products (code,name,price,cost_price,stock,min_stock,iva,category_id,is_virtual,parent_id,pack_size,expiry_date,price_b,unit_label) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO products (code,name,price,cost_price,stock,min_stock,iva,category_id,is_virtual,parent_id,pack_size,expiry_date,price_b,price_c,price_d,price_e,unit_label,supplier_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                 (code, product.get("name"), product.get("price", 0), product.get("cost_price", 0),
                  product.get("stock", 0), product.get("min_stock", 5), product.get("iva", "21%"),
                  product.get("category_id"), 1 if product.get("is_virtual") else 0,
                  product.get("parent_id"), product.get("pack_size", 1), product.get("expiry_date", ""),
-                 product.get("price_b"), product.get("unit_label", "unidad"))
+                 product.get("price_b"), product.get("price_c"), product.get("price_d"), product.get("price_e"),
+                 product.get("unit_label", "unidad"), product.get("supplier_id"))
             )
             new_id = cur.lastrowid
             extra = _parse_extra_codes(product.get("extra_codes"), code)
@@ -787,3 +789,92 @@ async def get_audit_logs(request: Request, limit: int = Query(100)) -> list:
             cur = await db.execute("SELECT * FROM audit_log ORDER BY timestamp DESC LIMIT ?", (limit,))
             rows = await cur.fetchall()
             return [row_to_dict(r, cur.description) for r in rows]
+
+
+@router.get("/api/suppliers/{supplier_id}/products-count", summary="Cuantos productos tiene un proveedor (para el preview del aumento)")
+async def supplier_products_count(supplier_id: int) -> dict:
+    b_id = _biz_id()
+    if USE_PG:
+        from db_helpers import get_pg_pool
+        pool = await get_pg_pool()
+        async with pool.acquire() as conn:
+            n = await conn.fetchval(
+                "SELECT COUNT(*) FROM products WHERE supplier_id = $1 AND business_id = $2 AND is_active = 1",
+                supplier_id, b_id
+            )
+            return {"count": int(n or 0)}
+    else:
+        async with aiosqlite.connect(main.DB_PATH) as db:
+            cur = await db.execute(
+                "SELECT COUNT(*) FROM products WHERE supplier_id = ? AND is_active = 1",
+                (supplier_id,)
+            )
+            row = await cur.fetchone()
+            return {"count": int(row[0] or 0)}
+
+
+@router.post("/api/suppliers/{supplier_id}/price-update", summary="Aumentar/bajar los precios de venta de todos los productos de un proveedor por %")
+@limiter.limit("20/minute")
+async def supplier_price_update(request: Request, supplier_id: int, body: dict = Body(...)) -> dict:
+    """Aplica un porcentaje a los precios de VENTA (price + listas B/C/D/E) de todos
+    los productos de un proveedor. Ej: percent=5 sube todo 5%. Acepta negativos para bajar.
+    NO toca el costo (cost_price) para no cambiar lo que el negocio pago. Redondea a peso entero."""
+    b_id = _biz_id()
+    try:
+        percent = float(body.get("percent"))
+    except (TypeError, ValueError):
+        raise HTTPException(400, detail="Porcentaje invalido")
+    if percent == 0:
+        raise HTTPException(400, detail="El porcentaje no puede ser cero")
+    if percent < -90 or percent > 1000:
+        raise HTTPException(400, detail="El porcentaje esta fuera de un rango razonable (-90 a 1000)")
+    factor = 1 + percent / 100.0
+
+    if USE_PG:
+        from db_helpers import get_pg_pool
+        pool = await get_pg_pool()
+        async with pool.acquire() as conn:
+            sup = await conn.fetchrow("SELECT id FROM suppliers WHERE id = $1 AND business_id = $2", supplier_id, b_id)
+            if not sup:
+                raise HTTPException(404, detail="Proveedor no encontrado")
+            # $1::numeric es obligatorio: ROUND(double precision, int) no existe en PG,
+            # solo ROUND(numeric, int). Sin el cast, el UPDATE falla en produccion.
+            result = await conn.execute(
+                """UPDATE products SET
+                       price   = ROUND(price   * $1::numeric, 0),
+                       price_b = CASE WHEN price_b IS NOT NULL THEN ROUND(price_b * $1::numeric, 0) ELSE NULL END,
+                       price_c = CASE WHEN price_c IS NOT NULL THEN ROUND(price_c * $1::numeric, 0) ELSE NULL END,
+                       price_d = CASE WHEN price_d IS NOT NULL THEN ROUND(price_d * $1::numeric, 0) ELSE NULL END,
+                       price_e = CASE WHEN price_e IS NOT NULL THEN ROUND(price_e * $1::numeric, 0) ELSE NULL END,
+                       updated_at = now()
+                   WHERE supplier_id = $2 AND business_id = $3 AND is_active = 1""",
+                factor, supplier_id, b_id
+            )
+            # result es tipo "UPDATE N"
+            try:
+                updated = int(result.split()[-1])
+            except (ValueError, IndexError):
+                updated = 0
+            return {"success": True, "updated": updated, "percent": percent}
+    else:
+        async with main.db_write_lock:
+            async with aiosqlite.connect(main.DB_PATH) as db:
+                await db.execute("BEGIN IMMEDIATE")
+                cur = await db.execute("SELECT id FROM suppliers WHERE id = ?", (supplier_id,))
+                if not await cur.fetchone():
+                    await db.rollback()
+                    raise HTTPException(404, detail="Proveedor no encontrado")
+                cur = await db.execute(
+                    """UPDATE products SET
+                           price   = ROUND(price   * ?, 0),
+                           price_b = CASE WHEN price_b IS NOT NULL THEN ROUND(price_b * ?, 0) ELSE NULL END,
+                           price_c = CASE WHEN price_c IS NOT NULL THEN ROUND(price_c * ?, 0) ELSE NULL END,
+                           price_d = CASE WHEN price_d IS NOT NULL THEN ROUND(price_d * ?, 0) ELSE NULL END,
+                           price_e = CASE WHEN price_e IS NOT NULL THEN ROUND(price_e * ?, 0) ELSE NULL END,
+                           updated_at = datetime('now','localtime')
+                       WHERE supplier_id = ? AND is_active = 1""",
+                    (factor, factor, factor, factor, factor, supplier_id)
+                )
+                updated = cur.rowcount
+                await db.commit()
+                return {"success": True, "updated": updated, "percent": percent}

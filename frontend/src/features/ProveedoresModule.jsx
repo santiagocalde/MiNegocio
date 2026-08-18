@@ -12,14 +12,6 @@ const Icons = {
   Plus: () => <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
 };
 
-const formatPhone = (phone) => {
-  if (!phone) return '';
-  const digits = phone.replace(/\D/g, '');
-  if (digits.startsWith('0')) return '54' + digits.slice(1);
-  if (digits.startsWith('54')) return digits;
-  return '54' + digits;
-};
-
 export default function ProveedoresModule() {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
@@ -33,11 +25,13 @@ export default function ProveedoresModule() {
   const [showAbonar, setShowAbonar] = useState(null);
   const [abonarMonto, setAbonarMonto] = useState('');
   const [abonarMotivo, setAbonarMotivo] = useState('');
+  const [showAumento, setShowAumento] = useState(null); // proveedor
+  const [aumentoPct, setAumentoPct] = useState('');
+  const [aumentoCount, setAumentoCount] = useState(null); // productos afectados (preview)
+  const [aumentoBusy, setAumentoBusy] = useState(false);
   const [newProv, setNewProv] = useState({ name: '', contact: '', phone: '' });
 
   // Pedido a proveedor — movido a Compras → tab "📋 Hacer pedido"
-  // Solo se mantiene el estado mínimo para no romper referencias residuales
-  const [showPedido] = useState(null);
 
   const fetchProveedores = () => {
     setLoading(true);
@@ -67,15 +61,41 @@ export default function ProveedoresModule() {
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { fetchProveedores(); }, []);
 
-  // Funciones de pedido movidas a PedidoProveedorTab (Compras)
-  // Se conserva solo handleSendPedidoWhatsApp por si hay referencias residuales en el template
-  const handleSendPedidoWhatsApp = () => {
-    if (!showPedido) return;
-    const phone = formatPhone(showPedido.phone);
-    const url = phone 
-      ? `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`
-      : `https://wa.me/?text=${encodeURIComponent(msg)}`;
-    window.open(url, '_blank');
+  const openAumento = async (p) => {
+    setShowAumento(p);
+    setAumentoPct('');
+    setAumentoCount(null);
+    try {
+      const res = await apiGet(`/suppliers/${p.id}/products-count`);
+      if (res.ok) {
+        const d = await res.json();
+        setAumentoCount(d.count ?? 0);
+      }
+    } catch { /* el preview es opcional */ }
+  };
+
+  const handleAumento = async () => {
+    const pct = parseFloat(aumentoPct);
+    if (isNaN(pct) || pct === 0) {
+      addToast?.('Ingresá un porcentaje distinto de cero.', 'error');
+      return;
+    }
+    setAumentoBusy(true);
+    try {
+      const res = await apiPost(`/suppliers/${showAumento.id}/price-update`, { percent: pct });
+      if (res.ok) {
+        const d = await res.json();
+        addToast?.(`Listo: ${d.updated} producto${d.updated === 1 ? '' : 's'} actualizado${d.updated === 1 ? '' : 's'} (${pct > 0 ? '+' : ''}${pct}%).`, 'success');
+        setShowAumento(null);
+      } else {
+        const d = await res.json().catch(() => ({}));
+        addToast?.(d.detail || 'No se pudo actualizar los precios.', 'error');
+      }
+    } catch {
+      addToast?.('Sin internet. Revisá tu conexión.', 'error');
+    } finally {
+      setAumentoBusy(false);
+    }
   };
 
   const handleCreate = async () => {
@@ -140,6 +160,7 @@ export default function ProveedoresModule() {
                   </div>
                    <div style={{ display: 'flex', gap: '10px', width: isMobile ? '100%' : undefined }}>
                       <button onClick={(e) => { e.stopPropagation(); navigate(`/panel/compras?supplier_id=${p.id}`); }} style={{ padding: '8px 16px', background: 'transparent', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', fontWeight: 700, cursor: 'pointer', transition: 'border-color 0.15s', flex: isMobile ? 1 : undefined }} onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--accent-primary)'} onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border-color)'}>Historial</button>
+                      <button onClick={(e) => { e.stopPropagation(); openAumento(p); }} title="Aumentar o bajar los precios de venta de todos los productos de este proveedor" style={{ padding: '8px 16px', background: 'var(--wash-primary)', color: 'var(--accent-primary)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', fontWeight: 700, cursor: 'pointer', transition: 'border-color 0.15s', flex: isMobile ? 1 : undefined }} onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--accent-primary)'} onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border-color)'}>% Precios</button>
                       {/* "Hacer pedido" movido a Compras → tab "📋 Hacer pedido" */}
                       {p.debt > 0 && <button onClick={(e) => { e.stopPropagation(); setShowAbonar(p); setAbonarMonto(''); setAbonarMotivo(''); }} style={{ padding: '8px 16px', background: 'var(--wash-danger)', color: 'var(--accent-danger)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', fontWeight: 700, cursor: 'pointer', flex: isMobile ? 1 : undefined }}>Abonar</button>}
                    </div>
@@ -219,6 +240,44 @@ export default function ProveedoresModule() {
               }} style={{ background: 'var(--accent-primary)', border: 'none', color: 'var(--sheet)', padding: '10px 24px', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontWeight: 800 }}
                 disabled={!abonarMonto || parseFloat(abonarMonto) <= 0}>
                 Pagar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showAumento && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(30,58,95,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '16px' }} onClick={() => setShowAumento(null)}>
+          <div onClick={e => e.stopPropagation()} className="ledger-sheet" style={{ padding: isMobile ? '24px' : '32px', width: '420px', maxWidth: '92vw', boxSizing: 'border-box', boxShadow: 'var(--shadow-lg)' }}>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 800, margin: '0 0 6px 0', color: 'var(--text-primary)' }}>Actualizar precios</h2>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '20px', fontSize: '0.9rem' }}>
+              Proveedor: <strong>{showAumento.name}</strong>
+              {aumentoCount !== null && (
+                <><br/>Afecta a <strong>{aumentoCount}</strong> producto{aumentoCount === 1 ? '' : 's'} de este proveedor.</>
+              )}
+            </p>
+
+            <div style={{ marginBottom: '14px' }}>
+              <label style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '6px', fontWeight: 600 }}>Porcentaje de aumento (%)</label>
+              <input type="number" inputMode="decimal" value={aumentoPct} onChange={e => setAumentoPct(e.target.value)} autoFocus placeholder="Ej: 5"
+                onKeyDown={e => { if (e.key === 'Enter' && aumentoPct && !aumentoBusy) handleAumento(); }}
+                style={{ width: '100%', padding: '14px', background: 'var(--bg-main)', border: '2px solid var(--accent-primary)', color: 'var(--text-primary)', borderRadius: '12px', outline: 'none', fontSize: '1.5rem', fontFamily: 'var(--font-mono)', textAlign: 'center', boxSizing: 'border-box' }} />
+            </div>
+
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
+              {[5, 10, 15].map(v => (
+                <button key={v} onClick={() => setAumentoPct(String(v))} style={{ flex: 1, minWidth: 64, padding: '9px', background: 'var(--surface-veil)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontWeight: 700 }}>+{v}%</button>
+              ))}
+            </div>
+
+            <p style={{ color: 'var(--text-faint)', fontSize: '0.78rem', margin: '0 0 20px' }}>
+              Se aplican sobre los precios de <strong>venta</strong> (todas las listas). El costo no cambia. Podés usar un número negativo para bajar. Los importes se redondean a peso entero.
+            </p>
+
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <button onClick={() => setShowAumento(null)} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', padding: '10px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Cancelar</button>
+              <button onClick={handleAumento} disabled={!aumentoPct || aumentoBusy || (aumentoCount === 0)} style={{ background: 'var(--accent-primary)', border: 'none', color: 'var(--sheet)', padding: '10px 24px', borderRadius: 'var(--radius-sm)', cursor: (aumentoPct && !aumentoBusy && aumentoCount !== 0) ? 'pointer' : 'not-allowed', fontWeight: 800, opacity: (aumentoPct && !aumentoBusy && aumentoCount !== 0) ? 1 : 0.5 }}>
+                {aumentoBusy ? 'Aplicando…' : 'Aplicar aumento'}
               </button>
             </div>
           </div>

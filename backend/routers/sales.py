@@ -1411,3 +1411,49 @@ async def pay_customer_balance(customer_id: int, payment: dict = Body(...)) -> d
                     )
             await db.commit()
         return {"success": True, "new_balance": new_balance}
+
+
+@router.post("/api/customers/{customer_id}/charge", summary="Cargar deuda a un cliente (fiado manual con descripcion)")
+async def charge_customer_balance(customer_id: int, body: dict = Body(...)) -> dict:
+    """Suma deuda a un cliente sin pasar por el POS. Ej: 'sacó dos pan' $2800.
+    NO toca el cajón (no es movimiento de efectivo, solo deuda que queda anotada)."""
+    b_id = _biz_id()
+    try:
+        amount = round(float(body.get("amount", 0)), 2)
+    except (TypeError, ValueError):
+        raise HTTPException(400, detail="Monto invalido")
+    if amount <= 0:
+        raise HTTPException(400, detail="El monto a cargar debe ser mayor a cero")
+    operator = body.get("operator", "Sistema")
+    desc = (body.get("description") or "").strip() or "Fiado"
+    if USE_PG:
+        from db_helpers import get_pg_pool
+        pool = await get_pg_pool()
+        async with pool.acquire() as conn:
+            async with conn.transaction():
+                cust = await conn.fetchrow("SELECT id, balance FROM customers WHERE id = $1 AND business_id = $2", customer_id, b_id)
+                if not cust:
+                    raise HTTPException(404, detail="Cliente no encontrado")
+                new_balance = round((cust["balance"] or 0) + amount, 2)
+                await conn.execute("UPDATE customers SET balance = $1 WHERE id = $2", new_balance, customer_id)
+                await conn.execute(
+                    "INSERT INTO customer_transactions (business_id, customer_id, amount, type, description, operator) VALUES ($1,$2,$3,'charge',$4,$5)",
+                    b_id, customer_id, amount, desc, operator
+                )
+            return {"success": True, "new_balance": new_balance}
+    else:
+        import aiosqlite
+        async with aiosqlite.connect(main.DB_PATH) as db:
+            await db.execute("BEGIN IMMEDIATE")
+            cur = await db.execute("SELECT balance FROM customers WHERE id=?", (customer_id,))
+            row = await cur.fetchone()
+            if not row:
+                raise HTTPException(404, detail="Cliente no encontrado")
+            new_balance = round((row[0] or 0) + amount, 2)
+            await db.execute("UPDATE customers SET balance = ? WHERE id = ?", (new_balance, customer_id))
+            await db.execute(
+                "INSERT INTO customer_transactions (customer_id, amount, type, description, operator) VALUES (?,?,?,?,?)",
+                (customer_id, amount, 'charge', desc, operator)
+            )
+            await db.commit()
+        return {"success": True, "new_balance": new_balance}
