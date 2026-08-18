@@ -6,7 +6,7 @@
  */
 import { useState, useEffect, useCallback } from 'react';
 import { usePanelContext } from '../context/PanelContext';
-import { apiGet, apiPost, apiDelete } from '../services/apiClient';
+import { apiGet, apiPost, apiDelete, apiPatch } from '../services/apiClient';
 
 const formatPesos = (v) => (v ?? 0).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
@@ -26,6 +26,15 @@ export default function ClientesModule() {
   const [fDni, setFDni]           = useState('');
   const [fAddress, setFAddress]   = useState('');
   const [fDebt, setFDebt]         = useState('');
+
+  // Editar cliente
+  const [editing, setEditing]         = useState(false);
+  const [editName, setEditName]       = useState('');
+  const [editPhone, setEditPhone]     = useState('');
+  const [editEmail, setEditEmail]     = useState('');
+  const [editDni, setEditDni]         = useState('');
+  const [editAddress, setEditAddress] = useState('');
+  const [editSaving, setEditSaving]   = useState(false);
 
   // Agregar dirección
   const [showAddAddr, setShowAddAddr] = useState(false);
@@ -52,6 +61,36 @@ export default function ClientesModule() {
     const addresses = res.ok ? await res.json() : [];
     setDetail({ cliente: c, addresses });
     setShowAddAddr(false);
+    setEditing(false);
+  };
+
+  const openEdit = (c) => {
+    setEditName(c.name || '');
+    setEditPhone(c.phone || '');
+    setEditEmail(c.email || '');
+    setEditDni(c.dni_cuit || '');
+    setEditAddress(c.address || '');
+    setEditing(true);
+  };
+
+  const handleEditSave = async () => {
+    if (!editName.trim()) { addToast?.('El nombre es obligatorio.', 'error'); return; }
+    setEditSaving(true);
+    const res = await apiPatch(`/customers/${detail.cliente.id}`, {
+      name: editName.trim(),
+      phone: editPhone || null,
+      email: editEmail || null,
+      dni_cuit: editDni || null,
+      address: editAddress || null,
+    });
+    if (res.ok) {
+      addToast?.('Cliente actualizado.', 'success');
+      const updated = { ...detail.cliente, name: editName.trim(), phone: editPhone || null, email: editEmail || null, dni_cuit: editDni || null, address: editAddress || null };
+      setDetail(d => ({ ...d, cliente: updated }));
+      setClientes(cs => cs.map(c => c.id === updated.id ? updated : c));
+      setEditing(false);
+    } else { addToast?.('Error al actualizar cliente.', 'error'); }
+    setEditSaving(false);
   };
 
   const resetForm = () => {
@@ -217,7 +256,7 @@ export default function ClientesModule() {
       {/* ── Modal: Detalle de cliente + direcciones ── */}
       {detail && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(11,19,43,0.72)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
-          onMouseDown={e => { if (e.target === e.currentTarget) { setDetail(null); setShowAddAddr(false); } }}>
+          onMouseDown={e => { if (e.target === e.currentTarget) { setDetail(null); setShowAddAddr(false); setEditing(false); } }}>
           <div onMouseDown={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 500, maxHeight: '92vh', overflow: 'auto', background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line-strong)', borderRadius: 12, padding: 24, boxShadow: 'var(--lp-shadow-lg)' }}>
             {/* Cabecera */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
@@ -231,18 +270,59 @@ export default function ClientesModule() {
                   </span>
                 )}
               </div>
-              <button onClick={() => { setDetail(null); setShowAddAddr(false); }} style={{ background: 'none', border: 'none', color: 'var(--lp-ink-faint)', cursor: 'pointer', fontSize: '1.3rem' }}>✕</button>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <button onClick={() => editing ? setEditing(false) : openEdit(detail.cliente)}
+                  style={{ background: editing ? 'transparent' : 'rgba(20,187,166,0.1)', border: '1px solid rgba(20,187,166,0.3)', color: 'var(--lp-primary)', padding: '4px 12px', borderRadius: 6, cursor: 'pointer', fontSize: '0.78rem', fontWeight: 700 }}>
+                  {editing ? '✕ Cancelar' : '✎ Editar'}
+                </button>
+                <button onClick={() => { setDetail(null); setShowAddAddr(false); setEditing(false); }} style={{ background: 'none', border: 'none', color: 'var(--lp-ink-faint)', cursor: 'pointer', fontSize: '1.3rem' }}>✕</button>
+              </div>
             </div>
 
-            {/* Info básica */}
+            {/* Modo edición */}
+            {editing ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 18 }}>
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--lp-ink-faint)', display: 'block', marginBottom: 3 }}>Nombre *</label>
+                  <input value={editName} onChange={e => setEditName(e.target.value)} style={inputS} autoFocus />
+                </div>
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--lp-ink-faint)', display: 'block', marginBottom: 3 }}>Teléfono</label>
+                    <input value={editPhone} onChange={e => setEditPhone(e.target.value)} placeholder="11 1234-5678" style={inputS} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--lp-ink-faint)', display: 'block', marginBottom: 3 }}>Email</label>
+                    <input value={editEmail} onChange={e => setEditEmail(e.target.value)} placeholder="cliente@email.com" style={inputS} />
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--lp-ink-faint)', display: 'block', marginBottom: 3 }}>DNI / CUIT</label>
+                    <input value={editDni} onChange={e => setEditDni(e.target.value)} placeholder="20-12345678-9" style={inputS} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--lp-ink-faint)', display: 'block', marginBottom: 3 }}>Dirección</label>
+                    <input value={editAddress} onChange={e => setEditAddress(e.target.value)} placeholder="Av. Siempre Viva 742" style={inputS} />
+                  </div>
+                </div>
+                <button onClick={handleEditSave} disabled={editSaving || !editName.trim()} className="lp-btn lp-btn--primary"
+                  style={{ opacity: (!editName.trim() || editSaving) ? 0.6 : 1 }}>
+                  {editSaving ? 'Guardando...' : 'Guardar cambios'}
+                </button>
+              </div>
+            ) : (
+            /* Info básica (vista) */
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 18, padding: '12px 14px', background: 'var(--lp-paper-sunken)', borderRadius: 8, fontSize: '0.83rem', color: 'var(--lp-ink-faint)' }}>
               {detail.cliente.phone && <div>📞 {detail.cliente.phone}</div>}
               {detail.cliente.email && <div>✉️ {detail.cliente.email}</div>}
               {detail.cliente.dni_cuit && <div>🪪 {detail.cliente.dni_cuit}</div>}
-              {!detail.cliente.phone && !detail.cliente.email && !detail.cliente.dni_cuit && (
+              {detail.cliente.address && <div>📍 {detail.cliente.address}</div>}
+              {!detail.cliente.phone && !detail.cliente.email && !detail.cliente.dni_cuit && !detail.cliente.address && (
                 <div style={{ color: 'var(--lp-ink-faint)', fontStyle: 'italic' }}>Sin datos de contacto adicionales.</div>
               )}
             </div>
+            )}
 
             {/* Sección de direcciones */}
             <div style={{ marginBottom: 16 }}>

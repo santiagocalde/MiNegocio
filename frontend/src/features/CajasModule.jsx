@@ -105,7 +105,7 @@ export default function CajasModule() {
   };
 
   return (
-    <div style={{ padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 14, height: '100%', overflowY: 'auto' }}>
+    <div style={{ padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 14, minHeight: 0 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
         <div>
           <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800 }}>Cajas</h2>
@@ -136,7 +136,7 @@ export default function CajasModule() {
       </div>
 
       {/* Tabla de cajas */}
-      <div className="ledger-sheet" style={{ overflow: 'hidden' }}>
+      <div className="ledger-sheet">
         {loading ? (
           <SkeletonTable rows={6} cols={7} />
         ) : sortedTurns.length === 0 ? (

@@ -14,7 +14,7 @@ const Icons = {
 };
 
 export default function FiadoModule() {
-  const { addToast, currentPlan, auth } = usePanelContext();
+  const { addToast, currentPlan, auth, businessType } = usePanelContext();
   const operadorActual = auth?.currentOperator?.name || 'Cajero';
   const isMobile = useIsMobile();
   const [cobranza, setCobranza] = useState(null); // {nombre, telefono, texto, loading}
@@ -379,8 +379,8 @@ export default function FiadoModule() {
                     </tbody>
                     </table>
 
-                  {/* Obras del cliente */}
-                  <div style={{ borderTop: '1px solid var(--rule-strong)', padding: '16px 24px' }}>
+                  {/* Obras del cliente — solo corralón */}
+                  {businessType === 'corralon' && <div style={{ borderTop: '1px solid var(--rule-strong)', padding: '16px 24px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                       <span className="ledger-label" style={{ fontSize: '0.8rem' }}>Obras</span>
                       <button onClick={() => { toggleObras(c.id); setShowObraForm(showObraForm?.customer_id === c.id ? null : { customer_id: c.id }); }}
@@ -405,7 +405,7 @@ export default function FiadoModule() {
                     ) : (
                       <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>Sin obras cargadas</div>
                     )}
-                  </div>
+                  </div>}
                 </div>
               )}
             </div>
