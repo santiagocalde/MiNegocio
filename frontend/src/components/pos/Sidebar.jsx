@@ -350,7 +350,7 @@ export default function Sidebar({
           )}
           {currentTurnId && (
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 700, paddingTop: '4px', borderTop: '1px solid var(--border-color)' }}>
-              <span style={{ color: 'var(--text-primary)', fontSize: '0.75rem', fontWeight: 800 }}>EFT en caja</span>
+              <span style={{ color: 'var(--text-primary)', fontSize: '0.75rem', fontWeight: 800 }}>Efectivo estimado</span>
               <span style={{ color: 'var(--accent-primary)', fontSize: 'var(--fs-sm)', fontFamily: 'var(--font-mono)', fontWeight: 800 }}>
                 ${((initialCash || 0) + (cashSalesTotal || 0) - (totalEgresos || 0)).toLocaleString('es-AR')}
               </span>
