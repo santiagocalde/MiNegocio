@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { usePanelContext } from '../context/PanelContext';
 import { apiGet, apiPost, SERVER_URL } from '../services/apiClient';
 import { SkeletonTable } from '../components/ui/Skeleton';
@@ -27,7 +28,7 @@ export default function ReportsModule() {
   const [estimada, setEstimada] = useState({ ventas: 0, tickets: 0, margen_pct: 35, ganancia_estimada: 0 });
   const [periodKey, setPeriodKey] = useState(null);
 
-  const [menuOpenId, setMenuOpenId] = useState(null);
+  const [menuSale, setMenuSale] = useState(null);
   const [menuAnchor, setMenuAnchor] = useState({ top: 0, left: 0 });
   const [methodModal, setMethodModal] = useState(null);
   const [methodPick, setMethodPick] = useState('efectivo');
@@ -163,8 +164,11 @@ export default function ReportsModule() {
   const openRowMenu = (e, sale) => {
     e.stopPropagation();
     const rect = e.currentTarget.getBoundingClientRect();
-    setMenuAnchor({ top: rect.bottom + 4, left: Math.min(rect.left, window.innerWidth - 230) });
-    setMenuOpenId(menuOpenId === sale.id ? null : sale.id);
+    const menuW = 215;
+    const left = Math.min(rect.left, window.innerWidth - menuW - 12);
+    const top = Math.min(rect.bottom + 4, window.innerHeight - 96);
+    setMenuAnchor({ top, left });
+    setMenuSale(menuSale && menuSale.id === sale.id ? null : sale);
   };
 
   const submitMethodChange = async () => {
@@ -175,7 +179,7 @@ export default function ReportsModule() {
       if (res.ok) {
         addToast?.('Método de pago actualizado.', 'success');
         setMethodModal(null);
-        setMenuOpenId(null);
+        setMenuSale(null);
         fetchReports(true);
         fetchEstimada();
       } else {
@@ -200,7 +204,7 @@ export default function ReportsModule() {
         addToast?.('Venta anulada. El stock volvió al inventario.', 'success');
         setCancelModal(null);
         setCancelPin('');
-        setMenuOpenId(null);
+        setMenuSale(null);
         fetchReports(true);
         fetchEstimada();
       } else {
@@ -499,21 +503,6 @@ export default function ReportsModule() {
                               style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '6px', borderRadius: 6, display: 'inline-flex', alignItems: 'center' }}>
                               <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="12" cy="19" r="1.7"/></svg>
                             </button>
-                            {menuOpenId === sale.id && (
-                              <>
-                                <div style={{ position: 'fixed', inset: 0, zIndex: 999 }} onClick={() => setMenuOpenId(null)} />
-                                <div style={{ position: 'fixed', top: menuAnchor.top, left: menuAnchor.left, zIndex: 1000, background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 10, boxShadow: '0 8px 28px rgba(0,0,0,0.35)', minWidth: 215, padding: 6 }}>
-                                  <button onClick={() => { setMethodModal(sale); setMethodPick((sale.payment_method && METHOD_LABEL[sale.payment_method] && sale.payment_method !== 'split') ? sale.payment_method : 'efectivo'); setMenuOpenId(null); }}
-                                    style={menuItemStyle}>
-                                    Modificar método de pago
-                                  </button>
-                                  <button onClick={() => { setCancelModal(sale); setCancelPin(''); setMenuOpenId(null); }}
-                                    style={{ ...menuItemStyle, color: 'var(--accent-danger)' }}>
-                                    Cancelar venta
-                                  </button>
-                                </div>
-                              </>
-                            )}
                           </td>
                         </tr>
                       ))}
@@ -527,6 +516,23 @@ export default function ReportsModule() {
               </div>
         )}
       </div>
+
+      {menuSale && createPortal(
+        <>
+          <div style={{ position: 'fixed', inset: 0, zIndex: 999 }} onClick={() => setMenuSale(null)} />
+          <div style={{ position: 'fixed', top: menuAnchor.top, left: menuAnchor.left, zIndex: 1000, background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 10, boxShadow: '0 8px 28px rgba(0,0,0,0.35)', minWidth: 215, padding: 6 }}>
+            <button onClick={() => { setMethodModal(menuSale); setMethodPick((menuSale.payment_method && METHOD_LABEL[menuSale.payment_method] && menuSale.payment_method !== 'split') ? menuSale.payment_method : 'efectivo'); setMenuSale(null); }}
+              style={menuItemStyle}>
+              Modificar método de pago
+            </button>
+            <button onClick={() => { setCancelModal(menuSale); setCancelPin(''); setMenuSale(null); }}
+              style={{ ...menuItemStyle, color: 'var(--accent-danger)' }}>
+              Cancelar venta
+            </button>
+          </div>
+        </>,
+        document.body
+      )}
 
       {methodModal && (
         <div className="modal-overlay" onClick={() => setMethodModal(null)}>
