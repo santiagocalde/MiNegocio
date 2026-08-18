@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { usePanelContext } from '../context/PanelContext';
-import { apiGet, SERVER_URL } from '../services/apiClient';
+import { apiGet, apiPost, SERVER_URL } from '../services/apiClient';
 import { SkeletonTable } from '../components/ui/Skeleton';
 import EmptyState from '../components/ui/EmptyState';
 import useSortable from '../hooks/useSortable.jsx';
@@ -12,7 +12,7 @@ function formatPesos(n) {
 }
 
 export default function ReportsModule() {
-  const { currentPlan, currentSucursalId, trialDaysRemaining, isTrialExpired, trialEndDateFormatted } = usePanelContext();
+  const { currentPlan, currentSucursalId, trialDaysRemaining, isTrialExpired, trialEndDateFormatted, auth, addToast } = usePanelContext();
   const isMobile = useIsMobile();
   const sucursalId = currentSucursalId;
   const [dateFrom, setDateFrom] = useState('');
@@ -26,6 +26,15 @@ export default function ReportsModule() {
   const [searchQuery, setSearchQuery] = useState('');
   const [estimada, setEstimada] = useState({ ventas: 0, tickets: 0, margen_pct: 35, ganancia_estimada: 0 });
   const [periodKey, setPeriodKey] = useState(null);
+
+  const [menuOpenId, setMenuOpenId] = useState(null);
+  const [menuAnchor, setMenuAnchor] = useState({ top: 0, left: 0 });
+  const [methodModal, setMethodModal] = useState(null);
+  const [methodPick, setMethodPick] = useState('efectivo');
+  const [methodBusy, setMethodBusy] = useState(false);
+  const [cancelModal, setCancelModal] = useState(null);
+  const [cancelPin, setCancelPin] = useState('');
+  const [cancelBusy, setCancelBusy] = useState(false);
 
   const fmtLocal = (x) => `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`;
 
@@ -138,6 +147,72 @@ export default function ReportsModule() {
       console.error('Ganancias fetch error:', err);
     }
   }, [dateFrom, dateTo]);
+
+  const METHOD_OPTIONS = [
+    { value: 'efectivo', label: 'Efectivo' },
+    { value: 'tarjeta', label: 'Tarjeta' },
+    { value: 'transferencia', label: 'Transferencia' },
+    { value: 'mercadopago', label: 'QR' },
+  ];
+  const METHOD_LABEL = { efectivo: 'Efectivo', tarjeta: 'Tarjeta', transferencia: 'Transferencia', mercadopago: 'QR', split: 'Pago Mixto' };
+
+  const menuItemStyle = { display: 'flex', alignItems: 'center', gap: 8, width: '100%', background: 'transparent', border: 'none', color: 'var(--text-primary)', padding: '10px 12px', borderRadius: 8, fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', textAlign: 'left' };
+  const ghostBtn = { background: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', padding: '10px 18px', borderRadius: 8, fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' };
+  const primaryBtn = { background: 'var(--accent-primary)', color: 'var(--sheet)', border: '1px solid var(--accent-primary)', padding: '10px 18px', borderRadius: 8, fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' };
+
+  const openRowMenu = (e, sale) => {
+    e.stopPropagation();
+    const rect = e.currentTarget.getBoundingClientRect();
+    setMenuAnchor({ top: rect.bottom + 4, left: Math.min(rect.left, window.innerWidth - 230) });
+    setMenuOpenId(menuOpenId === sale.id ? null : sale.id);
+  };
+
+  const submitMethodChange = async () => {
+    if (!methodModal) return;
+    setMethodBusy(true);
+    try {
+      const res = await apiPost(`/sales/${methodModal.id}/payment-method`, { payment_method: methodPick });
+      if (res.ok) {
+        addToast?.('Método de pago actualizado.', 'success');
+        setMethodModal(null);
+        setMenuOpenId(null);
+        fetchReports(true);
+        fetchEstimada();
+      } else {
+        let msg = 'No se pudo actualizar el método de pago.';
+        try { const d = await res.json(); if (d.detail) msg = d.detail; } catch { /* noop */ }
+        addToast?.(msg, 'error');
+      }
+    } catch {
+      addToast?.('Error de conexión. Reintentá.', 'error');
+    }
+    setMethodBusy(false);
+  };
+
+  const submitCancel = async () => {
+    if (!cancelModal) return;
+    setCancelBusy(true);
+    try {
+      const res = await apiPost(`/sales/${cancelModal.id}/revert?operator=${encodeURIComponent(auth?.currentOperator?.name || 'Sistema')}`, {
+        supervisor_pin: cancelPin || undefined,
+      });
+      if (res.ok) {
+        addToast?.('Venta anulada. El stock volvió al inventario.', 'success');
+        setCancelModal(null);
+        setCancelPin('');
+        setMenuOpenId(null);
+        fetchReports(true);
+        fetchEstimada();
+      } else {
+        let msg = 'No se pudo anular la venta.';
+        try { const d = await res.json(); if (d.detail) msg = d.detail; } catch { /* noop */ }
+        addToast?.(msg, 'error');
+      }
+    } catch {
+      addToast?.('Error de conexión. Reintentá.', 'error');
+    }
+    setCancelBusy(false);
+  };
 
   useEffect(() => {
     if (dateFrom && dateTo) {
@@ -401,6 +476,7 @@ export default function ReportsModule() {
                         <th style={{ padding: '16px' }}>Productos</th>
                         <th style={{ padding: '16px', cursor: 'pointer' }} onClick={() => toggleSort('payment_method')}>Metodo de Pago<SortIcon columnKey="payment_method" /></th>
                         <th style={{ padding: '16px', cursor: 'pointer' }} onClick={() => toggleSort('total')}>Total<SortIcon columnKey="total" /></th>
+                        <th style={{ padding: '16px', width: 60 }}></th>
                       </tr>
                     </thead>
                     <tbody>
@@ -418,10 +494,31 @@ export default function ReportsModule() {
                             </span>
                           </td>
                           <td style={{ padding: '16px', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{formatPesos(sale.total)}</td>
+                          <td style={{ padding: '8px 16px', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                            <button onClick={(e) => openRowMenu(e, sale)} title="Acciones"
+                              style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '6px', borderRadius: 6, display: 'inline-flex', alignItems: 'center' }}>
+                              <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="12" cy="19" r="1.7"/></svg>
+                            </button>
+                            {menuOpenId === sale.id && (
+                              <>
+                                <div style={{ position: 'fixed', inset: 0, zIndex: 999 }} onClick={() => setMenuOpenId(null)} />
+                                <div style={{ position: 'fixed', top: menuAnchor.top, left: menuAnchor.left, zIndex: 1000, background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 10, boxShadow: '0 8px 28px rgba(0,0,0,0.35)', minWidth: 215, padding: 6 }}>
+                                  <button onClick={() => { setMethodModal(sale); setMethodPick((sale.payment_method && METHOD_LABEL[sale.payment_method] && sale.payment_method !== 'split') ? sale.payment_method : 'efectivo'); setMenuOpenId(null); }}
+                                    style={menuItemStyle}>
+                                    Modificar método de pago
+                                  </button>
+                                  <button onClick={() => { setCancelModal(sale); setCancelPin(''); setMenuOpenId(null); }}
+                                    style={{ ...menuItemStyle, color: 'var(--accent-danger)' }}>
+                                    Cancelar venta
+                                  </button>
+                                </div>
+                              </>
+                            )}
+                          </td>
                         </tr>
                       ))}
                       {sortedSales.length === 0 && (
-                        <tr><td colSpan="6" style={{ padding: 0 }}><EmptyState icon="Report" title="Sin ventas"
+                        <tr><td colSpan="7" style={{ padding: 0 }}><EmptyState icon="Report" title="Sin ventas"
                           description="No hay ventas en el período seleccionado. Probá ajustando las fechas." /></td></tr>
                       )}
                     </tbody>
@@ -430,6 +527,52 @@ export default function ReportsModule() {
               </div>
         )}
       </div>
+
+      {methodModal && (
+        <div className="modal-overlay" onClick={() => setMethodModal(null)}>
+          <div className="modal-content" style={{ maxWidth: 400 }} onClick={e => e.stopPropagation()}>
+            <h3 className="modal-title" style={{ margin: '0 0 12px 0' }}>Modificar método de pago</h3>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0 0 16px 0' }}>
+              Venta #{String(methodModal.id ?? '').padStart(8, '0')} · {formatPesos(methodModal.total)} · {METHOD_LABEL[methodModal.payment_method] || methodModal.payment_method?.toUpperCase() || '—'}
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
+              {METHOD_OPTIONS.map(opt => (
+                <label key={opt.value} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', borderRadius: 10, border: `1px solid ${methodPick === opt.value ? 'var(--accent-primary)' : 'var(--border-color)'}`, cursor: 'pointer', background: methodPick === opt.value ? 'rgba(20,187,166,0.08)' : 'var(--bg-card)' }}>
+                  <input type="radio" name="method" value={opt.value} checked={methodPick === opt.value} onChange={() => setMethodPick(opt.value)} />
+                  <span style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)' }}>{opt.label}</span>
+                </label>
+              ))}
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+              <button onClick={() => setMethodModal(null)} style={ghostBtn}>Cancelar</button>
+              <button onClick={submitMethodChange} disabled={methodBusy} style={{ ...primaryBtn, opacity: methodBusy ? 0.6 : 1 }}>
+                {methodBusy ? 'Guardando...' : 'Guardar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {cancelModal && (
+        <div className="modal-overlay" onClick={() => setCancelModal(null)}>
+          <div className="modal-content" style={{ maxWidth: 420 }} onClick={e => e.stopPropagation()}>
+            <h3 className="modal-title" style={{ margin: '0 0 12px 0' }}>Cancelar venta</h3>
+            <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', margin: '0 0 16px 0', lineHeight: 1.5 }}>
+              Vas a anular la venta #{String(cancelModal.id ?? '').padStart(8, '0')} por <b style={{ color: 'var(--text-primary)' }}>{formatPesos(cancelModal.total)}</b>.
+              El stock vuelve al inventario y la venta se descuenta de los totales.
+            </p>
+            <input type="password" inputMode="numeric" maxLength={6} placeholder="PIN de administrador (solo si hay más de un usuario)"
+              value={cancelPin} onChange={e => setCancelPin(e.target.value.replace(/[^0-9]/g, '').slice(0, 6))}
+              style={{ width: '100%', boxSizing: 'border-box', padding: '12px', borderRadius: 8, border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: '0.9rem', marginBottom: 16 }} />
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+              <button onClick={() => { setCancelModal(null); setCancelPin(''); }} style={ghostBtn}>No</button>
+              <button onClick={submitCancel} disabled={cancelBusy} style={{ ...primaryBtn, background: 'var(--accent-danger)', borderColor: 'var(--accent-danger)', opacity: cancelBusy ? 0.6 : 1 }}>
+                {cancelBusy ? 'Anulando...' : 'Sí, cancelar venta'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 

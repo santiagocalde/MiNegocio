@@ -937,6 +937,63 @@ async def list_sales(limit: int = Query(50), date_from: Optional[str] = Query(No
             return sales
 
 
+@router.post("/api/sales/{sale_id}/payment-method", summary="Cambiar método de pago de una venta")
+async def change_sale_payment_method(sale_id: int, body: dict = Body(...)) -> dict:
+    """Corrige el método de pago de una venta no anulada (por error del cajero).
+
+    No aplica a fiados. Recalcula `payment`/`change_given` para que el arqueo de
+    caja quede consistente con el método nuevo. Si venía con pago mixto
+    (sale_payments), se descartan esas filas y todo el total pasa al método nuevo.
+    """
+    new_method = str(body.get("payment_method", "")).strip().lower()
+    if new_method not in ("efectivo", "tarjeta", "transferencia", "mercadopago"):
+        raise HTTPException(400, detail="Método de pago inválido")
+    b_id = _biz_id()
+
+    if USE_PG:
+        from db_helpers import get_pg_pool
+        pool = await get_pg_pool()
+        async with pool.acquire() as conn:
+            async with conn.transaction():
+                sale = await conn.fetchrow(
+                    "SELECT id, total, payment, change_given, payment_method, is_fiado, reverted, turn_id "
+                    "FROM sales WHERE id = $1 AND business_id = $2",
+                    sale_id, b_id
+                )
+                if not sale: raise HTTPException(404, detail="Venta no encontrada")
+                if sale["reverted"] == 1: raise HTTPException(400, detail="La venta ya está anulada")
+                if sale["is_fiado"] == 1: raise HTTPException(400, detail="Las ventas a fiado no cambian de método de pago")
+                await conn.execute("DELETE FROM sale_payments WHERE sale_id = $1", sale_id)
+                change = sale["change_given"] if new_method == "efectivo" else 0
+                await conn.execute(
+                    "UPDATE sales SET payment_method = $1, payment = $2, change_given = $3 WHERE id = $4",
+                    new_method, sale["total"], change, sale_id
+                )
+            return {"success": True, "sale_id": sale_id, "payment_method": new_method}
+    else:
+        import aiosqlite
+        async with main.db_write_lock:
+            async with aiosqlite.connect(main.DB_PATH) as db:
+                await db.execute("BEGIN IMMEDIATE")
+                cur = await db.execute(
+                    "SELECT id, total, payment, change_given, payment_method, is_fiado, reverted, turn_id FROM sales WHERE id = ?",
+                    (sale_id,)
+                )
+                s = await cur.fetchone()
+                if not s: raise HTTPException(404, detail="Venta no encontrada")
+                s_dict = row_to_dict(s, cur.description)
+                if s_dict["reverted"] == 1: raise HTTPException(400, detail="La venta ya está anulada")
+                if s_dict["is_fiado"] == 1: raise HTTPException(400, detail="Las ventas a fiado no cambian de método de pago")
+                await db.execute("DELETE FROM sale_payments WHERE sale_id = ?", (sale_id,))
+                change = s_dict["change_given"] if new_method == "efectivo" else 0
+                await db.execute(
+                    "UPDATE sales SET payment_method = ?, payment = ?, change_given = ? WHERE id = ?",
+                    (new_method, s_dict["total"], change, sale_id)
+                )
+                await db.commit()
+            return {"success": True, "sale_id": sale_id, "payment_method": new_method}
+
+
 @router.get("/api/turns/{turn_id}/detail", summary="Detalle de turno")
 async def turn_detail(turn_id: int) -> dict:
     """Devuelve el turno con sus ventas y egresos asociados.
