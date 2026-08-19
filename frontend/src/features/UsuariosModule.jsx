@@ -29,7 +29,7 @@ export default function UsuariosModule() {
   const isCorralon = businessType === 'corralon';
   const ALL_MODULES = isCorralon
     ? ['Mostrador', 'Presupuestos', 'Acopios', 'Lista de clientes', 'Cuentas corrientes', 'Notas de pedido', 'Depósito', 'Inventario', 'Historial', 'Reportes', 'Configuración']
-    : ['Mostrador', 'Lista de clientes', 'Cuentas corrientes', 'Inventario', 'Historial', 'Reportes', 'Configuración'];
+    : ['Mostrador', 'Lista de clientes', 'Cuentas corrientes', 'Inventario', 'Etiquetas', 'Historial', 'Reportes', 'Configuración'];
 
   const ROLE_DEFAULT_PERMS = isCorralon
     ? {
@@ -43,9 +43,9 @@ export default function UsuariosModule() {
     : {
         cashier:  ['Mostrador', 'Lista de clientes', 'Cuentas corrientes'],
         logistica: ['Notas de pedido'],
-        manager:  ['Mostrador', 'Lista de clientes', 'Cuentas corrientes', 'Inventario', 'Historial', 'Reportes'],
+        manager:  ['Mostrador', 'Lista de clientes', 'Cuentas corrientes', 'Inventario', 'Etiquetas', 'Historial', 'Reportes'],
         admin:    [...ALL_MODULES],
-        vendedor: ['Mostrador', 'Lista de clientes', 'Cuentas corrientes', 'Inventario'],
+        vendedor: ['Mostrador', 'Lista de clientes', 'Cuentas corrientes', 'Inventario', 'Etiquetas'],
         employee: ['Mostrador'],
       };
 
