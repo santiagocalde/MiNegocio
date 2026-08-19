@@ -9,6 +9,10 @@ export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, curren
   const [turnCats, setTurnCats] = useState([]);
   const [turnTop, setTurnTop] = useState([]);
   const [turnResumen, setTurnResumen] = useState(null);
+  // Resumen final tras cerrar: se muestra ANTES de cerrar sesión, para que el
+  // operador tenga algo concreto que mostrarle al dueño (o sacarle foto) en
+  // vez de solo un toast que desaparece.
+  const [closedSummary, setClosedSummary] = useState(null);
 
   const isLogistica = currentOperator?.role === 'logistica';
   const isAdmin = currentOperator?.role === 'admin';
@@ -39,6 +43,52 @@ export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, curren
   }, [isClosingCaja, currentTurnId]);
 
   if (!isClosingCaja) return null;
+
+  const handleFinishAndLogout = () => {
+    setClosedSummary(null);
+    setIsClosingCaja(false);
+    if (onTurnClosed) onTurnClosed();
+  };
+
+  // Pantalla de resumen final — se muestra ANTES de cerrar sesión, con los
+  // números que ya confirmó el backend (no recalculados en el cliente).
+  if (closedSummary) {
+    const d = closedSummary.difference;
+    const dColor = d === null || d === undefined ? 'var(--text-secondary)'
+      : Math.abs(d) <= 200 ? 'var(--accent-success)'
+      : d > 0 ? 'var(--accent-warning)' : 'var(--accent-danger)';
+    return (
+      <div className="modal-overlay"><div className="modal-content" style={{ width: '460px', maxWidth: '95vw', textAlign: 'center' }}>
+        <div style={{ fontSize: '2.5rem', marginBottom: 4 }}>✅</div>
+        <h2 className="modal-title" style={{ color: 'var(--text-primary)', marginBottom: 4 }}>Turno cerrado</h2>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: 20 }}>
+          {closedSummary.operator ? `${closedSummary.operator} — ` : ''}{new Date().toLocaleString('es-AR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+        </p>
+        <div style={{ border: '1px solid var(--border-color)', borderRadius: 12, overflow: 'hidden', marginBottom: 16, background: 'var(--bg-main)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 16px', borderBottom: '1px solid var(--border-color)' }}>
+            <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Vendido este turno</span>
+            <span style={{ color: 'var(--text-primary)', fontWeight: 800, fontFamily: 'var(--font-mono)' }}>${(closedSummary.total || 0).toLocaleString('es-AR')}</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 16px', borderBottom: '1px solid var(--border-color)' }}>
+            <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Contaste en el cajón</span>
+            <span style={{ color: 'var(--text-primary)', fontWeight: 800, fontFamily: 'var(--font-mono)' }}>${(closedSummary.counted || 0).toLocaleString('es-AR')}</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 16px' }}>
+            <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Diferencia</span>
+            <span style={{ color: dColor, fontWeight: 800, fontFamily: 'var(--font-mono)' }}>
+              {d === null || d === undefined ? '—' : Math.abs(d) < 0.01 ? '$0' : (d > 0 ? '+$' : '−$') + Math.abs(d).toLocaleString('es-AR')}
+            </span>
+          </div>
+        </div>
+        <p style={{ color: 'var(--text-faint)', fontSize: '0.78rem', marginBottom: 20 }}>
+          Podés mostrarle esta pantalla al dueño o sacarle una foto antes de continuar.
+        </p>
+        <button className="btn btn-modal-confirm" style={{ width: '100%', background: 'var(--accent-primary)' }} onClick={handleFinishAndLogout}>
+          Listo, cerrar sesión
+        </button>
+      </div></div>
+    );
+  }
 
   // Efectivo del turno (el backend ya incluye la porción efectivo de pagos mixtos).
   const turnEfectivo = turnResumen ? (turnResumen.efectivo || 0) : null;
@@ -98,11 +148,27 @@ export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, curren
         notes: isLogistica ? 'Cierre de turno logística' : (diff === null ? 'Cierre sin arqueo en vivo' : (diff !== 0 ? (diff > 0 ? `Sobrante: $${diff}` : `Faltante: $${Math.abs(diff)}`) : 'Caja cerrada sin diferencias.')),
       });
       if (res.ok) {
+        const data = await res.json().catch(() => ({}));
         if (addToast) addToast('Turno cerrado correctamente.', 'success');
         setCountedCash('');
         setCloseCajaPin('');
-        setIsClosingCaja(false);
-        if (onTurnClosed) onTurnClosed();
+        if (isLogistica) {
+          // Logística no cuenta efectivo — no hay nada que resumir, cerramos directo.
+          setIsClosingCaja(false);
+          if (onTurnClosed) onTurnClosed();
+        } else {
+          // Guardamos una foto de los números finales antes de limpiar el estado
+          // del formulario — la pantalla de resumen se arma con esto y se muestra
+          // ANTES de cerrar sesión, para que el operador tenga algo concreto que
+          // mostrarle al dueño en vez de solo un toast que desaparece.
+          setClosedSummary({
+            total: turnResumen?.total || 0,
+            counted: parseFloat(countedCash) || 0,
+            expected_cash: data.expected_cash,
+            difference: data.difference,
+            operator: currentOperator?.name || '',
+          });
+        }
       } else {
         const data = await res.json().catch(() => ({}));
         if (addToast) addToast(data.detail || 'No se pudo cerrar el turno. Reintentá o revisá tu conexión.', 'error');
@@ -203,8 +269,12 @@ export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, curren
             <span style={{ color: 'var(--text-primary)', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>${(turnResumen.initial_cash || 0).toLocaleString('es-AR')}</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', padding: '9px 14px', fontSize: '0.9rem' }}>
-            <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Egresos / retiros</span>
-            <span style={{ color: 'var(--accent-warning)', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{(turnResumen.egresos || 0) !== 0 ? '−$' + Math.abs(turnResumen.egresos).toLocaleString('es-AR') : '$0'}</span>
+            <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>
+              {(turnResumen.egresos || 0) < 0 ? 'Ingresos a caja' : 'Egresos / retiros'}
+            </span>
+            <span style={{ color: (turnResumen.egresos || 0) < 0 ? 'var(--accent-primary)' : 'var(--accent-warning)', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>
+              {(turnResumen.egresos || 0) === 0 ? '$0' : (turnResumen.egresos > 0 ? '−$' : '+$') + Math.abs(turnResumen.egresos).toLocaleString('es-AR')}
+            </span>
           </div>
         </div>
 
@@ -251,6 +321,7 @@ export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, curren
               turnResumen.initial_cash > 0 && `$${Number(turnResumen.initial_cash).toLocaleString('es-AR')} que había al empezar`,
               turnResumen.efectivo > 0 && `+ $${Number(turnResumen.efectivo).toLocaleString('es-AR')} cobrado en efectivo`,
               turnResumen.egresos > 0 && `− $${Number(turnResumen.egresos).toLocaleString('es-AR')} retirado`,
+              turnResumen.egresos < 0 && `+ $${Math.abs(turnResumen.egresos).toLocaleString('es-AR')} agregado al cajón`,
             ].filter(Boolean).join(' ')}
           </div>
         </div>

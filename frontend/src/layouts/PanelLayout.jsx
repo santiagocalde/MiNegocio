@@ -271,7 +271,8 @@ export default function PanelLayout() {
         egresoType={backend.egresoType} setEgresoType={backend.setEgresoType}
         egresoMonto={backend.egresoMonto} setEgresoMonto={backend.setEgresoMonto}
         egresoMotivo={backend.egresoMotivo} setEgresoMotivo={backend.setEgresoMotivo}
-        submitEgreso={backend.submitEgreso} />
+        submitEgreso={backend.submitEgreso}
+        estimatedCash={(auth.initialCash || 0) + (backend.turnCashSalesTotal || 0) - (backend.turnEgresosTotal || 0)} />
 
       <CloseTurnModal isClosingCaja={closeTurn.isClosingCaja} setIsClosingCaja={closeTurn.setIsClosingCaja}
         currentOperator={auth.currentOperator} todaySalesTotal={backend.todaySalesTotal}

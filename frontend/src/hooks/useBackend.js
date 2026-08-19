@@ -167,10 +167,15 @@ export default function useBackend(currentOperator, currentTurnId, currentSucurs
         operator: currentOperator?.name || 'Sistema',
       });
       if (res.ok) {
-        addToast(`✅ ${egresoType === 'gasto' ? 'Gasto' : 'Retiro'} registrado`, 'success');
+        const tipoLabel = egresoType === 'gasto' ? 'Gasto' : egresoType === 'retiro' ? 'Retiro' : 'Ingreso';
+        addToast(`✅ ${tipoLabel} registrado`, 'success');
         setShowEgreso(false);
         const monto = parseFloat(egresoMonto) || 0;
-        setTotalEgresos(prev => prev + monto);
+        // 'ingreso' resta al total de egresos (el backend lo guarda en negativo:
+        // agrega plata al cajón en vez de sacarla).
+        const delta = egresoType === 'ingreso' ? -monto : monto;
+        setTotalEgresos(prev => prev + delta);
+        fetchTurnResumen();
         setEgresoMonto('');
         setEgresoMotivo('');
         setEgresoType('gasto');
@@ -181,7 +186,7 @@ export default function useBackend(currentOperator, currentTurnId, currentSucurs
         addToast(detail || `Error ${res.status} al registrar egreso`, 'error');
       }
     } catch { addToast('Error de conexión', 'error'); }
-  }, [egresoMonto, egresoMotivo, egresoType, currentTurnId, currentOperator, addToast]);
+  }, [egresoMonto, egresoMotivo, egresoType, currentTurnId, currentOperator, addToast, fetchTurnResumen]);
 
   const handleBackup = useCallback(async () => {
     setBackupLoading(true);
