@@ -121,8 +121,9 @@ export default function TicketPrint({ cart, total, payment, change, operator, ti
       {hr}
       <table className="t-inline"><tbody>
         <tr><td className="t-lef">{numeroCaja}</td><td className="t-rit">Ticket #{String(ticketNumber || 1).padStart(5, '0')}</td></tr>
-        <tr><td className="t-lef">{fecha}  {hora}</td><td className="t-rit">Cajero: {operator || 'Sistema'}</td></tr>
+        <tr><td className="t-lef">{fecha}  {hora}</td><td className="t-rit"></td></tr>
       </tbody></table>
+      <div className="t-center" style={{ fontSize: '0.82em', marginBottom: 2 }}>Cajero: {operator || 'Sistema'}</div>
       {hr}
       <table className="t-items">
         <thead>
