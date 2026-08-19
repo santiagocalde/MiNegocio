@@ -22,9 +22,15 @@ import TicketPrint from '../components/TicketPrint';
 
 export default function VentasPage() {
   const isMobile = useIsMobile();
-  const { auth, backend, addToast, playBeep, currentSucursalId, setCurrentSucursalId, businessType } = usePanelContext();
+  const { auth, backend, addToast, playBeep, currentSucursalId, setCurrentSucursalId, businessType, plan } = usePanelContext();
   const ivaRate = backend.businessConfig?.iva_rate ?? 0;
-  const cart = useCart(backend.productsDB, ivaRate, playBeep);
+  const hasMultiCart = plan?.currentPlan === 'pro' || plan?.currentPlan === 'ia';
+
+  // Dos instancias independientes de carrito — cada una con su propia key en localStorage
+  const cart1 = useCart(backend.productsDB, ivaRate, playBeep, 'minegocio_cart_1');
+  const cart2 = useCart(backend.productsDB, ivaRate, playBeep, 'minegocio_cart_2');
+  const [activeCart, setActiveCart] = useState(1);
+  const cart = activeCart === 1 ? cart1 : cart2;
   const promos = usePromotions(cart.cart);
 
   // Nombres configurables de las listas de precio (A/B/C/D/E) para el selector por ítem
@@ -168,7 +174,37 @@ export default function VentasPage() {
         canSwitchOperator={(backend.operators?.length || 0) > 1}
         onSwitchOperator={() => setShowOperatorSwitch(true)} />
 
-      <div style={{ padding: isMobile ? '8px 16px' : '16px 24px', width: '100%', height: isMobile ? 'calc(100dvh - 60px)' : 'calc(100% - 72px)', display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '8px' : '16px', alignItems: isMobile ? 'stretch' : 'flex-start', boxSizing: 'border-box', overflowY: isMobile ? 'auto' : undefined }}>
+      {/* Pestañas multi-carrito — solo plan Pro/IA */}
+      {hasMultiCart && (
+        <div style={{ display: 'flex', gap: 4, padding: '4px 16px 0', background: 'var(--bg-main)', borderBottom: '1px solid var(--border-color)' }}>
+          {[1, 2].map(n => {
+            const c = n === 1 ? cart1 : cart2;
+            const isActive = activeCart === n;
+            const itemCount = c.cart.length;
+            return (
+              <button key={n} onClick={() => setActiveCart(n)} style={{
+                display: 'flex', alignItems: 'center', gap: 6, padding: '7px 16px 8px',
+                background: isActive ? 'var(--bg-card)' : 'transparent',
+                border: '1px solid', borderBottom: isActive ? '1px solid var(--bg-card)' : '1px solid transparent',
+                borderColor: isActive ? 'var(--border-color)' : 'transparent',
+                borderRadius: '8px 8px 0 0', cursor: 'pointer',
+                color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
+                fontSize: '0.82rem', fontWeight: isActive ? 700 : 500,
+                marginBottom: '-1px', transition: 'all 0.12s',
+              }}>
+                🛒 Venta {n}
+                {itemCount > 0 && (
+                  <span style={{ background: isActive ? 'var(--accent-primary)' : 'var(--bg-hover)', color: isActive ? '#fff' : 'var(--text-secondary)', fontSize: '0.7rem', fontWeight: 700, padding: '1px 6px', borderRadius: 99 }}>
+                    {itemCount}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      <div style={{ padding: isMobile ? '8px 16px' : '16px 24px', width: '100%', height: isMobile ? 'calc(100dvh - 60px)' : hasMultiCart ? 'calc(100% - 108px)' : 'calc(100% - 72px)', display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '8px' : '16px', alignItems: isMobile ? 'stretch' : 'flex-start', boxSizing: 'border-box', overflowY: isMobile ? 'auto' : undefined }}>
         <div style={{ flex: isMobile ? '0 0 auto' : '2', display: 'flex', flexDirection: 'column', gap: isMobile ? '8px' : '16px', minHeight: 0, height: isMobile ? 'auto' : '100%', maxHeight: isMobile ? '55vh' : undefined }}>
           <div data-tour="search-bar" style={{ width: '100%', flexShrink: 0 }}>
           <SearchBar search={cart.search} setSearch={cart.setSearch} searchRef={searchRef}

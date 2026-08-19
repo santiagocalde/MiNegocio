@@ -1,15 +1,18 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { findProductByAnyCode } from '../utils/productLookup';
 
-export default function useCart(productsDB, ivaRate, playBeep) {
+export default function useCart(productsDB, ivaRate, playBeep, cartKey = 'minegocio_cart') {
+  const storageKey = cartKey;
+  const storageTsKey = cartKey + '_ts';
+  const bcChannel = cartKey + '-bc';
   const [cart, setCart] = useState(() => {
     try {
-      const saved = localStorage.getItem('minegocio_cart');
+      const saved = localStorage.getItem(storageKey);
       if (saved) {
-        const ts = localStorage.getItem('minegocio_cart_ts');
+        const ts = localStorage.getItem(storageTsKey);
         if (ts) {
           const age = Date.now() - parseInt(ts);
-          if (age > 86400000) { localStorage.removeItem('minegocio_cart'); localStorage.removeItem('minegocio_cart_ts'); return []; }
+          if (age > 86400000) { localStorage.removeItem(storageKey); localStorage.removeItem(storageTsKey); return []; }
         }
         return JSON.parse(saved);
       }
@@ -52,8 +55,8 @@ export default function useCart(productsDB, ivaRate, playBeep) {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       try {
-        localStorage.setItem('minegocio_cart', JSON.stringify(cart));
-        localStorage.setItem('minegocio_cart_ts', String(Date.now()));
+        localStorage.setItem(storageKey, JSON.stringify(cart));
+        localStorage.setItem(storageTsKey, String(Date.now()));
       } catch { /* noop */ }
       try { bcRef.current?.postMessage('cart-updated'); } catch { /* noop */ }
     }, 250);
@@ -62,12 +65,12 @@ export default function useCart(productsDB, ivaRate, playBeep) {
 
   // Listen for cart changes from other tabs (mismo canal usado para postear arriba)
   useEffect(() => {
-    const bc = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('minegocio-cart') : null;
+    const bc = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel(bcChannel) : null;
     if (!bc) return;
     bcRef.current = bc;
     const handler = () => {
       try {
-        const saved = localStorage.getItem('minegocio_cart');
+        const saved = localStorage.getItem(storageKey);
         if (saved) {
           const parsed = JSON.parse(saved);
           if (Array.isArray(parsed)) { if (parsed.length > 0) setCart(parsed); else if (parsed.length === 0) setCart([]); }
