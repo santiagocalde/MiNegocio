@@ -140,7 +140,7 @@ export default function LandingPage() {
   const [contactError, setContactError] = useState('');
 
   const handleContactSubmit = async () => {
-    if (!contactForm.nombre || !contactForm.mensaje) return;
+    if (!contactForm.nombre || !contactForm.contacto || !contactForm.mensaje) return;
     setContactLoading(true);
     setContactError('');
     try {

@@ -234,7 +234,7 @@ async def send_contact_email(request: Request, data: dict = Body(...)) -> dict:
     if not resend_key:
         logger.warning("RESEND_API_KEY no configurada")
         return {"success": False, "message": "Servicio de email no configurado"}
-    contact_email = os.getenv("CONTACT_EMAIL", "upcodednow@gmail.com")
+    contact_email = os.getenv("CONTACT_EMAIL", "calderonsantiago2019@gmail.com")
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
             resp = await client.post("https://api.resend.com/emails", headers={"Authorization": f"Bearer {resend_key}", "Content-Type": "application/json"}, json={

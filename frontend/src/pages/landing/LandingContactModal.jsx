@@ -9,13 +9,13 @@ export default function LandingContactModal({ showContactModal, setShowContactMo
   const [contactError, setContactError] = useState('');
 
   const handleContactSubmit = async () => {
-    if (!contactForm.nombre.trim() || !contactForm.mensaje.trim()) return;
+    if (!contactForm.nombre.trim() || !contactForm.contacto.trim() || !contactForm.mensaje.trim()) return;
     setContactLoading(true); setContactError('');
     try {
       const res = await fetch('/api/send-contact-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: contactForm.nombre, contact: contactForm.contacto, message: contactForm.mensaje }),
+        body: JSON.stringify({ nombre: contactForm.nombre, contacto: contactForm.contacto, mensaje: contactForm.mensaje }),
       });
       if (res.ok) { setContactSent(true); } else { setContactError('No se pudo enviar. Probá de nuevo.'); }
     } catch { setContactError('Error de conexión.'); }
@@ -56,20 +56,20 @@ export default function LandingContactModal({ showContactModal, setShowContactMo
           <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
             {contactError && <div style={{ background: 'rgba(239,68,68,0.08)', color: '#ef4444', padding: '10px 14px', borderRadius: 8, fontWeight: 600, fontSize: '0.85rem' }}>{contactError}</div>}
             <div>
-              <label style={{ fontSize: '0.85rem', color: 'var(--lp-ink-soft)', fontWeight: 500 }}>Tu Nombre</label>
+              <label style={{ fontSize: '0.85rem', color: 'var(--lp-ink-soft)', fontWeight: 500 }}>Tu Nombre <span style={{ color: 'var(--lp-primary)' }}>*</span></label>
               <input placeholder="Ej: Carlos" value={contactForm.nombre} onChange={e => setContactForm({ ...contactForm, nombre: e.target.value })} style={inputStyle} onFocus={e => e.target.style.borderColor = 'var(--lp-primary)'} onBlur={e => e.target.style.borderColor = 'var(--lp-line-strong)'} />
             </div>
             <div>
-              <label style={{ fontSize: '0.85rem', color: 'var(--lp-ink-soft)', fontWeight: 500 }}>Email o WhatsApp (opcional)</label>
-              <input placeholder="Opcional" value={contactForm.contacto} onChange={e => setContactForm({ ...contactForm, contacto: e.target.value })} style={inputStyle} onFocus={e => e.target.style.borderColor = 'var(--lp-primary)'} onBlur={e => e.target.style.borderColor = 'var(--lp-line-strong)'} />
+              <label style={{ fontSize: '0.85rem', color: 'var(--lp-ink-soft)', fontWeight: 500 }}>Email o WhatsApp <span style={{ color: 'var(--lp-primary)' }}>*</span></label>
+              <input placeholder="Ej: tuemail@mail.com o tu WhatsApp" value={contactForm.contacto} onChange={e => setContactForm({ ...contactForm, contacto: e.target.value })} style={inputStyle} onFocus={e => e.target.style.borderColor = 'var(--lp-primary)'} onBlur={e => e.target.style.borderColor = 'var(--lp-line-strong)'} />
             </div>
             <div>
-              <label style={{ fontSize: '0.85rem', color: 'var(--lp-ink-soft)', fontWeight: 500 }}>Mensaje</label>
+              <label style={{ fontSize: '0.85rem', color: 'var(--lp-ink-soft)', fontWeight: 500 }}>Mensaje <span style={{ color: 'var(--lp-primary)' }}>*</span></label>
               <textarea placeholder="¿En qué podemos ayudarte?" value={contactForm.mensaje} onChange={e => setContactForm({ ...contactForm, mensaje: e.target.value })} rows={4}
                 style={{ ...inputStyle, resize: 'vertical', minHeight: 100, fontFamily: 'inherit' }} onFocus={e => e.target.style.borderColor = 'var(--lp-primary)'} onBlur={e => e.target.style.borderColor = 'var(--lp-line-strong)'} />
             </div>
-            <button onClick={handleContactSubmit} disabled={contactLoading || !contactForm.nombre || !contactForm.mensaje}
-              className="lp-btn lp-btn--primary" style={{ width: '100%', padding: '16px', fontSize: '1.05rem', fontWeight: 700, borderRadius: 12, opacity: (contactLoading || !contactForm.nombre || !contactForm.mensaje) ? 0.5 : 1, cursor: (contactLoading || !contactForm.nombre || !contactForm.mensaje) ? 'not-allowed' : 'pointer' }}>
+            <button onClick={handleContactSubmit} disabled={contactLoading || !contactForm.nombre.trim() || !contactForm.contacto.trim() || !contactForm.mensaje.trim()}
+              className="lp-btn lp-btn--primary" style={{ width: '100%', padding: '16px', fontSize: '1.05rem', fontWeight: 700, borderRadius: 12, opacity: (contactLoading || !contactForm.nombre.trim() || !contactForm.contacto.trim() || !contactForm.mensaje.trim()) ? 0.5 : 1, cursor: (contactLoading || !contactForm.nombre.trim() || !contactForm.contacto.trim() || !contactForm.mensaje.trim()) ? 'not-allowed' : 'pointer' }}>
               {contactLoading ? 'Enviando...' : 'Enviar mensaje'}
             </button>
           </div>
