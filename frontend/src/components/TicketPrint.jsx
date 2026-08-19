@@ -30,6 +30,7 @@ export default function TicketPrint({ cart, total, payment, change, operator, ti
   const fecha = now.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
   const hora = now.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
 
+  const isCorralon = config?.business_type === 'corralon';
   const nombre = config?.nombre || 'KIOSCO';
   const subtitulo = config?.subtitulo || '';
   const direccion = config?.direccion || '';
@@ -154,7 +155,7 @@ export default function TicketPrint({ cart, total, payment, change, operator, ti
         <tr><td className="t-lef">{(paymentMethod || 'EFECTIVO').toUpperCase()}</td><td className="t-rit">{F(payment)}</td></tr>
         <tr><td className="t-lef">VUELTO</td><td className="t-rit">{F(change >= 0 ? change : 0)}</td></tr>
       </tbody></table>
-      <div className="t-center" style={{ fontWeight: 800, fontSize: '1.15em', letterSpacing: 3, marginTop: 6 }}>P A G A D O</div>
+      {isCorralon && <div className="t-center" style={{ fontWeight: 800, fontSize: '1.15em', letterSpacing: 3, marginTop: 6 }}>P A G A D O</div>}
       {hr}
       <div className="t-center t-mensaje">{mensaje}</div>
       <div className="t-center" style={{ marginBottom: 8, fontSize: '0.85em' }}>Vuelva pronto!</div>
