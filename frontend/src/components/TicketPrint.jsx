@@ -114,15 +114,12 @@ export default function TicketPrint({ cart, total, payment, change, operator, ti
         {instagram && <div className="t-subtitle">IG: {instagram}</div>}
       </div>
       {hr}
-      <table className="t-inline"><tbody>
-        {(cuit || condicion) ? <><tr><td className="t-lef">CUIT</td><td className="t-rit">{cuit}</td></tr>
-        <tr><td className="t-lef">Cond. IVA</td><td className="t-rit">{condicion}</td></tr></> : null}
-      </tbody></table>
-      {hr}
-      <table className="t-inline"><tbody>
-        <tr><td className="t-lef">{numeroCaja}</td><td className="t-rit">Ticket #{String(ticketNumber || 1).padStart(5, '0')}</td></tr>
-        <tr><td className="t-lef">{fecha}  {hora}</td><td className="t-rit"></td></tr>
-      </tbody></table>
+      {(cuit || condicion) ? <><table className="t-inline"><tbody>
+        <tr><td className="t-lef">CUIT</td><td className="t-rit">{cuit}</td></tr>
+        <tr><td className="t-lef">Cond. IVA</td><td className="t-rit">{condicion}</td></tr>
+      </tbody></table>{hr}</> : null}
+      <div className="t-center" style={{ fontSize: '0.82em', marginBottom: 1 }}>Ticket #{String(ticketNumber || 1).padStart(5, '0')} · {numeroCaja}</div>
+      <div className="t-center" style={{ fontSize: '0.82em', marginBottom: 1 }}>{fecha}  {hora}</div>
       <div className="t-center" style={{ fontSize: '0.82em', marginBottom: 2 }}>Cajero: {operator || 'Sistema'}</div>
       {hr}
       <table className="t-items">
