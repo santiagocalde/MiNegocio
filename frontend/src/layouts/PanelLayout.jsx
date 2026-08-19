@@ -81,15 +81,30 @@ export default function PanelLayout() {
 
   // Al abrir el modal de caja, buscar el último turno cerrado para mostrar
   // cuánto quedó en el cajón — así el nuevo operador no ingresa el número a ciegas.
+  // Si el último turno fue auto-cerrado sin contar, calculamos el estimado con
+  // el resumen del turno (initial_cash + efectivo - egresos) y lo marcamos como estimado.
   useEffect(() => {
     if (!showInitialCaja) { setLastTurnSuggestion(null); setCajaMontoManual(false); return; } // eslint-disable-line react-hooks/set-state-in-effect
     import('../services/apiClient').then(({ apiGet }) => {
-      apiGet('/turns?limit=10').then(r => r.ok ? r.json() : []).then(data => {
-        const closed = Array.isArray(data)
-          ? data.filter(t => t.closed_at && t.counted_cash != null).sort((a, b) => new Date(b.closed_at) - new Date(a.closed_at))
-          : [];
-        if (closed.length > 0) {
-          setLastTurnSuggestion({ counted: closed[0].counted_cash, operator: closed[0].operator || null });
+      apiGet('/turns?limit=10').then(r => r.ok ? r.json() : []).then(async data => {
+        if (!Array.isArray(data)) return;
+        const closed = data.filter(t => t.closed_at).sort((a, b) => new Date(b.closed_at) - new Date(a.closed_at));
+        if (closed.length === 0) return;
+        const last = closed[0];
+        if (last.counted_cash != null) {
+          // Turno cerrado con conteo: mostramos el monto real contado
+          setLastTurnSuggestion({ counted: last.counted_cash, operator: last.operator || null, estimado: false });
+        } else {
+          // Turno auto-cerrado sin conteo: calculamos el estimado del cajón
+          try {
+            const det = await apiGet(`/turns/${last.id}/detail`);
+            if (!det.ok) return;
+            const d = await det.json();
+            const r = d?.resumen_caja;
+            if (!r) return;
+            const estimado = Math.round((r.initial_cash || 0) + (r.efectivo || 0) - (r.egresos || 0));
+            setLastTurnSuggestion({ counted: estimado, operator: last.operator || null, estimado: true });
+          } catch { /* sin conexión, no mostramos sugerencia */ }
         }
       }).catch(() => {});
     });
@@ -314,20 +329,38 @@ export default function PanelLayout() {
               {/* Traspaso del turno anterior: flujo binario */}
               {lastTurnSuggestion && !cajaMontoManual ? (
                 <div style={{ marginBottom: 24 }}>
-                  <p style={{ color: 'var(--lp-text-muted)', fontSize: '0.9rem', marginBottom: 16, lineHeight: 1.5 }}>
-                    {lastTurnSuggestion.operator
-                      ? <><strong style={{ color: '#fff' }}>{lastTurnSuggestion.operator}</strong> cerró su turno con</>
-                      : 'El turno anterior cerró con'
-                    }
-                    {' '}<strong style={{ color: '#14BBA6', fontSize: '1.1rem', fontVariantNumeric: 'tabular-nums' }}>${Number(lastTurnSuggestion.counted).toLocaleString('es-AR')}</strong>{' '}
-                    en el cajón. Abrilo y fijate.
-                  </p>
+                  {lastTurnSuggestion.estimado ? (
+                    // Auto-cierre sin conteo: mostramos estimado con advertencia
+                    <div style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 12, padding: '14px 18px', marginBottom: 16 }}>
+                      <p style={{ color: 'var(--accent-warning)', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 6px' }}>
+                        ⚠ Turno anterior cerrado sin contar
+                      </p>
+                      <p style={{ color: 'var(--lp-text-muted)', fontSize: '0.88rem', margin: '0 0 4px', lineHeight: 1.5 }}>
+                        {lastTurnSuggestion.operator
+                          ? <><strong style={{ color: '#fff' }}>{lastTurnSuggestion.operator}</strong> no contó al cerrar.</>
+                          : 'El turno anterior se cerró sin contar.'
+                        }
+                        {' '}Calculamos que habría aprox.{' '}
+                        <strong style={{ color: '#fff', fontVariantNumeric: 'tabular-nums' }}>${Number(lastTurnSuggestion.counted).toLocaleString('es-AR')}</strong>{' '}
+                        en el cajón. Abrilo y contá vos.
+                      </p>
+                    </div>
+                  ) : (
+                    <p style={{ color: 'var(--lp-text-muted)', fontSize: '0.9rem', marginBottom: 16, lineHeight: 1.5 }}>
+                      {lastTurnSuggestion.operator
+                        ? <><strong style={{ color: '#fff' }}>{lastTurnSuggestion.operator}</strong> cerró su turno con</>
+                        : 'El turno anterior cerró con'
+                      }
+                      {' '}<strong style={{ color: '#14BBA6', fontSize: '1.1rem', fontVariantNumeric: 'tabular-nums' }}>${Number(lastTurnSuggestion.counted).toLocaleString('es-AR')}</strong>{' '}
+                      en el cajón. Abrilo y fijate.
+                    </p>
+                  )}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                     <button type="submit"
                       onClick={() => setInitialCajaMonto(String(lastTurnSuggestion.counted))}
                       className="lp-btn lp-btn--primary"
                       style={{ width: '100%', padding: '16px', fontSize: '1rem', boxShadow: '0 0 30px rgba(15,138,125,0.4)' }}>
-                      ✓ Sí, tengo ${Number(lastTurnSuggestion.counted).toLocaleString('es-AR')}
+                      ✓ {lastTurnSuggestion.estimado ? 'Confirmar — cuento aprox.' : 'Sí, tengo'} ${Number(lastTurnSuggestion.counted).toLocaleString('es-AR')}
                     </button>
                     <button type="button"
                       onClick={() => { setInitialCajaMonto(''); setCajaMontoManual(true); }}
@@ -357,6 +390,15 @@ export default function PanelLayout() {
               )}
 
               {cajaError && <p style={{ color: '#f87171', textAlign: 'center', marginBottom: 20, fontSize: '0.85rem' }}>{cajaError}</p>}
+
+              {/* Warning $0 en flujo manual */}
+              {(!lastTurnSuggestion || cajaMontoManual) && initialCajaMonto === '0' && (
+                <div style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.35)', borderRadius: 10, padding: '10px 14px', marginBottom: 14, textAlign: 'left' }}>
+                  <span style={{ color: 'var(--accent-warning)', fontSize: '0.85rem', fontWeight: 600 }}>
+                    ⚠ ¿El cajón tiene $0? Si vas a arrancar sin efectivo está bien, pero verificá antes de continuar.
+                  </span>
+                </div>
+              )}
 
               {/* Botón de abrir solo visible en flujo manual (sin sugerencia o eligió otro monto) */}
               {(!lastTurnSuggestion || cajaMontoManual) && (

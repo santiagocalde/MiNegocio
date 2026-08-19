@@ -274,26 +274,43 @@ export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, curren
         </div>
       )}
       {countedCash !== '' && (isAdmin || closeCajaPin.length === 4) && (
-        <div style={{ textAlign: 'center', marginBottom: '24px', padding: '16px', borderRadius: '12px', background: diff === 0 ? 'rgba(16,185,129,0.1)' : diff === null ? 'rgba(20,187,166,0.06)' : diff > 0 ? 'rgba(245,158,11,0.1)' : 'rgba(239,68,68,0.1)' }}>
+        <div style={{ textAlign: 'center', marginBottom: '24px', padding: '16px', borderRadius: '12px',
+          background: diff === null ? 'rgba(20,187,166,0.06)'
+            : diff === 0 || Math.abs(diff) <= 200 ? 'rgba(16,185,129,0.1)'
+            : diff > 0 ? 'rgba(245,158,11,0.1)'
+            : 'rgba(239,68,68,0.1)' }}>
           {diff === null
             ? <span style={{ color: 'var(--text-secondary)', fontWeight: 700, fontSize: '1rem' }}>Calculando arqueo del turno...</span>
             : diff === 0
               ? <span style={{ color: 'var(--accent-success)', fontWeight: 700, fontSize: '1.5rem' }}>¡Caja perfecta! No sobra ni falta.</span>
-              : (
-                <div>
-                  <span style={{ color: diff > 0 ? 'var(--accent-warning)' : 'var(--accent-danger)', fontWeight: 800, fontSize: '1.8rem' }}>
-                    {diff > 0 ? `Sobra $${diff.toLocaleString('es-AR')}` : `Falta $${Math.abs(diff).toLocaleString('es-AR')}`}
-                  </span>
-                  {sobrante_de_turno_anterior
-                    ? <p style={{ color: 'var(--text-secondary)', marginTop: '8px', fontSize: '0.85rem' }}>
-                        El sobrante puede incluir efectivo de un turno anterior que se cerró sin contar. Es normal.
-                      </p>
-                    : <p style={{ color: diff > 0 ? 'var(--accent-warning)' : 'var(--accent-danger)', marginTop: '8px', fontSize: '0.9rem' }}>
-                        Revisá los billetes o anotá el {diff > 0 ? 'sobrante' : 'faltante'} como observación.
-                      </p>
-                  }
-                </div>
-              )
+              : Math.abs(diff) <= 200
+                ? <div>
+                    <span style={{ color: 'var(--accent-success)', fontWeight: 700, fontSize: '1.3rem' }}>
+                      {diff > 0 ? `Sobra $${diff.toLocaleString('es-AR')}` : `Falta $${Math.abs(diff).toLocaleString('es-AR')}`}
+                    </span>
+                    <p style={{ color: 'var(--text-secondary)', marginTop: '6px', fontSize: '0.85rem' }}>
+                      Diferencia mínima — puede ser monedas o redondeo. Está dentro del margen normal.
+                    </p>
+                  </div>
+                : (
+                  <div>
+                    <span style={{ color: diff > 0 ? 'var(--accent-warning)' : 'var(--accent-danger)', fontWeight: 800, fontSize: '1.8rem' }}>
+                      {diff > 0 ? `Sobra $${diff.toLocaleString('es-AR')}` : `Falta $${Math.abs(diff).toLocaleString('es-AR')}`}
+                    </span>
+                    {sobrante_de_turno_anterior
+                      ? <p style={{ color: 'var(--text-secondary)', marginTop: '8px', fontSize: '0.85rem' }}>
+                          El sobrante puede incluir efectivo de un turno anterior que se cerró sin contar. Es normal.
+                        </p>
+                      : diff < 0
+                        ? <p style={{ color: 'var(--accent-danger)', marginTop: '8px', fontSize: '0.85rem' }}>
+                            ¿Hiciste algún retiro de efectivo que no registraste? Si sí, cerrá igual y avisale al dueño.
+                          </p>
+                        : <p style={{ color: 'var(--accent-warning)', marginTop: '8px', fontSize: '0.85rem' }}>
+                            ¿Pusiste plata extra en el cajón? Si sí, cerrá igual y avisale al dueño.
+                          </p>
+                    }
+                  </div>
+                )
           }
         </div>
       )}
