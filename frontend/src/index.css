@@ -612,14 +612,14 @@ svg {
     width: 100% !important;
     max-width: 80mm !important;
     margin: 0 auto !important;
-    padding: 1mm 1mm !important;
+    padding: 2mm 2mm !important;
     box-sizing: border-box !important;
     background: white !important;
     overflow: hidden !important;
     /* Negro sólido: en impresora térmica los grises salen punteados/borrosos. */
     color: #000 !important;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
-    font-size: 10.5px !important;
+    font-size: 11.5px !important;
     line-height: 1.4 !important;
     font-weight: 600 !important;
     -webkit-font-smoothing: none !important;
