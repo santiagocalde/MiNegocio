@@ -110,14 +110,13 @@ export default function PanelLayout() {
     });
   }, [showInitialCaja]);
 
-  const handleCajaSubmit = async (e) => {
-    e.preventDefault();
+  // Lógica central de apertura de caja. Recibe el monto como argumento para
+  // que el botón "Sí, tengo $X" pueda pasar el valor directo sin depender de
+  // que el estado ya se haya actualizado en el mismo ciclo de render.
+  const handleCajaSubmitWithMonto = async (monto) => {
     setCajaError('');
     try {
       const { apiPost } = await import('../services/apiClient');
-      // Con varios operadores, quien abre confirma con su PIN. El PIN es la
-      // identidad: verify-pin devuelve a quién corresponde y con ese nombre se
-      // estampa el turno (y pasa a ser el operador actual).
       let operatorName = auth.currentOperator?.name || 'Dueño';
       if (multiOperator) {
         if (!/^\d{4}$/.test(cajaPin)) { setCajaError('Ingresá tu PIN (4 dígitos)'); return; }
@@ -133,7 +132,7 @@ export default function PanelLayout() {
       const res = await apiPost('/turns', {
         operator: operatorName,
         sucursal_id: 1,
-        initial_cash: parseFloat(initialCajaMonto) || 0
+        initial_cash: parseFloat(monto) || 0
       });
       if (res.ok) {
         const data = await res.json();
@@ -146,6 +145,11 @@ export default function PanelLayout() {
     setShowInitialCaja(false);
     setCajaPin(''); setCajaOperatorId('');
     addToast('Caja abierta. ¡A vender!', 'success');
+  };
+
+  const handleCajaSubmit = async (e) => {
+    e.preventDefault();
+    await handleCajaSubmitWithMonto(initialCajaMonto);
   };
 
   const handlePasswordSubmit = async (e) => {
@@ -356,8 +360,15 @@ export default function PanelLayout() {
                     </p>
                   )}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                    <button type="submit"
-                      onClick={() => setInitialCajaMonto(String(lastTurnSuggestion.counted))}
+                    <button type="button"
+                      onClick={async () => {
+                        // Seteamos el monto y disparamos el submit en el mismo handler
+                        // para evitar que el form se submitee antes de que el estado actualice.
+                        const monto = String(lastTurnSuggestion.counted);
+                        setInitialCajaMonto(monto);
+                        // Creamos un evento sintético con el monto ya disponible
+                        await handleCajaSubmitWithMonto(monto);
+                      }}
                       className="lp-btn lp-btn--primary"
                       style={{ width: '100%', padding: '16px', fontSize: '1rem', boxShadow: '0 0 30px rgba(15,138,125,0.4)' }}>
                       ✓ {lastTurnSuggestion.estimado ? 'Confirmar — cuento aprox.' : 'Sí, tengo'} ${Number(lastTurnSuggestion.counted).toLocaleString('es-AR')}
