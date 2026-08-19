@@ -386,6 +386,132 @@ async def update_turn_initial_cash(turn_id: int, body: dict = Body(...)) -> dict
     return {"success": True, "initial_cash": monto}
 
 
+@router.post("/api/turns/{turn_id}/correct-count", summary="Corregir el efectivo contado de un turno ya cerrado (solo admin)")
+async def correct_turn_count(turn_id: int, body: dict = Body(...)) -> dict:
+    """Permite a un admin corregir counted_cash cuando el operador se equivocó
+    al tipear (ej. le faltó un cero). Recalcula la diferencia con el mismo
+    criterio que el cierre normal. Requiere PIN de un operador con rol admin."""
+    import bcrypt
+    b_id = _biz_id()
+    operator_id = body.get("operator_id")
+    pin = body.get("pin")
+    reason = (body.get("reason") or "").strip()
+    try:
+        new_counted = round(float(body.get("counted_cash")), 2)
+    except (TypeError, ValueError):
+        raise HTTPException(400, detail="Monto inválido")
+    if not (0 <= new_counted <= 99_999_999):
+        raise HTTPException(400, detail="Monto fuera de rango")
+    if not operator_id or not pin:
+        raise HTTPException(403, detail="Se necesita PIN de admin para corregir un cierre")
+
+    if USE_PG:
+        from db_helpers import get_pg_pool
+        pool = await get_pg_pool()
+        async with pool.acquire() as conn:
+            op_row = await conn.fetchrow(
+                "SELECT pin, role, name FROM operators WHERE id = $1 AND business_id = $2", operator_id, b_id
+            )
+            if not op_row or op_row["role"] != "admin":
+                raise HTTPException(403, detail="Solo un admin puede corregir un cierre")
+            if not bcrypt.checkpw(pin.encode(), op_row["pin"].encode()):
+                if not (not op_row["pin"].startswith("$2b$") and pin == op_row["pin"]):
+                    raise HTTPException(403, detail="PIN incorrecto")
+
+            async with conn.transaction():
+                turn = await conn.fetchrow(
+                    "SELECT initial_cash, closed_at, counted_cash FROM turns WHERE id = $1 AND business_id = $2",
+                    turn_id, b_id
+                )
+                if not turn:
+                    raise HTTPException(404, detail="Turno no encontrado")
+                if turn["closed_at"] is None:
+                    raise HTTPException(400, detail="El turno todavía está abierto — usá el cierre normal")
+
+                cash_sales = await conn.fetchval(
+                    "SELECT COALESCE(SUM(total),0) FROM sales WHERE turn_id = $1 AND business_id = $2 "
+                    "AND payment_method = 'efectivo' AND is_fiado = 0 AND reverted = 0",
+                    turn_id, b_id
+                )
+                split_efectivo = await conn.fetchval(
+                    "SELECT COALESCE(SUM(sp.amount),0) FROM sale_payments sp "
+                    "JOIN sales s2 ON s2.id = sp.sale_id "
+                    "WHERE s2.turn_id = $1 AND s2.business_id = $2 AND sp.method = 'efectivo' AND s2.reverted = 0",
+                    turn_id, b_id
+                )
+                cash_sales = float(cash_sales or 0) + float(split_efectivo or 0)
+                egresos = await conn.fetchval(
+                    "SELECT COALESCE(SUM(monto),0) FROM egresos_caja WHERE turn_id = $1 AND business_id = $2 AND type != 'ajuste_arqueo'",
+                    turn_id, b_id
+                )
+                expected_cash = round(float(turn["initial_cash"] or 0) + float(cash_sales) - float(egresos), 2)
+                new_difference = round(new_counted - expected_cash, 2)
+                old_counted = turn["counted_cash"]
+
+                await conn.execute(
+                    "UPDATE turns SET counted_cash = $1, difference = $2, "
+                    "notes = COALESCE(notes, '') || $3 WHERE id = $4",
+                    new_counted, new_difference,
+                    f" | Corregido por admin: ${old_counted or 0:.0f} → ${new_counted:.0f}" + (f" ({reason})" if reason else ""),
+                    turn_id
+                )
+                await conn.execute(
+                    "INSERT INTO audit_log (business_id, action, operator, details) VALUES ($1,$2,$3,$4)",
+                    b_id, "turno_corregido", op_row["name"] or "admin",
+                    f"Turno {turn_id}: contado corregido de ${old_counted or 0:.0f} a ${new_counted:.0f}" + (f" — {reason}" if reason else "")
+                )
+        return {"success": True, "difference": new_difference, "expected_cash": expected_cash}
+    else:
+        import aiosqlite
+        async with main.db_write_lock:
+            async with aiosqlite.connect(main.DB_PATH) as db:
+                cur_op = await db.execute("SELECT pin, role, name FROM operators WHERE id = ?", (operator_id,))
+                op_row = await cur_op.fetchone()
+                if not op_row or op_row[1] != "admin":
+                    raise HTTPException(403, detail="Solo un admin puede corregir un cierre")
+                if not bcrypt.checkpw(pin.encode(), op_row[0].encode()):
+                    if not (not op_row[0].startswith("$2b$") and pin == op_row[0]):
+                        raise HTTPException(403, detail="PIN incorrecto")
+
+                await db.execute("BEGIN IMMEDIATE")
+                cur = await db.execute("SELECT initial_cash, closed_at, counted_cash FROM turns WHERE id=?", (turn_id,))
+                turn = await cur.fetchone()
+                if not turn:
+                    raise HTTPException(404, detail="Turno no encontrado")
+                if turn[1] is None:
+                    raise HTTPException(400, detail="El turno todavía está abierto — usá el cierre normal")
+
+                cur2 = await db.execute(
+                    "SELECT COALESCE(SUM(total),0) FROM sales WHERE turn_id=? AND payment_method='efectivo' AND is_fiado=0 AND reverted=0",
+                    (turn_id,)
+                )
+                cash_sales = (await cur2.fetchone())[0] or 0
+                cur_split = await db.execute(
+                    "SELECT COALESCE(SUM(sp.amount),0) FROM sale_payments sp "
+                    "JOIN sales s2 ON s2.id = sp.sale_id "
+                    "WHERE s2.turn_id=? AND sp.method='efectivo' AND s2.reverted=0",
+                    (turn_id,)
+                )
+                cash_sales = float(cash_sales) + float((await cur_split.fetchone())[0] or 0)
+                cur3 = await db.execute("SELECT COALESCE(SUM(monto),0) FROM egresos_caja WHERE turn_id=? AND type != 'ajuste_arqueo'", (turn_id,))
+                egresos = (await cur3.fetchone())[0] or 0
+                expected_cash = round(float(turn[0] or 0) + float(cash_sales) - float(egresos), 2)
+                new_difference = round(new_counted - expected_cash, 2)
+                old_counted = turn[2]
+
+                nota_extra = f" | Corregido por admin: ${old_counted or 0:.0f} → ${new_counted:.0f}" + (f" ({reason})" if reason else "")
+                await db.execute(
+                    "UPDATE turns SET counted_cash = ?, difference = ?, notes = COALESCE(notes,'') || ? WHERE id = ?",
+                    (new_counted, new_difference, nota_extra, turn_id)
+                )
+                await db.execute(
+                    "INSERT INTO audit_log (action, operator, details) VALUES (?,?,?)",
+                    ("turno_corregido", op_row[2] or "admin", f"Turno {turn_id}: contado corregido de ${old_counted or 0:.0f} a ${new_counted:.0f}" + (f" — {reason}" if reason else ""))
+                )
+                await db.commit()
+        return {"success": True, "difference": new_difference, "expected_cash": expected_cash}
+
+
 @router.get("/api/turns", summary="Historial de turnos")
 async def list_turns(limit: int = Query(30), date_from: Optional[str] = Query(None), date_to: Optional[str] = Query(None)) -> list:
     """Historial de cajas (turnos). Filtros opcionales por fecha de CIERRE."""
