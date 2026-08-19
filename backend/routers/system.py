@@ -273,7 +273,7 @@ async def list_plans(request: Request) -> list:
         pool = await get_pg_pool()
         async with pool.acquire() as conn:
             rows = await conn.fetch("SELECT slug, name, monthly_price, yearly_price, max_products, max_users, features FROM plans WHERE is_active = true ORDER BY sort_order")
-        return [{"id": r["slug"], "name": r["name"], "monthly": r["monthly_price"], "yearly": r["yearly_price"], "desc": f"Hasta {r['max_products']:,} productos".replace(",", "."), "features": json.loads(r["features"]) if isinstance(r["features"], str) else r["features"], "popular": r["slug"] == "pro"} for r in rows]
+        return [{"id": r["slug"], "name": r["name"], "monthly": r["monthly_price"], "yearly": r["yearly_price"], "desc": f"Otorga hasta {r['max_products']:,} productos y {r['max_users']} usuarios".replace(",", "."), "features": json.loads(r["features"]) if isinstance(r["features"], str) else r["features"], "popular": r["slug"] == "pro"} for r in rows]
     except Exception as e:
         logger.warning(f"No se pudieron cargar planes desde DB, usando fallback: {e}")
         from core.plan_pricing import PLANS_CONFIG

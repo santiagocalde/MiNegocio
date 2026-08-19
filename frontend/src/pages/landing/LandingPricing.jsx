@@ -9,14 +9,14 @@ const Svg = {
 };
 
 const FALLBACK_PLANS = [
-  { id: 'simple', name: 'Básico', monthly: 19999, yearly: 180000, desc: 'Arrancá a vender hoy.', popular: false,
-    features: ['Punto de venta con lector de barras', 'Dashboard con ventas del día', 'El vuelto se calcula solo', 'Funciona sin internet', 'Control de stock automático', 'Cuentas corrientes (fiados)', 'Compras a proveedores', 'Promociones y descuentos', 'Hasta 2 usuarios', 'Facturación ARCA (+adicional)'],
+  { id: 'simple', name: 'Básico', monthly: 19999, yearly: 180000, desc: 'Otorga hasta 3.500 productos y 2 usuarios', popular: false,
+    features: ['Punto de venta con lector de código de barras', 'Vuelto automático en efectivo, transferencia, tarjeta y QR', 'Cobro dividido (pago mixto) en un solo ticket', 'Control de stock con alertas de reposición', 'Cuentas corrientes (fiados) con historial de pagos', 'Compras a proveedores con control de deuda', 'Promociones y descuentos por producto', 'Módulo Cajas: arqueo, cierre de turno y caja inicial', 'Reportes y resumen del día (ventas, pagos y operador)', 'Impresión de tickets y comprobantes', 'Funciona sin internet (modo offline)', 'Facturación ARCA (+adicional)'],
     cta: 'Adquirir' },
-  { id: 'pro', name: 'Pro', monthly: 29999, yearly: 270000, desc: 'El plan más completo.', popular: true,
-    features: ['Todo lo de Básico', 'Presupuestos para tus clientes', 'Historial de ventas por cliente', 'Tu catálogo online con QR', 'Reportes de lo que vendés y ganás', 'Análisis de qué productos te convienen', 'Registro de compras a proveedores', 'Hasta 5 usuarios', 'Facturación ARCA (+adicional)'],
+  { id: 'pro', name: 'Pro', monthly: 29999, yearly: 270000, desc: 'Otorga hasta 7.000 productos y 5 usuarios', popular: true,
+    features: ['Todo lo del plan Simple', 'QR fijo imprimible para tu mostrador (auto-confirmación)', 'Reportes de ventas, ganancias y rentabilidad', 'Exportación de tus datos a Excel', 'Análisis de qué productos te convienen (ventas por categoría)', 'Dashboard ejecutivo: deudores, proveedores y top productos', 'Catálogo web con QR (tu tienda online)', 'Devoluciones y notas de crédito', 'Etiquetas de precio imprimibles', 'Historial completo y auditoría de operaciones', 'Facturación ARCA (+adicional)'],
     cta: 'Adquirir' },
-  { id: 'ia', name: 'IA', monthly: 39999, yearly: 360000, desc: 'Inteligencia artificial para tu negocio.', popular: false,
-    features: ['Todo lo de Pro', 'Escáner de facturas con IA', 'Resumen diario del negocio con IA', 'Asesor de precios y reposición con IA', 'Cobranza de fiados por WhatsApp con IA', 'Pedidos por adelantado con entregas parciales', 'Hasta 7 usuarios', 'Facturación ARCA (+adicional)'],
+  { id: 'ia', name: 'IA', monthly: 39999, yearly: 360000, desc: 'Otorga hasta 10.000 productos y usuarios ilimitados', popular: false,
+    features: ['Todo lo del plan Pro', 'Escáner de facturas con IA', 'Resumen diario del negocio con IA', 'Asesor de precios y reposición con IA', 'Sugerencias de compra y reposición inteligentes', 'Advertencia de stock próximo a agotarse con IA', 'Cobranza de fiados por WhatsApp con IA', 'Pedidos por adelantado con entregas parciales', 'Facturación ARCA (+adicional)'],
     cta: 'Adquirir' },
 ];
 
