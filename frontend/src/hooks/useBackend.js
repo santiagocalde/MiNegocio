@@ -13,6 +13,12 @@ export default function useBackend(currentOperator, currentTurnId, currentSucurs
   const [todaySalesTotal, setTodaySalesTotal] = useState(0);
   const [cashSalesTotal, setCashSalesTotal] = useState(0);
   const [totalEgresos, setTotalEgresos] = useState(0);
+  // Efectivo/egresos escopeados al TURNO activo (no al día completo) — en días
+  // multi-turno, mezclar datos del día con la caja inicial del turno da un
+  // "Efectivo estimado" incorrecto en el sidebar. Ver CloseTurnModal para el
+  // mismo criterio turn-scoped en el cierre.
+  const [turnCashSalesTotal, setTurnCashSalesTotal] = useState(0);
+  const [turnEgresosTotal, setTurnEgresosTotal] = useState(0);
   const [operators, setOperators] = useState([]);
   const [sucursales, setSucursales] = useState([]);
   const [businessConfig, setBusinessConfig] = useState({});
@@ -67,6 +73,21 @@ export default function useBackend(currentOperator, currentTurnId, currentSucurs
   const _notifyTabs = useCallback((msg) => {
     try { new BroadcastChannel('minegocio-sync').postMessage(msg); } catch { /* noop */ }
   }, []);
+
+  // Efectivo y egresos del TURNO activo (no del día completo) para el sidebar.
+  // Usa el mismo resumen_caja que ya calcula el backend para el cierre —
+  // así el número que ve el operador en vivo coincide con el que verá al cerrar.
+  const fetchTurnResumen = useCallback(() => {
+    if (!currentTurnId) { setTurnCashSalesTotal(0); setTurnEgresosTotal(0); return; }
+    apiGet(`/turns/${currentTurnId}/detail`).then(r => r.ok ? r.json() : null).then(d => {
+      const r = d?.resumen_caja;
+      if (!r) return;
+      setTurnCashSalesTotal(r.efectivo || 0);
+      setTurnEgresosTotal(r.egresos || 0);
+    }).catch(() => {});
+  }, [currentTurnId]);
+
+  useEffect(() => { fetchTurnResumen(); }, [fetchTurnResumen]); // eslint-disable-line react-hooks/set-state-in-effect
 
   const handleUnpack = useCallback(async (productId) => {
     try {
@@ -233,6 +254,7 @@ export default function useBackend(currentOperator, currentTurnId, currentSucurs
                       setResumenData(d);
                       setTotalEgresos(d.total_egresos || 0);
                     }).catch(() => {});
+                    fetchTurnResumen();
                   }
                 }
               }
@@ -272,6 +294,7 @@ export default function useBackend(currentOperator, currentTurnId, currentSucurs
             setResumenData(d);
             setTotalEgresos(d.total_egresos || 0);
           }).catch(() => {});
+          fetchTurnResumen();
         }
       };
     }
@@ -283,7 +306,7 @@ export default function useBackend(currentOperator, currentTurnId, currentSucurs
       if (bc) bc.close();
       window.removeEventListener('focus', fetchProductsDBIfStale);
     };
-  }, [fetchProductsDB, fetchProductsDBIfStale, currentSucursalId]);
+  }, [fetchProductsDB, fetchProductsDBIfStale, currentSucursalId, fetchTurnResumen]);
 
   useEffect(() => {
     const checkRealHealth = async () => {
@@ -301,6 +324,7 @@ export default function useBackend(currentOperator, currentTurnId, currentSucurs
             setCashSalesTotal(todayData.total_efectivo || 0);
             setResumenData(todayData);
             setTotalEgresos(todayData.total_egresos || 0);
+            fetchTurnResumen();
           } catch (e) { console.error(e) }
         } else {
           setBackendError(true);
@@ -314,7 +338,7 @@ export default function useBackend(currentOperator, currentTurnId, currentSucurs
     checkRealHealth();
     const interval = setInterval(checkRealHealth, 15000);
     return () => clearInterval(interval);
-  }, [currentSucursalId]);
+  }, [currentSucursalId, fetchTurnResumen]);
 
   useEffect(() => {
     const syncPending = async () => {
@@ -369,6 +393,7 @@ export default function useBackend(currentOperator, currentTurnId, currentSucurs
     todaySalesTotal, setTodaySalesTotal,
     cashSalesTotal, setCashSalesTotal,
     totalEgresos, setTotalEgresos,
+    turnCashSalesTotal, turnEgresosTotal,
     operators, setOperators,
     sucursales, setSucursales,
     businessConfig, setBusinessConfig,

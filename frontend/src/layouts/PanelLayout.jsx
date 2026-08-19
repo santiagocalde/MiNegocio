@@ -207,6 +207,8 @@ export default function PanelLayout() {
         todaySalesTotal={backend.todaySalesTotal}
         cashSalesTotal={backend.cashSalesTotal}
         totalEgresos={backend.totalEgresos}
+        turnCashSalesTotal={backend.turnCashSalesTotal}
+        turnEgresosTotal={backend.turnEgresosTotal}
         setShowResumen={backend.setShowResumen}
         setShowEgreso={backend.setShowEgreso}
         setIsClosingCaja={closeTurn.setIsClosingCaja}
