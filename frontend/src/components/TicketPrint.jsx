@@ -118,9 +118,10 @@ export default function TicketPrint({ cart, total, payment, change, operator, ti
         <tr><td className="t-lef">CUIT</td><td className="t-rit">{cuit}</td></tr>
         <tr><td className="t-lef">Cond. IVA</td><td className="t-rit">{condicion}</td></tr>
       </tbody></table>{hr}</> : null}
-      <div className="t-center" style={{ fontSize: '0.82em', marginBottom: 1 }}>Ticket #{String(ticketNumber || 1).padStart(5, '0')} · {numeroCaja}</div>
-      <div className="t-center" style={{ fontSize: '0.82em', marginBottom: 1 }}>{fecha}  {hora}</div>
-      <div className="t-center" style={{ fontSize: '0.82em', marginBottom: 2 }}>Cajero: {operator || 'Sistema'}</div>
+      <table className="t-inline"><tbody>
+        <tr><td className="t-lef">{numeroCaja}</td><td className="t-rit t-rit-pad">Ticket #{String(ticketNumber || 1).padStart(5, '0')}</td></tr>
+        <tr><td className="t-lef">{fecha}  {hora}</td><td className="t-rit t-rit-pad">Cajero: {operator || 'Sistema'}</td></tr>
+      </tbody></table>
       {hr}
       <table className="t-items">
         <thead>
@@ -146,12 +147,12 @@ export default function TicketPrint({ cart, total, payment, change, operator, ti
         <div className="t-center" style={{ fontSize: '0.7em', marginBottom: 4 }}>El precio incluye IVA</div>
       )}
       <table className="t-inline t-summary"><tbody>
-        <tr className="t-total-row"><td className="t-lef">TOTAL</td><td className="t-rit" style={{ fontSize: '1.3em' }}>{F(total)}</td></tr>
+        <tr className="t-total-row"><td className="t-lef">TOTAL</td><td className="t-rit t-rit-pad" style={{ fontSize: '1.3em' }}>{F(total)}</td></tr>
       </tbody></table>
       {hr}
       <table className="t-inline"><tbody>
-        <tr><td className="t-lef">{(paymentMethod || 'EFECTIVO').toUpperCase()}</td><td className="t-rit">{F(payment)}</td></tr>
-        <tr><td className="t-lef">VUELTO</td><td className="t-rit">{F(change >= 0 ? change : 0)}</td></tr>
+        <tr><td className="t-lef">{(paymentMethod || 'EFECTIVO').toUpperCase()}</td><td className="t-rit t-rit-pad">{F(payment)}</td></tr>
+        <tr><td className="t-lef">VUELTO</td><td className="t-rit t-rit-pad">{F(change >= 0 ? change : 0)}</td></tr>
       </tbody></table>
       {isCorralon && <div className="t-center" style={{ fontWeight: 800, fontSize: '1.15em', letterSpacing: 3, marginTop: 6 }}>P A G A D O</div>}
       {hr}
