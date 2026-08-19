@@ -28,24 +28,24 @@ export default function UsuariosModule() {
   // no tiene sentido mostrar módulos que no existen en el sistema.
   const isCorralon = businessType === 'corralon';
   const ALL_MODULES = isCorralon
-    ? ['Mostrador', 'Presupuestos', 'Acopios', 'Lista de clientes', 'Cuentas corrientes', 'Notas de pedido', 'Depósito', 'Historial', 'Reportes', 'Configuración']
-    : ['Mostrador', 'Lista de clientes', 'Cuentas corrientes', 'Historial', 'Reportes', 'Configuración'];
+    ? ['Mostrador', 'Presupuestos', 'Acopios', 'Lista de clientes', 'Cuentas corrientes', 'Notas de pedido', 'Depósito', 'Inventario', 'Historial', 'Reportes', 'Configuración']
+    : ['Mostrador', 'Lista de clientes', 'Cuentas corrientes', 'Inventario', 'Historial', 'Reportes', 'Configuración'];
 
   const ROLE_DEFAULT_PERMS = isCorralon
     ? {
         cashier:  ['Mostrador', 'Presupuestos', 'Acopios', 'Lista de clientes', 'Cuentas corrientes'],
         logistica: ['Notas de pedido'],
-        manager:  ['Mostrador', 'Presupuestos', 'Acopios', 'Lista de clientes', 'Cuentas corrientes', 'Notas de pedido', 'Depósito', 'Historial', 'Reportes'],
+        manager:  ['Mostrador', 'Presupuestos', 'Acopios', 'Lista de clientes', 'Cuentas corrientes', 'Notas de pedido', 'Depósito', 'Inventario', 'Historial', 'Reportes'],
         admin:    [...ALL_MODULES],
-        vendedor: ['Mostrador', 'Presupuestos', 'Acopios', 'Lista de clientes', 'Cuentas corrientes'],
+        vendedor: ['Mostrador', 'Presupuestos', 'Acopios', 'Lista de clientes', 'Cuentas corrientes', 'Inventario'],
         employee: ['Mostrador'],
       }
     : {
         cashier:  ['Mostrador', 'Lista de clientes', 'Cuentas corrientes'],
         logistica: ['Notas de pedido'],
-        manager:  ['Mostrador', 'Lista de clientes', 'Cuentas corrientes', 'Historial', 'Reportes'],
+        manager:  ['Mostrador', 'Lista de clientes', 'Cuentas corrientes', 'Inventario', 'Historial', 'Reportes'],
         admin:    [...ALL_MODULES],
-        vendedor: ['Mostrador', 'Lista de clientes', 'Cuentas corrientes'],
+        vendedor: ['Mostrador', 'Lista de clientes', 'Cuentas corrientes', 'Inventario'],
         employee: ['Mostrador'],
       };
 
