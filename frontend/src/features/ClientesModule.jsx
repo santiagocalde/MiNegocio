@@ -11,7 +11,8 @@ import { apiGet, apiPost, apiDelete, apiPatch } from '../services/apiClient';
 const formatPesos = (v) => (v ?? 0).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
 export default function ClientesModule() {
-  const { addToast } = usePanelContext();
+  const { addToast, businessType } = usePanelContext();
+  const isCorralon = businessType === 'corralon';
   const [clientes, setClientes]   = useState([]);
   const [loading, setLoading]     = useState(true);
   const [search, setSearch]       = useState('');
@@ -324,8 +325,8 @@ export default function ClientesModule() {
             </div>
             )}
 
-            {/* Sección de direcciones */}
-            <div style={{ marginBottom: 16 }}>
+            {/* Sección de direcciones — solo corralones */}
+            {isCorralon && <div style={{ marginBottom: 16 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                 <div style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--lp-ink-faint)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                   Domicilios
@@ -392,7 +393,7 @@ export default function ClientesModule() {
                   </div>
                 </div>
               )}
-            </div>
+            </div>}
 
             {/* WhatsApp rápido si tiene teléfono */}
             {detail.cliente.phone && (
