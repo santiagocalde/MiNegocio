@@ -1,14 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
 
 export default function AddAmountModal({ show, setShow, handleQuickAdd }) {
-  const [name, setName] = useState('Producto Manual');
+  const [name, setName] = useState('');
   const [price, setPrice] = useState(0);
   const inputRef = useRef(null);
 
   useEffect(() => {
     if (show) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setName('Producto Manual');
+      setName('');
       setPrice('');
       setTimeout(() => inputRef.current?.focus(), 100);
     }
