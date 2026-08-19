@@ -22,9 +22,9 @@ import TicketPrint from '../components/TicketPrint';
 
 export default function VentasPage() {
   const isMobile = useIsMobile();
-  const { auth, backend, addToast, playBeep, currentSucursalId, setCurrentSucursalId, businessType, plan } = usePanelContext();
+  const { auth, backend, addToast, playBeep, currentSucursalId, setCurrentSucursalId, businessType, currentPlan } = usePanelContext();
   const ivaRate = backend.businessConfig?.iva_rate ?? 0;
-  const hasMultiCart = plan?.currentPlan === 'pro' || plan?.currentPlan === 'ia';
+  const hasMultiCart = currentPlan === 'pro' || currentPlan === 'ia';
 
   // Dos instancias independientes de carrito — cada una con su propia key en localStorage
   const cart1 = useCart(backend.productsDB, ivaRate, playBeep, 'minegocio_cart_1');
