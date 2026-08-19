@@ -9,6 +9,10 @@ export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, curren
   const [turnCats, setTurnCats] = useState([]);
   const [turnTop, setTurnTop] = useState([]);
   const [turnResumen, setTurnResumen] = useState(null);
+  // Resumen final tras cerrar: se muestra ANTES de cerrar sesión, para que el
+  // operador tenga algo concreto que mostrarle al dueño (o sacarle foto) en
+  // vez de solo un toast que desaparece.
+  const [closedSummary, setClosedSummary] = useState(null);
 
   const isLogistica = currentOperator?.role === 'logistica';
   const isAdmin = currentOperator?.role === 'admin';
@@ -39,6 +43,52 @@ export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, curren
   }, [isClosingCaja, currentTurnId]);
 
   if (!isClosingCaja) return null;
+
+  const handleFinishAndLogout = () => {
+    setClosedSummary(null);
+    setIsClosingCaja(false);
+    if (onTurnClosed) onTurnClosed();
+  };
+
+  // Pantalla de resumen final — se muestra ANTES de cerrar sesión, con los
+  // números que ya confirmó el backend (no recalculados en el cliente).
+  if (closedSummary) {
+    const d = closedSummary.difference;
+    const dColor = d === null || d === undefined ? 'var(--text-secondary)'
+      : Math.abs(d) <= 200 ? 'var(--accent-success)'
+      : d > 0 ? 'var(--accent-warning)' : 'var(--accent-danger)';
+    return (
+      <div className="modal-overlay"><div className="modal-content" style={{ width: '460px', maxWidth: '95vw', textAlign: 'center' }}>
+        <div style={{ fontSize: '2.5rem', marginBottom: 4 }}>✅</div>
+        <h2 className="modal-title" style={{ color: 'var(--text-primary)', marginBottom: 4 }}>Turno cerrado</h2>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: 20 }}>
+          {closedSummary.operator ? `${closedSummary.operator} — ` : ''}{new Date().toLocaleString('es-AR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+        </p>
+        <div style={{ border: '1px solid var(--border-color)', borderRadius: 12, overflow: 'hidden', marginBottom: 16, background: 'var(--bg-main)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 16px', borderBottom: '1px solid var(--border-color)' }}>
+            <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Vendido este turno</span>
+            <span style={{ color: 'var(--text-primary)', fontWeight: 800, fontFamily: 'var(--font-mono)' }}>${(closedSummary.total || 0).toLocaleString('es-AR')}</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 16px', borderBottom: '1px solid var(--border-color)' }}>
+            <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Contaste en el cajón</span>
+            <span style={{ color: 'var(--text-primary)', fontWeight: 800, fontFamily: 'var(--font-mono)' }}>${(closedSummary.counted || 0).toLocaleString('es-AR')}</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 16px' }}>
+            <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Diferencia</span>
+            <span style={{ color: dColor, fontWeight: 800, fontFamily: 'var(--font-mono)' }}>
+              {d === null || d === undefined ? '—' : Math.abs(d) < 0.01 ? '$0' : (d > 0 ? '+$' : '−$') + Math.abs(d).toLocaleString('es-AR')}
+            </span>
+          </div>
+        </div>
+        <p style={{ color: 'var(--text-faint)', fontSize: '0.78rem', marginBottom: 20 }}>
+          Podés mostrarle esta pantalla al dueño o sacarle una foto antes de continuar.
+        </p>
+        <button className="btn btn-modal-confirm" style={{ width: '100%', background: 'var(--accent-primary)' }} onClick={handleFinishAndLogout}>
+          Listo, cerrar sesión
+        </button>
+      </div></div>
+    );
+  }
 
   // Efectivo del turno (el backend ya incluye la porción efectivo de pagos mixtos).
   const turnEfectivo = turnResumen ? (turnResumen.efectivo || 0) : null;
@@ -98,11 +148,27 @@ export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, curren
         notes: isLogistica ? 'Cierre de turno logística' : (diff === null ? 'Cierre sin arqueo en vivo' : (diff !== 0 ? (diff > 0 ? `Sobrante: $${diff}` : `Faltante: $${Math.abs(diff)}`) : 'Caja cerrada sin diferencias.')),
       });
       if (res.ok) {
+        const data = await res.json().catch(() => ({}));
         if (addToast) addToast('Turno cerrado correctamente.', 'success');
         setCountedCash('');
         setCloseCajaPin('');
-        setIsClosingCaja(false);
-        if (onTurnClosed) onTurnClosed();
+        if (isLogistica) {
+          // Logística no cuenta efectivo — no hay nada que resumir, cerramos directo.
+          setIsClosingCaja(false);
+          if (onTurnClosed) onTurnClosed();
+        } else {
+          // Guardamos una foto de los números finales antes de limpiar el estado
+          // del formulario — la pantalla de resumen se arma con esto y se muestra
+          // ANTES de cerrar sesión, para que el operador tenga algo concreto que
+          // mostrarle al dueño en vez de solo un toast que desaparece.
+          setClosedSummary({
+            total: turnResumen?.total || 0,
+            counted: parseFloat(countedCash) || 0,
+            expected_cash: data.expected_cash,
+            difference: data.difference,
+            operator: currentOperator?.name || '',
+          });
+        }
       } else {
         const data = await res.json().catch(() => ({}));
         if (addToast) addToast(data.detail || 'No se pudo cerrar el turno. Reintentá o revisá tu conexión.', 'error');
@@ -153,57 +219,73 @@ export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, curren
     );
   }
 
+  // Sobrante grande: probable efectivo de turno anterior no contado
+  const diff = cajaDiff();
+  const sobrante_de_turno_anterior = diff !== null && diff > 0 && diff > (turnEfectivo || 0) * 0.5;
+
+  // Cuánto debería haber en el cajón (lo que el backend va a calcular al cierre)
+  const expectedCash = turnResumen
+    ? (turnResumen.initial_cash || 0) + (turnResumen.efectivo || 0) - (turnResumen.egresos || 0)
+    : null;
+
   return (
     <div className="modal-overlay"><div className="modal-content" style={{ width: '580px', maxWidth: '95vw', maxHeight: '92vh', overflowY: 'auto' }}>
       <h2 className="modal-title" style={{ color: 'var(--text-primary)' }}>Cierre de Turno</h2>
-      {currentOperator?.role === 'admin' && (
+
+      {/* Resumen del turno — visible para todos los roles */}
+      {turnResumen ? (
         <>
-        {turnResumen ? (
-          <>
-          <div style={{ textAlign: 'center', marginBottom: '14px' }}>
-            <div style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px' }}>Este turno registró ventas por</div>
-            <div style={{ fontSize: '2.1rem', fontWeight: 800, color: 'var(--accent-primary)', fontFamily: 'var(--font-mono)', lineHeight: 1.1 }}>${(turnResumen.total || 0).toLocaleString('es-AR')}</div>
-          </div>
-
-          {/* Ventas por método */}
-          <div style={{ border: '1px solid var(--border-color)', borderRadius: '10px', overflow: 'hidden', marginBottom: '12px', background: 'var(--bg-main)' }}>
-            <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px', padding: '10px 14px', background: 'var(--bg-card)', borderBottom: '1px solid var(--border-color)' }}>Ventas por método</div>
-            {[
-              { label: 'Efectivo', key: 'efectivo' },
-              { label: 'Tarjeta', key: 'tarjeta' },
-              { label: 'Transferencia', key: 'transferencia' },
-              { label: 'QR', key: 'mercadopago' },
-            ].map((m, i, arr) => (
-              <div key={m.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 14px', fontSize: '0.9rem', borderBottom: i < arr.length - 1 ? '1px solid var(--border-color)' : 'none' }}>
-                <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>{m.label}</span>
-                <span style={{ color: 'var(--text-primary)', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>${((turnResumen[m.key] || 0)).toLocaleString('es-AR')}</span>
-              </div>
-            ))}
-          </div>
-
-          {/* Caja inicial y egresos */}
-          <div style={{ border: '1px solid var(--border-color)', borderRadius: '10px', overflow: 'hidden', marginBottom: '12px', background: 'var(--bg-main)' }}>
-            <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px', padding: '10px 14px', background: 'var(--bg-card)', borderBottom: '1px solid var(--border-color)' }}>Caja del turno</div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '9px 14px', fontSize: '0.9rem', borderBottom: '1px solid var(--border-color)' }}>
-              <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Caja inicial</span>
-              <span style={{ color: 'var(--text-primary)', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>${(turnResumen.initial_cash || 0).toLocaleString('es-AR')}</span>
+        <div style={{ textAlign: 'center', marginBottom: '14px' }}>
+          <div style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px' }}>Este turno — ventas totales</div>
+          <div style={{ fontSize: '2.1rem', fontWeight: 800, color: 'var(--accent-primary)', fontFamily: 'var(--font-mono)', lineHeight: 1.1 }}>${(turnResumen.total || 0).toLocaleString('es-AR')}</div>
+          {todaySalesTotal > (turnResumen.total || 0) && (
+            <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: 4 }}>
+              Día completo: <strong style={{ color: 'var(--text-primary)' }}>${todaySalesTotal.toLocaleString('es-AR')}</strong> (incluye turnos anteriores)
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '9px 14px', fontSize: '0.9rem' }}>
-              <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Egresos / ingresos</span>
-              <span style={{ color: 'var(--accent-warning)', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{(turnResumen.egresos || 0) !== 0 ? ((turnResumen.egresos > 0 ? '−$' : '+$') + Math.abs(turnResumen.egresos).toLocaleString('es-AR')) : '$0'}</span>
-            </div>
-          </div>
+          )}
+        </div>
 
-          <p style={{ textAlign: 'center', color: 'var(--text-secondary)', marginBottom: '16px', fontSize: '0.8rem' }}>
-            El arqueo compara solo el <strong>efectivo físico</strong> del cajón. Las transferencias y posnet van a tu cuenta bancaria aparte.
-          </p>
-          </>
-        ) : (
-          <>
-          <p style={{ textAlign: 'center', color: 'var(--text-secondary)', marginBottom: '8px' }}>Hoy el sistema registró ventas por:</p>
-          <div className="modal-amount" style={{ color: 'var(--text-primary)', marginBottom: '16px', textAlign: 'center' }}>${(todaySalesTotal || 0).toLocaleString('es-AR')}</div>
-          </>
-        )}
+        {/* Ventas por método */}
+        <div style={{ border: '1px solid var(--border-color)', borderRadius: '10px', overflow: 'hidden', marginBottom: '12px', background: 'var(--bg-main)' }}>
+          <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px', padding: '10px 14px', background: 'var(--bg-card)', borderBottom: '1px solid var(--border-color)' }}>Ventas por método</div>
+          {[
+            { label: 'Efectivo', key: 'efectivo' },
+            { label: 'Tarjeta', key: 'tarjeta' },
+            { label: 'Transferencia', key: 'transferencia' },
+            { label: 'QR', key: 'mercadopago' },
+          ].map((m, i, arr) => (
+            <div key={m.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 14px', fontSize: '0.9rem', borderBottom: i < arr.length - 1 ? '1px solid var(--border-color)' : 'none' }}>
+              <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>{m.label}</span>
+              <span style={{ color: 'var(--text-primary)', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>${((turnResumen[m.key] || 0)).toLocaleString('es-AR')}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Caja inicial y egresos */}
+        <div style={{ border: '1px solid var(--border-color)', borderRadius: '10px', overflow: 'hidden', marginBottom: '12px', background: 'var(--bg-main)' }}>
+          <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px', padding: '10px 14px', background: 'var(--bg-card)', borderBottom: '1px solid var(--border-color)' }}>Caja del turno</div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '9px 14px', fontSize: '0.9rem', borderBottom: '1px solid var(--border-color)' }}>
+            <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Caja inicial</span>
+            <span style={{ color: 'var(--text-primary)', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>${(turnResumen.initial_cash || 0).toLocaleString('es-AR')}</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '9px 14px', fontSize: '0.9rem' }}>
+            <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>
+              {(turnResumen.egresos || 0) < 0 ? 'Ingresos a caja' : 'Egresos / retiros'}
+            </span>
+            <span style={{ color: (turnResumen.egresos || 0) < 0 ? 'var(--accent-primary)' : 'var(--accent-warning)', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>
+              {(turnResumen.egresos || 0) === 0 ? '$0' : (turnResumen.egresos > 0 ? '−$' : '+$') + Math.abs(turnResumen.egresos).toLocaleString('es-AR')}
+            </span>
+          </div>
+        </div>
+
+        <p style={{ textAlign: 'center', color: 'var(--text-secondary)', marginBottom: '16px', fontSize: '0.8rem' }}>
+          El arqueo compara solo el <strong>efectivo físico</strong> del cajón. Transferencias y QR van a tu cuenta bancaria aparte.
+        </p>
+        </>
+      ) : (
+        <>
+        <p style={{ textAlign: 'center', color: 'var(--text-secondary)', marginBottom: '8px' }}>Hoy el sistema registró ventas por:</p>
+        <div className="modal-amount" style={{ color: 'var(--text-primary)', marginBottom: '16px', textAlign: 'center' }}>${(todaySalesTotal || 0).toLocaleString('es-AR')}</div>
         </>
       )}
 
@@ -225,34 +307,82 @@ export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, curren
         </div>
       )}
 
-      {currentOperator?.role !== 'admin' && (
-        <div style={{ background: 'rgba(20,187,166, 0.1)', padding: '16px', borderRadius: '8px', marginBottom: '24px', textAlign: 'center' }}>
-          <p style={{ color: 'var(--text-secondary)', margin: 0 }}>Arqueo Ciego: Por favor, ingrese el total de efectivo que hay en la caja.</p>
+      {/* Cuánto debería haber — el operador lo ve ANTES de contar, no después */}
+      {expectedCash !== null && (
+        <div style={{ background: 'rgba(20,187,166,0.08)', border: '1px solid rgba(20,187,166,0.25)', borderRadius: 12, padding: '14px 18px', marginBottom: 14 }}>
+          <div style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 6 }}>
+            El cajón debería tener
+          </div>
+          <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--accent-primary)', fontFamily: 'var(--font-mono)', lineHeight: 1 }}>
+            ${expectedCash.toLocaleString('es-AR')}
+          </div>
+          <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: 6, lineHeight: 1.4 }}>
+            {[
+              turnResumen.initial_cash > 0 && `$${Number(turnResumen.initial_cash).toLocaleString('es-AR')} que había al empezar`,
+              turnResumen.efectivo > 0 && `+ $${Number(turnResumen.efectivo).toLocaleString('es-AR')} cobrado en efectivo`,
+              turnResumen.egresos > 0 && `− $${Number(turnResumen.egresos).toLocaleString('es-AR')} retirado`,
+              turnResumen.egresos < 0 && `+ $${Math.abs(turnResumen.egresos).toLocaleString('es-AR')} agregado al cajón`,
+            ].filter(Boolean).join(' ')}
+          </div>
         </div>
       )}
-      <div className="input-group"><label style={{ fontSize: '1.1rem', color: 'var(--accent-primary)', fontWeight: 600 }}>Cuanto efectivo contaste en el cajon fisico?</label>
-        <input ref={cashRef} type="number" value={countedCash} onChange={e => setCountedCash(e.target.value)} autoFocus />
+
+      <div className="input-group">
+        <label style={{ fontSize: '1.1rem', color: 'var(--accent-primary)', fontWeight: 600 }}>¿Cuánto contás en el cajón ahora?</label>
+        <input ref={cashRef} type="number" value={countedCash} onChange={e => setCountedCash(e.target.value)} autoFocus placeholder="Abrí el cajón, contá los billetes y escribí el total" />
       </div>
       {countedCash !== '' && parseFloat(countedCash) === 0 && (
         <div style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.4)', borderRadius: 10, padding: '12px 16px', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 10 }}>
           <span style={{ fontSize: '1.2rem' }}>⚠️</span>
           <span style={{ color: 'var(--accent-warning)', fontSize: '0.88rem', fontWeight: 600 }}>
-            Ingresaste $0 en el cajón. Si el cajón está vacío está bien, pero verificá antes de confirmar — esto registrará un faltante por todo el efectivo del turno.
+            Ingresaste $0. Si el cajón está vacío está bien, pero verificá antes de confirmar.
           </span>
         </div>
       )}
       {!isAdmin && (
-        <div className="input-group"><label style={{ fontSize: '1.1rem', color: 'var(--text-secondary)' }}>Firma del Cierre (PIN 4 digitos)</label>
+        <div className="input-group"><label style={{ fontSize: '1.1rem', color: 'var(--text-secondary)' }}>Firma del Cierre (PIN 4 dígitos)</label>
           <input type="password" value={closeCajaPin} onChange={e => setCloseCajaPin(e.target.value.replace(/[^0-9]/g, '').slice(0, 4))} placeholder="****" />
         </div>
       )}
       {countedCash !== '' && (isAdmin || closeCajaPin.length === 4) && (
-        <div style={{ textAlign: 'center', marginBottom: '24px', padding: '16px', borderRadius: '12px', background: cajaDiff() === 0 ? 'rgba(16,185,129,0.1)' : cajaDiff() === null ? 'rgba(20,187,166,0.06)' : 'rgba(239,68,68,0.1)' }}>
-          {cajaDiff() === null ? <span style={{ color: 'var(--text-secondary)', fontWeight: 700, fontSize: '1rem' }}>Calculando arqueo del turno...</span> : cajaDiff() === 0 ? <span style={{ color: 'var(--accent-success)', fontWeight: 700, fontSize: '1.5rem' }}>Caja perfecta! No sobra ni falta.</span> : (
-            <div><span style={{ color: 'var(--accent-danger)', fontWeight: 800, fontSize: '1.8rem' }}>{cajaDiff() > 0 ? `Sobra $${cajaDiff().toLocaleString('es-AR')}` : `Falta $${Math.abs(cajaDiff()).toLocaleString('es-AR')}`}</span>
-              <p style={{ color: 'var(--accent-danger)', marginTop: '8px', fontSize: '0.9rem' }}>Revisa los billetes o anota el {cajaDiff() > 0 ? 'sobrante' : 'faltante'} en las observaciones.</p>
-            </div>
-          )}
+        <div style={{ textAlign: 'center', marginBottom: '24px', padding: '16px', borderRadius: '12px',
+          background: diff === null ? 'rgba(20,187,166,0.06)'
+            : diff === 0 || Math.abs(diff) <= 200 ? 'rgba(16,185,129,0.1)'
+            : diff > 0 ? 'rgba(245,158,11,0.1)'
+            : 'rgba(239,68,68,0.1)' }}>
+          {diff === null
+            ? <span style={{ color: 'var(--text-secondary)', fontWeight: 700, fontSize: '1rem' }}>Calculando arqueo del turno...</span>
+            : diff === 0
+              ? <span style={{ color: 'var(--accent-success)', fontWeight: 700, fontSize: '1.5rem' }}>¡Caja perfecta! No sobra ni falta.</span>
+              : Math.abs(diff) <= 200
+                ? <div>
+                    <span style={{ color: 'var(--accent-success)', fontWeight: 700, fontSize: '1.3rem' }}>
+                      {diff > 0 ? `Sobra $${diff.toLocaleString('es-AR')}` : `Falta $${Math.abs(diff).toLocaleString('es-AR')}`}
+                    </span>
+                    <p style={{ color: 'var(--text-secondary)', marginTop: '6px', fontSize: '0.85rem' }}>
+                      Diferencia mínima — puede ser monedas o redondeo. Está dentro del margen normal.
+                    </p>
+                  </div>
+                : (
+                  <div>
+                    <span style={{ color: diff > 0 ? 'var(--accent-warning)' : 'var(--accent-danger)', fontWeight: 800, fontSize: '1.8rem' }}>
+                      {diff > 0 ? `Sobra $${diff.toLocaleString('es-AR')}` : `Falta $${Math.abs(diff).toLocaleString('es-AR')}`}
+                    </span>
+                    {sobrante_de_turno_anterior
+                      ? <p style={{ color: 'var(--text-secondary)', marginTop: '8px', fontSize: '0.85rem' }}>
+                          El sobrante puede incluir efectivo de un turno anterior que se cerró sin contar. Es normal.
+                        </p>
+                      : diff < 0
+                        ? <p style={{ color: 'var(--accent-danger)', marginTop: '8px', fontSize: '0.85rem' }}>
+                            ¿Hiciste algún retiro de efectivo que no registraste? Si sí, cerrá igual y avisale al dueño.
+                          </p>
+                        : <p style={{ color: 'var(--accent-warning)', marginTop: '8px', fontSize: '0.85rem' }}>
+                            ¿Pusiste plata extra en el cajón? Si sí, cerrá igual y avisale al dueño.
+                          </p>
+                    }
+                  </div>
+                )
+          }
         </div>
       )}
 

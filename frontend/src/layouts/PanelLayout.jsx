@@ -32,6 +32,9 @@ export default function PanelLayout() {
   const [cajaOperatorId, setCajaOperatorId] = React.useState('');
   const [cajaPin, setCajaPin] = React.useState('');
   const [cajaError, setCajaError] = React.useState('');
+  // Contexto del último turno cerrado para mostrar traspaso al abrir caja
+  const [lastTurnSuggestion, setLastTurnSuggestion] = React.useState(null); // { counted, operator }
+  const [cajaMontoManual, setCajaMontoManual] = React.useState(false); // eligió "No, tengo otro monto"
   const navigate = useNavigate();
 
   const multiOperator = (backend.operators?.length || 0) > 1;
@@ -76,14 +79,44 @@ export default function PanelLayout() {
     }
   }, [auth.currentTurnId]);
 
-  const handleCajaSubmit = async (e) => {
-    e.preventDefault();
+  // Al abrir el modal de caja, buscar el último turno cerrado para mostrar
+  // cuánto quedó en el cajón — así el nuevo operador no ingresa el número a ciegas.
+  // Si el último turno fue auto-cerrado sin contar, calculamos el estimado con
+  // el resumen del turno (initial_cash + efectivo - egresos) y lo marcamos como estimado.
+  useEffect(() => {
+    if (!showInitialCaja) { setLastTurnSuggestion(null); setCajaMontoManual(false); return; } // eslint-disable-line react-hooks/set-state-in-effect
+    import('../services/apiClient').then(({ apiGet }) => {
+      apiGet('/turns?limit=10').then(r => r.ok ? r.json() : []).then(async data => {
+        if (!Array.isArray(data)) return;
+        const closed = data.filter(t => t.closed_at).sort((a, b) => new Date(b.closed_at) - new Date(a.closed_at));
+        if (closed.length === 0) return;
+        const last = closed[0];
+        if (last.counted_cash != null) {
+          // Turno cerrado con conteo: mostramos el monto real contado
+          setLastTurnSuggestion({ counted: last.counted_cash, operator: last.operator || null, estimado: false });
+        } else {
+          // Turno auto-cerrado sin conteo: calculamos el estimado del cajón
+          try {
+            const det = await apiGet(`/turns/${last.id}/detail`);
+            if (!det.ok) return;
+            const d = await det.json();
+            const r = d?.resumen_caja;
+            if (!r) return;
+            const estimado = Math.round((r.initial_cash || 0) + (r.efectivo || 0) - (r.egresos || 0));
+            setLastTurnSuggestion({ counted: estimado, operator: last.operator || null, estimado: true });
+          } catch { /* sin conexión, no mostramos sugerencia */ }
+        }
+      }).catch(() => {});
+    });
+  }, [showInitialCaja]);
+
+  // Lógica central de apertura de caja. Recibe el monto como argumento para
+  // que el botón "Sí, tengo $X" pueda pasar el valor directo sin depender de
+  // que el estado ya se haya actualizado en el mismo ciclo de render.
+  const handleCajaSubmitWithMonto = async (monto) => {
     setCajaError('');
     try {
       const { apiPost } = await import('../services/apiClient');
-      // Con varios operadores, quien abre confirma con su PIN. El PIN es la
-      // identidad: verify-pin devuelve a quién corresponde y con ese nombre se
-      // estampa el turno (y pasa a ser el operador actual).
       let operatorName = auth.currentOperator?.name || 'Dueño';
       if (multiOperator) {
         if (!/^\d{4}$/.test(cajaPin)) { setCajaError('Ingresá tu PIN (4 dígitos)'); return; }
@@ -99,7 +132,7 @@ export default function PanelLayout() {
       const res = await apiPost('/turns', {
         operator: operatorName,
         sucursal_id: 1,
-        initial_cash: parseFloat(initialCajaMonto) || 0
+        initial_cash: parseFloat(monto) || 0
       });
       if (res.ok) {
         const data = await res.json();
@@ -112,6 +145,11 @@ export default function PanelLayout() {
     setShowInitialCaja(false);
     setCajaPin(''); setCajaOperatorId('');
     addToast('Caja abierta. ¡A vender!', 'success');
+  };
+
+  const handleCajaSubmit = async (e) => {
+    e.preventDefault();
+    await handleCajaSubmitWithMonto(initialCajaMonto);
   };
 
   const handlePasswordSubmit = async (e) => {
@@ -169,6 +207,8 @@ export default function PanelLayout() {
         todaySalesTotal={backend.todaySalesTotal}
         cashSalesTotal={backend.cashSalesTotal}
         totalEgresos={backend.totalEgresos}
+        turnCashSalesTotal={backend.turnCashSalesTotal}
+        turnEgresosTotal={backend.turnEgresosTotal}
         setShowResumen={backend.setShowResumen}
         setShowEgreso={backend.setShowEgreso}
         setIsClosingCaja={closeTurn.setIsClosingCaja}
@@ -231,7 +271,8 @@ export default function PanelLayout() {
         egresoType={backend.egresoType} setEgresoType={backend.setEgresoType}
         egresoMonto={backend.egresoMonto} setEgresoMonto={backend.setEgresoMonto}
         egresoMotivo={backend.egresoMotivo} setEgresoMotivo={backend.setEgresoMotivo}
-        submitEgreso={backend.submitEgreso} />
+        submitEgreso={backend.submitEgreso}
+        estimatedCash={(auth.initialCash || 0) + (backend.turnCashSalesTotal || 0) - (backend.turnEgresosTotal || 0)} />
 
       <CloseTurnModal isClosingCaja={closeTurn.isClosingCaja} setIsClosingCaja={closeTurn.setIsClosingCaja}
         currentOperator={auth.currentOperator} todaySalesTotal={backend.todaySalesTotal}
@@ -273,7 +314,6 @@ export default function PanelLayout() {
                <Icons.Box style={{ color: 'var(--lp-primary)' }} /> Abrir mi caja
             </h2>
             <form onSubmit={handleCajaSubmit}>
-              <p style={{ color: 'var(--lp-text-muted)', marginBottom: 32, fontSize: '0.95rem', lineHeight: 1.5 }}>Para comenzar a vender, ingresá el monto de dinero en efectivo (cambio) con el que empezás el día.</p>
               {multiOperator && (
                 <>
                   <div style={{ textAlign: 'left', marginBottom: 16 }}>
@@ -292,12 +332,94 @@ export default function PanelLayout() {
                   </div>
                 </>
               )}
-              <div style={{ textAlign: 'left', marginBottom: cajaError ? 12 : 32 }}>
-                <label style={{ display: 'block', color: '#fff', marginBottom: 8, fontWeight: 600 }}>Monto inicial ($)</label>
-                <input type="number" min="0" step="1" required autoFocus={!multiOperator} value={initialCajaMonto} onChange={e => setInitialCajaMonto(e.target.value)} placeholder="Ej. 15000" style={{ width: '100%', padding: '16px 20px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, color: '#fff', fontSize: '1.2rem', outline: 'none', transition: 'all 0.2s', fontFamily: 'var(--lp-font-body)' }} onFocus={e => e.target.style.borderColor = 'var(--lp-primary)'} onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'} />
-              </div>
+
+              {/* Traspaso del turno anterior: flujo binario */}
+              {lastTurnSuggestion && !cajaMontoManual ? (
+                <div style={{ marginBottom: 24 }}>
+                  {lastTurnSuggestion.estimado ? (
+                    // Auto-cierre sin conteo: mostramos estimado con advertencia
+                    <div style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 12, padding: '14px 18px', marginBottom: 16 }}>
+                      <p style={{ color: 'var(--accent-warning)', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 6px' }}>
+                        ⚠ Turno anterior cerrado sin contar
+                      </p>
+                      <p style={{ color: 'var(--lp-text-muted)', fontSize: '0.88rem', margin: '0 0 4px', lineHeight: 1.5 }}>
+                        {lastTurnSuggestion.operator
+                          ? <><strong style={{ color: '#fff' }}>{lastTurnSuggestion.operator}</strong> no contó al cerrar.</>
+                          : 'El turno anterior se cerró sin contar.'
+                        }
+                        {' '}Calculamos que habría aprox.{' '}
+                        <strong style={{ color: '#fff', fontVariantNumeric: 'tabular-nums' }}>${Number(lastTurnSuggestion.counted).toLocaleString('es-AR')}</strong>{' '}
+                        en el cajón. Abrilo y contá vos.
+                      </p>
+                    </div>
+                  ) : (
+                    <p style={{ color: 'var(--lp-text-muted)', fontSize: '0.9rem', marginBottom: 16, lineHeight: 1.5 }}>
+                      {lastTurnSuggestion.operator
+                        ? <><strong style={{ color: '#fff' }}>{lastTurnSuggestion.operator}</strong> cerró su turno con</>
+                        : 'El turno anterior cerró con'
+                      }
+                      {' '}<strong style={{ color: '#14BBA6', fontSize: '1.1rem', fontVariantNumeric: 'tabular-nums' }}>${Number(lastTurnSuggestion.counted).toLocaleString('es-AR')}</strong>{' '}
+                      en el cajón. Abrilo y fijate.
+                    </p>
+                  )}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    <button type="button"
+                      onClick={async () => {
+                        // Seteamos el monto y disparamos el submit en el mismo handler
+                        // para evitar que el form se submitee antes de que el estado actualice.
+                        const monto = String(lastTurnSuggestion.counted);
+                        setInitialCajaMonto(monto);
+                        // Creamos un evento sintético con el monto ya disponible
+                        await handleCajaSubmitWithMonto(monto);
+                      }}
+                      className="lp-btn lp-btn--primary"
+                      style={{ width: '100%', padding: '16px', fontSize: '1rem', boxShadow: '0 0 30px rgba(15,138,125,0.4)' }}>
+                      ✓ {lastTurnSuggestion.estimado ? 'Confirmar — cuento aprox.' : 'Sí, tengo'} ${Number(lastTurnSuggestion.counted).toLocaleString('es-AR')}
+                    </button>
+                    <button type="button"
+                      onClick={() => { setInitialCajaMonto(''); setCajaMontoManual(true); }}
+                      style={{ width: '100%', padding: '14px', fontSize: '0.95rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 12, color: 'var(--lp-text-muted)', cursor: 'pointer' }}>
+                      No, tengo otro monto →
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ textAlign: 'left', marginBottom: cajaError ? 12 : 32 }}>
+                  {lastTurnSuggestion && (
+                    <button type="button" onClick={() => setCajaMontoManual(false)}
+                      style={{ background: 'none', border: 'none', color: 'var(--lp-text-muted)', fontSize: '0.8rem', cursor: 'pointer', marginBottom: 10, padding: 0 }}>
+                      ← Volver
+                    </button>
+                  )}
+                  <label style={{ display: 'block', color: '#fff', marginBottom: 8, fontWeight: 600 }}>
+                    ¿Cuánto hay en el cajón ahora? ($)
+                  </label>
+                  <input type="number" min="0" step="1" required autoFocus value={initialCajaMonto}
+                    onChange={e => setInitialCajaMonto(e.target.value)}
+                    placeholder="Contá los billetes y escribí el total"
+                    style={{ width: '100%', padding: '16px 20px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, color: '#fff', fontSize: '1.2rem', outline: 'none', transition: 'all 0.2s', fontFamily: 'var(--lp-font-body)' }}
+                    onFocus={e => e.target.style.borderColor = 'var(--lp-primary)'}
+                    onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'} />
+                </div>
+              )}
+
               {cajaError && <p style={{ color: '#f87171', textAlign: 'center', marginBottom: 20, fontSize: '0.85rem' }}>{cajaError}</p>}
-              <button type="submit" className="lp-btn lp-btn--primary" style={{ width: '100%', padding: '16px', fontSize: '1.1rem', boxShadow: '0 0 30px rgba(15,138,125, 0.4)' }}>Abrir Caja</button>
+
+              {/* Warning $0 en flujo manual */}
+              {(!lastTurnSuggestion || cajaMontoManual) && initialCajaMonto === '0' && (
+                <div style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.35)', borderRadius: 10, padding: '10px 14px', marginBottom: 14, textAlign: 'left' }}>
+                  <span style={{ color: 'var(--accent-warning)', fontSize: '0.85rem', fontWeight: 600 }}>
+                    ⚠ ¿El cajón tiene $0? Si vas a arrancar sin efectivo está bien, pero verificá antes de continuar.
+                  </span>
+                </div>
+              )}
+
+              {/* Botón de abrir solo visible en flujo manual (sin sugerencia o eligió otro monto) */}
+              {(!lastTurnSuggestion || cajaMontoManual) && (
+                <button type="submit" className="lp-btn lp-btn--primary" style={{ width: '100%', padding: '16px', fontSize: '1.1rem', boxShadow: '0 0 30px rgba(15,138,125, 0.4)' }}>
+                  Abrir Caja
+                </button>
+              )}
             </form>
           </div>
         </div>

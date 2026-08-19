@@ -311,14 +311,19 @@ async def create_egreso(body: dict = Body(...)) -> dict:
                     "SELECT 1 FROM turns WHERE id = $1 AND business_id = $2", turn_id, b_id)
                 if not own:
                     raise HTTPException(400, detail="El turno indicado no pertenece a este negocio")
+            # 'ingreso' = plata que se AGREGA al cajón (ej. fondo de cambio a mitad de
+            # turno). Se guarda en negativo porque el resumen de caja hace SUM(monto)
+            # y lo resta del efectivo esperado — un negativo lo suma en cambio.
+            monto_to_store = -monto_f if tipo == 'ingreso' else monto_f
             await conn.execute(
                 "INSERT INTO egresos_caja (business_id, turn_id, monto, motivo, type, operator) VALUES ($1,$2,$3,$4,$5,$6)",
-                b_id, turn_id, monto_f, motivo, tipo, operador
+                b_id, turn_id, monto_to_store, motivo, tipo, operador
             )
+            tipo_label = {'gasto': 'Gasto', 'retiro': 'Retiro del dueño', 'ingreso': 'Ingreso a caja'}.get(tipo, tipo)
             await conn.execute(
                 "INSERT INTO audit_log (business_id, action, operator, details) VALUES ($1,$2,$3,$4)",
                 b_id, "egreso_" + tipo, operador,
-                f"{'Gasto' if tipo == 'gasto' else 'Retiro del dueño'} — ${float(monto or 0):.0f} ({motivo})"
+                f"{tipo_label} — ${monto_f:.0f} ({motivo})"
             )
             return {"success": True}
     else:
@@ -340,13 +345,18 @@ async def create_egreso(body: dict = Body(...)) -> dict:
                 cur_t = await db.execute("SELECT 1 FROM turns WHERE id = ?", (turn_id,))
                 if not await cur_t.fetchone():
                     raise HTTPException(400, detail="El turno indicado no existe")
+            # 'ingreso' = plata que se AGREGA al cajón (fondo de cambio a mitad de
+            # turno). Negativo porque el resumen suma egresos con SUM(monto) y lo
+            # resta del esperado — un negativo lo suma en cambio.
+            monto_to_store = -monto_f if tipo == 'ingreso' else monto_f
             await db.execute(
                 "INSERT INTO egresos_caja (turn_id, monto, motivo, type, operator) VALUES (?,?,?,?,?)",
-                (turn_id, monto_f, motivo, tipo, operador)
+                (turn_id, monto_to_store, motivo, tipo, operador)
             )
+            tipo_label = {'gasto': 'Gasto', 'retiro': 'Retiro del dueño', 'ingreso': 'Ingreso a caja'}.get(tipo, tipo)
             await db.execute(
                 "INSERT INTO audit_log (action, operator, details) VALUES (?,?,?)",
-                ("egreso_" + tipo, operador, f"{'Gasto' if tipo == 'gasto' else 'Retiro del dueño'} — ${float(monto or 0):.0f} ({motivo})")
+                ("egreso_" + tipo, operador, f"{tipo_label} — ${monto_f:.0f} ({motivo})")
             )
             await db.commit()
             return {"success": True}

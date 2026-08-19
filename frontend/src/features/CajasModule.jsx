@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { usePanelContext } from '../context/PanelContext';
-import { apiGet } from '../services/apiClient';
+import { apiGet, apiPost } from '../services/apiClient';
 import { SkeletonTable } from '../components/ui/Skeleton';
 import EmptyState from '../components/ui/EmptyState';
 import useSortable from '../hooks/useSortable.jsx';
@@ -17,13 +17,20 @@ const fmtDate = (iso) => {
 };
 
 export default function CajasModule() {
-  const { businessConfig, addToast } = usePanelContext();
+  const { businessConfig, addToast, auth } = usePanelContext();
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [loading, setLoading] = useState(true);
   const [turns, setTurns] = useState([]);
   const [detail, setDetail] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  // Corrección de un cierre ya hecho — para cuando el operador se equivocó al
+  // tipear el contado (ej. le faltó un cero). Solo admin, requiere su PIN.
+  const [correcting, setCorrecting] = useState(false);
+  const [correctMonto, setCorrectMonto] = useState('');
+  const [correctReason, setCorrectReason] = useState('');
+  const [correctPin, setCorrectPin] = useState('');
+  const [correctSaving, setCorrectSaving] = useState(false);
 
   const fetchTurns = useCallback(async () => {
     try {
@@ -49,6 +56,7 @@ export default function CajasModule() {
   const openDetail = async (turnId) => {
     setDetailLoading(true);
     setDetail(null);
+    setCorrecting(false); setCorrectMonto(''); setCorrectReason(''); setCorrectPin('');
     try {
       const res = await apiGet(`/turns/${turnId}/detail`);
       if (res.ok) {
@@ -104,8 +112,34 @@ export default function CajasModule() {
     w.document.close();
   };
 
+  const handleCorrectSave = async () => {
+    if (!detail || correctMonto === '' || !correctPin || correctPin.length < 4) return;
+    setCorrectSaving(true);
+    try {
+      const res = await apiPost(`/turns/${detail.id}/correct-count`, {
+        counted_cash: parseFloat(correctMonto) || 0,
+        operator_id: auth?.currentOperator?.id,
+        pin: correctPin,
+        reason: correctReason,
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setDetail(prev => prev ? { ...prev, counted_cash: parseFloat(correctMonto) || 0, difference: data.difference } : prev);
+        setTurns(prev => prev.map(t => t.id === detail.id ? { ...t, counted_cash: parseFloat(correctMonto) || 0, difference: data.difference } : t));
+        addToast('Cierre corregido correctamente.', 'success');
+        setCorrecting(false); setCorrectMonto(''); setCorrectReason(''); setCorrectPin('');
+      } else {
+        const err = await res.json().catch(() => ({}));
+        addToast(err.detail || 'No se pudo corregir el cierre.', 'error');
+      }
+    } catch {
+      addToast('Sin conexión. Reintentá.', 'error');
+    }
+    setCorrectSaving(false);
+  };
+
   return (
-    <div style={{ padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 14, height: '100%', overflowY: 'auto' }}>
+    <div style={{ padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 14, minHeight: 0 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
         <div>
           <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800 }}>Cajas</h2>
@@ -136,7 +170,7 @@ export default function CajasModule() {
       </div>
 
       {/* Tabla de cajas */}
-      <div className="ledger-sheet" style={{ overflow: 'hidden' }}>
+      <div className="ledger-sheet">
         {loading ? (
           <SkeletonTable rows={6} cols={7} />
         ) : sortedTurns.length === 0 ? (
@@ -220,6 +254,44 @@ export default function CajasModule() {
               );
             })()}
             <CategoryBreakdown items={detail.por_categoria} />
+
+            {/* Corrección del contado — solo admin, para cuando el operador se
+                equivocó al tipear (ej. le faltó un cero). */}
+            {!correcting ? (
+              <button onClick={() => { setCorrecting(true); setCorrectMonto(String(detail.counted_cash ?? '')); }}
+                style={{ marginTop: 12, background: 'none', border: '1px dashed var(--border-color)', borderRadius: 8, padding: '8px 12px', color: 'var(--text-secondary)', fontSize: '0.8rem', cursor: 'pointer', width: '100%' }}>
+                ✎ ¿Se equivocaron al tipear el contado? Corregir
+              </button>
+            ) : (
+              <div style={{ marginTop: 12, border: '1px solid rgba(245,158,11,0.4)', background: 'rgba(245,158,11,0.06)', borderRadius: 10, padding: 14 }}>
+                <p style={{ fontSize: '0.78rem', color: 'var(--accent-warning)', fontWeight: 700, margin: '0 0 10px' }}>
+                  Corregir monto contado (solo admin)
+                </p>
+                <div className="input-group" style={{ marginBottom: 8 }}>
+                  <label style={{ fontSize: '0.8rem' }}>Monto correcto ($)</label>
+                  <input type="number" value={correctMonto} onChange={e => setCorrectMonto(e.target.value)} autoFocus />
+                </div>
+                <div className="input-group" style={{ marginBottom: 8 }}>
+                  <label style={{ fontSize: '0.8rem' }}>Motivo (opcional)</label>
+                  <input type="text" value={correctReason} onChange={e => setCorrectReason(e.target.value)} placeholder="Ej: se tipeó $17.000 en vez de $170.000" />
+                </div>
+                <div className="input-group" style={{ marginBottom: 12 }}>
+                  <label style={{ fontSize: '0.8rem' }}>Tu PIN de admin</label>
+                  <input type="password" value={correctPin} onChange={e => setCorrectPin(e.target.value.replace(/[^0-9]/g, '').slice(0, 4))} placeholder="****" />
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button onClick={() => { setCorrecting(false); setCorrectMonto(''); setCorrectReason(''); setCorrectPin(''); }}
+                    style={{ flex: 1, padding: '9px', borderRadius: 8, border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                    Cancelar
+                  </button>
+                  <button onClick={handleCorrectSave} disabled={correctSaving || correctMonto === '' || correctPin.length < 4}
+                    style={{ flex: 1, padding: '9px', borderRadius: 8, border: 'none', background: 'var(--accent-warning)', color: '#1E3A5F', fontWeight: 700, cursor: 'pointer', opacity: (correctSaving || correctMonto === '' || correctPin.length < 4) ? 0.5 : 1 }}>
+                    {correctSaving ? 'Guardando...' : 'Confirmar corrección'}
+                  </button>
+                </div>
+              </div>
+            )}
+
             <div className="modal-actions" style={{ marginTop: 18 }}>
               <button className="btn btn-modal-cancel" onClick={() => setDetail(null)}>Cerrar</button>
               <button className="btn btn-modal-confirm" onClick={handlePrint} style={{ background: 'var(--accent-primary)' }}>
