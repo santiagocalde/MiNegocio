@@ -7,7 +7,7 @@ import QRCode from 'qrcode';
 */
 
 const fmt = (n) => (typeof n === 'number' ? n.toLocaleString('es-AR') : n);
-const F = (n) => '$' + (typeof n === 'number' ? n.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : n);
+const F = (n) => '$' + (typeof n === 'number' ? n.toLocaleString('es-AR', { minimumFractionDigits: Number.isInteger(n) ? 0 : 2, maximumFractionDigits: 2 }) : n);
 
 function ItemRow({ item }) {
   const lineTotal = item.price * (item.qty || 1);
