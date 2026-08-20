@@ -112,7 +112,7 @@ function ResumenModal({ showResumen, setShowResumen, resumenData, businessConfig
 
   return (
     <div className="modal-overlay" onClick={() => setShowResumen(false)}>
-      <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '520px', width: '100%' }}>
+      <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '520px', width: '100%', maxHeight: '90dvh', overflowY: 'auto' }}>
 
         {/* Header */}
         <h2 className="modal-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

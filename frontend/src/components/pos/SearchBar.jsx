@@ -73,7 +73,7 @@ export default function SearchBar({
   const autocomplete = useMemo(() => {
     if (!search.trim() || !productsDB) return [];
     return productsDB
-      .filter(p => p.code?.startsWith(search) || (p.extra_codes || []).some(c => c?.startsWith(search)) || p.name?.toLowerCase().includes(search.toLowerCase()))
+      .filter(p => p.code?.startsWith(search.trim()) || (p.extra_codes || []).some(c => c?.startsWith(search.trim())) || p.name?.toLowerCase().includes(search.trim().toLowerCase()))
       .slice(0, 5);
   }, [search, productsDB]);
 
