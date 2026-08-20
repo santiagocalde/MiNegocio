@@ -62,7 +62,14 @@ export default function LandingHero({ isLoggedIn, goPanel, goOnboard }) {
           max-width: 15ch;
         }
         .hero-h1 .l1 { display: block; }
-        .hero-h1 .l2 { display: block; }
+        .hero-h1 .l2 {
+          display: block;
+          /* Reserva espacio para el peor caso (rubros largos como "fiambrería"
+             o "ferretería" pueden ocupar hasta 3 líneas dentro del max-width
+             de 15ch) — evita que la animación typewriter empuje el resto de
+             la página hacia abajo mientras tipea. */
+          min-height: 3.1em;
+        }
 
         .hero-rubro {
           color: var(--lp-primary-ink);

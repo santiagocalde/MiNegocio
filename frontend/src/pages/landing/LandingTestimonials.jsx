@@ -4,8 +4,6 @@ import { Reveal } from './hooks/useReveal';
 import testimonialsFallback from './data/testimonials';
 import useIsMobile from '../../hooks/useIsMobile';
 
-const Svg = { Star: () => <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg> };
-
 export default function LandingTestimonials() {
   const [testimonials, setTestimonials] = useState(testimonialsFallback);
   const isMobile = useIsMobile();
@@ -36,7 +34,6 @@ export default function LandingTestimonials() {
           {visible.map((t, i) => (
             <Reveal key={t.id} delay={i + 1} style={{ height: '100%' }}>
               <div className="lp-glass" style={{ padding: isMobile ? 16 : 24, height: '100%', display: 'flex', flexDirection: 'column', transition: 'transform 0.2s, border-color 0.2s, box-shadow 0.2s' }} onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.borderColor = 'rgba(20,187,166,0.2)'; e.currentTarget.style.boxShadow = '0 8px 30px rgba(20,187,166,0.08)'; }} onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = 'var(--lp-line)'; e.currentTarget.style.boxShadow = 'var(--lp-shadow-sm)'; }}>
-                <div style={{ display: 'flex', gap: 2, marginBottom: 10, color: '#F5C518' }}>{Array.from({ length: t.stars }).map((_, j) => <Svg.Star key={j} />)}</div>
                 <p style={{ fontSize: isMobile ? '0.88rem' : '0.92rem', lineHeight: 1.55, marginBottom: 14, fontStyle: 'italic', color: 'var(--lp-ink-soft)', flex: 1,
                   ...(isMobile ? { display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' } : {}) }}>"{t.text}"</p>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
