@@ -36,7 +36,9 @@ export default function SearchBar({
 
   const isDuplicateScan = useCallback((code) => {
     const now = Date.now();
-    if (code === lastScanRef.current.code && now - lastScanRef.current.time < 3000) return true;
+    // 200ms: filtra dobles disparos accidentales del hardware del scanner (~50ms)
+    // pero permite escanear el mismo código dos veces para sumar unidades.
+    if (code === lastScanRef.current.code && now - lastScanRef.current.time < 200) return true;
     lastScanRef.current = { code, time: now };
     return false;
   }, []);
