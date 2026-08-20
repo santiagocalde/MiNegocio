@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import useIsMobile from '../../hooks/useIsMobile';
+import useModalExit from '../../hooks/useModalExit';
 import { Icons } from '../ui/Icons';
 import MpQrFijoCobro from './MpQrFijoCobro';
 
@@ -80,11 +81,12 @@ export default function ChargeModal({
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { setMpPaid(false); }, [isCharging]);
 
-  if (!isCharging) return null;
+  const { rendered, closing } = useModalExit(isCharging);
+  if (!rendered) return null;
 
   return (
-    <div className="modal-overlay" onClick={cancelCharge} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(30,58,95,0.85)', backdropFilter: 'blur(8px)', zIndex: 1000 }} role="dialog" aria-modal="true">
-      <div onClick={e => e.stopPropagation()} style={{ background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '24px', width: '900px', maxWidth: '95vw', maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 25px 50px -12px rgba(30,58,95, 0.5)' }}>
+    <div className={`modal-overlay${closing ? ' closing' : ''}`} onClick={cancelCharge} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(30,58,95,0.85)', backdropFilter: 'blur(8px)', zIndex: 1000 }} role="dialog" aria-modal="true">
+      <div className={closing ? 'closing' : ''} onClick={e => e.stopPropagation()} style={{ animation: closing ? 'modalContentOut 0.16s cubic-bezier(0.4, 0, 1, 1) forwards' : 'modalContentIn 0.2s cubic-bezier(0.16, 1, 0.3, 1)', background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '24px', width: '900px', maxWidth: '95vw', maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 25px 50px -12px rgba(30,58,95, 0.5)' }}>
         
         {/* Header */}
         <div style={{ padding: isMobile ? '16px' : '24px 32px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-card)' }}>

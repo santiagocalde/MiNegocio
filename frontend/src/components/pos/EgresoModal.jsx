@@ -1,7 +1,9 @@
 import { Icons } from '../ui/Icons';
+import useModalExit from '../../hooks/useModalExit';
 
 export default function EgresoModal({ showEgreso, setShowEgreso, egresoType, setEgresoType, egresoMonto, setEgresoMonto, egresoMotivo, setEgresoMotivo, submitEgreso, estimatedCash }) {
-  if (!showEgreso) return null;
+  const { rendered, closing } = useModalExit(showEgreso);
+  if (!rendered) return null;
   const isIngreso = egresoType === 'ingreso';
   // 'gasto' y 'retiro' son las dos variantes de "saqué efectivo": gasto resta
   // de la ganancia en Reportes (luz, insumos...), retiro es plata que ya era
@@ -17,8 +19,8 @@ export default function EgresoModal({ showEgreso, setShowEgreso, egresoType, set
   const closeAndReset = () => { setShowEgreso(false); setEgresoMonto(''); setEgresoMotivo(''); setEgresoType('gasto'); };
 
   return (
-    <div className="modal-overlay" onClick={closeAndReset}>
-      <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '360px' }}>
+    <div className={`modal-overlay${closing ? ' closing' : ''}`} onClick={closeAndReset}>
+      <div className={`modal-content${closing ? ' closing' : ''}`} onClick={e => e.stopPropagation()} style={{ maxWidth: '360px' }}>
         <h2 className="modal-title" style={{ fontSize: '1.3rem', color: 'var(--text-primary)' }}>Movimiento de caja</h2>
 
         {/* Toggle principal — simple, dos opciones. Icono y texto en fila

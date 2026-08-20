@@ -3,6 +3,7 @@ import { apiPost, apiGet } from '../../services/apiClient';
 import CategoryBreakdown from './CategoryBreakdown';
 import TopProductsList from './TopProductsList';
 import useIsMobile from '../../hooks/useIsMobile';
+import useModalExit from '../../hooks/useModalExit';
 import { Icons } from '../ui/Icons';
 
 export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, currentOperator, todaySalesTotal, countedCash, setCountedCash, closeCajaPin, setCloseCajaPin, cashRef, addToast, currentTurnId, onTurnClosed }) {
@@ -46,7 +47,8 @@ export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, curren
       .catch(() => {});
   }, [isClosingCaja, currentTurnId]);
 
-  if (!isClosingCaja) return null;
+  const { rendered, closing: exiting } = useModalExit(isClosingCaja);
+  if (!rendered) return null;
 
   const handleFinishAndLogout = () => {
     setClosedSummary(null);
@@ -62,7 +64,7 @@ export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, curren
       : Math.abs(d) <= 200 ? 'var(--accent-success)'
       : d > 0 ? 'var(--accent-warning)' : 'var(--accent-danger)';
     return (
-      <div className="modal-overlay" onClick={handleFinishAndLogout}><div className="modal-content" onClick={e => e.stopPropagation()} style={{ width: '460px', maxWidth: '95vw', textAlign: 'center' }}>
+      <div className={`modal-overlay${exiting ? ' closing' : ''}`} onClick={handleFinishAndLogout}><div className={`modal-content${exiting ? ' closing' : ''}`} onClick={e => e.stopPropagation()} style={{ width: '460px', maxWidth: '95vw', textAlign: 'center' }}>
         <Icons.CheckCircle style={{ width: 44, height: 44, margin: '0 auto 4px', color: 'var(--accent-success)', display: 'block' }} />
         <h2 className="modal-title" style={{ color: 'var(--text-primary)', marginBottom: 4 }}>Turno cerrado</h2>
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: 20 }}>
@@ -187,7 +189,7 @@ export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, curren
   // ── Vista para rol logística ──────────────────────────────────
   if (isLogistica) {
     return (
-      <div className="modal-overlay" onClick={() => setIsClosingCaja(false)}><div className="modal-content" onClick={e => e.stopPropagation()} style={{ width: '500px' }}>
+      <div className={`modal-overlay${exiting ? ' closing' : ''}`} onClick={() => setIsClosingCaja(false)}><div className={`modal-content${exiting ? ' closing' : ''}`} onClick={e => e.stopPropagation()} style={{ width: '500px' }}>
         <h2 className="modal-title" style={{ color: 'var(--text-primary)' }}>Cierre de turno — Logística</h2>
         {pendingRemitos.length > 0 ? (
           <>
@@ -233,7 +235,7 @@ export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, curren
     : null;
 
   return (
-    <div className="modal-overlay" onClick={() => setIsClosingCaja(false)}><div className="modal-content" onClick={e => e.stopPropagation()} style={{ width: '640px', maxWidth: '95vw', maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+    <div className={`modal-overlay${exiting ? ' closing' : ''}`} onClick={() => setIsClosingCaja(false)}><div className={`modal-content${exiting ? ' closing' : ''}`} onClick={e => e.stopPropagation()} style={{ width: '640px', maxWidth: '95vw', maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <h2 className="modal-title" style={{ color: 'var(--text-primary)', flexShrink: 0 }}>Cierre de Turno</h2>
 
       {/* ── Zona de resumen — scroll propio, no arrastra la zona de acción ── */}

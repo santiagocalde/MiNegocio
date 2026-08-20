@@ -5,6 +5,7 @@ import { usePanelContext } from '../../context/PanelContext';
 import { apiGet } from '../../services/apiClient';
 import CategoryBreakdown from './CategoryBreakdown';
 import TopProductsList from './TopProductsList';
+import useModalExit from '../../hooks/useModalExit';
 
 /** Icono inline 16 × 16, color heredado del padre */
 const Ico = ({ icon: Icon }) => (
@@ -42,7 +43,8 @@ function ResumenModal({ showResumen, setShowResumen, resumenData, businessConfig
     return () => { cancelled = true; };
   }, [showResumen, isCorralon]);
 
-  if (!showResumen) return null;
+  const { rendered, closing } = useModalExit(showResumen);
+  if (!rendered) return null;
 
   const fmt  = (n) => '$' + Math.round(n || 0).toLocaleString('es-AR');
   const fmtN = (n) => String(n ?? 0);
@@ -112,8 +114,8 @@ function ResumenModal({ showResumen, setShowResumen, resumenData, businessConfig
   };
 
   return (
-    <div className="modal-overlay" onClick={() => setShowResumen(false)}>
-      <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '640px', width: '100%', maxHeight: '88dvh', overflowY: 'auto' }}>
+    <div className={`modal-overlay${closing ? ' closing' : ''}`} onClick={() => setShowResumen(false)}>
+      <div className={`modal-content${closing ? ' closing' : ''}`} onClick={e => e.stopPropagation()} style={{ maxWidth: '640px', width: '100%', maxHeight: '88dvh', overflowY: 'auto' }}>
 
         {/* Header */}
         <h2 className="modal-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

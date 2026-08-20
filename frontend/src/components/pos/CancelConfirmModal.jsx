@@ -1,10 +1,12 @@
 
 import { apiPost } from '../../services/apiClient';
+import useModalExit from '../../hooks/useModalExit';
 
 export default function CancelConfirmModal({ isCancelConfirm, setIsCancelConfirm, clearCart, cart, adjustedTotal, total, currentOperator }) {
-  if (!isCancelConfirm) return null;
+  const { rendered, closing } = useModalExit(isCancelConfirm);
+  if (!rendered) return null;
   return (
-    <div className="modal-overlay" onClick={() => setIsCancelConfirm(false)}><div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px', width: '100%', maxHeight: '80vh', overflowY: 'auto' }}>
+    <div className={`modal-overlay${closing ? ' closing' : ''}`} onClick={() => setIsCancelConfirm(false)}><div className={`modal-content${closing ? ' closing' : ''}`} onClick={e => e.stopPropagation()} style={{ maxWidth: '400px', width: '100%', maxHeight: '80vh', overflowY: 'auto' }}>
       <h2 className="modal-title" style={{ color: 'var(--accent-danger)' }}>¿Anular Venta?</h2>
       <p style={{ textAlign: 'center', fontSize: '1.2rem', marginBottom: '32px' }}>Se vaciará el carrito y se perderán los productos escaneados.</p>
       <div className="modal-actions">
