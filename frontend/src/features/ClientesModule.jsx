@@ -289,21 +289,21 @@ export default function ClientesModule() {
                 </div>
                 <div style={{ display: 'flex', gap: 10 }}>
                   <div style={{ flex: 1 }}>
-                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--lp-ink-faint)', display: 'block', marginBottom: 3 }}>Teléfono</label>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--lp-ink-faint)', display: 'block', marginBottom: 3 }}>Teléfono *</label>
                     <input value={editPhone} onChange={e => setEditPhone(e.target.value)} placeholder="11 1234-5678" style={inputS} />
                   </div>
                   <div style={{ flex: 1 }}>
-                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--lp-ink-faint)', display: 'block', marginBottom: 3 }}>Email</label>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--lp-ink-faint)', display: 'block', marginBottom: 3 }}>Email <span style={{ fontWeight: 400 }}>(opcional)</span></label>
                     <input value={editEmail} onChange={e => setEditEmail(e.target.value)} placeholder="cliente@email.com" style={inputS} />
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: 10 }}>
                   <div style={{ flex: 1 }}>
-                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--lp-ink-faint)', display: 'block', marginBottom: 3 }}>DNI / CUIT</label>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--lp-ink-faint)', display: 'block', marginBottom: 3 }}>DNI / CUIT <span style={{ fontWeight: 400 }}>(opcional)</span></label>
                     <input value={editDni} onChange={e => setEditDni(e.target.value)} placeholder="20-12345678-9" style={inputS} />
                   </div>
                   <div style={{ flex: 1 }}>
-                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--lp-ink-faint)', display: 'block', marginBottom: 3 }}>Dirección</label>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--lp-ink-faint)', display: 'block', marginBottom: 3 }}>Dirección <span style={{ fontWeight: 400 }}>(opcional)</span></label>
                     <input value={editAddress} onChange={e => setEditAddress(e.target.value)} placeholder="Av. Siempre Viva 742" style={inputS} />
                   </div>
                 </div>
