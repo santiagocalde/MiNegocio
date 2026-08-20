@@ -43,7 +43,7 @@ function ResumenModal({ showResumen, setShowResumen, resumenData, businessConfig
 
   if (!showResumen) return null;
 
-  const fmt  = (n) => '$' + (n || 0).toLocaleString('es-AR', { minimumFractionDigits: 0 });
+  const fmt  = (n) => '$' + Math.round(n || 0).toLocaleString('es-AR');
   const fmtN = (n) => String(n ?? 0);
 
   // ── Kiosco: filas planas ──
@@ -112,7 +112,7 @@ function ResumenModal({ showResumen, setShowResumen, resumenData, businessConfig
 
   return (
     <div className="modal-overlay" onClick={() => setShowResumen(false)}>
-      <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '520px', width: '100%' }}>
+      <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '520px', width: '100%', maxHeight: '90dvh', overflowY: 'auto' }}>
 
         {/* Header */}
         <h2 className="modal-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

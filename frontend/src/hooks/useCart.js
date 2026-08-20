@@ -170,6 +170,7 @@ export default function useCart(productsDB, ivaRate, playBeep, cartKey = 'minego
     setClienteVuelto('');
     setEmitirFactura(false);
     setTipoFactura('C');
+    setListType('a');
   }, []);
 
   const ivaMultiplier = 1 + ivaRate / 100;
