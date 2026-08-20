@@ -67,6 +67,7 @@ const MODULE_PATH = {
   'Notas de pedido':    '/panel/remitos',
   'Depósito':           '/panel/inventario',
   'Inventario':         '/panel/inventario',
+  'Etiquetas':          '/panel/etiquetas',
   'Historial':          '/panel/auditoria',
   'Reportes':           '/panel/dashboard',
   'Configuración':      '/panel/configuracion',
@@ -144,7 +145,7 @@ function App() {
           <Route path="compras" element={<PanelSuspense><PurchasesModule /></PanelSuspense>} />
           <Route path="clientes" element={<RoleGuard moduleKey="Cuentas corrientes"><PanelSuspense><FiadoModule /></PanelSuspense></RoleGuard>} />
           <Route path="proveedores" element={<PanelSuspense><ProveedoresModule /></PanelSuspense>} />
-          <Route path="etiquetas" element={<PanelSuspense><EtiquetasModule /></PanelSuspense>} />
+          <Route path="etiquetas" element={<RoleGuard moduleKey="Etiquetas"><PanelSuspense><EtiquetasModule /></PanelSuspense></RoleGuard>} />
           <Route path="catalogo-web" element={<PanelSuspense><CatalogoModule /></PanelSuspense>} />
           <Route path="reportes" element={<PanelSuspense><ReportsModule /></PanelSuspense>} />
           <Route path="cajas" element={<RoleGuard adminOnly><PanelSuspense><CajasModule /></PanelSuspense></RoleGuard>} />
