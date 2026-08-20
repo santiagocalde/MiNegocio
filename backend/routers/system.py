@@ -342,8 +342,8 @@ async def list_testimonials(request: Request) -> list:
             rows = await conn.fetch("SELECT * FROM testimonials WHERE is_verified = true ORDER BY id")
         return [{"id": r["id"], "text": r["text"], "name": r["author_name"], "business": r["business_name"], "stars": r["stars"]} for r in rows]
     except:
-        return [{"id": 1, "text": "Antes usaba un cuaderno. Ahora se cuanto vendi. Cambio todo.", "name": "Carlos", "business": "Kiosco Don Carlos", "stars": 5},
-                {"id": 2, "text": "Se corto internet 3 dias y cobramos normal.", "name": "Maria", "business": "Almacen La Buena Fe", "stars": 5}]
+        return [{"id": 1, "text": "Tengo mas de 1.300 productos cargados en la vinateria. El escaner de facturas con IA me ahorra horas cada vez que llega un pedido.", "name": "Danilo", "business": "967cerveteca, Vinateria", "stars": 5},
+                {"id": 2, "text": "Los sabados se me llena de gente y antes tenia que cerrar una venta para arrancar la otra. Ahora abro dos ventas al mismo tiempo.", "name": "Leandro", "business": "Almacen Moreno", "stars": 5}]
 
 
 @router.get("/api/activity", summary="Actividad reciente del negocio")
