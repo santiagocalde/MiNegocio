@@ -150,7 +150,7 @@ export default function EtiquetasModule() {
   const isFull = selectedProducts.length >= maxPerPage;
 
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', gap: '8px', overflow: 'hidden' }}>
+    <div style={{ height: '100%', padding: '12px 20px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: '8px', overflow: 'hidden' }}>
       <iframe ref={printFrameRef} title="print-frame" style={{ display: 'none' }} />
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px', flexShrink: 0 }}>

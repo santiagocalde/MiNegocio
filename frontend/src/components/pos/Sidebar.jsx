@@ -139,8 +139,10 @@ export default function Sidebar({
       // Si el item tiene query string, exigir que coincida el search también
       return currentPath === pathname && location.search === `?${qs}`;
     }
-    // Si no tiene query string, solo activo cuando tampoco hay search
-    return currentPath === pathname && !location.search;
+    // Sin query string propio: activo por pathname, sin importar query params
+    // extra en la URL actual (ej: /panel/compras?supplier_id=26 al entrar
+    // desde el historial de un proveedor sigue siendo "Compras").
+    return currentPath === pathname;
   };
 
   const features = getBusinessFeatures(businessType);

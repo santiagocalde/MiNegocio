@@ -228,7 +228,7 @@ export default function AuditModule() {
                     <div style={{ width: '120px', textAlign: 'right' }}>
                       {m.movement_type !== 'event' && (
                         <span style={{ fontSize: '1.2rem', fontWeight: 800, fontFamily: 'var(--font-mono)', color: m.movement_type === 'entrada' ? 'var(--accent-success)' : (m.movement_type === 'salida' || m.movement_type === 'egreso' ? 'var(--accent-danger)' : 'var(--text-primary)') }}>
-                          {m.movement_type === 'price_change' ? '—' : (m.movement_type === 'entrada' ? `+${m.quantity ?? 0}` : (m.movement_type === 'egreso' ? (m.quantity != null ? `-$${Number(m.quantity).toLocaleString('es-AR')}` : '—') : `-${m.quantity ?? 0}`))}
+                          {m.movement_type === 'price_change' ? '—' : (m.movement_type === 'entrada' ? `+${m.quantity ?? 0}` : (m.movement_type === 'egreso' ? (m.quantity != null ? `-$${Math.abs(Number(m.quantity)).toLocaleString('es-AR')}` : '—') : `-${m.quantity ?? 0}`))}
                         </span>
                       )}
                     </div>

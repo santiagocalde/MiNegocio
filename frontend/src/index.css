@@ -272,7 +272,7 @@ svg {
 .nav-menu {
   display: flex;
   flex-direction: column;
-  padding: 8px 12px;
+  padding: 2px 12px 8px;
   gap: 4px;
   flex: 1;
 }
