@@ -190,7 +190,8 @@ export default function VentasPage() {
   const anyModalOpen = (
     showOperatorSwitch || showShipModal ||
     !!backend.showDevolucionItems || !!backend.showDuplicateCodeModal ||
-    !!backend.showPriceCheck || !!sales.isFiadoOpen || !!sales.isCharging
+    !!backend.showPriceCheck || !!sales.isFiadoOpen || !!sales.isCharging ||
+    !!cart.isCancelConfirm
   );
   useEffect(() => {
     if (isMobile || anyModalOpen) return;
