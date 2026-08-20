@@ -5,6 +5,7 @@
  * Las Cuentas Corrientes (deudores) siguen en FiadoModule.
  */
 import { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { usePanelContext } from '../context/PanelContext';
 import { apiGet, apiPost, apiDelete, apiPatch } from '../services/apiClient';
 
@@ -36,6 +37,12 @@ export default function ClientesModule() {
   const [editDni, setEditDni]         = useState('');
   const [editAddress, setEditAddress] = useState('');
   const [editSaving, setEditSaving]   = useState(false);
+
+  // Menú de 3 puntitos
+  const [menuCliente, setMenuCliente] = useState(null);
+  const [menuAnchor, setMenuAnchor] = useState({ top: 0, left: 0 });
+  const [deleteModal, setDeleteModal] = useState(null); // cliente a eliminar
+  const [deleting, setDeleting] = useState(false);
 
   // Agregar dirección
   const [showAddAddr, setShowAddAddr] = useState(false);
@@ -130,6 +137,29 @@ export default function ClientesModule() {
     setAddrSaving(false);
   };
 
+  const openRowMenu = (e, c) => {
+    e.stopPropagation();
+    const rect = e.currentTarget.getBoundingClientRect();
+    const menuW = 175;
+    const left = Math.min(rect.left, window.innerWidth - menuW - 12);
+    const top = Math.min(rect.bottom + 4, window.innerHeight - 80);
+    setMenuAnchor({ top, left });
+    setMenuCliente(menuCliente?.id === c.id ? null : c);
+  };
+
+  const handleDeleteClient = async () => {
+    if (!deleteModal) return;
+    setDeleting(true);
+    const res = await apiDelete(`/customers/${deleteModal.id}`);
+    if (res.ok) {
+      addToast?.('Cliente eliminado.', 'success');
+      setClientes(cs => cs.filter(c => c.id !== deleteModal.id));
+      if (detail?.cliente?.id === deleteModal.id) setDetail(null);
+      setDeleteModal(null);
+    } else { addToast?.('Error al eliminar cliente.', 'error'); }
+    setDeleting(false);
+  };
+
   const handleDeleteAddress = async (addrId) => {
     const res = await apiDelete(`/customers/addresses/${addrId}`);
     if (res.ok) {
@@ -176,7 +206,7 @@ export default function ClientesModule() {
         ) : (
           <div className="ledger-sheet" style={{ overflow: 'hidden' }}>
             {clientes.map(c => (
-              <div key={c.id} className="ledger-row ledger-row--hover" onClick={() => loadDetail(c)}>
+              <div key={c.id} className="ledger-row ledger-row--hover" style={{ display: 'flex', alignItems: 'center' }} onClick={() => loadDetail(c)}>
                 <div style={{ minWidth: 0, flex: 1 }}>
                   <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.92rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {c.name}
@@ -192,6 +222,10 @@ export default function ClientesModule() {
                     ${formatPesos(c.balance)}
                   </div>
                 )}
+                <button onClick={(e) => openRowMenu(e, c)} title="Más opciones"
+                  style={{ background: 'transparent', border: 'none', color: 'var(--lp-ink-faint)', cursor: 'pointer', padding: '6px', borderRadius: 6, display: 'inline-flex', alignItems: 'center', marginLeft: 8, flexShrink: 0 }}>
+                  <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="12" cy="19" r="1.7"/></svg>
+                </button>
               </div>
             ))}
           </div>
@@ -248,6 +282,44 @@ export default function ClientesModule() {
               <button onClick={handleCreate} disabled={saving || !fName.trim()} className="lp-btn lp-btn--primary"
                 style={{ flex: 2, opacity: (!fName.trim() || saving) ? 0.6 : 1 }}>
                 {saving ? 'Guardando...' : 'Crear cliente'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Portal: menú 3 puntitos ── */}
+      {menuCliente && createPortal(
+        <>
+          <div style={{ position: 'fixed', inset: 0, zIndex: 999 }} onClick={() => setMenuCliente(null)} />
+          <div style={{ position: 'fixed', top: menuAnchor.top, left: menuAnchor.left, zIndex: 1000, background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line-strong)', borderRadius: 10, boxShadow: '0 8px 28px rgba(0,0,0,0.35)', minWidth: 175, padding: 6 }}>
+            <button onClick={() => { loadDetail(menuCliente); setMenuCliente(null); }}
+              style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', background: 'transparent', border: 'none', color: 'var(--lp-ink)', padding: '10px 12px', borderRadius: 8, fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', textAlign: 'left' }}>
+              Ver detalle
+            </button>
+            <button onClick={() => { setDeleteModal(menuCliente); setMenuCliente(null); }}
+              style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', background: 'transparent', border: 'none', color: 'var(--accent-danger)', padding: '10px 12px', borderRadius: 8, fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', textAlign: 'left' }}>
+              Eliminar cliente
+            </button>
+          </div>
+        </>,
+        document.body
+      )}
+
+      {/* ── Modal: Confirmar eliminar cliente ── */}
+      {deleteModal && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1100, background: 'rgba(11,19,43,0.72)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+          onClick={() => setDeleteModal(null)}>
+          <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 400, background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line-strong)', borderRadius: 12, padding: 24, boxShadow: 'var(--lp-shadow-lg)' }}>
+            <h3 style={{ fontFamily: 'var(--lp-font-display)', fontSize: '1.1rem', fontWeight: 700, color: 'var(--lp-ink)', margin: '0 0 10px' }}>Eliminar cliente</h3>
+            <p style={{ fontSize: '0.88rem', color: 'var(--lp-ink-faint)', margin: '0 0 20px', lineHeight: 1.5 }}>
+              ¿Eliminás a <strong style={{ color: 'var(--lp-ink)' }}>{deleteModal.name}</strong>? Se borrarán también sus transacciones y direcciones. Esta acción no se puede deshacer.
+            </p>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={() => setDeleteModal(null)} className="lp-btn lp-btn--ghost" style={{ flex: 1 }}>Cancelar</button>
+              <button onClick={handleDeleteClient} disabled={deleting}
+                style={{ flex: 1, background: 'var(--accent-danger)', color: '#fff', border: 'none', borderRadius: 8, padding: '10px', fontWeight: 700, cursor: deleting ? 'not-allowed' : 'pointer', opacity: deleting ? 0.7 : 1, fontSize: '0.88rem' }}>
+                {deleting ? 'Eliminando...' : 'Sí, eliminar'}
               </button>
             </div>
           </div>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { usePanelContext } from '../context/PanelContext';
-import { apiGet, apiPost } from '../services/apiClient';
+import { apiGet, apiPost, apiDelete } from '../services/apiClient';
 import { SkeletonCard } from '../components/ui/Skeleton';
 import useIsMobile from '../hooks/useIsMobile';
 
@@ -41,6 +42,10 @@ export default function FiadoModule() {
   const [newClientAddress, setNewClientAddress] = useState('');
   const [newClientEmail, setNewClientEmail] = useState('');
   const [newClientDniCuit, setNewClientDniCuit] = useState('');
+  const [menuFiado, setMenuFiado] = useState(null);
+  const [menuAnchor, setMenuAnchor] = useState({ top: 0, left: 0 });
+  const [deleteModal, setDeleteModal] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   const fetchCustomers = async () => {
     setLoading(true);
@@ -187,6 +192,29 @@ export default function FiadoModule() {
     if (customerObras[customerId]) return;
     const res = await apiGet('/customers/' + customerId + '/obras');
     if (res.ok) { const data = await res.json(); setCustomerObras(function(prev) { var next = {}; Object.assign(next, prev); next[customerId] = data; return next; }); }
+  };
+
+  const openFiadoMenu = (e, c) => {
+    e.stopPropagation();
+    const rect = e.currentTarget.getBoundingClientRect();
+    const menuW = 175;
+    const left = Math.min(rect.left, window.innerWidth - menuW - 12);
+    const top = Math.min(rect.bottom + 4, window.innerHeight - 80);
+    setMenuAnchor({ top, left });
+    setMenuFiado(menuFiado?.id === c.id ? null : c);
+  };
+
+  const handleDeleteFiado = async () => {
+    if (!deleteModal) return;
+    setDeleting(true);
+    const res = await apiDelete(`/customers/${deleteModal.id}`);
+    if (res.ok) {
+      addToast?.('Cliente eliminado.', 'success');
+      setCustomers(cs => cs.filter(c => c.id !== deleteModal.id));
+      if (expandedClient === deleteModal.id) setExpandedClient(null);
+      setDeleteModal(null);
+    } else { addToast?.('Error al eliminar cliente.', 'error'); }
+    setDeleting(false);
   };
 
   const handleCobranzaIA = async (c) => {
@@ -342,6 +370,10 @@ export default function FiadoModule() {
                   <div style={{ color: 'var(--text-secondary)' }}>
                     {isExpanded ? <Icons.ChevronUp /> : <Icons.ChevronDown />}
                   </div>
+                  <button onClick={(e) => openFiadoMenu(e, c)} title="Más opciones"
+                    style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '6px', borderRadius: 6, display: 'inline-flex', alignItems: 'center' }}>
+                    <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="12" cy="19" r="1.7"/></svg>
+                  </button>
                 </div>
               </div>
 
@@ -515,6 +547,40 @@ export default function FiadoModule() {
             <div style={{ display: 'flex', gap: '12px' }}>
               <button onClick={() => setCargarModal(null)} style={{ flex: 1, padding: '15px', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', borderRadius: 'var(--radius-sm)', fontWeight: 700, cursor: 'pointer' }}>Cancelar</button>
               <button onClick={handleCargar} disabled={!cargarAmount || cargarBusy} style={{ flex: 1, padding: '15px', background: 'var(--accent-warning)', border: 'none', color: 'var(--sheet)', borderRadius: 'var(--radius-sm)', fontWeight: 800, cursor: (cargarAmount && !cargarBusy) ? 'pointer' : 'not-allowed', opacity: (cargarAmount && !cargarBusy) ? 1 : 0.5 }}>{cargarBusy ? 'Cargando…' : 'Cargar deuda'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* PORTAL: menú 3 puntitos */}
+      {menuFiado && createPortal(
+        <>
+          <div style={{ position: 'fixed', inset: 0, zIndex: 999 }} onClick={() => setMenuFiado(null)} />
+          <div style={{ position: 'fixed', top: menuAnchor.top, left: menuAnchor.left, zIndex: 1000, background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 10, boxShadow: '0 8px 28px rgba(0,0,0,0.35)', minWidth: 175, padding: 6 }}>
+            <button onClick={() => { setDeleteModal(menuFiado); setMenuFiado(null); }}
+              style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', background: 'transparent', border: 'none', color: 'var(--accent-danger)', padding: '10px 12px', borderRadius: 8, fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', textAlign: 'left' }}>
+              Eliminar cliente
+            </button>
+          </div>
+        </>,
+        document.body
+      )}
+
+      {/* MODAL: Confirmar eliminar cliente */}
+      {deleteModal && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1100, background: 'rgba(11,19,43,0.72)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+          onClick={() => setDeleteModal(null)}>
+          <div onClick={e => e.stopPropagation()} className="ledger-sheet" style={{ width: '100%', maxWidth: 400, padding: 28, boxShadow: 'var(--shadow-lg)' }}>
+            <h3 className="ledger-title" style={{ margin: '0 0 10px', fontSize: '1.3rem' }}>Eliminar cliente</h3>
+            <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', margin: '0 0 24px', lineHeight: 1.5 }}>
+              ¿Eliminás a <strong style={{ color: 'var(--text-primary)' }}>{deleteModal.name}</strong>? Se borrarán sus transacciones y todo el historial de fiado. Esta acción no se puede deshacer.
+            </p>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button onClick={() => setDeleteModal(null)} style={{ flex: 1, padding: '14px', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', borderRadius: 'var(--radius-sm)', fontWeight: 700, cursor: 'pointer' }}>Cancelar</button>
+              <button onClick={handleDeleteFiado} disabled={deleting}
+                style={{ flex: 1, padding: '14px', background: 'var(--accent-danger)', border: 'none', color: '#fff', borderRadius: 'var(--radius-sm)', fontWeight: 800, cursor: deleting ? 'not-allowed' : 'pointer', opacity: deleting ? 0.7 : 1 }}>
+                {deleting ? 'Eliminando...' : 'Sí, eliminar'}
+              </button>
             </div>
           </div>
         </div>

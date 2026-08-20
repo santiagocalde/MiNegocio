@@ -1348,6 +1348,29 @@ async def add_customer_address(customer_id: int, body: dict = Body(...)) -> dict
             return {"id": cur.lastrowid, "success": True}
 
 
+@router.delete("/api/customers/{customer_id}", summary="Eliminar cliente")
+async def delete_customer(customer_id: int) -> dict:
+    from main import USE_PG; import main
+    b_id = _biz_id()
+    if USE_PG:
+        from db_helpers import get_pg_pool
+        pool = await get_pg_pool()
+        async with pool.acquire() as conn:
+            r = await conn.execute(
+                "DELETE FROM customers WHERE id = $1 AND business_id = $2",
+                customer_id, b_id
+            )
+            if r == "DELETE 0":
+                raise HTTPException(404, detail="Cliente no encontrado")
+            return {"success": True}
+    else:
+        import aiosqlite
+        async with aiosqlite.connect(main.DB_PATH) as db:
+            await db.execute("DELETE FROM customers WHERE id = ?", (customer_id,))
+            await db.commit()
+            return {"success": True}
+
+
 @router.delete("/api/customers/addresses/{address_id}", summary="Eliminar dirección de un cliente")
 async def delete_customer_address(address_id: int) -> dict:
     from main import USE_PG; import main
