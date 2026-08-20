@@ -53,6 +53,30 @@ export default function VentasPage() {
   // Cambio de operador en pleno turno (relevo liviano, sin cerrar caja)
   const [showOperatorSwitch, setShowOperatorSwitch] = useState(false);
 
+  // ── Foco permanente en el buscador (fix scanner Leandro) ──────────────────
+  // Cuando el usuario hace clic en cualquier parte que no sea un campo de texto
+  // ni un modal abierto, devolvemos el foco al buscador automáticamente.
+  // Así el scanner siempre puede escanear sin tener que hacer clic en el campo.
+  useEffect(() => {
+    if (isMobile) return;
+    const handleMouseDown = (e) => {
+      const tag = e.target?.tagName?.toUpperCase();
+      const isFormField = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || e.target?.isContentEditable;
+      if (isFormField) return;
+      // No redirigir si hay un modal overlay abierto en el DOM
+      if (document.querySelector('.modal-overlay, [data-modal-open]')) return;
+      // Pequeño timeout para que el click original se procese primero
+      setTimeout(() => {
+        if (!document.querySelector('.modal-overlay, [data-modal-open]')) {
+          searchRef.current?.focus();
+        }
+      }, 0);
+    };
+    document.addEventListener('mousedown', handleMouseDown);
+    return () => document.removeEventListener('mousedown', handleMouseDown);
+  }, [isMobile]);
+  // ─────────────────────────────────────────────────────────────────────────
+
   // Pedido de envío desde mostrador — con split por ítem retira/envío
   const [showShipModal, setShowShipModal] = useState(false);
   const [shipClient, setShipClient] = useState(null);
