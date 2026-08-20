@@ -8,6 +8,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { usePanelContext } from '../context/PanelContext';
 import { apiGet, apiPost, apiDelete, apiPatch } from '../services/apiClient';
+import { Icons } from '../components/ui/Icons';
 
 const formatPesos = (v) => (v ?? 0).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
@@ -386,11 +387,11 @@ export default function ClientesModule() {
               </div>
             ) : (
             /* Info básica (vista) */
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 18, padding: '12px 14px', background: 'var(--lp-paper-sunken)', borderRadius: 8, fontSize: '0.83rem', color: 'var(--lp-ink-faint)' }}>
-              {detail.cliente.phone && <div>📞 {detail.cliente.phone}</div>}
-              {detail.cliente.email && <div>✉️ {detail.cliente.email}</div>}
-              {detail.cliente.dni_cuit && <div>🪪 {detail.cliente.dni_cuit}</div>}
-              {detail.cliente.address && <div>📍 {detail.cliente.address}</div>}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 18, padding: '12px 14px', background: 'var(--lp-paper-sunken)', borderRadius: 8, fontSize: '0.83rem', color: 'var(--lp-ink-faint)' }}>
+              {detail.cliente.phone && <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Icons.Phone style={{ width: 14, height: 14, flexShrink: 0, color: 'var(--lp-ink-faint)' }} /> {detail.cliente.phone}</div>}
+              {detail.cliente.email && <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Icons.Mail style={{ width: 14, height: 14, flexShrink: 0, color: 'var(--lp-ink-faint)' }} /> {detail.cliente.email}</div>}
+              {detail.cliente.dni_cuit && <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Icons.IdCard style={{ width: 14, height: 14, flexShrink: 0, color: 'var(--lp-ink-faint)' }} /> {detail.cliente.dni_cuit}</div>}
+              {detail.cliente.address && <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Icons.MapPin style={{ width: 14, height: 14, flexShrink: 0, color: 'var(--lp-ink-faint)' }} /> {detail.cliente.address}</div>}
               {!detail.cliente.phone && !detail.cliente.email && !detail.cliente.dni_cuit && !detail.cliente.address && (
                 <div style={{ color: 'var(--lp-ink-faint)', fontStyle: 'italic' }}>Sin datos de contacto adicionales.</div>
               )}
@@ -470,8 +471,8 @@ export default function ClientesModule() {
             {/* WhatsApp rápido si tiene teléfono */}
             {detail.cliente.phone && (
               <button onClick={() => window.open(`https://wa.me/54${detail.cliente.phone.replace(/\D/g, '')}`, '_blank')}
-                style={{ width: '100%', background: 'rgba(37,211,102,0.09)', border: '1px solid rgba(37,211,102,0.25)', color: '#25D366', padding: '9px', borderRadius: 8, cursor: 'pointer', fontSize: '0.83rem', fontWeight: 700 }}>
-                📱 Abrir WhatsApp con {detail.cliente.name.split(' ')[0]}
+                style={{ width: '100%', background: 'rgba(37,211,102,0.09)', border: '1px solid rgba(37,211,102,0.25)', color: '#25D366', padding: '9px', borderRadius: 8, cursor: 'pointer', fontSize: '0.83rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}>
+                <Icons.MessageCircle style={{ width: 15, height: 15, flexShrink: 0 }} /> Abrir WhatsApp con {detail.cliente.name.split(' ')[0]}
               </button>
             )}
           </div>

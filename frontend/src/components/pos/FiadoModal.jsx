@@ -14,8 +14,10 @@ export default function FiadoModal({ isFiadoOpen, setIsFiadoOpen, adjustedTotal,
     onFiadoClose?.();
   };
 
+  const closeFiado = () => { setIsFiadoOpen(false); setFiadoName(''); onFiadoClose?.(); };
+
   return (
-    <div className="modal-overlay" onKeyDown={e => { if (e.key === 'Escape') { setIsFiadoOpen(false); setFiadoName(''); onFiadoClose?.(); } if (e.key === 'Enter' && fiadoName) handleConfirm(); }}><div className="modal-content" style={{ maxHeight: isMobile ? "90dvh" : "80vh", overflowY: "auto", padding: isMobile ? "20px" : undefined }}>
+    <div className="modal-overlay" onClick={closeFiado} onKeyDown={e => { if (e.key === 'Escape') closeFiado(); if (e.key === 'Enter' && fiadoName) handleConfirm(); }}><div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxHeight: isMobile ? "90dvh" : "80vh", overflowY: "auto", padding: isMobile ? "20px" : undefined }}>
       <h2 className="modal-title">{manualMode ? 'Anotar Deuda' : 'Vender Fiado'}</h2>
       {manualMode
         ? <p style={{ textAlign: 'center', fontSize: '1rem', marginBottom: '16px', color: 'var(--text-secondary)' }}>Sin productos en el carrito. Anotá cuánto te debe el cliente.</p>
