@@ -1390,9 +1390,26 @@ async def delete_customer(customer_id: int) -> dict:
         import aiosqlite
         async with aiosqlite.connect(main.DB_PATH) as db:
             await db.execute("BEGIN IMMEDIATE")
+            # Validar que el cliente pertenece a este negocio
+            cur = await db.execute("SELECT id FROM customers WHERE id = ? AND business_id = ?", (customer_id, b_id))
+            if not await cur.fetchone():
+                await db.execute("ROLLBACK")
+                raise HTTPException(404, detail="Cliente no encontrado")
             await db.execute("DELETE FROM customer_transactions WHERE customer_id = ?", (customer_id,))
             await db.execute("DELETE FROM customer_addresses WHERE customer_id = ?", (customer_id,))
             await db.execute("DELETE FROM remitos WHERE customer_id = ?", (customer_id,))
+            # acopio_withdrawal_items → acopio_withdrawals → acopios (orden FK-seguro)
+            await db.execute(
+                "DELETE FROM acopio_withdrawal_items WHERE withdrawal_id IN "
+                "(SELECT id FROM acopio_withdrawals WHERE acopio_id IN "
+                "(SELECT id FROM acopios WHERE customer_id = ?))",
+                (customer_id,)
+            )
+            await db.execute(
+                "DELETE FROM acopio_withdrawals WHERE acopio_id IN "
+                "(SELECT id FROM acopios WHERE customer_id = ?)",
+                (customer_id,)
+            )
             await db.execute("DELETE FROM acopios WHERE customer_id = ?", (customer_id,))
             await db.execute("DELETE FROM credit_notes WHERE customer_id = ?", (customer_id,))
             await db.execute("DELETE FROM quotes WHERE customer_id = ?", (customer_id,))
