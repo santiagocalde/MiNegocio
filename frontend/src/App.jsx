@@ -66,6 +66,7 @@ const MODULE_PATH = {
   'Cuentas corrientes': '/panel/clientes',
   'Notas de pedido':    '/panel/remitos',
   'Depósito':           '/panel/inventario',
+  'Inventario':         '/panel/inventario',
   'Historial':          '/panel/auditoria',
   'Reportes':           '/panel/dashboard',
   'Configuración':      '/panel/configuracion',
@@ -105,8 +106,13 @@ function RoleGuard({ children, moduleKey, adminOnly }) {
   // Sin moduleKey o sin perms personalizados: la ruta es accesible.
   if (!moduleKey || !Array.isArray(perms) || perms.length === 0) return children;
 
+  // moduleKey puede ser un string o un array de claves equivalentes (ej. la
+  // ruta de inventario acepta tanto "Depósito" como "Inventario" porque el
+  // label del módulo cambia según el tipo de negocio — corralón vs. resto).
+  const moduleKeys = Array.isArray(moduleKey) ? moduleKey : [moduleKey];
+
   // Si el módulo está en los perms, OK.
-  if (perms.includes(moduleKey)) return children;
+  if (moduleKeys.some(k => perms.includes(k))) return children;
 
   // No permitido: ir al primer módulo habilitado.
   const fallback = MODULE_PATH[perms[0]] || '/panel/ventas';
@@ -134,7 +140,7 @@ function App() {
           <Route index element={<Navigate to="inicio" replace />} />
           <Route path="inicio" element={<PanelSuspense><InicioPage /></PanelSuspense>} />
           <Route path="ventas" element={<RoleGuard moduleKey="Mostrador"><PanelSuspense><VentasPage /></PanelSuspense></RoleGuard>} />
-          <Route path="inventario" element={<RoleGuard moduleKey="Depósito"><PanelSuspense><StockModule /></PanelSuspense></RoleGuard>} />
+          <Route path="inventario" element={<RoleGuard moduleKey={['Depósito', 'Inventario']}><PanelSuspense><StockModule /></PanelSuspense></RoleGuard>} />
           <Route path="compras" element={<PanelSuspense><PurchasesModule /></PanelSuspense>} />
           <Route path="clientes" element={<RoleGuard moduleKey="Cuentas corrientes"><PanelSuspense><FiadoModule /></PanelSuspense></RoleGuard>} />
           <Route path="proveedores" element={<PanelSuspense><ProveedoresModule /></PanelSuspense>} />

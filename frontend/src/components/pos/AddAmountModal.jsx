@@ -4,6 +4,7 @@ export default function AddAmountModal({ show, setShow, handleQuickAdd }) {
   const [name, setName] = useState('');
   const [price, setPrice] = useState(0);
   const inputRef = useRef(null);
+  const priceRef = useRef(null);
 
   useEffect(() => {
     if (show) {
@@ -34,11 +35,17 @@ export default function AddAmountModal({ show, setShow, handleQuickAdd }) {
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div>
             <label style={{ display: 'block', marginBottom: '6px', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Nombre del Ítem</label>
-            <input 
+            <input
               ref={inputRef}
-              type="text" 
+              type="text"
               value={name}
               onChange={e => setName(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  if (name.trim()) priceRef.current?.focus();
+                }
+              }}
               style={{ width: '100%', background: 'var(--bg-main)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '12px 16px', borderRadius: '8px', outline: 'none', fontSize: '1rem' }}
               placeholder="Ej: Caramelos sueltos"
               autoFocus
@@ -47,8 +54,9 @@ export default function AddAmountModal({ show, setShow, handleQuickAdd }) {
           
           <div>
             <label style={{ display: 'block', marginBottom: '6px', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Precio ($)</label>
-            <input 
-              type="number" 
+            <input
+              ref={priceRef}
+              type="number"
               value={price}
               onChange={e => setPrice(e.target.value)}
               style={{ width: '100%', background: 'var(--bg-main)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '12px 16px', borderRadius: '8px', outline: 'none', fontSize: '1.2rem', fontFamily: 'var(--font-mono)' }}
