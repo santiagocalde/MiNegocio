@@ -195,9 +195,9 @@ async def get_active_turn() -> dict:
                     "SELECT EXTRACT(EPOCH FROM (now() - $1::timestamptz))/3600",
                     row["opened_at"]
                 )
-                if hours and hours >= 14:
+                if hours and hours >= 22:
                     await conn.execute(
-                        "UPDATE turns SET closed_at = now(), sales_total = COALESCE((SELECT SUM(total) FROM sales WHERE turn_id = $1 AND business_id = $2 AND reverted = 0), 0), notes = 'Cierre automatico > 14hs' WHERE id = $1",
+                        "UPDATE turns SET closed_at = now(), sales_total = COALESCE((SELECT SUM(total) FROM sales WHERE turn_id = $1 AND business_id = $2 AND reverted = 0), 0), notes = 'Cierre automatico > 22hs' WHERE id = $1",
                         row["id"], b_id
                     )
                     # Avisamos al frontend para que muestre un toast y abra el modal de apertura.
@@ -212,8 +212,8 @@ async def get_active_turn() -> dict:
             if row:
                 cur = await db.execute("SELECT (julianday('now','localtime') - julianday(?)) * 24.0", (row[2],))
                 diff = await cur.fetchone()
-                if diff and diff[0] >= 14:
-                    await db.execute("UPDATE turns SET closed_at = datetime('now','localtime'), sales_total = COALESCE((SELECT SUM(total) FROM sales WHERE turn_id = ? AND reverted = 0), 0), notes = 'Cierre automatico > 14hs' WHERE id = ?", (row[0], row[0],))
+                if diff and diff[0] >= 22:
+                    await db.execute("UPDATE turns SET closed_at = datetime('now','localtime'), sales_total = COALESCE((SELECT SUM(total) FROM sales WHERE turn_id = ? AND reverted = 0), 0), notes = 'Cierre automatico > 22hs' WHERE id = ?", (row[0], row[0],))
                     await db.commit()
                     return {"id": None, "auto_closed": True}
                 return {"id": row[0], "operator": row[1], "opened_at": row[2], "initial_cash": float(row[3] or 0)}

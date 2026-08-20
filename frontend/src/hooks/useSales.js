@@ -83,7 +83,17 @@ export default function useSales(cart, effectiveTotal, payment, paymentMethod, u
         // HTTP error (4xx/5xx) — show the actual error message, do NOT save offline
         const errData = await res.json().catch(() => ({}));
         const msg = errData.detail || `Error ${res.status} al procesar la venta`;
-        addToast(`Error: ${msg}`, 'error');
+        // Turno stale: el backend ya lo cerró (auto-close o cierre manual en otra pestaña).
+        // Limpiamos el turn_id del localStorage para que el POS pida abrir caja al
+        // siguiente intento, en vez de seguir enviando un ID inválido.
+        const msgLower = msg.toLowerCase();
+        if (msgLower.includes('turno') && (msgLower.includes('cerrado') || msgLower.includes('no encontrado') || msgLower.includes('no existe'))) {
+          localStorage.removeItem('minegocio_turn_id');
+          localStorage.setItem('minegocio_need_open_caja', '1');
+          addToast('⚠️ El turno fue cerrado. Abrí una nueva caja para seguir vendiendo.', 'error');
+        } else {
+          addToast(`Error: ${msg}`, 'error');
+        }
         setIsProcessing(false);
         processingRef.current = false;
         return;
