@@ -1,4 +1,4 @@
-import { useMemo, useState, useRef, useCallback } from 'react';
+import { useMemo, useState, useRef, useCallback, useEffect } from 'react';
 import { Icons } from '../ui/Icons';
 import AddAmountModal from './AddAmountModal';
 import CameraBarcodeScanner from '../ui/CameraBarcodeScanner';
@@ -33,6 +33,14 @@ export default function SearchBar({
   }, [handleQuickAdd, getPrice, setSearch, searchRef]);
   const isMobile = useIsMobile();
   const lastScanRef = useRef({ code: '', time: 0 });
+
+  // Devolver foco al input cuando se cierra cualquier modal interno del SearchBar
+  const anyInternalModal = showAddAmountModal || showScanner || showCatalog || !!variantProduct;
+  useEffect(() => {
+    if (isMobile || anyInternalModal) return;
+    const t = setTimeout(() => searchRef.current?.focus(), 80);
+    return () => clearTimeout(t);
+  }, [anyInternalModal, isMobile, searchRef]);
 
   const isDuplicateScan = useCallback((code) => {
     const now = Date.now();

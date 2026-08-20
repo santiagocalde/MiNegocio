@@ -54,18 +54,19 @@ export default function VentasPage() {
   const [showOperatorSwitch, setShowOperatorSwitch] = useState(false);
 
   // ── Foco permanente en el buscador (fix scanner Leandro) ──────────────────
-  // Cuando el usuario hace clic en cualquier parte que no sea un campo de texto
-  // ni un modal abierto, devolvemos el foco al buscador automáticamente.
-  // Así el scanner siempre puede escanear sin tener que hacer clic en el campo.
+  // Dos mecanismos combinados:
+  // 1. mousedown: cuando el usuario hace clic en algo que no es un input ni un
+  //    modal abierto, devolvemos el foco al buscador de inmediato.
+  // 2. useEffect sobre estados de modal: cuando cualquier modal se cierra,
+  //    devolvemos el foco al buscador (cubre el caso de hacer clic en Cerrar/✕
+  //    de un modal, donde al momento del mousedown el overlay todavía existe).
   useEffect(() => {
     if (isMobile) return;
     const handleMouseDown = (e) => {
       const tag = e.target?.tagName?.toUpperCase();
       const isFormField = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || e.target?.isContentEditable;
       if (isFormField) return;
-      // No redirigir si hay un modal overlay abierto en el DOM
       if (document.querySelector('.modal-overlay, [data-modal-open]')) return;
-      // Pequeño timeout para que el click original se procese primero
       setTimeout(() => {
         if (!document.querySelector('.modal-overlay, [data-modal-open]')) {
           searchRef.current?.focus();
@@ -75,6 +76,8 @@ export default function VentasPage() {
     document.addEventListener('mousedown', handleMouseDown);
     return () => document.removeEventListener('mousedown', handleMouseDown);
   }, [isMobile]);
+
+  // (el useEffect de cierre de modales va después de que se defina `sales`)
   // ─────────────────────────────────────────────────────────────────────────
 
   // Pedido de envío desde mostrador — con split por ítem retira/envío
@@ -180,6 +183,20 @@ export default function VentasPage() {
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cart.cart.length]);
+
+  // Devolver foco al buscador cuando se cierra cualquier modal conocido de VentasPage.
+  // Cubre el caso de cerrar modales con botón ✕/Cancelar (donde el mousedown
+  // ve el overlay todavía presente y no puede enfocar en ese momento).
+  const anyModalOpen = (
+    showOperatorSwitch || showShipModal ||
+    !!backend.showDevolucionItems || !!backend.showDuplicateCodeModal ||
+    !!backend.showPriceCheck || !!sales.isFiadoOpen || !!sales.isCharging
+  );
+  useEffect(() => {
+    if (isMobile || anyModalOpen) return;
+    const t = setTimeout(() => searchRef.current?.focus(), 80);
+    return () => clearTimeout(t);
+  }, [anyModalOpen, isMobile]);
 
   // Auto-print al confirmar venta cuando autoPrint está activo
   const lastPrintedRef = useRef(null);
