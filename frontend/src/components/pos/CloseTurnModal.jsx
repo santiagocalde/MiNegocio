@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { apiPost, apiGet } from '../../services/apiClient';
 import CategoryBreakdown from './CategoryBreakdown';
+import TopProductsList from './TopProductsList';
 import useIsMobile from '../../hooks/useIsMobile';
+import { Icons } from '../ui/Icons';
 
 export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, currentOperator, todaySalesTotal, countedCash, setCountedCash, closeCajaPin, setCloseCajaPin, cashRef, addToast, currentTurnId, onTurnClosed }) {
   const isMobile = useIsMobile();
@@ -61,7 +63,7 @@ export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, curren
       : d > 0 ? 'var(--accent-warning)' : 'var(--accent-danger)';
     return (
       <div className="modal-overlay" onClick={handleFinishAndLogout}><div className="modal-content" onClick={e => e.stopPropagation()} style={{ width: '460px', maxWidth: '95vw', textAlign: 'center' }}>
-        <div style={{ fontSize: '2.5rem', marginBottom: 4 }}>✅</div>
+        <Icons.CheckCircle style={{ width: 44, height: 44, margin: '0 auto 4px', color: 'var(--accent-success)', display: 'block' }} />
         <h2 className="modal-title" style={{ color: 'var(--text-primary)', marginBottom: 4 }}>Turno cerrado</h2>
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: 20 }}>
           {closedSummary.operator ? `${closedSummary.operator} — ` : ''}{new Date().toLocaleString('es-AR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
@@ -295,23 +297,8 @@ export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, curren
 
       {/* Más vendidos + Ventas por categoría — lado a lado en desktop, cada uno con su propio tope de altura */}
       {(turnTop.length > 0 || turnCats.length > 0) && (
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile || turnTop.length === 0 || turnCats.length === 0 ? '1fr' : '1fr 1fr', gap: '12px' }}>
-          {turnTop.length > 0 && (
-            <div>
-              <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '6px', paddingLeft: '2px' }}>Más vendidos</div>
-              <div style={{ border: '1px solid var(--border-color)', borderRadius: '8px', overflow: 'hidden', background: 'var(--bg-main)', maxHeight: turnTop.length > 6 ? '220px' : 'none', overflowY: turnTop.length > 6 ? 'auto' : 'visible' }}>
-                {turnTop.map((p, i) => (
-                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 14px', borderBottom: i < turnTop.length - 1 ? '1px solid var(--border-color)' : 'none' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0 }}>
-                      <span style={{ color: 'var(--text-primary)', fontSize: '0.88rem', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.producto}</span>
-                      <span style={{ color: 'var(--text-faint)', fontSize: '0.72rem' }}>{p.cantidad} u</span>
-                    </div>
-                    <span style={{ fontWeight: 800, fontSize: '1rem', fontFamily: 'var(--font-mono)', color: 'var(--text-primary)', flexShrink: 0 }}>${(p.total || 0).toLocaleString('es-AR')}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile || turnTop.length === 0 || turnCats.length === 0 ? '1fr' : '1fr 1fr', gap: '20px' }}>
+          <TopProductsList items={turnTop} compact />
           <CategoryBreakdown items={turnCats} compact />
         </div>
       )}
@@ -346,7 +333,7 @@ export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, curren
       </div>
       {countedCash !== '' && parseFloat(countedCash) === 0 && (
         <div style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.4)', borderRadius: 10, padding: '12px 16px', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: '1.2rem' }}>⚠️</span>
+          <Icons.Alert style={{ width: 18, height: 18, flexShrink: 0, color: 'var(--accent-warning)' }} />
           <span style={{ color: 'var(--accent-warning)', fontSize: '0.88rem', fontWeight: 600 }}>
             Ingresaste $0. Si el cajón está vacío está bien, pero verificá antes de confirmar.
           </span>

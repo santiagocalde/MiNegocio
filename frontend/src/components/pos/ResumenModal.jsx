@@ -4,6 +4,7 @@ import { Icons } from '../ui/Icons';
 import { usePanelContext } from '../../context/PanelContext';
 import { apiGet } from '../../services/apiClient';
 import CategoryBreakdown from './CategoryBreakdown';
+import TopProductsList from './TopProductsList';
 
 /** Icono inline 16 × 16, color heredado del padre */
 const Ico = ({ icon: Icon }) => (
@@ -239,25 +240,8 @@ function ResumenModal({ showResumen, setShowResumen, resumenData, businessConfig
 
         {/* Más vendidos + Ventas por categoría — lado a lado, cada uno con su propio tope de altura */}
         {(topProducts.length > 0 || (resumenData?.por_categoria || []).length > 0) && (
-          <div style={{ display: 'grid', gridTemplateColumns: topProducts.length === 0 || (resumenData?.por_categoria || []).length === 0 ? '1fr' : '1fr 1fr', gap: '14px', marginTop: '18px' }}>
-            {topProducts.length > 0 && (
-              <div>
-                <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '6px', paddingLeft: '2px' }}>
-                  Más vendidos
-                </div>
-                <div style={{ border: '1px solid var(--border-color)', borderRadius: '8px', overflow: 'hidden', background: 'var(--bg-main)', maxHeight: topProducts.length > 6 ? '220px' : 'none', overflowY: topProducts.length > 6 ? 'auto' : 'visible' }}>
-                  {topProducts.map((p, i) => (
-                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 14px', borderBottom: i < topProducts.length - 1 ? '1px solid var(--border-color)' : 'none' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0 }}>
-                        <span style={{ color: 'var(--text-primary)', fontSize: '0.88rem', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.producto}</span>
-                        <span style={{ color: 'var(--text-faint)', fontSize: '0.72rem' }}>{p.cantidad} u</span>
-                      </div>
-                      <span style={{ fontWeight: 800, fontSize: '1rem', fontFamily: 'var(--font-mono)', color: 'var(--text-primary)', flexShrink: 0 }}>{fmt(p.total)}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+          <div style={{ display: 'grid', gridTemplateColumns: topProducts.length === 0 || (resumenData?.por_categoria || []).length === 0 ? '1fr' : '1fr 1fr', gap: '20px', marginTop: '18px' }}>
+            <TopProductsList items={topProducts} compact />
             <CategoryBreakdown items={resumenData?.por_categoria} compact />
           </div>
         )}

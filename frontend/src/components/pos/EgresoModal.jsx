@@ -1,3 +1,4 @@
+import { Icons } from '../ui/Icons';
 
 export default function EgresoModal({ showEgreso, setShowEgreso, egresoType, setEgresoType, egresoMonto, setEgresoMonto, egresoMotivo, setEgresoMotivo, submitEgreso, estimatedCash }) {
   if (!showEgreso) return null;
@@ -17,19 +18,19 @@ export default function EgresoModal({ showEgreso, setShowEgreso, egresoType, set
 
   return (
     <div className="modal-overlay" onClick={closeAndReset}>
-      <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '440px' }}>
-        <h2 className="modal-title" style={{ fontSize: '1.4rem', color: 'var(--text-primary)' }}>Movimiento de caja</h2>
+      <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '360px' }}>
+        <h2 className="modal-title" style={{ fontSize: '1.3rem', color: 'var(--text-primary)' }}>Movimiento de caja</h2>
 
         {/* Toggle principal — simple, dos opciones */}
-        <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '18px' }}>
           <button onClick={() => setEgresoType('retiro')}
-            style={{ flex: 1, padding: '16px 12px', borderRadius: '10px', border: '2px solid', borderColor: isSaque ? 'var(--accent-danger)' : 'var(--border-color)', background: isSaque ? 'rgba(239,68,68,0.12)' : 'transparent', color: 'var(--text-primary)', fontWeight: 800, fontSize: '1rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-            <span style={{ fontSize: '1.3rem' }}>➖</span>
+            style={{ flex: 1, padding: '13px 8px', borderRadius: '10px', border: '2px solid', borderColor: isSaque ? 'var(--accent-danger)' : 'var(--border-color)', background: isSaque ? 'rgba(239,68,68,0.12)' : 'transparent', color: 'var(--text-primary)', fontWeight: 800, fontSize: '0.86rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
+            <Icons.Minus style={{ width: 17, height: 17, color: 'var(--accent-danger)' }} />
             Retirar efectivo
           </button>
           <button onClick={() => setEgresoType('ingreso')}
-            style={{ flex: 1, padding: '16px 12px', borderRadius: '10px', border: '2px solid', borderColor: isIngreso ? 'var(--accent-success)' : 'var(--border-color)', background: isIngreso ? 'rgba(16,185,129,0.12)' : 'transparent', color: 'var(--text-primary)', fontWeight: 800, fontSize: '1rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-            <span style={{ fontSize: '1.3rem' }}>➕</span>
+            style={{ flex: 1, padding: '13px 8px', borderRadius: '10px', border: '2px solid', borderColor: isIngreso ? 'var(--accent-success)' : 'var(--border-color)', background: isIngreso ? 'rgba(16,185,129,0.12)' : 'transparent', color: 'var(--text-primary)', fontWeight: 800, fontSize: '0.86rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
+            <Icons.Plus style={{ width: 17, height: 17, color: 'var(--accent-success)' }} />
             Ingresar efectivo
           </button>
         </div>
@@ -55,7 +56,7 @@ export default function EgresoModal({ showEgreso, setShowEgreso, egresoType, set
         </div>
         {excedeCajon && (
           <div style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.4)', borderRadius: 10, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ fontSize: '1.2rem' }}>⚠️</span>
+            <Icons.Alert style={{ width: 18, height: 18, flexShrink: 0, color: 'var(--accent-warning)' }} />
             <span style={{ color: 'var(--accent-warning)', fontSize: '0.85rem', fontWeight: 600 }}>
               El cajón debería tener ${Math.round(estimatedCash).toLocaleString('es-AR')} — estás sacando más de lo que hay. Revisá el monto.
             </span>
