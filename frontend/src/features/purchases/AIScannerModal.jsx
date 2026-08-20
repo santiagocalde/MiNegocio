@@ -97,13 +97,26 @@ export default function AIScannerModal({ onClose, onScanSuccess }) {
              )}
           </div>
 
-          <div style={{ background: 'var(--bg-card)', borderRadius: '12px', padding: '20px', border: '1px solid var(--border-color)' }}>
-             <h4 style={{ fontSize: '0.9rem', fontWeight: 700, margin: '0 0 12px 0', color: 'var(--text-primary)' }}>Para mejores resultados:</h4>
-             <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><span style={{ color: '#10B981' }}>✓</span> Buena iluminación, sin sombras oscuras.</li>
-                <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><span style={{ color: '#10B981' }}>✓</span> Todos los márgenes de la hoja visibles.</li>
-                <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><span style={{ color: '#10B981' }}>✓</span> Texto legible, sin desenfoque ni movimiento.</li>
-             </ul>
+          <div style={{ background: 'var(--bg-card)', borderRadius: '12px', padding: '20px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+             {/* Qué factura subir */}
+             <div>
+               <h4 style={{ fontSize: '0.9rem', fontWeight: 700, margin: '0 0 10px 0', color: 'var(--text-primary)' }}>¿Qué factura funciona mejor?</h4>
+               <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.84rem', color: 'var(--text-secondary)' }}>
+                 <li style={{ display: 'flex', gap: '8px' }}><span style={{ color: '#10B981', flexShrink: 0 }}>✓</span> Remitos o facturas simples con columnas claras: <strong style={{ color: 'var(--text-primary)' }}>Producto · Cantidad · Precio unitario</strong>.</li>
+                 <li style={{ display: 'flex', gap: '8px' }}><span style={{ color: '#10B981', flexShrink: 0 }}>✓</span> Facturas A, B o C de un solo precio por ítem (sin columnas de promociones ni precios alternativos).</li>
+                 <li style={{ display: 'flex', gap: '8px' }}><span style={{ color: '#f59e0b', flexShrink: 0 }}>⚠</span> Si la factura tiene varias columnas de precio (lista, promo 4+1, por botella, etc.), la IA toma la columna más a la derecha. Revisá los costos antes de confirmar.</li>
+                 <li style={{ display: 'flex', gap: '8px' }}><span style={{ color: '#ef4444', flexShrink: 0 }}>✗</span> Planillas Excel complejas con celdas combinadas o subtotales mezclados con precios — el resultado puede ser parcial.</li>
+               </ul>
+             </div>
+             {/* Foto */}
+             <div>
+               <h4 style={{ fontSize: '0.9rem', fontWeight: 700, margin: '0 0 10px 0', color: 'var(--text-primary)' }}>Para que la foto salga bien:</h4>
+               <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.84rem', color: 'var(--text-secondary)' }}>
+                 <li style={{ display: 'flex', gap: '8px' }}><span style={{ color: '#10B981', flexShrink: 0 }}>✓</span> Buena iluminación, sin sombras sobre el papel.</li>
+                 <li style={{ display: 'flex', gap: '8px' }}><span style={{ color: '#10B981', flexShrink: 0 }}>✓</span> Hoja plana, todos los bordes visibles.</li>
+                 <li style={{ display: 'flex', gap: '8px' }}><span style={{ color: '#10B981', flexShrink: 0 }}>✓</span> Texto nítido — si la foto está movida, intentá de nuevo.</li>
+               </ul>
+             </div>
           </div>
           <style>{'@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }'}</style>
        </div>
