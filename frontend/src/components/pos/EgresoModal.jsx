@@ -21,16 +21,17 @@ export default function EgresoModal({ showEgreso, setShowEgreso, egresoType, set
       <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '360px' }}>
         <h2 className="modal-title" style={{ fontSize: '1.3rem', color: 'var(--text-primary)' }}>Movimiento de caja</h2>
 
-        {/* Toggle principal — simple, dos opciones */}
+        {/* Toggle principal — simple, dos opciones. Icono y texto en fila
+            (no apilados) para que entren en un solo renglón parejo. */}
         <div style={{ display: 'flex', gap: '8px', marginBottom: '18px' }}>
           <button onClick={() => setEgresoType('retiro')}
-            style={{ flex: 1, padding: '13px 8px', borderRadius: '10px', border: '2px solid', borderColor: isSaque ? 'var(--accent-danger)' : 'var(--border-color)', background: isSaque ? 'rgba(239,68,68,0.12)' : 'transparent', color: 'var(--text-primary)', fontWeight: 800, fontSize: '0.86rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
-            <Icons.Minus style={{ width: 17, height: 17, color: 'var(--accent-danger)' }} />
+            style={{ flex: 1, padding: '13px 6px', borderRadius: '10px', border: '2px solid', borderColor: isSaque ? 'var(--accent-danger)' : 'var(--border-color)', background: isSaque ? 'rgba(239,68,68,0.12)' : 'transparent', color: 'var(--text-primary)', fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', whiteSpace: 'nowrap' }}>
+            <Icons.Minus style={{ width: 13, height: 13, color: 'var(--accent-danger)', flexShrink: 0 }} />
             Retirar efectivo
           </button>
           <button onClick={() => setEgresoType('ingreso')}
-            style={{ flex: 1, padding: '13px 8px', borderRadius: '10px', border: '2px solid', borderColor: isIngreso ? 'var(--accent-success)' : 'var(--border-color)', background: isIngreso ? 'rgba(16,185,129,0.12)' : 'transparent', color: 'var(--text-primary)', fontWeight: 800, fontSize: '0.86rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
-            <Icons.Plus style={{ width: 17, height: 17, color: 'var(--accent-success)' }} />
+            style={{ flex: 1, padding: '13px 6px', borderRadius: '10px', border: '2px solid', borderColor: isIngreso ? 'var(--accent-success)' : 'var(--border-color)', background: isIngreso ? 'rgba(16,185,129,0.12)' : 'transparent', color: 'var(--text-primary)', fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', whiteSpace: 'nowrap' }}>
+            <Icons.Plus style={{ width: 13, height: 13, color: 'var(--accent-success)', flexShrink: 0 }} />
             Ingresar efectivo
           </button>
         </div>
