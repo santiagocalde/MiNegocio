@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { usePanelContext } from '../context/PanelContext';
 import { apiGet, apiPut, apiPost } from '../services/apiClient';
 import FeatureGate from '../components/ui/FeatureGate';
+import useIsMobile from '../hooks/useIsMobile';
 
 const Icons = {
   Check: () => <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/></svg>,
@@ -28,6 +29,7 @@ const readErrorDetail = async (res) => {
 
 export default function CatalogoModule() {
   const { addToast, currentPlan } = usePanelContext();
+  const isMobile = useIsMobile();
   const PLAN_WEIGHT = { trial: 1, simple: 1, pro: 2, ia: 3 };
   const isLocked = PLAN_WEIGHT[currentPlan] < PLAN_WEIGHT['pro'];
   const THEMES = [
@@ -212,10 +214,10 @@ export default function CatalogoModule() {
         <h1 className="ledger-title" style={{ fontSize: '1.6rem', marginTop: 4 }}>Catálogo web</h1>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 350px', gap: '32px', flex: 1 }}>
-        <div className="ledger-sheet" style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 350px', gap: isMobile ? '16px' : '32px', flex: 1 }}>
+        <div className="ledger-sheet" style={{ padding: isMobile ? '16px' : '32px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: isActive ? 'var(--wash-success)' : 'var(--surface-veil)', padding: '24px', borderRadius: 'var(--radius-sm)', border: `1px solid ${isActive ? 'var(--accent-success)' : 'var(--border-color)'}` }}>
+          <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'stretch' : 'center', gap: isMobile ? '16px' : 0, background: isActive ? 'var(--wash-success)' : 'var(--surface-veil)', padding: isMobile ? '16px' : '24px', borderRadius: 'var(--radius-sm)', border: `1px solid ${isActive ? 'var(--accent-success)' : 'var(--border-color)'}` }}>
              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                <div style={{ color: isActive ? 'var(--accent-success)' : 'var(--text-secondary)' }}><Icons.Globe /></div>
                <div>
@@ -223,7 +225,7 @@ export default function CatalogoModule() {
                  <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{isActive ? 'Tu catálogo está público y aceptando pedidos.' : 'El catálogo está desactivado.'}</p>
                </div>
              </div>
-              <button onClick={toggleCatalogo} disabled={saving} style={{ background: isActive ? 'var(--accent-danger)' : 'var(--accent-success)', color: 'white', border: 'none', padding: '12px 24px', borderRadius: '8px', fontWeight: 800, fontSize: '1rem', cursor: saving ? 'not-allowed' : 'pointer', transition: 'all 0.15s', boxShadow: '0 4px 12px rgba(30,58,95,0.2)', opacity: saving ? 0.7 : 1 }}>
+              <button onClick={toggleCatalogo} disabled={saving} style={{ width: isMobile ? '100%' : 'auto', flexShrink: 0, background: isActive ? 'var(--accent-danger)' : 'var(--accent-success)', color: 'white', border: 'none', padding: '12px 24px', borderRadius: '8px', fontWeight: 800, fontSize: '1rem', cursor: saving ? 'not-allowed' : 'pointer', transition: 'all 0.15s', boxShadow: '0 4px 12px rgba(30,58,95,0.2)', opacity: saving ? 0.7 : 1 }}>
                 {saving ? '...' : (isActive ? 'Desactivar Catálogo' : 'Activar Catálogo')}
               </button>
           </div>

@@ -45,10 +45,13 @@ export default function AIScannerModal({ onClose, onScanSuccess }) {
       }
       const data = await res.json();
       if (data.items && data.items.length > 0) {
+        // procesar_factura_ocr devuelve {name, qty, cost} — el fallback a
+        // item.qty es imprescindible, si no toda cantidad detectada por la
+        // IA se pierde y queda en 1 sin que se note.
         const mapped = data.items.map(item => ({
           product_id: item.product_id || 0,
           product_name: item.product_name || item.name || 'Producto detectado',
-          quantity: item.quantity || 1,
+          quantity: item.quantity || item.qty || 1,
           unit_cost: item.unit_cost || item.cost || 0,
         }));
         onScanSuccess(mapped);
