@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { apiPost, apiGet } from '../../services/apiClient';
 import CategoryBreakdown from './CategoryBreakdown';
+import useIsMobile from '../../hooks/useIsMobile';
 
 export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, currentOperator, todaySalesTotal, countedCash, setCountedCash, closeCajaPin, setCloseCajaPin, cashRef, addToast, currentTurnId, onTurnClosed }) {
+  const isMobile = useIsMobile();
   const [closing, setClosing] = useState(false);
   const [pendingRemitos, setPendingRemitos] = useState([]);
   const [postponing, setPostponing] = useState(false);
@@ -58,7 +60,7 @@ export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, curren
       : Math.abs(d) <= 200 ? 'var(--accent-success)'
       : d > 0 ? 'var(--accent-warning)' : 'var(--accent-danger)';
     return (
-      <div className="modal-overlay"><div className="modal-content" style={{ width: '460px', maxWidth: '95vw', textAlign: 'center' }}>
+      <div className="modal-overlay" onClick={handleFinishAndLogout}><div className="modal-content" onClick={e => e.stopPropagation()} style={{ width: '460px', maxWidth: '95vw', textAlign: 'center' }}>
         <div style={{ fontSize: '2.5rem', marginBottom: 4 }}>✅</div>
         <h2 className="modal-title" style={{ color: 'var(--text-primary)', marginBottom: 4 }}>Turno cerrado</h2>
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: 20 }}>
@@ -183,7 +185,7 @@ export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, curren
   // ── Vista para rol logística ──────────────────────────────────
   if (isLogistica) {
     return (
-      <div className="modal-overlay"><div className="modal-content" style={{ width: '500px' }}>
+      <div className="modal-overlay" onClick={() => setIsClosingCaja(false)}><div className="modal-content" onClick={e => e.stopPropagation()} style={{ width: '500px' }}>
         <h2 className="modal-title" style={{ color: 'var(--text-primary)' }}>Cierre de turno — Logística</h2>
         {pendingRemitos.length > 0 ? (
           <>
@@ -229,10 +231,11 @@ export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, curren
     : null;
 
   return (
-    <div className="modal-overlay"><div className="modal-content" style={{ width: '580px', maxWidth: '95vw', maxHeight: '92vh', overflowY: 'auto' }}>
-      <h2 className="modal-title" style={{ color: 'var(--text-primary)' }}>Cierre de Turno</h2>
+    <div className="modal-overlay" onClick={() => setIsClosingCaja(false)}><div className="modal-content" onClick={e => e.stopPropagation()} style={{ width: '640px', maxWidth: '95vw', maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <h2 className="modal-title" style={{ color: 'var(--text-primary)', flexShrink: 0 }}>Cierre de Turno</h2>
 
-      {/* Resumen del turno — visible para todos los roles */}
+      {/* ── Zona de resumen — scroll propio, no arrastra la zona de acción ── */}
+      <div style={{ overflowY: 'auto', flexShrink: 1, minHeight: 0, maxHeight: isMobile ? '32vh' : '38vh', marginBottom: '14px', paddingRight: 2 }}>
       {turnResumen ? (
         <>
         <div style={{ textAlign: 'center', marginBottom: '14px' }}>
@@ -245,36 +248,37 @@ export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, curren
           )}
         </div>
 
-        {/* Ventas por método */}
-        <div style={{ border: '1px solid var(--border-color)', borderRadius: '10px', overflow: 'hidden', marginBottom: '12px', background: 'var(--bg-main)' }}>
-          <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px', padding: '10px 14px', background: 'var(--bg-card)', borderBottom: '1px solid var(--border-color)' }}>Ventas por método</div>
-          {[
-            { label: 'Efectivo', key: 'efectivo' },
-            { label: 'Tarjeta', key: 'tarjeta' },
-            { label: 'Transferencia', key: 'transferencia' },
-            { label: 'QR', key: 'mercadopago' },
-          ].map((m, i, arr) => (
-            <div key={m.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 14px', fontSize: '0.9rem', borderBottom: i < arr.length - 1 ? '1px solid var(--border-color)' : 'none' }}>
-              <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>{m.label}</span>
-              <span style={{ color: 'var(--text-primary)', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>${((turnResumen[m.key] || 0)).toLocaleString('es-AR')}</span>
-            </div>
-          ))}
-        </div>
-
-        {/* Caja inicial y egresos */}
-        <div style={{ border: '1px solid var(--border-color)', borderRadius: '10px', overflow: 'hidden', marginBottom: '12px', background: 'var(--bg-main)' }}>
-          <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px', padding: '10px 14px', background: 'var(--bg-card)', borderBottom: '1px solid var(--border-color)' }}>Caja del turno</div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '9px 14px', fontSize: '0.9rem', borderBottom: '1px solid var(--border-color)' }}>
-            <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Caja inicial</span>
-            <span style={{ color: 'var(--text-primary)', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>${(turnResumen.initial_cash || 0).toLocaleString('es-AR')}</span>
+        {/* Ventas por método + Caja del turno — lado a lado en desktop para ahorrar altura */}
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+          <div style={{ border: '1px solid var(--border-color)', borderRadius: '10px', overflow: 'hidden', background: 'var(--bg-main)' }}>
+            <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px', padding: '10px 14px', background: 'var(--bg-card)', borderBottom: '1px solid var(--border-color)' }}>Ventas por método</div>
+            {[
+              { label: 'Efectivo', key: 'efectivo' },
+              { label: 'Tarjeta', key: 'tarjeta' },
+              { label: 'Transferencia', key: 'transferencia' },
+              { label: 'QR', key: 'mercadopago' },
+            ].map((m, i, arr) => (
+              <div key={m.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 14px', fontSize: '0.9rem', borderBottom: i < arr.length - 1 ? '1px solid var(--border-color)' : 'none' }}>
+                <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>{m.label}</span>
+                <span style={{ color: 'var(--text-primary)', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>${((turnResumen[m.key] || 0)).toLocaleString('es-AR')}</span>
+              </div>
+            ))}
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '9px 14px', fontSize: '0.9rem' }}>
-            <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>
-              {(turnResumen.egresos || 0) < 0 ? 'Ingresos a caja' : 'Egresos / retiros'}
-            </span>
-            <span style={{ color: (turnResumen.egresos || 0) < 0 ? 'var(--accent-primary)' : 'var(--accent-warning)', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>
-              {(turnResumen.egresos || 0) === 0 ? '$0' : (turnResumen.egresos > 0 ? '−$' : '+$') + Math.abs(turnResumen.egresos).toLocaleString('es-AR')}
-            </span>
+
+          <div style={{ border: '1px solid var(--border-color)', borderRadius: '10px', overflow: 'hidden', background: 'var(--bg-main)' }}>
+            <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px', padding: '10px 14px', background: 'var(--bg-card)', borderBottom: '1px solid var(--border-color)' }}>Caja del turno</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '9px 14px', fontSize: '0.9rem', borderBottom: '1px solid var(--border-color)' }}>
+              <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Caja inicial</span>
+              <span style={{ color: 'var(--text-primary)', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>${(turnResumen.initial_cash || 0).toLocaleString('es-AR')}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '9px 14px', fontSize: '0.9rem' }}>
+              <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>
+                {(turnResumen.egresos || 0) < 0 ? 'Ingresos a caja' : 'Egresos / retiros'}
+              </span>
+              <span style={{ color: (turnResumen.egresos || 0) < 0 ? 'var(--accent-primary)' : 'var(--accent-warning)', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>
+                {(turnResumen.egresos || 0) === 0 ? '$0' : (turnResumen.egresos > 0 ? '−$' : '+$') + Math.abs(turnResumen.egresos).toLocaleString('es-AR')}
+              </span>
+            </div>
           </div>
         </div>
 
@@ -289,24 +293,33 @@ export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, curren
         </>
       )}
 
-      {/* Más vendidos del turno */}
-      {turnTop.length > 0 && (
-        <div style={{ marginBottom: '12px' }}>
-          <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '6px', paddingLeft: '2px' }}>Más vendidos</div>
-          <div style={{ border: '1px solid var(--border-color)', borderRadius: '8px', overflow: 'hidden', background: 'var(--bg-main)' }}>
-            {turnTop.map((p, i) => (
-              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 14px', borderBottom: i < turnTop.length - 1 ? '1px solid var(--border-color)' : 'none' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0 }}>
-                  <span style={{ color: 'var(--text-primary)', fontSize: '0.88rem', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.producto}</span>
-                  <span style={{ color: 'var(--text-faint)', fontSize: '0.72rem' }}>{p.cantidad} u</span>
-                </div>
-                <span style={{ fontWeight: 800, fontSize: '1rem', fontFamily: 'var(--font-mono)', color: 'var(--text-primary)', flexShrink: 0 }}>${(p.total || 0).toLocaleString('es-AR')}</span>
+      {/* Más vendidos + Ventas por categoría — lado a lado en desktop, cada uno con su propio tope de altura */}
+      {(turnTop.length > 0 || turnCats.length > 0) && (
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile || turnTop.length === 0 || turnCats.length === 0 ? '1fr' : '1fr 1fr', gap: '12px' }}>
+          {turnTop.length > 0 && (
+            <div>
+              <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '6px', paddingLeft: '2px' }}>Más vendidos</div>
+              <div style={{ border: '1px solid var(--border-color)', borderRadius: '8px', overflow: 'hidden', background: 'var(--bg-main)', maxHeight: turnTop.length > 6 ? '220px' : 'none', overflowY: turnTop.length > 6 ? 'auto' : 'visible' }}>
+                {turnTop.map((p, i) => (
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 14px', borderBottom: i < turnTop.length - 1 ? '1px solid var(--border-color)' : 'none' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0 }}>
+                      <span style={{ color: 'var(--text-primary)', fontSize: '0.88rem', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.producto}</span>
+                      <span style={{ color: 'var(--text-faint)', fontSize: '0.72rem' }}>{p.cantidad} u</span>
+                    </div>
+                    <span style={{ fontWeight: 800, fontSize: '1rem', fontFamily: 'var(--font-mono)', color: 'var(--text-primary)', flexShrink: 0 }}>${(p.total || 0).toLocaleString('es-AR')}</span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </div>
+          )}
+          <CategoryBreakdown items={turnCats} compact />
         </div>
       )}
+      </div>
+      {/* ── Fin zona de resumen ── */}
 
+      {/* ── Zona de acción — siempre visible, no scrollea con el resumen ── */}
+      <div style={{ flexShrink: 0, overflowY: 'auto' }}>
       {/* Cuánto debería haber — el operador lo ve ANTES de contar, no después */}
       {expectedCash !== null && (
         <div style={{ background: 'rgba(20,187,166,0.08)', border: '1px solid rgba(20,187,166,0.25)', borderRadius: 12, padding: '14px 18px', marginBottom: 14 }}>
@@ -386,15 +399,14 @@ export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, curren
         </div>
       )}
 
-      {/* Ventas por categoría — componente aparte al pie del cierre */}
-      <CategoryBreakdown items={turnCats} />
-
-      <div className="modal-actions">
+      <div className="modal-actions" style={{ marginTop: 4 }}>
         <button className="btn btn-modal-cancel" onClick={() => { setIsClosingCaja(false); setCountedCash(''); setCloseCajaPin(''); }} disabled={closing}>Cancelar</button>
         <button className="btn btn-modal-confirm" style={{ background: 'var(--accent-danger)', opacity: countedCash === '' || (!isAdmin && closeCajaPin.length < 4) || closing ? 0.5 : 1 }} onClick={handleCloseTurn} disabled={countedCash === '' || (!isAdmin && closeCajaPin.length < 4) || closing}>
           {closing ? 'Cerrando turno...' : 'Confirmar y Reportar'}
         </button>
       </div>
+      </div>
+      {/* ── Fin zona de acción ── */}
     </div></div>
   );
 }

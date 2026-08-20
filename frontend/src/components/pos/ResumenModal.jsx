@@ -112,7 +112,7 @@ function ResumenModal({ showResumen, setShowResumen, resumenData, businessConfig
 
   return (
     <div className="modal-overlay" onClick={() => setShowResumen(false)}>
-      <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '520px', width: '100%', maxHeight: '90dvh', overflowY: 'auto' }}>
+      <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '640px', width: '100%', maxHeight: '88dvh', overflowY: 'auto' }}>
 
         {/* Header */}
         <h2 className="modal-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -122,15 +122,41 @@ function ResumenModal({ showResumen, setShowResumen, resumenData, businessConfig
           {new Date().toLocaleDateString('es-AR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
         </p>
 
-        {/* ── Kiosco ── */}
+        {/* ── Kiosco — mismo lenguaje de tarjetas que Cierre de Turno ── */}
         {!isCorralon && resumenData && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            {kioscRows.map(([label, val, color]) => (
-              <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 14px', background: 'var(--bg-main)', borderRadius: '8px' }}>
-                <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{label}</span>
-                <span style={{ fontWeight: 800, fontSize: '1.15rem', fontFamily: 'var(--font-mono)', color: color || 'var(--text-primary)' }}>{val}</span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px' }}>Total vendido hoy</div>
+              <div style={{ fontSize: '2.1rem', fontWeight: 800, color: 'var(--accent-success)', fontFamily: 'var(--font-mono)', lineHeight: 1.1 }}>{fmt(resumenData?.total_vendido)}</div>
+              <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: 4 }}>
+                {fmtN(resumenData?.total_tickets)} tickets — promedio {fmt((resumenData?.total_vendido || 0) / Math.max(1, resumenData?.total_tickets || 1))}
               </div>
-            ))}
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div style={{ border: '1px solid var(--border-color)', borderRadius: '10px', overflow: 'hidden', background: 'var(--bg-main)' }}>
+                <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px', padding: '10px 14px', background: 'var(--bg-card)', borderBottom: '1px solid var(--border-color)' }}>Ventas por método</div>
+                {[
+                  ['Efectivo', resumenData?.total_efectivo],
+                  ['Tarjeta', resumenData?.total_tarjeta],
+                  ['Transferencia', resumenData?.total_transferencia],
+                  ['QR', resumenData?.total_mp],
+                ].map(([label, val], i, arr) => (
+                  <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 14px', fontSize: '0.9rem', borderBottom: i < arr.length - 1 ? '1px solid var(--border-color)' : 'none' }}>
+                    <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>{label}</span>
+                    <span style={{ color: 'var(--text-primary)', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{fmt(val)}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ border: '1px solid var(--border-color)', borderRadius: '10px', overflow: 'hidden', background: 'var(--bg-main)', display: 'flex', flexDirection: 'column' }}>
+                <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px', padding: '10px 14px', background: 'var(--bg-card)', borderBottom: '1px solid var(--border-color)' }}>Fiado</div>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '14px' }}>
+                  <span style={{ fontSize: '1.3rem', fontWeight: 800, fontFamily: 'var(--font-mono)', color: (resumenData?.total_fiado || 0) > 0 ? 'var(--accent-warning)' : 'var(--text-faint)' }}>{fmt(resumenData?.total_fiado)}</span>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: 4 }}>pendiente de cobro</span>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
@@ -211,26 +237,28 @@ function ResumenModal({ showResumen, setShowResumen, resumenData, businessConfig
           </div>
         )}
 
-        {/* Ventas por categoría — componente aparte al pie del resumen */}
-        <CategoryBreakdown items={resumenData?.por_categoria} />
-
-        {/* Más vendidos del día */}
-        {topProducts.length > 0 && (
-          <div>
-            <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '6px', paddingLeft: '2px' }}>
-              Más vendidos
-            </div>
-            <div style={{ border: '1px solid var(--border-color)', borderRadius: '8px', overflow: 'hidden', background: 'var(--bg-main)' }}>
-              {topProducts.map((p, i) => (
-                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 14px', borderBottom: i < topProducts.length - 1 ? '1px solid var(--border-color)' : 'none' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0 }}>
-                    <span style={{ color: 'var(--text-primary)', fontSize: '0.88rem', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.producto}</span>
-                    <span style={{ color: 'var(--text-faint)', fontSize: '0.72rem' }}>{p.cantidad} u</span>
-                  </div>
-                  <span style={{ fontWeight: 800, fontSize: '1rem', fontFamily: 'var(--font-mono)', color: 'var(--text-primary)', flexShrink: 0 }}>{fmt(p.total)}</span>
+        {/* Más vendidos + Ventas por categoría — lado a lado, cada uno con su propio tope de altura */}
+        {(topProducts.length > 0 || (resumenData?.por_categoria || []).length > 0) && (
+          <div style={{ display: 'grid', gridTemplateColumns: topProducts.length === 0 || (resumenData?.por_categoria || []).length === 0 ? '1fr' : '1fr 1fr', gap: '14px', marginTop: '18px' }}>
+            {topProducts.length > 0 && (
+              <div>
+                <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '6px', paddingLeft: '2px' }}>
+                  Más vendidos
                 </div>
-              ))}
-            </div>
+                <div style={{ border: '1px solid var(--border-color)', borderRadius: '8px', overflow: 'hidden', background: 'var(--bg-main)', maxHeight: topProducts.length > 6 ? '220px' : 'none', overflowY: topProducts.length > 6 ? 'auto' : 'visible' }}>
+                  {topProducts.map((p, i) => (
+                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 14px', borderBottom: i < topProducts.length - 1 ? '1px solid var(--border-color)' : 'none' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0 }}>
+                        <span style={{ color: 'var(--text-primary)', fontSize: '0.88rem', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.producto}</span>
+                        <span style={{ color: 'var(--text-faint)', fontSize: '0.72rem' }}>{p.cantidad} u</span>
+                      </div>
+                      <span style={{ fontWeight: 800, fontSize: '1rem', fontFamily: 'var(--font-mono)', color: 'var(--text-primary)', flexShrink: 0 }}>{fmt(p.total)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            <CategoryBreakdown items={resumenData?.por_categoria} compact />
           </div>
         )}
 
