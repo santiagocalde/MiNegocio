@@ -1356,16 +1356,47 @@ async def delete_customer(customer_id: int) -> dict:
         from db_helpers import get_pg_pool
         pool = await get_pg_pool()
         async with pool.acquire() as conn:
-            r = await conn.execute(
-                "DELETE FROM customers WHERE id = $1 AND business_id = $2",
-                customer_id, b_id
-            )
-            if r == "DELETE 0":
-                raise HTTPException(404, detail="Cliente no encontrado")
+            async with conn.transaction():
+                # Verifica que el cliente exista y pertenezca al negocio.
+                cust = await conn.fetchrow(
+                    "SELECT id FROM customers WHERE id = $1 AND business_id = $2",
+                    customer_id, b_id
+                )
+                if not cust:
+                    raise HTTPException(404, detail="Cliente no encontrado")
+                # Borra las dependencias en orden FK-seguro (transacciones, direcciones,
+                # remitos, acopios, presupuestos) antes de borrar el cliente.
+                await conn.execute("DELETE FROM customer_transactions WHERE customer_id = $1", customer_id)
+                await conn.execute("DELETE FROM customer_addresses WHERE customer_id = $1", customer_id)
+                await conn.execute("DELETE FROM remitos WHERE customer_id = $1", customer_id)
+                await conn.execute(
+                    "DELETE FROM acopio_withdrawal_items WHERE withdrawal_id IN "
+                    "(SELECT id FROM acopio_withdrawals WHERE acopio_id IN "
+                    "(SELECT id FROM acopios WHERE customer_id = $1))",
+                    customer_id
+                )
+                await conn.execute(
+                    "DELETE FROM acopio_withdrawals WHERE acopio_id IN "
+                    "(SELECT id FROM acopios WHERE customer_id = $1)",
+                    customer_id
+                )
+                await conn.execute("DELETE FROM acopios WHERE customer_id = $1", customer_id)
+                await conn.execute("DELETE FROM credit_notes WHERE customer_id = $1", customer_id)
+                await conn.execute("DELETE FROM quotes WHERE customer_id = $1", customer_id)
+                await conn.execute("DELETE FROM obras WHERE customer_id = $1", customer_id)
+                await conn.execute("DELETE FROM customers WHERE id = $1", customer_id)
             return {"success": True}
     else:
         import aiosqlite
         async with aiosqlite.connect(main.DB_PATH) as db:
+            await db.execute("BEGIN IMMEDIATE")
+            await db.execute("DELETE FROM customer_transactions WHERE customer_id = ?", (customer_id,))
+            await db.execute("DELETE FROM customer_addresses WHERE customer_id = ?", (customer_id,))
+            await db.execute("DELETE FROM remitos WHERE customer_id = ?", (customer_id,))
+            await db.execute("DELETE FROM acopios WHERE customer_id = ?", (customer_id,))
+            await db.execute("DELETE FROM credit_notes WHERE customer_id = ?", (customer_id,))
+            await db.execute("DELETE FROM quotes WHERE customer_id = ?", (customer_id,))
+            await db.execute("DELETE FROM obras WHERE customer_id = ?", (customer_id,))
             await db.execute("DELETE FROM customers WHERE id = ?", (customer_id,))
             await db.commit()
             return {"success": True}
