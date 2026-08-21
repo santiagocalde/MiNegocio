@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { usePanelContext } from '../context/PanelContext';
 import { apiGet, apiPost } from '../services/apiClient';
 import ClientePicker from '../components/corralon/ClientePicker';
+import useModalExit, { overlayAnim, contentAnim } from '../hooks/useModalExit';
 
 const STATUS_MAP = {
   pending:   { label: 'Pendiente',  color: '#F59E0B', bg: 'rgba(245,158,11,0.09)'  },
@@ -484,6 +485,16 @@ ${stopRows}
   const selectedCount = selected.size;
   const isLogistica = auth?.currentOperator?.role === 'logistica';
 
+  const formExit = useModalExit(showForm);
+  const detailExit = useModalExit(!!detail);
+  const detailDataRef = useRef(null);
+  if (detail) detailDataRef.current = detail;
+  const detailData = detail || detailDataRef.current;
+  const postponeExit = useModalExit(!!postponeModal);
+  const postponeDataRef = useRef(null);
+  if (postponeModal) postponeDataRef.current = postponeModal;
+  const postponeData = postponeModal || postponeDataRef.current;
+
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', gap: 10, overflow: 'hidden', padding: '12px 20px' }}>
 
@@ -634,10 +645,10 @@ ${stopRows}
       )}
 
       {/* ── Modal: Nueva nota de pedido ── */}
-      {showForm && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(11,19,43,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+      {formExit.rendered && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(11,19,43,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, ...overlayAnim(formExit.closing) }}
           onMouseDown={e => { if (e.target === e.currentTarget) { setShowForm(false); setFormCustomer(null); } }}>
-          <div onMouseDown={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 540, maxHeight: '92vh', overflow: 'auto', background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line-strong)', borderRadius: 12, padding: 24, boxShadow: 'var(--lp-shadow-lg)' }}>
+          <div onMouseDown={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 540, maxHeight: '92vh', overflow: 'auto', background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line-strong)', borderRadius: 12, padding: 24, boxShadow: 'var(--lp-shadow-lg)', ...contentAnim(formExit.closing) }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
               <h3 style={{ fontFamily: 'var(--lp-font-display)', fontSize: '1.1rem', fontWeight: 700, color: 'var(--lp-ink)', margin: 0 }}>Nueva nota de pedido</h3>
               <button onClick={() => { setShowForm(false); setFormCustomer(null); }} style={{ background: 'none', border: 'none', color: 'var(--lp-ink-faint)', cursor: 'pointer', fontSize: '1.3rem' }}>✕</button>
@@ -722,13 +733,14 @@ ${stopRows}
         />
       )}
 
-      {postponeModal && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 1001, background: 'rgba(11,19,43,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+      {postponeExit.rendered && postponeData && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1001, background: 'rgba(11,19,43,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, ...overlayAnim(postponeExit.closing) }}
           onMouseDown={e => { if (e.target === e.currentTarget) setPostponeModal(null); }}>
           <div onMouseDown={e => e.stopPropagation()} style={{
             width: '100%', maxWidth: 380, background: 'var(--lp-paper-raised)',
             border: '1px solid var(--lp-line-strong)', borderRadius: 12, padding: 24,
             boxShadow: 'var(--lp-shadow-lg)',
+            ...contentAnim(postponeExit.closing),
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <h3 style={{ fontFamily: 'var(--lp-font-display)', fontSize: '1.05rem', fontWeight: 700, color: 'var(--lp-ink)', margin: 0 }}>
@@ -738,13 +750,13 @@ ${stopRows}
                 style={{ background: 'none', border: 'none', color: 'var(--lp-ink-faint)', cursor: 'pointer', fontSize: '1.2rem' }}>✕</button>
             </div>
             <p style={{ fontSize: '0.82rem', color: 'var(--lp-ink-faint)', margin: '0 0 14px 0' }}>
-              ¿Para qué día reprogramamos la nota N° {postponeModal.remito_id}?
+              ¿Para qué día reprogramamos la nota N° {postponeData.remito_id}?
             </p>
             <div style={{ marginBottom: 18 }}>
               <label style={{ fontSize: '0.75rem', color: 'var(--lp-ink-faint)', fontWeight: 600, display: 'block', marginBottom: 5 }}>
                 Nueva fecha de entrega
               </label>
-              <input type="date" value={postponeModal.date}
+              <input type="date" value={postponeData.date}
                 onChange={e => setPostponeModal(prev => ({ ...prev, date: e.target.value }))}
                 style={{
                   width: '100%', padding: '10px 14px',
@@ -760,7 +772,7 @@ ${stopRows}
                 Cancelar
               </button>
               <button onClick={() => {
-                handleStatus(postponeModal.remito_id, 'postponed', { scheduled_date: postponeModal.date });
+                handleStatus(postponeData.remito_id, 'postponed', { scheduled_date: postponeData.date });
                 setPostponeModal(null);
               }}
                 className="lp-btn lp-btn--primary" style={{ flex: 2 }}>
@@ -772,19 +784,19 @@ ${stopRows}
       )}
 
       {/* ── Modal: Detalle de nota ── */}
-      {detail && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(11,19,43,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+      {detailExit.rendered && detailData && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(11,19,43,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, ...overlayAnim(detailExit.closing) }}
           onMouseDown={e => { if (e.target === e.currentTarget) { setDetail(null); setShowCobrar(false); } }}>
-          <div onMouseDown={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 510, maxHeight: '92vh', overflow: 'auto', background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line-strong)', borderRadius: 12, padding: 24, boxShadow: 'var(--lp-shadow-lg)' }}>
+          <div onMouseDown={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 510, maxHeight: '92vh', overflow: 'auto', background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line-strong)', borderRadius: 12, padding: 24, boxShadow: 'var(--lp-shadow-lg)', ...contentAnim(detailExit.closing) }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
               <h3 style={{ fontFamily: 'var(--lp-font-display)', fontSize: '1.1rem', fontWeight: 700, color: 'var(--lp-ink)', margin: 0 }}>
-                Nota de pedido N° {detail.remito.id}
+                Nota de pedido N° {detailData.remito.id}
               </h3>
               <button onClick={() => { setDetail(null); setShowCobrar(false); setPostponeModal(null); }} style={{ background: 'none', border: 'none', color: 'var(--lp-ink-faint)', cursor: 'pointer', fontSize: '1.3rem' }}>✕</button>
             </div>
 
             {(() => {
-              const st = STATUS_MAP[detail.remito.status] || STATUS_MAP.pending;
+              const st = STATUS_MAP[detailData.remito.status] || STATUS_MAP.pending;
               return (
                 <div style={{ display: 'inline-block', background: st.bg, border: `1px solid ${st.color}40`, color: st.color, fontWeight: 800, fontSize: '0.8rem', padding: '4px 14px', borderRadius: 20, marginBottom: 12 }}>
                   {st.label}
@@ -793,14 +805,14 @@ ${stopRows}
             })()}
 
             <div style={{ fontSize: '0.83rem', color: 'var(--lp-ink-faint)', marginBottom: 14, display: 'flex', flexDirection: 'column', gap: 3 }}>
-              {detail.remito.address && <div>Dirección: <strong style={{ color: 'var(--lp-ink)' }}>{detail.remito.address}</strong></div>}
-              {detail.remito.customer_name && <div>{detail.remito.customer_name}</div>}
-              {detail.remito.driver && <div>Chofer: {detail.remito.driver}</div>}
-              <div>Programado: {fmtDate(detail.remito.scheduled_date)}</div>
+              {detailData.remito.address && <div>Dirección: <strong style={{ color: 'var(--lp-ink)' }}>{detailData.remito.address}</strong></div>}
+              {detailData.remito.customer_name && <div>{detailData.remito.customer_name}</div>}
+              {detailData.remito.driver && <div>Chofer: {detailData.remito.driver}</div>}
+              <div>Programado: {fmtDate(detailData.remito.scheduled_date)}</div>
             </div>
 
             <div style={{ borderTop: '1px solid var(--lp-line)', paddingTop: 10, marginBottom: 14 }}>
-              {detail.items.map((it, i) => (
+              {detailData.items.map((it, i) => (
                 <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: '0.83rem', color: 'var(--lp-ink)' }}>
                   <span>{it.product_name} × {it.quantity}</span>
                   <span style={{ fontFamily: 'var(--lp-font-mono)' }}>${formatPesos(it.unit_price * it.quantity)}</span>
@@ -808,7 +820,7 @@ ${stopRows}
               ))}
               <div style={{ borderTop: '1px solid var(--lp-line-strong)', marginTop: 7, paddingTop: 7, fontWeight: 800, color: 'var(--lp-ink)', display: 'flex', justifyContent: 'space-between', fontSize: '1rem' }}>
                 <span>Total</span>
-                <span style={{ fontFamily: 'var(--lp-font-mono)' }}>${formatPesos(detail.items.reduce((s, i) => s + Number(i.unit_price) * Number(i.quantity), 0))}</span>
+                <span style={{ fontFamily: 'var(--lp-font-mono)' }}>${formatPesos(detailData.items.reduce((s, i) => s + Number(i.unit_price) * Number(i.quantity), 0))}</span>
               </div>
             </div>
 
@@ -816,35 +828,35 @@ ${stopRows}
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
                 {/* Logística: solo puede confirmar entrega cuando está en camino */}
                 {isLogistica ? (
-                  detail.remito.status === 'en_camino'
-                    ? btnStatus('#10B981', 'Confirmar entrega', () => handleStatus(detail.remito.id, 'delivered'))
+                  detailData.remito.status === 'en_camino'
+                    ? btnStatus('#10B981', 'Confirmar entrega', () => handleStatus(detailData.remito.id, 'delivered'))
                     : <p style={{ fontSize: '0.8rem', color: 'var(--lp-ink-faint)', margin: 0 }}>
-                        {detail.remito.status === 'delivered' ? 'Ya entregado.' : 'Pendiente de despacho.'}
+                        {detailData.remito.status === 'delivered' ? 'Ya entregado.' : 'Pendiente de despacho.'}
                       </p>
                 ) : (<>
-                  {detail.remito.status === 'pending' && (<>
-                    {btnStatus('#F59E0B', 'En camino', () => handleStatus(detail.remito.id, 'en_camino'))}
+                  {detailData.remito.status === 'pending' && (<>
+                    {btnStatus('#F59E0B', 'En camino', () => handleStatus(detailData.remito.id, 'en_camino'))}
                     {btnStatus('#F97316', '📅 Postergado', () => {
                       const tom = new Date(); tom.setDate(tom.getDate() + 1);
-                      setPostponeModal({ remito_id: detail.remito.id, date: tom.toISOString().slice(0, 10) });
+                      setPostponeModal({ remito_id: detailData.remito.id, date: tom.toISOString().slice(0, 10) });
                     })}
-                    {btnStatus('#6B7280', 'Cancelar', () => handleStatus(detail.remito.id, 'cancelled'))}
+                    {btnStatus('#6B7280', 'Cancelar', () => handleStatus(detailData.remito.id, 'cancelled'))}
                   </>)}
-                  {detail.remito.status === 'en_camino' && (<>
-                    {btnStatus('#10B981', 'Entregado', () => handleStatus(detail.remito.id, 'delivered'))}
-                    {btnStatus('#EF4444', '✕ Fallido', () => handleStatus(detail.remito.id, 'failed'))}
+                  {detailData.remito.status === 'en_camino' && (<>
+                    {btnStatus('#10B981', 'Entregado', () => handleStatus(detailData.remito.id, 'delivered'))}
+                    {btnStatus('#EF4444', '✕ Fallido', () => handleStatus(detailData.remito.id, 'failed'))}
                     {btnStatus('#F97316', '📅 Postergado', () => {
                       const tom = new Date(); tom.setDate(tom.getDate() + 1);
-                      setPostponeModal({ remito_id: detail.remito.id, date: tom.toISOString().slice(0, 10) });
+                      setPostponeModal({ remito_id: detailData.remito.id, date: tom.toISOString().slice(0, 10) });
                     })}
                   </>)}
-                  {detail.remito.status === 'postponed' && (<>
-                    {btnStatus('#F59E0B', '↩ Retomar', () => handleStatus(detail.remito.id, 'pending'))}
-                    {btnStatus('#6B7280', 'Cancelar', () => handleStatus(detail.remito.id, 'cancelled'))}
+                  {detailData.remito.status === 'postponed' && (<>
+                    {btnStatus('#F59E0B', '↩ Retomar', () => handleStatus(detailData.remito.id, 'pending'))}
+                    {btnStatus('#6B7280', 'Cancelar', () => handleStatus(detailData.remito.id, 'cancelled'))}
                   </>)}
-                  {detail.remito.status === 'delivered' && (
+                  {detailData.remito.status === 'delivered' && (
                     btnStatus('#10B981', 'Cobrar', () => {
-                      const calc = detail.items.reduce((s, i) => s + Number(i.unit_price || 0) * Number(i.quantity || 1), 0);
+                      const calc = detailData.items.reduce((s, i) => s + Number(i.unit_price || 0) * Number(i.quantity || 1), 0);
                       setCobrarMonto(calc > 0 ? String(calc) : '');
                       setShowCobrar(true);
                     })
@@ -853,7 +865,7 @@ ${stopRows}
               </div>
             )}
 
-            {showCobrar && detail.remito.status === 'delivered' && (
+            {showCobrar && detailData.remito.status === 'delivered' && (
               <div style={{ marginTop: 4, background: 'var(--lp-paper-sunken)', border: '1px solid var(--lp-line-strong)', borderRadius: 10, padding: 16 }}>
                 <div style={{ fontWeight: 700, color: 'var(--lp-ink)', fontSize: '0.95rem', marginBottom: 10 }}>Registrar cobro</div>
 
@@ -896,11 +908,11 @@ ${stopRows}
             )}
 
             <div style={{ display: 'flex', gap: 8, marginTop: 12, justifyContent: 'center' }}>
-              <button onClick={() => handlePrint(detail)}
+              <button onClick={() => handlePrint(detailData)}
                 style={{ background: 'rgba(107,114,128,0.1)', border: '1px solid var(--lp-line-strong)', color: 'var(--lp-ink-faint)', padding: '6px 14px', borderRadius: 6, cursor: 'pointer', fontSize: '0.78rem', fontWeight: 600 }}>
                 Imprimir
               </button>
-              <button onClick={() => handleShareWhatsApp(detail.remito)}
+              <button onClick={() => handleShareWhatsApp(detailData.remito)}
                 style={{ background: 'rgba(37,211,102,0.09)', border: '1px solid rgba(37,211,102,0.25)', color: '#25D366', padding: '6px 14px', borderRadius: 6, cursor: 'pointer', fontSize: '0.78rem', fontWeight: 600 }}>
                 WhatsApp
               </button>
