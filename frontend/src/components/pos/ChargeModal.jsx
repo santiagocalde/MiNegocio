@@ -94,6 +94,12 @@ export default function ChargeModal({
   // No se aplican solas al pasar: son botones que SUMAN (+$1000, +$2000...),
   // aplicar de más solo por navegar de paso agregaría plata sin querer.
   const arrowNavFocusOnly = (e, ids) => {
+    // Enter queda desactivado a propósito en estos botones: son reflejo fácil
+    // después de navegar con flechas, y un Enter de más acá no debe sumar un
+    // billete ni, mucho menos, arriesgarse a que algo dispare "procesar
+    // venta" sin querer. Solo Espacio (comportamiento nativo del <button>)
+    // o clic los activa.
+    if (e.key === 'Enter') { e.preventDefault(); return; }
     if (!['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp'].includes(e.key)) return;
     e.preventDefault();
     const dir = (e.key === 'ArrowRight' || e.key === 'ArrowDown') ? 1 : -1;
@@ -288,7 +294,7 @@ export default function ChargeModal({
                     </button>
                   ))}
                 </div>
-                <p style={{ margin: '0 0 12px', fontSize: '0.72rem', color: 'var(--text-faint)' }}>← → navega, Enter o clic elige</p>
+                <p style={{ margin: '0 0 12px', fontSize: '0.72rem', color: 'var(--text-faint)' }}>← → navega, Espacio o clic elige</p>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px', borderTop: '1px dashed var(--border-color)', paddingTop: '16px' }}>
                   <span style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', fontWeight: 600 }}>VUELTO:</span>
                   <div style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: 800, color: change < 0 ? 'var(--accent-danger)' : 'var(--accent-success)', fontFamily: 'var(--font-mono)' }}>
