@@ -19,6 +19,7 @@ import DuplicateCodeModal from '../components/pos/DuplicateCodeModal';
 import PriceCheckModal from '../components/pos/PriceCheckModal';
 import OperatorSwitchModal from '../components/pos/OperatorSwitchModal';
 import TicketPrint from '../components/TicketPrint';
+import useModalExit, { overlayAnim, contentAnim } from '../hooks/useModalExit';
 
 export default function VentasPage() {
   const isMobile = useIsMobile();
@@ -82,6 +83,7 @@ export default function VentasPage() {
 
   // Pedido de envío desde mostrador — con split por ítem retira/envío
   const [showShipModal, setShowShipModal] = useState(false);
+  const shipExit = useModalExit(showShipModal);
   const [shipClient, setShipClient] = useState(null);
   const [shipDate, setShipDate] = useState('');
   const [shipSaving, setShipSaving] = useState(false);
@@ -380,10 +382,10 @@ export default function VentasPage() {
       )}
 
       {/* F7: Modal pedido de envío */}
-      {showShipModal && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 2000, background: 'rgba(11,19,43,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+      {shipExit.rendered && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 2000, background: 'rgba(11,19,43,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, ...overlayAnim(shipExit.closing) }}
           onMouseDown={e => { if (e.target === e.currentTarget) setShowShipModal(false); }}>
-          <div onMouseDown={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 480, background: 'var(--lp-paper-raised, #0d1b38)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 14, padding: 24, boxShadow: '0 24px 64px rgba(0,0,0,0.4)' }}>
+          <div onMouseDown={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 480, background: 'var(--lp-paper-raised, #0d1b38)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 14, padding: 24, boxShadow: '0 24px 64px rgba(0,0,0,0.4)', ...contentAnim(shipExit.closing) }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
               <h3 style={{ margin: 0, fontWeight: 800, fontSize: '1.05rem', color: 'var(--lp-ink, #e8eaf0)' }}>📦 Pedido de envío</h3>
               <button onClick={() => setShowShipModal(false)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: '1.3rem' }}>✕</button>
