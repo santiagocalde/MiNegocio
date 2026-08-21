@@ -4,11 +4,12 @@
  * Gestiona múltiples direcciones por cliente.
  * Las Cuentas Corrientes (deudores) siguen en FiadoModule.
  */
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { usePanelContext } from '../context/PanelContext';
 import { apiGet, apiPost, apiDelete, apiPatch } from '../services/apiClient';
 import { Icons } from '../components/ui/Icons';
+import useModalExit, { overlayAnim, contentAnim } from '../hooks/useModalExit';
 
 const formatPesos = (v) => (v ?? 0).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
@@ -175,6 +176,20 @@ export default function ClientesModule() {
     borderRadius: 6, color: 'var(--lp-ink)', outline: 'none',
   };
 
+  // Animación de entrada/salida de los 3 modales de este módulo. deleteModal
+  // y detail son objetos (null = cerrado) que se limpian al cerrar, así que
+  // guardamos el último valor en un ref para poder seguir mostrando el texto
+  // ("¿Eliminás a X?") mientras el modal se desvanece.
+  const formExit = useModalExit(showForm);
+  const deleteExit = useModalExit(!!deleteModal);
+  const deleteDataRef = useRef(null);
+  if (deleteModal) deleteDataRef.current = deleteModal;
+  const deleteData = deleteModal || deleteDataRef.current;
+  const detailExit = useModalExit(!!detail);
+  const detailDataRef = useRef(null);
+  if (detail) detailDataRef.current = detail;
+  const detailData = detail || detailDataRef.current;
+
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', gap: 10, overflow: 'hidden', padding: '12px 20px' }}>
 
@@ -234,10 +249,10 @@ export default function ClientesModule() {
       </div>
 
       {/* ── Modal: Nuevo cliente ── */}
-      {showForm && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(11,19,43,0.72)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+      {formExit.rendered && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(11,19,43,0.72)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, ...overlayAnim(formExit.closing) }}
           onMouseDown={e => { if (e.target === e.currentTarget) setShowForm(false); }}>
-          <div onMouseDown={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 480, maxHeight: '92vh', overflow: 'auto', background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line-strong)', borderRadius: 12, padding: 24, boxShadow: 'var(--lp-shadow-lg)' }}>
+          <div onMouseDown={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 480, maxHeight: '92vh', overflow: 'auto', background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line-strong)', borderRadius: 12, padding: 24, boxShadow: 'var(--lp-shadow-lg)', ...contentAnim(formExit.closing) }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 18 }}>
               <h3 style={{ fontFamily: 'var(--lp-font-display)', fontSize: '1.1rem', fontWeight: 700, color: 'var(--lp-ink)', margin: 0 }}>Nuevo cliente</h3>
               <button onClick={() => setShowForm(false)} style={{ background: 'none', border: 'none', color: 'var(--lp-ink-faint)', cursor: 'pointer', fontSize: '1.3rem' }}>✕</button>
@@ -308,13 +323,13 @@ export default function ClientesModule() {
       )}
 
       {/* ── Modal: Confirmar eliminar cliente ── */}
-      {deleteModal && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 1100, background: 'rgba(11,19,43,0.72)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+      {deleteExit.rendered && deleteData && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1100, background: 'rgba(11,19,43,0.72)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, ...overlayAnim(deleteExit.closing) }}
           onClick={() => setDeleteModal(null)}>
-          <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 400, background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line-strong)', borderRadius: 12, padding: 24, boxShadow: 'var(--lp-shadow-lg)' }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 400, background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line-strong)', borderRadius: 12, padding: 24, boxShadow: 'var(--lp-shadow-lg)', ...contentAnim(deleteExit.closing) }}>
             <h3 style={{ fontFamily: 'var(--lp-font-display)', fontSize: '1.1rem', fontWeight: 700, color: 'var(--lp-ink)', margin: '0 0 10px' }}>Eliminar cliente</h3>
             <p style={{ fontSize: '0.88rem', color: 'var(--lp-ink-faint)', margin: '0 0 20px', lineHeight: 1.5 }}>
-              ¿Eliminás a <strong style={{ color: 'var(--lp-ink)' }}>{deleteModal.name}</strong>? Se borrarán también sus transacciones y direcciones. Esta acción no se puede deshacer.
+              ¿Eliminás a <strong style={{ color: 'var(--lp-ink)' }}>{deleteData.name}</strong>? Se borrarán también sus transacciones y direcciones. Esta acción no se puede deshacer.
             </p>
             <div style={{ display: 'flex', gap: 10 }}>
               <button onClick={() => setDeleteModal(null)} className="lp-btn lp-btn--ghost" style={{ flex: 1 }}>Cancelar</button>
@@ -328,24 +343,24 @@ export default function ClientesModule() {
       )}
 
       {/* ── Modal: Detalle de cliente + direcciones ── */}
-      {detail && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(11,19,43,0.72)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+      {detailExit.rendered && detailData && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(11,19,43,0.72)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, ...overlayAnim(detailExit.closing) }}
           onMouseDown={e => { if (e.target === e.currentTarget) { setDetail(null); setShowAddAddr(false); setEditing(false); } }}>
-          <div onMouseDown={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 500, maxHeight: '92vh', overflow: 'auto', background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line-strong)', borderRadius: 12, padding: 24, boxShadow: 'var(--lp-shadow-lg)' }}>
+          <div onMouseDown={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 500, maxHeight: '92vh', overflow: 'auto', background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line-strong)', borderRadius: 12, padding: 24, boxShadow: 'var(--lp-shadow-lg)', ...contentAnim(detailExit.closing) }}>
             {/* Cabecera */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
               <div>
                 <h3 style={{ fontFamily: 'var(--lp-font-display)', fontSize: '1.15rem', fontWeight: 800, color: 'var(--lp-ink)', margin: '0 0 2px' }}>
-                  {detail.cliente.name}
+                  {detailData.cliente.name}
                 </h3>
-                {detail.cliente.balance > 0 && (
+                {detailData.cliente.balance > 0 && (
                   <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--accent-danger)', background: 'var(--wash-danger)', padding: '2px 10px', borderRadius: 20 }}>
-                    Debe ${formatPesos(detail.cliente.balance)}
+                    Debe ${formatPesos(detailData.cliente.balance)}
                   </span>
                 )}
               </div>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <button onClick={() => editing ? setEditing(false) : openEdit(detail.cliente)}
+                <button onClick={() => editing ? setEditing(false) : openEdit(detailData.cliente)}
                   style={{ background: editing ? 'transparent' : 'rgba(20,187,166,0.1)', border: '1px solid rgba(20,187,166,0.3)', color: 'var(--lp-primary)', padding: '4px 12px', borderRadius: 6, cursor: 'pointer', fontSize: '0.78rem', fontWeight: 700 }}>
                   {editing ? '✕ Cancelar' : '✎ Editar'}
                 </button>
@@ -388,11 +403,11 @@ export default function ClientesModule() {
             ) : (
             /* Info básica (vista) */
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 18, padding: '12px 14px', background: 'var(--lp-paper-sunken)', borderRadius: 8, fontSize: '0.83rem', color: 'var(--lp-ink-faint)' }}>
-              {detail.cliente.phone && <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Icons.Phone style={{ width: 14, height: 14, flexShrink: 0, color: 'var(--lp-ink-faint)' }} /> {detail.cliente.phone}</div>}
-              {detail.cliente.email && <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Icons.Mail style={{ width: 14, height: 14, flexShrink: 0, color: 'var(--lp-ink-faint)' }} /> {detail.cliente.email}</div>}
-              {detail.cliente.dni_cuit && <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Icons.IdCard style={{ width: 14, height: 14, flexShrink: 0, color: 'var(--lp-ink-faint)' }} /> {detail.cliente.dni_cuit}</div>}
-              {detail.cliente.address && <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Icons.MapPin style={{ width: 14, height: 14, flexShrink: 0, color: 'var(--lp-ink-faint)' }} /> {detail.cliente.address}</div>}
-              {!detail.cliente.phone && !detail.cliente.email && !detail.cliente.dni_cuit && !detail.cliente.address && (
+              {detailData.cliente.phone && <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Icons.Phone style={{ width: 14, height: 14, flexShrink: 0, color: 'var(--lp-ink-faint)' }} /> {detailData.cliente.phone}</div>}
+              {detailData.cliente.email && <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Icons.Mail style={{ width: 14, height: 14, flexShrink: 0, color: 'var(--lp-ink-faint)' }} /> {detailData.cliente.email}</div>}
+              {detailData.cliente.dni_cuit && <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Icons.IdCard style={{ width: 14, height: 14, flexShrink: 0, color: 'var(--lp-ink-faint)' }} /> {detailData.cliente.dni_cuit}</div>}
+              {detailData.cliente.address && <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Icons.MapPin style={{ width: 14, height: 14, flexShrink: 0, color: 'var(--lp-ink-faint)' }} /> {detailData.cliente.address}</div>}
+              {!detailData.cliente.phone && !detailData.cliente.email && !detailData.cliente.dni_cuit && !detailData.cliente.address && (
                 <div style={{ color: 'var(--lp-ink-faint)', fontStyle: 'italic' }}>Sin datos de contacto adicionales.</div>
               )}
             </div>
@@ -411,20 +426,20 @@ export default function ClientesModule() {
               </div>
 
               {/* Dirección legacy (customers.address) */}
-              {detail.cliente.address && detail.addresses.length === 0 && (
+              {detailData.cliente.address && detailData.addresses.length === 0 && (
                 <div style={{ padding: '9px 12px', background: 'var(--lp-paper-sunken)', border: '1px solid var(--lp-line)', borderRadius: 7, marginBottom: 6 }}>
                   <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--lp-ink-faint)', marginBottom: 2 }}>DIRECCIÓN PRINCIPAL</div>
-                  <div style={{ fontSize: '0.85rem', color: 'var(--lp-ink)', fontWeight: 600 }}>{detail.cliente.address}</div>
+                  <div style={{ fontSize: '0.85rem', color: 'var(--lp-ink)', fontWeight: 600 }}>{detailData.cliente.address}</div>
                 </div>
               )}
 
               {/* Direcciones en customer_addresses */}
-              {detail.addresses.length === 0 && !detail.cliente.address && (
+              {detailData.addresses.length === 0 && !detailData.cliente.address && (
                 <div style={{ fontSize: '0.83rem', color: 'var(--lp-ink-faint)', fontStyle: 'italic', padding: '8px 0' }}>
                   Sin domicilios registrados.
                 </div>
               )}
-              {detail.addresses.map(addr => (
+              {detailData.addresses.map(addr => (
                 <div key={addr.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '9px 12px', background: 'var(--lp-paper-sunken)', border: `1px solid ${addr.is_default ? 'rgba(20,187,166,0.35)' : 'var(--lp-line)'}`, borderRadius: 7, marginBottom: 6 }}>
                   <div>
                     <div style={{ fontSize: '0.72rem', fontWeight: 700, color: addr.is_default ? 'var(--lp-primary)' : 'var(--lp-ink-faint)', marginBottom: 2, textTransform: 'uppercase', letterSpacing: '0.3px' }}>
@@ -469,10 +484,10 @@ export default function ClientesModule() {
             </div>}
 
             {/* WhatsApp rápido si tiene teléfono */}
-            {detail.cliente.phone && (
-              <button onClick={() => window.open(`https://wa.me/54${detail.cliente.phone.replace(/\D/g, '')}`, '_blank')}
+            {detailData.cliente.phone && (
+              <button onClick={() => window.open(`https://wa.me/54${detailData.cliente.phone.replace(/\D/g, '')}`, '_blank')}
                 style={{ width: '100%', background: 'rgba(37,211,102,0.09)', border: '1px solid rgba(37,211,102,0.25)', color: '#25D366', padding: '9px', borderRadius: 8, cursor: 'pointer', fontSize: '0.83rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}>
-                <Icons.MessageCircle style={{ width: 15, height: 15, flexShrink: 0 }} /> Abrir WhatsApp con {detail.cliente.name.split(' ')[0]}
+                <Icons.MessageCircle style={{ width: 15, height: 15, flexShrink: 0 }} /> Abrir WhatsApp con {detailData.cliente.name.split(' ')[0]}
               </button>
             )}
           </div>
