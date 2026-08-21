@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import useModalExit, { overlayAnim, contentAnim } from '../../hooks/useModalExit';
 
 const Svg = {
   X: () => <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 18L18 6M6 6l12 12" /></svg>,
@@ -16,7 +17,8 @@ export default function LandingLoginModal({
     setTermsAccepted(false);
   }, [showLoginModal]);
 
-  if (!showLoginModal) return null;
+  const { rendered, closing } = useModalExit(!!showLoginModal);
+  if (!rendered) return null;
 
   const isRegister = showLoginModal === 'register';
   const canSubmit = !loginLoading && (!isRegister || termsAccepted);
@@ -30,14 +32,14 @@ export default function LandingLoginModal({
 
   return (
     <div
-      style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(11,19,43,0.85)', backdropFilter: 'blur(20px)', padding: 20, animation: 'fadeIn 0.2s ease' }}
+      style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(11,19,43,0.85)', backdropFilter: 'blur(20px)', padding: 20, ...overlayAnim(closing) }}
       onMouseDown={(e) => { if (e.target === e.currentTarget) setShowLoginModal(false); }}
       onKeyDown={(e) => { if (e.key === 'Escape') setShowLoginModal(false); }}
     >
       <div
         onMouseDown={e => e.stopPropagation()}
         onClick={e => e.stopPropagation()}
-        style={{ width: '100%', maxWidth: 460, background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line-strong)', borderRadius: 24, padding: '40px 40px 32px', position: 'relative', boxShadow: 'var(--lp-shadow-lg)' }}
+        style={{ width: '100%', maxWidth: 460, background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line-strong)', borderRadius: 24, padding: '40px 40px 32px', position: 'relative', boxShadow: 'var(--lp-shadow-lg)', ...contentAnim(closing) }}
       >
         <button
           onClick={() => setShowLoginModal(false)}

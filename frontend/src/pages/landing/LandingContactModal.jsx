@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import useModalExit, { overlayAnim, contentAnim } from '../../hooks/useModalExit';
 
 const Svg = { X: () => <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 18L18 6M6 6l12 12" /></svg> };
 
@@ -22,7 +23,8 @@ export default function LandingContactModal({ showContactModal, setShowContactMo
     setContactLoading(false);
   };
 
-  if (!showContactModal) return null;
+  const { rendered, closing } = useModalExit(showContactModal);
+  if (!rendered) return null;
 
   const inputStyle = {
     width: '100%', padding: '14px 16px', marginTop: 6,
@@ -32,9 +34,9 @@ export default function LandingContactModal({ showContactModal, setShowContactMo
   };
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(11,19,43,0.85)', backdropFilter: 'blur(20px)', padding: 20 }}
+    <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(11,19,43,0.85)', backdropFilter: 'blur(20px)', padding: 20, ...overlayAnim(closing) }}
       onMouseDown={e => { if (e.target === e.currentTarget) setShowContactModal(false); }}>
-      <div onMouseDown={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 460, background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line-strong)', borderRadius: 24, padding: '40px 38px 32px', position: 'relative', boxShadow: 'var(--lp-shadow-lg)' }}>
+      <div onMouseDown={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 460, background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line-strong)', borderRadius: 24, padding: '40px 38px 32px', position: 'relative', boxShadow: 'var(--lp-shadow-lg)', ...contentAnim(closing) }}>
         <button onClick={() => setShowContactModal(false)} style={{ position: 'absolute', top: 20, right: 20, background: 'var(--lp-paper-sunken)', border: 'none', color: 'var(--lp-ink-faint)', width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'color 0.18s, transform 0.18s' }}
           onMouseEnter={e => { e.currentTarget.style.color = 'var(--lp-ink)'; e.currentTarget.style.background = 'var(--lp-primary-wash)'; }}
           onMouseLeave={e => { e.currentTarget.style.color = 'var(--lp-ink-faint)'; e.currentTarget.style.background = 'var(--lp-paper-sunken)'; }}>
