@@ -29,7 +29,7 @@ export default function FiadoModal({ isFiadoOpen, setIsFiadoOpen, adjustedTotal,
         <label>{manualMode ? 'Monto que debe' : 'Monto a fiar (vacío = total)'}</label>
         <input type="number" min="0" step="1" placeholder={manualMode ? 'Ej: 5000' : `$${maxFiado}`}
           value={fiadoAmount} onChange={e => setFiadoAmount(e.target.value)}
-          autoFocus={manualMode}
+          autoFocus
           onWheel={e => e.currentTarget.blur()}
           onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); fiadoRef?.current?.focus(); } }}
           style={{ fontSize: '1.5rem', fontFamily: 'var(--font-mono)', textAlign: 'center' }} />
@@ -38,7 +38,7 @@ export default function FiadoModal({ isFiadoOpen, setIsFiadoOpen, adjustedTotal,
       <div className="input-group">
         <label>Nombre del cliente</label>
         <input ref={fiadoRef} type="text" list="fiado-names" placeholder="Ej: Doña María"
-          value={fiadoName} onChange={e => setFiadoName(e.target.value)} autoFocus={!manualMode}
+          value={fiadoName} onChange={e => setFiadoName(e.target.value)}
           onKeyDown={e => { if (e.key === 'Enter' && fiadoName) handleConfirm(); }}
           style={{ fontSize: '1.5rem', fontFamily: 'var(--font-main)', textAlign: 'left' }} />
         <datalist id="fiado-names">

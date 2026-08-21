@@ -1,18 +1,22 @@
 import { useState, useMemo } from 'react';
 import useIsMobile from '../../hooks/useIsMobile';
+import useModalExit, { overlayAnim, contentAnim } from '../../hooks/useModalExit';
 
 /**
  * CatalogModal — pantalla de catálogo por categoría
  *
  * Props:
+ *   open       — bool: el padre lo monta SIEMPRE y controla apertura por acá, así
+ *                el hook puede reproducir la animación de salida antes de desmontar.
  *   products   — array de productos (productsDB o similar), cada uno con category_name
  *   onSelect   — fn(product) → lo que sea que el padre haga (agregar al carrito, al presupuesto, etc.)
  *   onClose    — fn() para cerrar
  *   getPrice   — fn(product) → number  (opcional; si no se pasa usa p.price)
  *   title      — string (opcional)
  */
-export default function CatalogModal({ products = [], onSelect, onClose, getPrice, title = 'Catálogo de productos' }) {
+export default function CatalogModal({ open = true, products = [], onSelect, onClose, getPrice, title = 'Catálogo de productos' }) {
   const isMobile = useIsMobile();
+  const { rendered, closing } = useModalExit(open);
   const [activeCategory, setActiveCategory] = useState('__all__');
   const [search, setSearch] = useState('');
 
@@ -43,6 +47,8 @@ export default function CatalogModal({ products = [], onSelect, onClose, getPric
     onClose();
   };
 
+  if (!rendered) return null;
+
   return (
     <div
       role="dialog"
@@ -55,7 +61,7 @@ export default function CatalogModal({ products = [], onSelect, onClose, getPric
         zIndex: 1000,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         padding: isMobile ? '0' : '24px',
-        animation: 'modalOverlayIn 0.16s ease-out',
+        ...overlayAnim(closing),
       }}
     >
       <div
@@ -71,7 +77,7 @@ export default function CatalogModal({ products = [], onSelect, onClose, getPric
           flexDirection: 'column',
           overflow: 'hidden',
           boxShadow: 'var(--shadow-lg)',
-          animation: 'modalContentIn 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+          ...contentAnim(closing),
           ...(isMobile ? { position: 'fixed', bottom: 0, left: 0, right: 0 } : {}),
         }}
       >

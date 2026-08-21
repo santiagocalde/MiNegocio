@@ -240,7 +240,7 @@ export default function CajasModule() {
             </p>
             {detailData.resumen_caja && (() => {
               const r = detailData.resumen_caja;
-              const st = statusOf(detail);
+              const st = statusOf(detailData);
               return (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   {[

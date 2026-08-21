@@ -9,7 +9,8 @@ import { findProductByAnyCode } from '../../utils/productLookup';
 
 export default function SearchBar({
   search, setSearch, searchRef, searchError, flash,
-  productsDB, handleQuickAdd, setShowPriceCheck, addToast, handleEmptyEnter, listType
+  productsDB, handleQuickAdd, setShowPriceCheck, addToast, handleEmptyEnter, listType,
+  quickButtons, quickNavIndex, setQuickNavIndex
 }) {
   const [showAddAmountModal, setShowAddAmountModal] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
@@ -128,6 +129,9 @@ export default function SearchBar({
           aria-label="Buscar producto por código o nombre"
           value={search}
           onChange={e => {
+            // Apenas escribís algo, se cancela la navegación de accesos rápidos:
+            // el Enter vuelve a funcionar como siempre (buscar/agregar producto).
+            if (quickNavIndex != null) setQuickNavIndex?.(null);
             setSearch(e.target.value);
             if (e.target.value.trim().length > 0 && e.target.value.trim().length < 3) {
               const term = e.target.value.trim();
@@ -136,8 +140,38 @@ export default function SearchBar({
             }
           }}
           onKeyDown={e => {
+            // ── Navegación de accesos rápidos con las flechas ──────────────
+            // Solo con el buscador VACÍO (si estás escribiendo, las flechas
+            // siguen navegando el autocompletado). El foco NO se mueve del
+            // buscador: solo resaltamos un acceso rápido para agregarlo con Enter.
+            const emptySearch = !e.target.value.trim();
+            const qbCount = quickButtons?.length || 0;
+            if (emptySearch && qbCount > 0 && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+              e.preventDefault();
+              const cols = 3;
+              setQuickNavIndex?.(prev => {
+                if (prev == null) return (e.key === 'ArrowUp' || e.key === 'ArrowLeft') ? qbCount - 1 : 0;
+                let next = prev;
+                if (e.key === 'ArrowRight') next = prev + 1;
+                else if (e.key === 'ArrowLeft') next = prev - 1;
+                else if (e.key === 'ArrowDown') next = prev + cols;
+                else if (e.key === 'ArrowUp') next = prev - cols;
+                return (next < 0 || next >= qbCount) ? prev : next; // no salir de la grilla
+              });
+              return;
+            }
             if (e.key === 'ArrowDown') { e.preventDefault(); document.getElementById('autocomplete-0')?.focus(); }
             if (e.key === 'Enter') {
+              // Si navegaste un acceso rápido con las flechas, Enter lo AGREGA
+              // (y no procesa la venta). Después vuelve al modo normal.
+              if (quickNavIndex != null && quickButtons?.[quickNavIndex]) {
+                e.preventDefault();
+                const btn = quickButtons[quickNavIndex];
+                handleQuickAdd('BTN_' + btn.id, btn.name, btn.price, { is_virtual: true });
+                setQuickNavIndex?.(null);
+                searchRef.current?.focus();
+                return;
+              }
               const term = e.target.value.trim();
               if (!term) {
                 if (handleEmptyEnter) handleEmptyEnter();
@@ -225,18 +259,17 @@ export default function SearchBar({
       {showScanner && (
         <CameraBarcodeScanner onScan={handleBarcodeScan} onClose={() => setShowScanner(false)} />
       )}
-      {showCatalog && (
-        <CatalogModal
-          products={productsDB}
-          onSelect={p => {
-            setShowCatalog(false);
-            if (p.has_variants) { setVariantProduct(p); }
-            else { handleQuickAdd(p.code, p.name, getPrice(p)); searchRef.current?.focus(); }
-          }}
-          onClose={() => setShowCatalog(false)}
-          getPrice={getPrice}
-        />
-      )}
+      <CatalogModal
+        open={showCatalog}
+        products={productsDB}
+        onSelect={p => {
+          setShowCatalog(false);
+          if (p.has_variants) { setVariantProduct(p); }
+          else { handleQuickAdd(p.code, p.name, getPrice(p)); searchRef.current?.focus(); }
+        }}
+        onClose={() => setShowCatalog(false)}
+        getPrice={getPrice}
+      />
       {variantProduct && (
         <VariantPicker
           product={variantProduct}

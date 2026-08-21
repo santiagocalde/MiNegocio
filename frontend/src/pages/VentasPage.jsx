@@ -21,6 +21,19 @@ import OperatorSwitchModal from '../components/pos/OperatorSwitchModal';
 import TicketPrint from '../components/TicketPrint';
 import useModalExit, { overlayAnim, contentAnim } from '../hooks/useModalExit';
 
+// Accesos rápidos por defecto. Se definen a nivel módulo (referencia estable) y
+// el estado vive en VentasPage para poder compartirlo entre PaymentPanel (donde
+// se ven/editan) y SearchBar (donde se navegan con las flechas sin sacar el foco
+// del buscador).
+const DEFAULT_QUICK_BUTTONS = [
+  { id: 1, name: 'Carga SUBE', price: 1000 },
+  { id: 2, name: 'Saldo Virtual', price: 500 },
+  { id: 3, name: 'Agua Hervida', price: 100 },
+  { id: 4, name: 'Fotocopias', price: 50 },
+  { id: 5, name: 'Impresiones', price: 80 },
+  { id: 6, name: 'Varios', price: 100 },
+];
+
 export default function VentasPage() {
   const isMobile = useIsMobile();
   const { auth, backend, addToast, playBeep, currentSucursalId, setCurrentSucursalId, businessType, currentPlan } = usePanelContext();
@@ -50,6 +63,16 @@ export default function VentasPage() {
   const searchRef = useRef(null);
   const paymentRef = useRef(null);
   const fiadoRef = useRef(null);
+
+  // Accesos rápidos compartidos + índice resaltado por navegación con flechas.
+  // quickNavIndex === null significa "no estás navegando los accesos": el Enter
+  // del buscador funciona como siempre. Apenas tocás una flecha (con el buscador
+  // vacío) se resalta uno y el Enter agrega ESE acceso en vez de procesar.
+  const [quickButtons, setQuickButtons] = useState(() => {
+    try { const s = localStorage.getItem('minegocio_quick_buttons'); return s ? JSON.parse(s) : DEFAULT_QUICK_BUTTONS; } catch { return DEFAULT_QUICK_BUTTONS; }
+  });
+  const saveQuickButtons = (b) => { setQuickButtons(b); try { localStorage.setItem('minegocio_quick_buttons', JSON.stringify(b)); } catch { /* noop */ } };
+  const [quickNavIndex, setQuickNavIndex] = useState(null);
 
   // Cambio de operador en pleno turno (relevo liviano, sin cerrar caja)
   const [showOperatorSwitch, setShowOperatorSwitch] = useState(false);
@@ -179,7 +202,7 @@ export default function VentasPage() {
   useEffect(() => {
     const handleGlobalKeyDown = (e) => {
       if (e.key === 'Delete') { e.preventDefault(); cart.setCart(prev => prev.slice(0, -1)); }
-      if (e.key === 'Escape') { cart.setSearch(''); }
+      if (e.key === 'Escape') { cart.setSearch(''); setQuickNavIndex(null); }
     };
     window.addEventListener('keydown', handleGlobalKeyDown);
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
@@ -256,6 +279,7 @@ export default function VentasPage() {
             productsDB={backend.productsDB} handleQuickAdd={cart.handleQuickAdd}
             setShowPriceCheck={backend.setShowPriceCheck} addToast={addToast}
             listType={cart.listType}
+            quickButtons={quickButtons} quickNavIndex={quickNavIndex} setQuickNavIndex={setQuickNavIndex}
             handleEmptyEnter={() => { if (cart.cart.length > 0) sales.setIsCharging(true); }} />
           </div>
           <div data-tour="cart-panel" style={{ flex: '1 1 auto', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
@@ -308,6 +332,7 @@ export default function VentasPage() {
           saleConfirm={sales.saleConfirm}
           handleQuickAdd={cart.handleQuickAdd}
           handleRepeatSale={cart.handleRepeatSale}
+          quickButtons={quickButtons} saveQuickButtons={saveQuickButtons} quickNavIndex={quickNavIndex}
           businessConfig={backend.businessConfig} setBusinessConfig={backend.setBusinessConfig} addToast={addToast}
           currentOperator={auth.currentOperator} promotionSavings={promos.promotionSavings} />
         </div>

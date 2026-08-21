@@ -217,7 +217,7 @@ export default function CatalogoModule() {
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 350px', gap: isMobile ? '16px' : '32px', flex: 1 }}>
         <div className="ledger-sheet" style={{ padding: isMobile ? '16px' : '32px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
-          <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? '14px' : 16, background: isActive ? 'var(--wash-success)' : 'var(--surface-veil)', padding: isMobile ? '16px' : '20px 24px', borderRadius: 'var(--radius-sm)', border: `1px solid ${isActive ? 'var(--accent-success)' : 'var(--border-color)'}` }}>
+          <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? '14px' : 16, maxWidth: '640px', background: isActive ? 'var(--wash-success)' : 'var(--surface-veil)', padding: isMobile ? '14px 16px' : '16px 20px', borderRadius: 'var(--radius-sm)', border: `1px solid ${isActive ? 'var(--accent-success)' : 'var(--border-color)'}` }}>
              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', minWidth: 0 }}>
                <div style={{ color: isActive ? 'var(--accent-success)' : 'var(--text-secondary)', flexShrink: 0 }}><Icons.Globe /></div>
                <div style={{ minWidth: 0 }}>

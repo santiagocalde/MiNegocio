@@ -218,12 +218,17 @@ export default function ProveedoresModule() {
             <div style={{ marginBottom: '16px' }}>
               <label style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '6px', fontWeight: 600 }}>Monto ($)</label>
               <input type="number" value={abonarMonto} onChange={e => setAbonarMonto(e.target.value)} autoFocus
+                onWheel={e => e.currentTarget.blur()}
+                onKeyDown={e => { if (e.key === 'Escape') setShowAbonar(null); if (e.key === 'Enter') { e.preventDefault(); document.getElementById('abonar-motivo')?.focus(); } }}
                 style={{ width: '100%', padding: '10px 12px', background: 'var(--bg-main)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: 'var(--radius-sm)', outline: 'none', fontSize: '1.1rem', boxSizing: 'border-box' }} />
+              <p style={{ margin: '6px 2px 0', fontSize: '0.72rem', color: 'var(--text-faint)' }}>Enter pasa al motivo</p>
             </div>
             <div style={{ marginBottom: '24px' }}>
               <label style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '6px', fontWeight: 600 }}>Motivo</label>
-              <input type="text" value={abonarMotivo} onChange={e => setAbonarMotivo(e.target.value)} placeholder="Ej: Pago factura 001"
+              <input id="abonar-motivo" type="text" value={abonarMotivo} onChange={e => setAbonarMotivo(e.target.value)} placeholder="Ej: Pago factura 001"
+                onKeyDown={e => { if (e.key === 'Escape') setShowAbonar(null); if (e.key === 'Enter') { e.preventDefault(); document.getElementById('abonar-pagar')?.focus(); } }}
                 style={{ width: '100%', padding: '10px 12px', background: 'var(--bg-main)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: 'var(--radius-sm)', outline: 'none', fontSize: '0.95rem', boxSizing: 'border-box' }} />
+              <p style={{ margin: '6px 2px 0', fontSize: '0.72rem', color: 'var(--text-faint)' }}>Enter va al botón Pagar · Enter de nuevo confirma</p>
             </div>
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
               <button onClick={() => setShowAbonar(null)} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', padding: '10px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Cancelar</button>
@@ -248,7 +253,7 @@ export default function ProveedoresModule() {
                     addToast(data.detail || 'No se pudo registrar el pago.', 'error');
                   }
                 } catch { addToast('Sin internet. Revisá tu conexión.', 'error'); }
-              }} style={{ background: 'var(--accent-primary)', border: 'none', color: 'var(--sheet)', padding: '10px 24px', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontWeight: 800 }}
+              }} id="abonar-pagar" style={{ background: 'var(--accent-primary)', border: 'none', color: 'var(--sheet)', padding: '10px 24px', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontWeight: 800 }}
                 disabled={!abonarMonto || parseFloat(abonarMonto) <= 0}>
                 Pagar
               </button>

@@ -9,7 +9,7 @@ export default function TopProductsList({ items, compact }) {
   const capped = items.length > 6;
 
   return (
-    <div style={compact ? undefined : { marginTop: '18px' }}>
+    <div style={compact ? { minWidth: 0 } : { marginTop: '18px' }}>
       <div style={{ border: '1px solid var(--border-color)', borderRadius: '10px', overflow: 'hidden', background: 'var(--bg-main)', maxHeight: capped ? '220px' : 'none', display: 'flex', flexDirection: 'column' }}>
         <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px', padding: '10px 14px', background: 'var(--bg-card)', borderBottom: '1px solid var(--border-color)', flexShrink: 0 }}>
           Más vendidos

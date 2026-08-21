@@ -14,7 +14,8 @@ export default function PaymentPanel({
   saleConfirm,
   businessConfig, setBusinessConfig, addToast,
   promotionSavings,
-  handleQuickAdd, handleRepeatSale
+  handleQuickAdd, handleRepeatSale,
+  quickButtons, saveQuickButtons, quickNavIndex
 }) {
   const ivaActual = String(businessConfig?.iva_rate ?? '0');
   const isMobile = useIsMobile();
@@ -33,23 +34,10 @@ export default function PaymentPanel({
       addToast('No se pudo guardar el IVA. Reintentá o revisá tu conexión.', 'error');
     }
   };
-  const defaultQuickButtons = [
-    { id: 1, name: 'Carga SUBE', price: 1000 },
-    { id: 2, name: 'Saldo Virtual', price: 500 },
-    { id: 3, name: 'Agua Hervida', price: 100 },
-    { id: 4, name: 'Fotocopias', price: 50 },
-    { id: 5, name: 'Impresiones', price: 80 },
-    { id: 6, name: 'Varios', price: 100 }
-  ];
-  const [quickButtons, setQuickButtons] = React.useState(() => {
-    try { const saved = localStorage.getItem('minegocio_quick_buttons'); return saved ? JSON.parse(saved) : defaultQuickButtons; } catch { return defaultQuickButtons; }
-  });
+  // quickButtons / saveQuickButtons ahora vienen del padre (VentasPage), así el
+  // buscador puede navegarlos con las flechas sin duplicar el estado.
   const [isEditingQuick, setIsEditingQuick] = React.useState(false);
-
-  const saveQuickButtons = (newBtns) => {
-    setQuickButtons(newBtns);
-    localStorage.setItem('minegocio_quick_buttons', JSON.stringify(newBtns));
-  };
+  const btns = quickButtons || [];
   return (
     <div style={{ position: 'relative', flex: 1, display: 'flex', flexDirection: 'column', gap: '12px', minHeight: 0, overflowY: 'auto' }}>
       <div className="ledger-sheet" style={{ padding: isMobile ? '10px 12px' : '14px 18px' }}>
@@ -127,18 +115,20 @@ export default function PaymentPanel({
           </button>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
-          {quickButtons.map((btn, idx) => (
-            <div key={btn.id} style={{ background: 'var(--surface-veil)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '8px', minHeight: '44px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '4px', position: 'relative' }}>
+          {btns.map((btn, idx) => {
+            const navSel = quickNavIndex === idx;
+            return (
+            <div key={btn.id} style={{ background: navSel ? 'var(--wash-primary, rgba(20,187,166,0.12))' : 'var(--surface-veil)', border: `1px solid ${navSel ? 'var(--accent-primary)' : 'var(--border-color)'}`, boxShadow: navSel ? '0 0 0 2px rgba(20,187,166,0.25)' : 'none', borderRadius: '8px', padding: '8px', minHeight: '44px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '4px', position: 'relative', transition: 'border-color 0.12s, box-shadow 0.12s, background 0.12s' }}>
               {isEditingQuick ? (
                 <>
                   <input type="text" value={btn.name} onChange={e => {
-                    const newBtns = [...quickButtons];
-                    newBtns[idx].name = e.target.value;
+                    const newBtns = [...btns];
+                    newBtns[idx] = { ...newBtns[idx], name: e.target.value };
                     saveQuickButtons(newBtns);
                   }} style={{ width: '100%', background: 'var(--bg-raised)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', fontSize: '0.75rem', padding: '4px', borderRadius: '4px', textAlign: 'center', boxSizing: 'border-box' }} />
                   <input type="number" value={btn.price} onChange={e => {
-                    const newBtns = [...quickButtons];
-                    newBtns[idx].price = Number(e.target.value);
+                    const newBtns = [...btns];
+                    newBtns[idx] = { ...newBtns[idx], price: Number(e.target.value) };
                     saveQuickButtons(newBtns);
                   }} style={{ width: '100%', background: 'var(--bg-raised)', border: '1px solid var(--border-color)', color: 'var(--accent-success)', fontSize: '0.75rem', padding: '4px', borderRadius: '4px', textAlign: 'center', fontFamily: 'var(--font-mono)', boxSizing: 'border-box' }} />
                 </>
@@ -149,7 +139,8 @@ export default function PaymentPanel({
                 </div>
               )}
             </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
