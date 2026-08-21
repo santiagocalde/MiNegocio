@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePanelContext } from '../context/PanelContext';
 import { apiGet, apiPost } from '../services/apiClient';
 import { SkeletonTable } from '../components/ui/Skeleton';
 import EmptyState from '../components/ui/EmptyState';
+import useModalExit, { overlayAnim, contentAnim } from '../hooks/useModalExit';
 import FeatureGate from '../components/ui/FeatureGate';
 import useIsMobile from '../hooks/useIsMobile';
 
@@ -119,6 +120,16 @@ export default function ProveedoresModule() {
     }
   };
 
+  const modalExit = useModalExit(showModal);
+  const abonarExit = useModalExit(!!showAbonar);
+  const abonarDataRef = useRef(null);
+  if (showAbonar) abonarDataRef.current = showAbonar;
+  const abonarData = showAbonar || abonarDataRef.current;
+  const aumentoExit = useModalExit(!!showAumento);
+  const aumentoDataRef = useRef(null);
+  if (showAumento) aumentoDataRef.current = showAumento;
+  const aumentoData = showAumento || aumentoDataRef.current;
+
   return (
     <FeatureGate isLocked={isLocked} requiredPlan="Simple">
     <div style={{ padding: '12px 20px', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
@@ -170,9 +181,9 @@ export default function ProveedoresModule() {
         )}
       </div>
 
-      {showModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(30,58,95,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div className="ledger-sheet" style={{ padding: isMobile ? '24px' : '32px', width: '400px', maxWidth: '92vw', boxSizing: 'border-box', boxShadow: 'var(--shadow-lg)' }}>
+      {modalExit.rendered && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(30,58,95,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, ...overlayAnim(modalExit.closing) }} onClick={() => setShowModal(false)}>
+          <div onClick={e => e.stopPropagation()} className="ledger-sheet" style={{ padding: isMobile ? '24px' : '32px', width: '400px', maxWidth: '92vw', boxSizing: 'border-box', boxShadow: 'var(--shadow-lg)', ...contentAnim(modalExit.closing) }}>
             <h2 style={{ fontSize: '1.5rem', fontWeight: 800, margin: '0 0 24px 0', color: 'var(--text-primary)' }}>Nuevo Proveedor</h2>
             <div style={{ marginBottom: '16px' }}>
               <label style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '6px', fontWeight: 600 }}>Nombre</label>
@@ -199,11 +210,11 @@ export default function ProveedoresModule() {
         </div>
       )}
 
-      {showAbonar && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(30,58,95,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div className="ledger-sheet" style={{ padding: isMobile ? '24px' : '32px', width: '400px', maxWidth: '92vw', boxSizing: 'border-box', boxShadow: 'var(--shadow-lg)' }}>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 800, margin: '0 0 8px 0', color: 'var(--text-primary)' }}>Abonar a {showAbonar.name}</h2>
-            <p style={{ color: 'var(--text-secondary)', marginBottom: '24px', fontSize: '0.9rem' }}>Deuda actual: ${(showAbonar.debt ?? 0).toLocaleString('es-AR')}</p>
+      {abonarExit.rendered && abonarData && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(30,58,95,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, ...overlayAnim(abonarExit.closing) }} onClick={() => setShowAbonar(null)}>
+          <div onClick={e => e.stopPropagation()} className="ledger-sheet" style={{ padding: isMobile ? '24px' : '32px', width: '400px', maxWidth: '92vw', boxSizing: 'border-box', boxShadow: 'var(--shadow-lg)', ...contentAnim(abonarExit.closing) }}>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 800, margin: '0 0 8px 0', color: 'var(--text-primary)' }}>Abonar a {abonarData.name}</h2>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '24px', fontSize: '0.9rem' }}>Deuda actual: ${(abonarData.debt ?? 0).toLocaleString('es-AR')}</p>
             <div style={{ marginBottom: '16px' }}>
               <label style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '6px', fontWeight: 600 }}>Monto ($)</label>
               <input type="number" value={abonarMonto} onChange={e => setAbonarMonto(e.target.value)} autoFocus
@@ -218,14 +229,14 @@ export default function ProveedoresModule() {
               <button onClick={() => setShowAbonar(null)} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', padding: '10px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Cancelar</button>
               <button onClick={async () => {
                 if (!abonarMonto || parseFloat(abonarMonto) <= 0) return;
-                if (parseFloat(abonarMonto) > (showAbonar.debt || 0)) {
+                if (parseFloat(abonarMonto) > (abonarData.debt || 0)) {
                   addToast('El monto no puede superar la deuda.', 'error');
                   return;
                 }
                 try {
-                  const res = await apiPost(`/suppliers/${showAbonar.id}/pay`, {
+                  const res = await apiPost(`/suppliers/${abonarData.id}/pay`, {
                     amount: parseFloat(abonarMonto),
-                    motivo: abonarMotivo || `Pago a ${showAbonar.name}`,
+                    motivo: abonarMotivo || `Pago a ${abonarData.name}`,
                     operator: 'Dueño'
                   });
                   if (res.ok) {
@@ -246,12 +257,12 @@ export default function ProveedoresModule() {
         </div>
       )}
 
-      {showAumento && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(30,58,95,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '16px' }} onClick={() => setShowAumento(null)}>
-          <div onClick={e => e.stopPropagation()} className="ledger-sheet" style={{ padding: isMobile ? '24px' : '32px', width: '420px', maxWidth: '92vw', boxSizing: 'border-box', boxShadow: 'var(--shadow-lg)' }}>
+      {aumentoExit.rendered && aumentoData && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(30,58,95,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '16px', ...overlayAnim(aumentoExit.closing) }} onClick={() => setShowAumento(null)}>
+          <div onClick={e => e.stopPropagation()} className="ledger-sheet" style={{ padding: isMobile ? '24px' : '32px', width: '420px', maxWidth: '92vw', boxSizing: 'border-box', boxShadow: 'var(--shadow-lg)', ...contentAnim(aumentoExit.closing) }}>
             <h2 style={{ fontSize: '1.5rem', fontWeight: 800, margin: '0 0 6px 0', color: 'var(--text-primary)' }}>Actualizar precios</h2>
             <p style={{ color: 'var(--text-secondary)', marginBottom: '20px', fontSize: '0.9rem' }}>
-              Proveedor: <strong>{showAumento.name}</strong>
+              Proveedor: <strong>{aumentoData.name}</strong>
               {aumentoCount !== null && (
                 <><br/>Afecta a <strong>{aumentoCount}</strong> producto{aumentoCount === 1 ? '' : 's'} de este proveedor.</>
               )}
