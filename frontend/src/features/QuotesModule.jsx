@@ -1,9 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { usePanelContext } from '../context/PanelContext';
 import { apiGet, apiPost, apiPut, apiDelete } from '../services/apiClient';
 import ClientePicker from '../components/corralon/ClientePicker';
 import CatalogModal from '../components/pos/CatalogModal';
 import VariantPicker from '../components/pos/VariantPicker';
+import useModalExit, { overlayAnim, contentAnim } from '../hooks/useModalExit';
 
 const STATUS_MAP = {
   draft:     { label: 'Borrador',  color: 'var(--lp-ink-faint)' },
@@ -534,6 +535,12 @@ const handleStatus = async (id, status) => {
     setToRemitoLoading(false);
   };
 
+  const formExit = useModalExit(showForm);
+  const detailExit = useModalExit(!!detail);
+  const detailDataRef = useRef(null);
+  if (detail) detailDataRef.current = detail;
+  const detailData = detail || detailDataRef.current;
+
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', gap: '10px', overflow: 'hidden', padding: '12px 20px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
@@ -609,10 +616,10 @@ const handleStatus = async (id, status) => {
       </div>
 
       {/* Form modal */}
-      {showForm && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(11,19,43,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+      {formExit.rendered && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(11,19,43,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, ...overlayAnim(formExit.closing) }}
           onMouseDown={e => { if (e.target === e.currentTarget) { setShowForm(false); resetForm(); } }}>
-          <div onMouseDown={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 560, maxHeight: '90vh', overflow: 'auto', background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line-strong)', borderRadius: 12, padding: 28, boxShadow: 'var(--lp-shadow-lg)' }}>
+          <div onMouseDown={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 560, maxHeight: '90vh', overflow: 'auto', background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line-strong)', borderRadius: 12, padding: 28, boxShadow: 'var(--lp-shadow-lg)', ...contentAnim(formExit.closing) }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <h3 style={{ fontFamily: 'var(--lp-font-display)', fontSize: '1.2rem', fontWeight: 700, color: 'var(--lp-ink)', margin: 0 }}>
                 {editingId ? `Editar presupuesto #${editingId}` : 'Nuevo presupuesto'}
@@ -783,25 +790,25 @@ const handleStatus = async (id, status) => {
       )}
 
       {/* Detail modal */}
-      {detail && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(11,19,43,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+      {detailExit.rendered && detailData && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(11,19,43,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, ...overlayAnim(detailExit.closing) }}
           onMouseDown={e => { if (e.target === e.currentTarget) { setDetail(null); setShowToRemito(false); } }}>
-          <div onMouseDown={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 560, maxHeight: '90vh', overflow: 'auto', background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line-strong)', borderRadius: 12, padding: 28, boxShadow: 'var(--lp-shadow-lg)' }}>
+          <div onMouseDown={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 560, maxHeight: '90vh', overflow: 'auto', background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line-strong)', borderRadius: 12, padding: 28, boxShadow: 'var(--lp-shadow-lg)', ...contentAnim(detailExit.closing) }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
-              <h3 style={{ fontFamily: 'var(--lp-font-display)', fontSize: '1.1rem', fontWeight: 700, color: 'var(--lp-ink)', margin: 0 }}>Presupuesto #{detail.quote.id}</h3>
+              <h3 style={{ fontFamily: 'var(--lp-font-display)', fontSize: '1.1rem', fontWeight: 700, color: 'var(--lp-ink)', margin: 0 }}>Presupuesto #{detailData.quote.id}</h3>
               <button onClick={() => { setDetail(null); setShowToRemito(false); }} style={{ background: 'none', border: 'none', color: 'var(--lp-ink-faint)', cursor: 'pointer', fontSize: '1.3rem' }}>✕</button>
             </div>
 
             <div style={{ fontSize: '0.85rem', color: 'var(--lp-ink-faint)', marginBottom: 16 }}>
-              <div>Estado: <span style={{ color: STATUS_MAP[detail.quote.status]?.color, fontWeight: 700 }}>{STATUS_MAP[detail.quote.status]?.label}</span></div>
-              <div>Creado: {fmtDate(detail.quote.created_at)} · Vence: {fmtDate(detail.quote.expires_at)}</div>
-              {detail.quote.customer_name && <div>Cliente: <strong style={{ color: 'var(--lp-ink)' }}>{detail.quote.customer_name}</strong></div>}
-              {detail.quote.note && <div>Obra: {detail.quote.note}</div>}
+              <div>Estado: <span style={{ color: STATUS_MAP[detailData.quote.status]?.color, fontWeight: 700 }}>{STATUS_MAP[detailData.quote.status]?.label}</span></div>
+              <div>Creado: {fmtDate(detailData.quote.created_at)} · Vence: {fmtDate(detailData.quote.expires_at)}</div>
+              {detailData.quote.customer_name && <div>Cliente: <strong style={{ color: 'var(--lp-ink)' }}>{detailData.quote.customer_name}</strong></div>}
+              {detailData.quote.note && <div>Obra: {detailData.quote.note}</div>}
             </div>
 
             {/* Items */}
             <div style={{ borderTop: '1px solid var(--lp-line)', paddingTop: 12, marginBottom: 16 }}>
-              {detail.items.map((it, i) => (
+              {detailData.items.map((it, i) => (
                 <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: '0.85rem', color: 'var(--lp-ink)' }}>
                   <span>{it.product_name} × {it.quantity}</span>
                   <span style={{ fontFamily: 'var(--lp-font-mono)' }}>${formatPesos(it.unit_price * it.quantity)}</span>
@@ -809,22 +816,22 @@ const handleStatus = async (id, status) => {
               ))}
               <div style={{ borderTop: '1px solid var(--lp-line-strong)', marginTop: 8, paddingTop: 8, display: 'flex', justifyContent: 'space-between', fontWeight: 700, color: 'var(--lp-ink)' }}>
                 <span>Total</span>
-                <span style={{ fontFamily: 'var(--lp-font-mono)' }}>${formatPesos(detail.items.reduce((s, i) => s + i.unit_price * i.quantity, 0))}</span>
+                <span style={{ fontFamily: 'var(--lp-font-mono)' }}>${formatPesos(detailData.items.reduce((s, i) => s + i.unit_price * i.quantity, 0))}</span>
               </div>
             </div>
 
             {/* Acciones */}
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              {detail.quote.status === 'draft' && (
+              {detailData.quote.status === 'draft' && (
                 <>
-                  <button onClick={() => handleStatus(detail.quote.id, 'sent')} className="lp-btn lp-btn--ghost" style={{ flex: 1, fontSize: '0.85rem' }}>Enviar</button>
-                  <button onClick={() => handleStatus(detail.quote.id, 'approved')} className="lp-btn lp-btn--primary" style={{ flex: 1, fontSize: '0.85rem' }}>Aprobar</button>
+                  <button onClick={() => handleStatus(detailData.quote.id, 'sent')} className="lp-btn lp-btn--ghost" style={{ flex: 1, fontSize: '0.85rem' }}>Enviar</button>
+                  <button onClick={() => handleStatus(detailData.quote.id, 'approved')} className="lp-btn lp-btn--primary" style={{ flex: 1, fontSize: '0.85rem' }}>Aprobar</button>
                 </>
               )}
-              {detail.quote.status === 'sent' && (
-                <button onClick={() => handleStatus(detail.quote.id, 'approved')} className="lp-btn lp-btn--primary" style={{ flex: 1, fontSize: '0.85rem' }}>Aprobar</button>
+              {detailData.quote.status === 'sent' && (
+                <button onClick={() => handleStatus(detailData.quote.id, 'approved')} className="lp-btn lp-btn--primary" style={{ flex: 1, fontSize: '0.85rem' }}>Aprobar</button>
               )}
-              {detail.quote.status === 'approved' && !showToRemito && (
+              {detailData.quote.status === 'approved' && !showToRemito && (
                 <>
                   {/* Dos opciones principales: nota de pedido (entrega total) o acopio (entregas parciales) */}
                   <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -833,9 +840,9 @@ const handleStatus = async (id, status) => {
                     </div>
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                       <button onClick={() => {
-                        const custAddr = detail.quote.customer_address || '';
+                        const custAddr = detailData.quote.customer_address || '';
                         setToRemitoAddress(custAddr);
-                        setToRemitoCustomer(detail.quote.customer_id ? { id: detail.quote.customer_id, name: detail.quote.customer_name || '', phone: detail.quote.customer_phone || '', address: custAddr } : null);
+                        setToRemitoCustomer(detailData.quote.customer_id ? { id: detailData.quote.customer_id, name: detailData.quote.customer_name || '', phone: detailData.quote.customer_phone || '', address: custAddr } : null);
                         setToRemitoDriver('');
                         setToRemitoDate(new Date().toISOString().slice(0, 10));
                         setShowToRemito(true);
@@ -843,17 +850,17 @@ const handleStatus = async (id, status) => {
                         📋 Nota de pedido
                         <div style={{ fontSize: '0.68rem', fontWeight: 400, opacity: 0.8 }}>Entrega total de una vez</div>
                       </button>
-                      <button onClick={handleCreateAcopio} disabled={creatingAcopio || !detail.quote.customer_id} className="lp-btn lp-btn--primary"
+                      <button onClick={handleCreateAcopio} disabled={creatingAcopio || !detailData.quote.customer_id} className="lp-btn lp-btn--primary"
                         style={{ flex: 1, fontSize: '0.82rem', fontWeight: 800, background: 'rgba(20,187,166,0.15)', color: 'var(--lp-primary)', border: '1.5px solid var(--lp-primary)', opacity: creatingAcopio ? 0.6 : 1 }}>
                         📦 Crear Acopio
                         <div style={{ fontSize: '0.68rem', fontWeight: 400, opacity: 0.8 }}>Entregas parciales</div>
                       </button>
                     </div>
-                    <button onClick={() => handleStatus(detail.quote.id, 'delivered')} className="lp-btn lp-btn--ghost" style={{ fontSize: '0.82rem' }}>Entregado sin remito</button>
+                    <button onClick={() => handleStatus(detailData.quote.id, 'delivered')} className="lp-btn lp-btn--ghost" style={{ fontSize: '0.82rem' }}>Entregado sin remito</button>
                   </div>
                 </>
               )}
-              {detail.quote.status === 'approved' && showToRemito && (
+              {detailData.quote.status === 'approved' && showToRemito && (
                 <div style={{ width: '100%', background: 'var(--lp-paper-sunken)', border: '1.5px solid rgba(20,187,166,0.35)', borderRadius: 10, padding: 16, marginTop: 4 }}>
                   <div style={{ fontWeight: 800, color: 'var(--lp-primary)', fontSize: '0.9rem', marginBottom: 12, display: 'flex', justifyContent: 'space-between' }}>
                     <span>Nueva Nota de pedido</span>
@@ -893,13 +900,13 @@ const handleStatus = async (id, status) => {
                   </div>
                 </div>
               )}
-              {['draft', 'sent'].includes(detail.quote.status) && (
-                <button onClick={() => handleStatus(detail.quote.id, 'rejected')} className="lp-btn lp-btn--ghost" style={{ flex: 1, fontSize: '0.85rem', color: 'var(--lp-red)' }}>Rechazar</button>
+              {['draft', 'sent'].includes(detailData.quote.status) && (
+                <button onClick={() => handleStatus(detailData.quote.id, 'rejected')} className="lp-btn lp-btn--ghost" style={{ flex: 1, fontSize: '0.85rem', color: 'var(--lp-red)' }}>Rechazar</button>
               )}
-              <button onClick={() => openEditForm(detail.quote)} className="lp-btn lp-btn--ghost" style={{ fontSize: '0.85rem' }}>✏️ Editar</button>
+              <button onClick={() => openEditForm(detailData.quote)} className="lp-btn lp-btn--ghost" style={{ fontSize: '0.85rem' }}>✏️ Editar</button>
               <button onClick={handleShareWhatsApp} className="lp-btn lp-btn--ghost" style={{ fontSize: '0.85rem', color: '#25D366' }}>WhatsApp</button>
               <button onClick={handlePrint} className="lp-btn lp-btn--ghost" style={{ fontSize: '0.85rem' }}>Imprimir</button>
-              <button onClick={() => { handleDelete(detail.quote.id); setDetail(null); setShowToRemito(false); }} className="lp-btn lp-btn--ghost" style={{ fontSize: '0.85rem', color: 'var(--lp-red)' }}>Eliminar</button>
+              <button onClick={() => { handleDelete(detailData.quote.id); setDetail(null); setShowToRemito(false); }} className="lp-btn lp-btn--ghost" style={{ fontSize: '0.85rem', color: 'var(--lp-red)' }}>Eliminar</button>
             </div>
           </div>
         </div>
