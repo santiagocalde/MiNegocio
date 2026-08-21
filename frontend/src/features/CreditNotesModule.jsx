@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { usePanelContext } from '../context/PanelContext';
 import { apiGet, apiPost } from '../services/apiClient';
 import ClientePicker from '../components/corralon/ClientePicker';
+import useModalExit, { overlayAnim, contentAnim } from '../hooks/useModalExit';
 
 const formatPesos = (v) => (v ?? 0).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 const fmtDate = (s) => s ? new Date(s).toLocaleDateString('es-AR', { day: 'numeric', month: 'short' }) : '—';
@@ -60,6 +61,12 @@ export default function CreditNotesModule() {
 
   const totalFrom = (items) => items.reduce((s, i) => s + (i.quantity || 0) * (i.unit_price || 0), 0);
 
+  const formExit = useModalExit(showForm);
+  const detailExit = useModalExit(!!detail);
+  const detailDataRef = useRef(null);
+  if (detail) detailDataRef.current = detail;
+  const detailData = detail || detailDataRef.current;
+
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', gap: '10px', overflow: 'hidden', padding: '12px 20px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
@@ -93,9 +100,9 @@ export default function CreditNotesModule() {
       </div>
 
       {/* Form */}
-      {showForm && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(11,19,43,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} onMouseDown={e => { if (e.target === e.currentTarget) { setShowForm(false); setFormCustomer(null); } }}>
-          <div onMouseDown={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 500, maxHeight: '90vh', overflow: 'auto', background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line-strong)', borderRadius: 12, padding: 24, boxShadow: 'var(--lp-shadow-lg)' }}>
+      {formExit.rendered && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(11,19,43,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, ...overlayAnim(formExit.closing) }} onMouseDown={e => { if (e.target === e.currentTarget) { setShowForm(false); setFormCustomer(null); } }}>
+          <div onMouseDown={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 500, maxHeight: '90vh', overflow: 'auto', background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line-strong)', borderRadius: 12, padding: 24, boxShadow: 'var(--lp-shadow-lg)', ...contentAnim(formExit.closing) }}>
             <h3 style={{ fontFamily: 'var(--lp-font-display)', fontSize: '1.1rem', fontWeight: 700, color: 'var(--lp-ink)', margin: '0 0 12px' }}>Nueva devolución</h3>
             <div style={{ marginBottom: 10 }}>
               <label style={{ fontSize: '0.75rem', color: 'var(--lp-ink-faint)', fontWeight: 600, display: 'block', marginBottom: 4 }}>Cliente (opcional)</label>
@@ -132,20 +139,20 @@ export default function CreditNotesModule() {
       )}
 
       {/* Detail */}
-      {detail && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(11,19,43,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} onMouseDown={e => { if (e.target === e.currentTarget) setDetail(null); }}>
-          <div onMouseDown={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 450, maxHeight: '90vh', overflow: 'auto', background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line-strong)', borderRadius: 12, padding: 24, boxShadow: 'var(--lp-shadow-lg)' }}>
+      {detailExit.rendered && detailData && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(11,19,43,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, ...overlayAnim(detailExit.closing) }} onMouseDown={e => { if (e.target === e.currentTarget) setDetail(null); }}>
+          <div onMouseDown={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 450, maxHeight: '90vh', overflow: 'auto', background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line-strong)', borderRadius: 12, padding: 24, boxShadow: 'var(--lp-shadow-lg)', ...contentAnim(detailExit.closing) }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
-              <h3 style={{ fontFamily: 'var(--lp-font-display)', fontSize: '1.1rem', fontWeight: 700, color: 'var(--lp-ink)', margin: 0 }}>NC #{detail.credit_note.id}</h3>
+              <h3 style={{ fontFamily: 'var(--lp-font-display)', fontSize: '1.1rem', fontWeight: 700, color: 'var(--lp-ink)', margin: 0 }}>NC #{detailData.credit_note.id}</h3>
               <button onClick={() => setDetail(null)} style={{ background: 'none', border: 'none', color: 'var(--lp-ink-faint)', cursor: 'pointer', fontSize: '1.3rem' }}>✕</button>
             </div>
             <div style={{ fontSize: '0.82rem', color: 'var(--lp-ink-faint)', marginBottom: 12 }}>
-              {detail.credit_note.customer_name && <div>Cliente: {detail.credit_note.customer_name}</div>}
-              {detail.credit_note.reason && <div>Motivo: {detail.credit_note.reason}</div>}
-              <div>Total acreditado: <strong style={{ color: 'var(--lp-green)' }}>${formatPesos(detail.credit_note.total)}</strong></div>
+              {detailData.credit_note.customer_name && <div>Cliente: {detailData.credit_note.customer_name}</div>}
+              {detailData.credit_note.reason && <div>Motivo: {detailData.credit_note.reason}</div>}
+              <div>Total acreditado: <strong style={{ color: 'var(--lp-green)' }}>${formatPesos(detailData.credit_note.total)}</strong></div>
             </div>
             <div style={{ borderTop: '1px solid var(--lp-line)', paddingTop: 10 }}>
-              {detail.items.map((it, i) => (
+              {detailData.items.map((it, i) => (
                 <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', fontSize: '0.82rem', color: 'var(--lp-ink)' }}>
                   <span>{it.product_name} × {it.quantity}</span>
                   <span style={{ fontFamily: 'var(--lp-font-mono)' }}>${formatPesos(it.unit_price * it.quantity)}</span>
