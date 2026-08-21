@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import useIsMobile from '../../hooks/useIsMobile';
 import useModalExit from '../../hooks/useModalExit';
 import { Icons } from '../ui/Icons';
@@ -73,32 +73,60 @@ export default function ChargeModal({
     setTimeout(() => { if (key === 'efectivo') paymentRef?.current?.focus(); }, 100);
   };
 
-  // El hook debe llamarse SIEMPRE (antes de cualquier return) para no violar las Reglas de Hooks
+  // Ref con el estado más reciente para que el listener global lea siempre
+  // valores frescos sin tener que re-suscribirse en cada render.
+  const kbRef = useRef({});
+  kbRef.current = { paymentMethod, useSplitPayment, isConfirmDisabled, confirmCharge, cancelCharge, selectPaymentMethod, mpPaid };
+
+  // Un único listener de teclado para todo el modal (Reglas de Hooks: se
+  // llama SIEMPRE, antes de cualquier return).
   useEffect(() => {
     if (!isCharging) return;
     const handler = (e) => {
-      if (e.key === 'Escape') { cancelCharge(); return; }
-      // Si el foco está en un <button> (método de pago, monto rápido), dejamos
-      // que el propio botón se active con Enter/Espacio — Enter global solo
-      // procesa la venta cuando NO estás navegando esos botones con flechas.
-      if (e.key === 'Enter' && !isConfirmDisabled && e.target?.tagName !== 'BUTTON') { e.preventDefault(); confirmCharge(); }
+      const s = kbRef.current;
+      const active = document.activeElement;
+      const tag = active?.tagName;
+      const inTextField = tag === 'INPUT' || tag === 'TEXTAREA';
+      const inSplitArea = !!active?.closest?.('[data-split-area]');
+      const onBillBtn = active?.dataset?.billnav === '1';
+
+      if (e.key === 'Escape') { s.cancelCharge(); return; }
+
+      if (e.key === 'Enter') {
+        // Sobre un botón, dejamos que Espacio lo active — Enter no debe
+        // activar el botón Y procesar la venta a la vez.
+        if (tag === 'BUTTON') return;
+        if (!s.isConfirmDisabled) { e.preventDefault(); s.confirmCharge(); }
+        return;
+      }
+
+      // Flechas → cambian el método de pago desde cualquier parte del modal.
+      // Excepciones: dentro del área de pago mixto (el <select> navega solo),
+      // y sobre los botones de billete (su propio handler mueve el foco ahí).
+      if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
+        if (inSplitArea || onBillBtn) return;
+        // En un campo de texto distinto al de efectivo, dejar el cursor. En el
+        // de efectivo sí interceptamos (un solo número, el cursor no importa y
+        // así se puede cambiar de método sin sacar la mano del teclado).
+        if (inTextField && active !== paymentRef?.current) return;
+        if (s.mpPaid) return; // método bloqueado tras cobrar QR
+        e.preventDefault();
+        const dir = (e.key === 'ArrowRight' || e.key === 'ArrowDown') ? 1 : -1;
+        const idx = PAYMENT_METHODS.findIndex(m => m.key === s.paymentMethod);
+        const next = PAYMENT_METHODS[(idx + dir + PAYMENT_METHODS.length) % PAYMENT_METHODS.length];
+        s.selectPaymentMethod(next.key);
+      }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isCharging, isConfirmDisabled, confirmCharge, setIsCharging]);
+  }, [isCharging]);
 
-  // Navegación por flechas entre botones de "monto rápido" (efectivo): mueve
-  // el foco al hermano siguiente/anterior sin activarlo — patrón estándar de
-  // toolbar accesible. Se activan con click, Enter o Espacio ya enfocados.
-  // No se aplican solas al pasar: son botones que SUMAN (+$1000, +$2000...),
-  // aplicar de más solo por navegar de paso agregaría plata sin querer.
-  const arrowNavFocusOnly = (e, ids) => {
-    // Enter queda desactivado a propósito en estos botones: son reflejo fácil
-    // después de navegar con flechas, y un Enter de más acá no debe sumar un
-    // billete ni, mucho menos, arriesgarse a que algo dispare "procesar
-    // venta" sin querer. Solo Espacio (comportamiento nativo del <button>)
-    // o clic los activa.
+  // Navegación por flechas SOLO entre los botones de "monto rápido" (billetes):
+  // mueve el foco sin activar. Se activan con Espacio o clic (Enter queda
+  // desactivado a propósito: evita sumar de más o disparar la venta por
+  // reflejo tras navegar).
+  const arrowNavBills = (e, ids) => {
     if (e.key === 'Enter') { e.preventDefault(); return; }
     if (!['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp'].includes(e.key)) return;
     e.preventDefault();
@@ -107,20 +135,6 @@ export default function ChargeModal({
     if (idx === -1) return;
     const nextId = ids[(idx + dir + ids.length) % ids.length];
     document.getElementById(nextId)?.focus();
-  };
-
-  // Navegación por flechas entre métodos de pago: acá SÍ conviene aplicar al
-  // pasar — es una selección única (como un <select>), no una suma, así que
-  // "flechear" y quedarte en el método que querés ya lo deja elegido.
-  const arrowNavPaymentMethod = (e) => {
-    if (!['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp'].includes(e.key)) return;
-    e.preventDefault();
-    const dir = (e.key === 'ArrowRight' || e.key === 'ArrowDown') ? 1 : -1;
-    const idx = PAYMENT_METHODS.findIndex(m => `pm-btn-${m.key}` === e.currentTarget.id);
-    if (idx === -1) return;
-    const next = PAYMENT_METHODS[(idx + dir + PAYMENT_METHODS.length) % PAYMENT_METHODS.length];
-    selectPaymentMethod(next.key);
-    document.getElementById(`pm-btn-${next.key}`)?.focus();
   };
 
   // Resetear el estado de pago QR SOLO al abrir/cerrar el modal (una venta nueva
@@ -201,10 +215,8 @@ export default function ChargeModal({
                 {PAYMENT_METHODS.map(m => (
                   <button
                     key={m.key}
-                    id={`pm-btn-${m.key}`}
                     disabled={mpPaid}
                     onClick={() => selectPaymentMethod(m.key)}
-                    onKeyDown={arrowNavPaymentMethod}
                     style={{
                       padding: isMobile ? '12px' : '16px', borderRadius: '12px', border: '2px solid',
                       borderColor: !useSplitPayment && paymentMethod === m.key ? 'var(--accent-primary)' : 'var(--border-color)',
@@ -217,12 +229,12 @@ export default function ChargeModal({
                   </button>
                 ))}
               </div>
-              <p style={{ margin: '6px 2px 0', fontSize: '0.72rem', color: 'var(--text-faint)' }}>← → para cambiar de método</p>
+              <p style={{ margin: '6px 2px 0', fontSize: '0.72rem', color: 'var(--text-faint)' }}>Flechas ← → ↑ ↓ para cambiar de método</p>
             </div>
 
             {/* Pago Mixto: cada parte con su método y monto */}
             {useSplitPayment && (
-              <div style={{ background: 'var(--bg-card)', padding: isMobile ? '14px' : '24px', borderRadius: '16px', border: '1px solid var(--accent-primary)' }}>
+              <div data-split-area style={{ background: 'var(--bg-card)', padding: isMobile ? '14px' : '24px', borderRadius: '16px', border: '1px solid var(--accent-primary)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                   <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px' }}>Pago Mixto — cargá cada parte</label>
                   <button onClick={() => setUseSplitPayment(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '0.8rem', textDecoration: 'underline', padding: 0 }}>Volver a método simple</button>
@@ -242,6 +254,7 @@ export default function ChargeModal({
                       placeholder="0"
                       value={p.amount}
                       onChange={e => setSplitPayments(prev => prev.map((x, j) => (j === i ? { ...x, amount: e.target.value } : x)))}
+                      onWheel={e => e.currentTarget.blur()}
                       style={{ width: '130px', padding: '10px 12px', background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: 8, color: 'var(--text-primary)', fontSize: '1rem', fontFamily: 'var(--font-mono)', textAlign: 'right', outline: 'none' }}
                     />
                     {splitPayments.length > 1 && (
@@ -276,25 +289,25 @@ export default function ChargeModal({
             {/* Efectivo */}
             {!useSplitPayment && paymentMethod === 'efectivo' && (
               <div style={{ background: 'var(--bg-card)', padding: isMobile ? '14px' : '24px', borderRadius: '16px', border: '1px solid var(--border-color)' }}>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '1px' }}>¿Con cuánto paga? (Ingresa monto + Enter)</label>
-                <input 
-                  ref={paymentRef} 
-                  type="number" 
-                  value={payment} 
-                  onChange={e => setPayment(e.target.value)} 
-                  autoFocus 
-                  onKeyDown={e => { if (e.key === 'Enter' && change >= 0 && !isConfirmDisabled) confirmCharge(); e.stopPropagation(); }} 
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '1px' }}>¿Con cuánto paga?</label>
+                <input
+                  ref={paymentRef}
+                  type="number"
+                  value={payment}
+                  onChange={e => setPayment(e.target.value)}
+                  autoFocus
+                  onWheel={e => e.currentTarget.blur()}
                   style={{ width: '100%', background: 'var(--bg-main)', border: '2px solid var(--accent-primary)', color: 'var(--text-primary)', borderRadius: '12px', padding: '16px', fontSize: isMobile ? '1.5rem' : '2rem', fontFamily: 'var(--font-mono)', textAlign: 'center', outline: 'none', marginBottom: isMobile ? '12px' : '16px', boxShadow: '0 0 0 4px rgba(20,187,166, 0.1)' }}
                 />
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '4px' }}>
-                  <button id="qa-btn-exacto" onClick={() => setPayment(finalTotal.toString())} onKeyDown={e => arrowNavFocusOnly(e, QUICK_AMOUNT_IDS)} style={{ flex: '1 0 auto', minHeight: '44px', padding: '8px 12px', background: 'var(--accent-success)', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 800, fontSize: 'var(--fs-body)', cursor: 'pointer' }}>Pago Exacto</button>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', marginBottom: '4px' }}>
+                  <button id="qa-btn-exacto" data-billnav="1" onClick={() => setPayment(finalTotal.toString())} onKeyDown={e => arrowNavBills(e, QUICK_AMOUNT_IDS)} style={{ height: '40px', padding: '0 8px', background: 'var(--accent-success)', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 800, fontSize: '0.82rem', cursor: 'pointer' }}>Pago Exacto</button>
                   {[1000, 2000, 5000, 10000, 20000].map(bill => (
-                    <button key={bill} id={`qa-btn-${bill}`} onClick={() => setPayment(p => (parseFloat(p || 0) + bill).toString())} onKeyDown={e => arrowNavFocusOnly(e, QUICK_AMOUNT_IDS)} style={{ flex: '1 0 auto', minHeight: '44px', padding: '8px 10px', background: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '8px', fontWeight: 600, fontSize: 'var(--fs-sm)', cursor: 'pointer', fontFamily: 'var(--font-mono)' }}>
+                    <button key={bill} id={`qa-btn-${bill}`} data-billnav="1" onClick={() => setPayment(p => (parseFloat(p || 0) + bill).toString())} onKeyDown={e => arrowNavBills(e, QUICK_AMOUNT_IDS)} style={{ height: '40px', padding: '0 6px', background: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '8px', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer', fontFamily: 'var(--font-mono)' }}>
                       +${bill.toLocaleString('es-AR')}
                     </button>
                   ))}
                 </div>
-                <p style={{ margin: '0 0 12px', fontSize: '0.72rem', color: 'var(--text-faint)' }}>← → navega, Espacio o clic elige</p>
+                <p style={{ margin: '0 0 12px', fontSize: '0.72rem', color: 'var(--text-faint)' }}>Escribí el monto y Enter cobra · flechas + Espacio para los billetes</p>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px', borderTop: '1px dashed var(--border-color)', paddingTop: '16px' }}>
                   <span style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', fontWeight: 600 }}>VUELTO:</span>
                   <div style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: 800, color: change < 0 ? 'var(--accent-danger)' : 'var(--accent-success)', fontFamily: 'var(--font-mono)' }}>
@@ -358,10 +371,15 @@ export default function ChargeModal({
                     <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '10px' }}>Cuando veas el pago acreditado, presioná "Procesar Venta".</div>
                   </>
                 ) : (
-                  <div style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: 1.5 }}>
-                    <p>⚠️ No cargaste tu QR de Mercado Pago.</p>
-                    <p>Andá a <strong style={{ color: 'var(--accent-primary)' }}>Configuración → Datos del negocio</strong> y subí tu "Mi QR" de Mercado Pago.</p>
-                  </div>
+                  <>
+                    <div style={{ fontSize: '2rem', fontWeight: 900, color: 'var(--accent-primary)', fontFamily: 'var(--font-mono)', marginBottom: '8px' }}>${finalTotal.toLocaleString('es-AR')}</div>
+                    <div style={{ color: 'var(--text-secondary)', fontSize: '0.92rem', lineHeight: 1.5 }}>
+                      Mostrale al cliente tu QR de Mercado Pago (el de tu celular sirve). Cuando veas el pago acreditado, presioná <strong style={{ color: 'var(--text-primary)' }}>Procesar Venta</strong>.
+                    </div>
+                    <div style={{ fontSize: '0.78rem', color: 'var(--text-faint)', marginTop: '10px' }}>
+                      Consejo: subí tu QR en Configuración → Datos del negocio para que aparezca acá en pantalla.
+                    </div>
+                  </>
                 )}
               </div>
             )}

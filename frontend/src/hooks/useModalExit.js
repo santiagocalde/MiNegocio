@@ -4,6 +4,25 @@ import { useState, useEffect, useRef } from 'react';
 // modalOverlayOut/modalContentOut en index.css.
 const EXIT_MS = 160;
 
+// Bloqueo del scroll de fondo mientras hay algún modal abierto. Sin esto, al
+// pasar la rueda del mouse sobre el modal se scrollea lo que hay DETRÁS, y al
+// cerrar el modal quedás en una posición rara ("se buguea y queda ahí"). El
+// scroll del panel no está en <body> sino en <main>, así que en vez de tocar
+// body.style.overflow ponemos la clase `modal-open` en <body> y el CSS congela
+// tanto el body (páginas públicas) como el <main> del panel. Un contador global
+// soporta modales anidados: se libera recién al cerrar el último.
+let _openModals = 0;
+function lockBodyScroll() {
+  if (typeof document === 'undefined') return;
+  if (_openModals === 0) document.body.classList.add('modal-open');
+  _openModals += 1;
+}
+function unlockBodyScroll() {
+  if (typeof document === 'undefined') return;
+  _openModals = Math.max(0, _openModals - 1);
+  if (_openModals === 0) document.body.classList.remove('modal-open');
+}
+
 // Helpers para modales con estilos inline (no usan las clases compartidas
 // .modal-overlay/.modal-content). Reutilizan los mismos @keyframes globales
 // de index.css, así que el efecto es idéntico en todo el sistema.
@@ -48,6 +67,15 @@ export default function useModalExit(isOpen) {
     return () => clearTimeout(timerRef.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
+
+  // Bloqueo del scroll de fondo mientras el modal está montado (incluye la
+  // ventana de animación de salida). Se libera al desmontar, con seguridad
+  // ante cierres abruptos gracias al cleanup.
+  useEffect(() => {
+    if (!rendered) return;
+    lockBodyScroll();
+    return unlockBodyScroll;
+  }, [rendered]);
 
   return { rendered, closing };
 }

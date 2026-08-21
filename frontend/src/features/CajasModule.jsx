@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { usePanelContext } from '../context/PanelContext';
 import { apiGet, apiPost } from '../services/apiClient';
 import { SkeletonTable } from '../components/ui/Skeleton';
@@ -7,6 +7,7 @@ import useSortable from '../hooks/useSortable.jsx';
 import { Icons } from '../components/ui/Icons';
 import { formatMoney } from '../utils/format';
 import CategoryBreakdown from '../components/pos/CategoryBreakdown';
+import useModalExit from '../hooks/useModalExit';
 
 const fmtDate = (iso) => {
   if (!iso) return '—';
@@ -138,6 +139,11 @@ export default function CajasModule() {
     setCorrectSaving(false);
   };
 
+  const detailExit = useModalExit(!!detail);
+  const detailDataRef = useRef(null);
+  if (detail) detailDataRef.current = detail;
+  const detailData = detail || detailDataRef.current;
+
   return (
     <div style={{ padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 14, minHeight: 0 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
@@ -222,18 +228,18 @@ export default function CajasModule() {
           <h2 className="modal-title">Cargando caja...</h2>
         </div></div>
       )}
-      {detail && (
-        <div className="modal-overlay" onClick={() => setDetail(null)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: 560, width: '100%' }}>
+      {detailExit.rendered && detailData && (
+        <div className={`modal-overlay${detailExit.closing ? ' closing' : ''}`} onClick={() => setDetail(null)}>
+          <div className={`modal-content${detailExit.closing ? ' closing' : ''}`} onClick={e => e.stopPropagation()} style={{ maxWidth: 560, width: '100%' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h2 className="modal-title" style={{ margin: 0 }}>Caja #{detail.id} — {detail.operator || 'Sin operador'}</h2>
+              <h2 className="modal-title" style={{ margin: 0 }}>Caja #{detailData.id} — {detailData.operator || 'Sin operador'}</h2>
               <button onClick={() => setDetail(null)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '1.3rem', cursor: 'pointer' }}>✕</button>
             </div>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', margin: '4px 0 14px' }}>
-              Apertura: {fmtDate(detail.opened_at)} · Cierre: {fmtDate(detail.closed_at)}
+              Apertura: {fmtDate(detailData.opened_at)} · Cierre: {fmtDate(detailData.closed_at)}
             </p>
-            {detail.resumen_caja && (() => {
-              const r = detail.resumen_caja;
+            {detailData.resumen_caja && (() => {
+              const r = detailData.resumen_caja;
               const st = statusOf(detail);
               return (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -241,24 +247,24 @@ export default function CajasModule() {
                     ['Caja inicial', formatMoney(r.initial_cash), 'var(--text-secondary)'],
                     ['Ventas en efectivo', formatMoney((r.efectivo || 0) + (r.split_efectivo || 0)), 'var(--accent-primary)'],
                     ['Egresos / ingresos', formatMoney(r.egresos), 'var(--accent-warning)'],
-                    ['Contado', formatMoney(detail.counted_cash), 'var(--text-primary)'],
-                    ['Diferencia', (detail.difference != null ? (detail.difference > 0 ? '+ ' : '') + formatMoney(detail.difference) : '—'), st.color],
+                    ['Contado', formatMoney(detailData.counted_cash), 'var(--text-primary)'],
+                    ['Diferencia', (detailData.difference != null ? (detailData.difference > 0 ? '+ ' : '') + formatMoney(detailData.difference) : '—'), st.color],
                   ].map(([label, val, color]) => (
                     <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '9px 14px', background: 'var(--bg-main)', borderRadius: 8 }}>
                       <span style={{ color: 'var(--text-secondary)', fontSize: '0.88rem' }}>{label}</span>
                       <span style={{ fontWeight: 800, fontSize: '1rem', fontFamily: 'var(--font-mono)', color }}>{val}</span>
                     </div>
                   ))}
-                  {detail.notes && <p style={{ color: 'var(--text-secondary)', fontSize: '0.78rem', margin: '4px 2px' }}>Nota: {detail.notes}</p>}
+                  {detailData.notes && <p style={{ color: 'var(--text-secondary)', fontSize: '0.78rem', margin: '4px 2px' }}>Nota: {detailData.notes}</p>}
                 </div>
               );
             })()}
-            <CategoryBreakdown items={detail.por_categoria} />
+            <CategoryBreakdown items={detailData.por_categoria} />
 
             {/* Corrección del contado — solo admin, para cuando el operador se
                 equivocó al tipear (ej. le faltó un cero). */}
             {!correcting ? (
-              <button onClick={() => { setCorrecting(true); setCorrectMonto(String(detail.counted_cash ?? '')); }}
+              <button onClick={() => { setCorrecting(true); setCorrectMonto(String(detailData.counted_cash ?? '')); }}
                 style={{ marginTop: 12, background: 'none', border: '1px dashed var(--border-color)', borderRadius: 8, padding: '8px 12px', color: 'var(--text-secondary)', fontSize: '0.8rem', cursor: 'pointer', width: '100%' }}>
                 ✎ ¿Se equivocaron al tipear el contado? Corregir
               </button>

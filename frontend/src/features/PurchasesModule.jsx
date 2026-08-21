@@ -396,9 +396,7 @@ export default function PurchasesModule() {
         />
       )}
 
-      {detailPurchase && (
-        <PurchaseDetailModal purchase={detailPurchase} onClose={() => setDetailPurchase(null)} />
-      )}
+      <PurchaseDetailModal purchase={detailPurchase} onClose={() => setDetailPurchase(null)} />
 
       {/* Modal: confirmar entrada de pedido pendiente (F6) */}
       {confirmExit.rendered && confirmData && (

@@ -1,22 +1,33 @@
+import { useRef } from 'react';
+import useModalExit, { overlayAnim, contentAnim } from '../../hooks/useModalExit';
+
 /**
- * Modal de detalle de una compra. Extraído de PurchasesModule (era una IIFE
- * inline) sin cambiar comportamiento. Se cierra con onClose.
+ * Modal de detalle de una compra. El padre lo monta SIEMPRE y le pasa
+ * `purchase` (null = cerrado); así el hook puede reproducir la animación de
+ * salida antes de desmontar. Guarda la última compra en un ref para seguir
+ * mostrándola mientras se desvanece.
  */
 export default function PurchaseDetailModal({ purchase, onClose }) {
-  const items = purchase.items || [];
+  const { rendered, closing } = useModalExit(!!purchase);
+  const lastRef = useRef(null);
+  if (purchase) lastRef.current = purchase;
+  const p = purchase || lastRef.current;
+  if (!rendered || !p) return null;
+
+  const items = p.items || [];
   const total = items.reduce((acc, i) => acc + (i.unit_cost || 0) * (i.quantity || 0), 0);
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(30,58,95,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, animation: 'modalOverlayIn 0.16s ease-out' }} onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} className="ledger-sheet" style={{ padding: '32px', width: '550px', maxWidth: '92vw', boxSizing: 'border-box', maxHeight: '80vh', overflow: 'auto', boxShadow: 'var(--shadow-lg)', animation: 'modalContentIn 0.2s cubic-bezier(0.16, 1, 0.3, 1)' }}>
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(30,58,95,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, ...overlayAnim(closing) }} onClick={onClose}>
+      <div onClick={e => e.stopPropagation()} className="ledger-sheet" style={{ padding: '32px', width: '550px', maxWidth: '92vw', boxSizing: 'border-box', maxHeight: '80vh', overflow: 'auto', boxShadow: 'var(--shadow-lg)', ...contentAnim(closing) }}>
         <h2 style={{ fontSize: '1.5rem', fontWeight: 800, margin: '0 0 20px 0', color: 'var(--text-primary)' }}>Detalle de Compra</h2>
         <div style={{ display: 'flex', gap: 32, marginBottom: 20 }}>
           <div>
             <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>Proveedor</div>
-            <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{purchase.supplier_name || 'N/A'}</div>
+            <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{p.supplier_name || 'N/A'}</div>
           </div>
           <div>
             <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>Fecha</div>
-            <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{purchase.created_at ? new Date(purchase.created_at).toLocaleString('es-AR', { dateStyle: 'medium' }) : '---'}</div>
+            <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{p.created_at ? new Date(p.created_at).toLocaleString('es-AR', { dateStyle: 'medium' }) : '---'}</div>
           </div>
           <div>
             <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>Items</div>

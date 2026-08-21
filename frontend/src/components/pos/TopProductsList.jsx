@@ -16,8 +16,8 @@ export default function TopProductsList({ items, compact }) {
         </div>
         <div style={{ overflowY: capped ? 'auto' : 'visible' }}>
           {items.map((p, i) => (
-            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 14px', fontSize: '0.9rem', borderBottom: i < items.length - 1 ? '1px solid var(--border-color)' : 'none' }}>
-              <span style={{ color: 'var(--text-secondary)', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', padding: '9px 14px', fontSize: '0.9rem', borderBottom: i < items.length - 1 ? '1px solid var(--border-color)' : 'none' }}>
+              <span style={{ flex: 1, minWidth: 0, color: 'var(--text-secondary)', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {p.producto}
                 <span style={{ color: 'var(--text-faint)', fontWeight: 500 }}> · {p.cantidad} u</span>
               </span>

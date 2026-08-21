@@ -531,11 +531,15 @@ svg {
   background-color: rgba(30,58,95, 0.85);
   backdrop-filter: blur(8px);
   display: flex;
-  align-items: center;
   justify-content: center;
   z-index: 50;
   padding: 24px;
   cursor: pointer;
+  /* El overlay es el contenedor de scroll: si el modal es más alto que la
+     pantalla, se scrollea ACÁ (no la página de fondo). overscroll-behavior
+     evita que el scroll "se pase" al body al llegar al borde. */
+  overflow-y: auto;
+  overscroll-behavior: contain;
   animation: modalOverlayIn 0.16s ease-out;
 }
 .modal-content {
@@ -547,12 +551,22 @@ svg {
   max-width: 600px;
   border: 1px solid var(--border-color);
   box-shadow: var(--shadow-lg);
+  /* margin:auto centra vertical y horizontalmente cuando entra en pantalla, y
+     cuando NO entra deja que el overlay lo scrollee sin cortar el borde de
+     arriba (lo que sí pasaría con align-items:center en el overlay). */
+  margin: auto;
   animation: modalContentIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 @media (prefers-reduced-motion: reduce) {
   .modal-overlay, .modal-content,
   .modal-overlay.closing, .modal-content.closing { animation: none; }
 }
+/* Con un modal abierto, congelamos el scroll de fondo: el <body> (páginas
+   públicas: landing, catálogo, admin) y el <main> del panel (que es su propio
+   contenedor de scroll). El modal, al ser position:fixed, sigue visible y
+   scrollea por su cuenta si es más alto que la pantalla. */
+body.modal-open { overflow: hidden; }
+body.modal-open .layout > main { overflow: hidden !important; }
 .modal-title {
   font-size: 1.6rem;
   font-weight: 800;

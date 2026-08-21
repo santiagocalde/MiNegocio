@@ -217,16 +217,16 @@ export default function CatalogoModule() {
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 350px', gap: isMobile ? '16px' : '32px', flex: 1 }}>
         <div className="ledger-sheet" style={{ padding: isMobile ? '16px' : '32px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
-          <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'stretch' : 'center', gap: isMobile ? '16px' : 0, background: isActive ? 'var(--wash-success)' : 'var(--surface-veil)', padding: isMobile ? '16px' : '24px', borderRadius: 'var(--radius-sm)', border: `1px solid ${isActive ? 'var(--accent-success)' : 'var(--border-color)'}` }}>
-             <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-               <div style={{ color: isActive ? 'var(--accent-success)' : 'var(--text-secondary)' }}><Icons.Globe /></div>
-               <div>
-                 <h3 style={{ margin: '0 0 4px 0', color: 'var(--text-primary)', fontSize: '1.2rem', fontWeight: 700 }}>Estado del Catálogo</h3>
-                 <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{isActive ? 'Tu catálogo está público y aceptando pedidos.' : 'El catálogo está desactivado.'}</p>
+          <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? '14px' : 16, background: isActive ? 'var(--wash-success)' : 'var(--surface-veil)', padding: isMobile ? '16px' : '20px 24px', borderRadius: 'var(--radius-sm)', border: `1px solid ${isActive ? 'var(--accent-success)' : 'var(--border-color)'}` }}>
+             <div style={{ display: 'flex', alignItems: 'center', gap: '16px', minWidth: 0 }}>
+               <div style={{ color: isActive ? 'var(--accent-success)' : 'var(--text-secondary)', flexShrink: 0 }}><Icons.Globe /></div>
+               <div style={{ minWidth: 0 }}>
+                 <h3 style={{ margin: '0 0 4px 0', color: 'var(--text-primary)', fontSize: '1.1rem', fontWeight: 700 }}>Estado del Catálogo</h3>
+                 <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.88rem' }}>{isActive ? 'Tu catálogo está público y aceptando pedidos.' : 'El catálogo está desactivado.'}</p>
                </div>
              </div>
-              <button onClick={toggleCatalogo} disabled={saving} style={{ width: isMobile ? '100%' : 'auto', flexShrink: 0, background: isActive ? 'var(--accent-danger)' : 'var(--accent-success)', color: 'white', border: 'none', padding: '12px 24px', borderRadius: '8px', fontWeight: 800, fontSize: '1rem', cursor: saving ? 'not-allowed' : 'pointer', transition: 'all 0.15s', boxShadow: '0 4px 12px rgba(30,58,95,0.2)', opacity: saving ? 0.7 : 1 }}>
-                {saving ? '...' : (isActive ? 'Desactivar Catálogo' : 'Activar Catálogo')}
+              <button onClick={toggleCatalogo} disabled={saving} style={{ width: 'auto', flexShrink: 0, background: isActive ? 'var(--accent-danger)' : 'var(--accent-success)', color: 'white', border: 'none', padding: '10px 18px', borderRadius: '8px', fontWeight: 700, fontSize: '0.9rem', cursor: saving ? 'not-allowed' : 'pointer', transition: 'all 0.15s', boxShadow: '0 4px 12px rgba(30,58,95,0.2)', opacity: saving ? 0.7 : 1, whiteSpace: 'nowrap' }}>
+                {saving ? '...' : (isActive ? 'Desactivar' : 'Activar catálogo')}
               </button>
           </div>
 

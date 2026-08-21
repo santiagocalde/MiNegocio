@@ -27,8 +27,8 @@ export default function CategoryBreakdown({ items, compact }) {
         </div>
         <div style={{ overflowY: capped ? 'auto' : 'visible' }}>
           {items.map((cat, i) => (
-            <div key={cat.categoria} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 14px', fontSize: '0.9rem', borderBottom: i < items.length - 1 ? '1px solid var(--border-color)' : 'none' }}>
-              <span style={{ color: 'var(--text-secondary)', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <div key={cat.categoria} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', padding: '9px 14px', fontSize: '0.9rem', borderBottom: i < items.length - 1 ? '1px solid var(--border-color)' : 'none' }}>
+              <span style={{ flex: 1, minWidth: 0, color: 'var(--text-secondary)', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {cat.categoria}
                 {parseFloat(cat.cantidad) > 0 && <span style={{ color: 'var(--text-faint)', fontWeight: 500 }}> · {fmtQty(cat.cantidad)} u</span>}
               </span>

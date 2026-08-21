@@ -329,9 +329,10 @@ export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, curren
         </div>
       )}
 
-      <div className="input-group">
+      <div className="input-group" style={{ marginBottom: 12 }}>
         <label style={{ fontSize: '1.1rem', color: 'var(--accent-primary)', fontWeight: 600 }}>¿Cuánto contás en el cajón ahora?</label>
-        <input ref={cashRef} type="number" value={countedCash} onChange={e => setCountedCash(e.target.value)} autoFocus placeholder="Abrí el cajón, contá los billetes y escribí el total" />
+        <input ref={cashRef} type="number" value={countedCash} onChange={e => setCountedCash(e.target.value)} autoFocus placeholder="0" onWheel={e => e.currentTarget.blur()} />
+        <p style={{ margin: '6px 2px 0', fontSize: '0.78rem', color: 'var(--text-faint)' }}>Abrí el cajón, contá los billetes y escribí el total.</p>
       </div>
       {countedCash !== '' && parseFloat(countedCash) === 0 && (
         <div style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.4)', borderRadius: 10, padding: '12px 16px', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 10 }}>

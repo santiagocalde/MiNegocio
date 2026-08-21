@@ -20,20 +20,20 @@ export default function EgresoModal({ showEgreso, setShowEgreso, egresoType, set
 
   return (
     <div className={`modal-overlay${closing ? ' closing' : ''}`} onClick={closeAndReset}>
-      <div className={`modal-content${closing ? ' closing' : ''}`} onClick={e => e.stopPropagation()} style={{ maxWidth: '360px' }}>
-        <h2 className="modal-title" style={{ fontSize: '1.3rem', color: 'var(--text-primary)' }}>Movimiento de caja</h2>
+      <div className={`modal-content${closing ? ' closing' : ''}`} onClick={e => e.stopPropagation()} style={{ maxWidth: '440px' }}>
+        <h2 className="modal-title" style={{ fontSize: '1.4rem', color: 'var(--text-primary)' }}>Movimiento de caja</h2>
 
         {/* Toggle principal — simple, dos opciones. Icono y texto en fila
             (no apilados) para que entren en un solo renglón parejo. */}
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '18px' }}>
+        <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
           <button onClick={() => setEgresoType('retiro')}
-            style={{ flex: 1, padding: '13px 6px', borderRadius: '10px', border: '2px solid', borderColor: isSaque ? 'var(--accent-danger)' : 'var(--border-color)', background: isSaque ? 'rgba(239,68,68,0.12)' : 'transparent', color: 'var(--text-primary)', fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', whiteSpace: 'nowrap' }}>
-            <Icons.Minus style={{ width: 13, height: 13, color: 'var(--accent-danger)', flexShrink: 0 }} />
+            style={{ flex: 1, padding: '15px 8px', borderRadius: '12px', border: '2px solid', borderColor: isSaque ? 'var(--accent-danger)' : 'var(--border-color)', background: isSaque ? 'rgba(239,68,68,0.12)' : 'transparent', color: 'var(--text-primary)', fontWeight: 700, fontSize: '0.92rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px', whiteSpace: 'nowrap' }}>
+            <Icons.Minus style={{ width: 15, height: 15, color: 'var(--accent-danger)', flexShrink: 0 }} />
             Retirar efectivo
           </button>
           <button onClick={() => setEgresoType('ingreso')}
-            style={{ flex: 1, padding: '13px 6px', borderRadius: '10px', border: '2px solid', borderColor: isIngreso ? 'var(--accent-success)' : 'var(--border-color)', background: isIngreso ? 'rgba(16,185,129,0.12)' : 'transparent', color: 'var(--text-primary)', fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', whiteSpace: 'nowrap' }}>
-            <Icons.Plus style={{ width: 13, height: 13, color: 'var(--accent-success)', flexShrink: 0 }} />
+            style={{ flex: 1, padding: '15px 8px', borderRadius: '12px', border: '2px solid', borderColor: isIngreso ? 'var(--accent-success)' : 'var(--border-color)', background: isIngreso ? 'rgba(16,185,129,0.12)' : 'transparent', color: 'var(--text-primary)', fontWeight: 700, fontSize: '0.92rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px', whiteSpace: 'nowrap' }}>
+            <Icons.Plus style={{ width: 15, height: 15, color: 'var(--accent-success)', flexShrink: 0 }} />
             Ingresar efectivo
           </button>
         </div>
@@ -52,8 +52,8 @@ export default function EgresoModal({ showEgreso, setShowEgreso, egresoType, set
           </div>
         )}
 
-        <div className="input-group"><label>{isIngreso ? 'Monto que agregaste ($)' : 'Monto a retirar ($)'}</label>
-          <input type="text" value={egresoMonto} onChange={e => setEgresoMonto(e.target.value.replace(/[^0-9]/g, ''))}
+        <div className="input-group" style={{ marginBottom: 16 }}><label>{isIngreso ? 'Monto que agregaste ($)' : 'Monto a retirar ($)'}</label>
+          <input type="text" inputMode="numeric" value={egresoMonto} onChange={e => setEgresoMonto(e.target.value.replace(/[^0-9]/g, ''))}
             onKeyDown={e => { if (e.key === 'Escape') closeAndReset(); if (e.key === 'Enter') document.getElementById('egresoMotivoInput')?.focus(); }}
             placeholder="0" style={{ fontSize: '2rem', padding: '16px' }} autoFocus />
           <p style={{ margin: '5px 0 0', fontSize: '0.72rem', color: 'var(--text-faint)' }}>Enter pasa al motivo</p>
@@ -69,8 +69,8 @@ export default function EgresoModal({ showEgreso, setShowEgreso, egresoType, set
         <div className="input-group"><label>{isIngreso ? '¿De dónde salió esa plata?' : '¿Para qué se usó?'}</label>
           <input id="egresoMotivoInput" type="text" value={egresoMotivo} onChange={e => setEgresoMotivo(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter' && egresoMonto && egresoMotivo) submitEgreso(); }}
-            placeholder={isIngreso ? "Ej: Fondo de cambio..." : "Ej: Pago de luz, retiro para vos..."}
-            style={{ fontSize: '1.25rem', fontFamily: 'var(--font-main)', padding: '16px' }} />
+            placeholder={isIngreso ? "Ej: fondo de cambio" : "Ej: pago de luz"}
+            style={{ fontSize: '1.05rem', fontFamily: 'var(--font-main)', padding: '14px 16px', textAlign: 'left' }} />
           <p style={{ margin: '5px 0 0', fontSize: '0.72rem', color: 'var(--text-faint)' }}>Enter confirma</p>
         </div>
         <div className="modal-actions">

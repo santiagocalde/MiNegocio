@@ -19,18 +19,21 @@ export default function FiadoModal({ isFiadoOpen, setIsFiadoOpen, adjustedTotal,
   const closeFiado = () => { setIsFiadoOpen(false); setFiadoName(''); onFiadoClose?.(); };
 
   return (
-    <div className={`modal-overlay${closing ? ' closing' : ''}`} onClick={closeFiado} onKeyDown={e => { if (e.key === 'Escape') closeFiado(); if (e.key === 'Enter' && fiadoName) handleConfirm(); }}><div className={`modal-content${closing ? ' closing' : ''}`} onClick={e => e.stopPropagation()} style={{ maxHeight: isMobile ? "90dvh" : "80vh", overflowY: "auto", padding: isMobile ? "20px" : undefined }}>
+    <div className={`modal-overlay${closing ? ' closing' : ''}`} onClick={closeFiado} onKeyDown={e => { if (e.key === 'Escape') closeFiado(); }}><div className={`modal-content${closing ? ' closing' : ''}`} onClick={e => e.stopPropagation()} style={{ maxWidth: 440, maxHeight: isMobile ? "90dvh" : "80vh", overflowY: "auto", padding: isMobile ? "20px" : undefined }}>
       <h2 className="modal-title">{manualMode ? 'Anotar Deuda' : 'Vender Fiado'}</h2>
       {manualMode
         ? <p style={{ textAlign: 'center', fontSize: '1rem', marginBottom: '16px', color: 'var(--text-secondary)' }}>Sin productos en el carrito. Anotá cuánto te debe el cliente.</p>
         : <p style={{ textAlign: 'center', fontSize: '1.2rem', marginBottom: '16px' }}>Total del carrito: <strong style={{ color: 'var(--accent-warning)', fontSize: '1.5rem' }}>${maxFiado.toLocaleString('es-AR')}</strong></p>
       }
-      <div className="input-group">
+      <div className="input-group" style={{ marginBottom: 16 }}>
         <label>{manualMode ? 'Monto que debe' : 'Monto a fiar (vacío = total)'}</label>
         <input type="number" min="0" step="1" placeholder={manualMode ? 'Ej: 5000' : `$${maxFiado}`}
           value={fiadoAmount} onChange={e => setFiadoAmount(e.target.value)}
           autoFocus={manualMode}
+          onWheel={e => e.currentTarget.blur()}
+          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); fiadoRef?.current?.focus(); } }}
           style={{ fontSize: '1.5rem', fontFamily: 'var(--font-mono)', textAlign: 'center' }} />
+        <p style={{ margin: '5px 2px 0', fontSize: '0.72rem', color: 'var(--text-faint)' }}>Enter pasa al nombre</p>
       </div>
       <div className="input-group">
         <label>Nombre del cliente</label>
@@ -41,6 +44,7 @@ export default function FiadoModal({ isFiadoOpen, setIsFiadoOpen, adjustedTotal,
         <datalist id="fiado-names">
           {customers?.map(c => <option key={c.id} value={c.name} />)}
         </datalist>
+        <p style={{ margin: '5px 2px 0', fontSize: '0.72rem', color: 'var(--text-faint)' }}>Enter guarda en la libreta</p>
       </div>
       <div className="modal-actions">
         <button className="btn btn-modal-cancel" onClick={() => { setIsFiadoOpen(false); setFiadoName(''); onFiadoClose?.(); setFiadoAmount(''); }}>Cancelar (Esc)</button>
