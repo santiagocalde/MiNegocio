@@ -55,6 +55,7 @@ export default function CatalogModal({ products = [], onSelect, onClose, getPric
         zIndex: 1000,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         padding: isMobile ? '0' : '24px',
+        animation: 'modalOverlayIn 0.16s ease-out',
       }}
     >
       <div
@@ -70,6 +71,7 @@ export default function CatalogModal({ products = [], onSelect, onClose, getPric
           flexDirection: 'column',
           overflow: 'hidden',
           boxShadow: 'var(--shadow-lg)',
+          animation: 'modalContentIn 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
           ...(isMobile ? { position: 'fixed', bottom: 0, left: 0, right: 0 } : {}),
         }}
       >

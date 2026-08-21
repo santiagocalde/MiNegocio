@@ -35,6 +35,7 @@ export default function VariantPicker({ product, onSelect, onClose, getPrice }) 
         zIndex: 1100,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         padding: 24,
+        animation: 'modalOverlayIn 0.16s ease-out',
       }}
     >
       <div
@@ -47,6 +48,7 @@ export default function VariantPicker({ product, onSelect, onClose, getPrice }) 
           maxWidth: 380,
           padding: 24,
           boxShadow: 'var(--shadow-lg)',
+          animation: 'modalContentIn 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
