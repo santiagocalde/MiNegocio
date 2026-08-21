@@ -112,6 +112,13 @@ async def update_config(request: Request, data: dict) -> dict:
     cuit = data.get("cuit", "")
     if cuit and len(str(cuit)) > 20:
         raise HTTPException(400, detail="CUIT demasiado largo")
+    caja_fija_raw = data.get("caja_inicial_fija")
+    if caja_fija_raw not in (None, ""):
+        try:
+            if float(str(caja_fija_raw)) < 0:
+                raise HTTPException(400, detail="El monto de caja inicial no puede ser negativo")
+        except (ValueError, TypeError):
+            raise HTTPException(400, detail="caja_inicial_fija debe ser un numero")
 
     # El GET nunca devuelve el mp_access_token real (llega vacío al form). Si el
     # usuario no cargó uno nuevo, no pisar el existente con "" → se quita del
@@ -144,7 +151,7 @@ async def update_config(request: Request, data: dict) -> dict:
                 "mp_qr_url", "mp_auto_confirm", "catalogo_activo", "catalogo_slug", "catalogo_whatsapp", "catalogo_tema",
                 "instagram", "propietario", "ing_brutos", "inicio_actividades", "logo_url",
                 "price_list_a_name", "price_list_b_name", "price_list_c_name",
-                "price_list_d_name", "price_list_e_name", "margen_estimado"]
+                "price_list_d_name", "price_list_e_name", "margen_estimado", "caja_inicial_fija"]
         pool = await get_pg_pool()
         async with pool.acquire() as conn:
             b_id = _biz_id()
@@ -197,7 +204,7 @@ async def update_config(request: Request, data: dict) -> dict:
                 "numero_caja", "mensaje_ticket", "iva_rate", "mp_access_token", "mp_collector_id",
                 "mp_qr_url", "mp_auto_confirm", "instagram", "propietario", "ing_brutos", "inicio_actividades", "logo_url",
                 "price_list_a_name", "price_list_b_name", "price_list_c_name",
-                "price_list_d_name", "price_list_e_name", "margen_estimado"]
+                "price_list_d_name", "price_list_e_name", "margen_estimado", "caja_inicial_fija"]
         async with aiosqlite.connect(main.DB_PATH) as db:
             # business_config key-value: upsert no destructivo. mp_access_token ya
             # fue removido de data arriba si llegó vacío, así se conserva el guardado.

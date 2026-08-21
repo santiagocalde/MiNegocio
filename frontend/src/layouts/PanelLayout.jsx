@@ -281,6 +281,9 @@ export default function PanelLayout() {
         closeCajaPin={closeTurn.closeCajaPin} setCloseCajaPin={closeTurn.setCloseCajaPin}
         calculateCajaDiff={closeTurn.calculateCajaDiff} cashRef={closeTurn.cashRef} addToast={addToast}
         currentTurnId={auth.currentTurnId}
+        businessConfig={backend.businessConfig}
+        setShowEgreso={backend.setShowEgreso} setEgresoType={backend.setEgresoType}
+        setEgresoMonto={backend.setEgresoMonto} setEgresoMotivo={backend.setEgresoMotivo}
         onTurnClosed={() => { localStorage.setItem('minegocio_just_closed', '1'); auth.setIsAuthenticated(false); auth.setCurrentTurnId(null); auth.setTurnOpenedAt(null); auth.setCurrentOperator(null); localStorage.removeItem('minegocio_current_operator'); localStorage.removeItem('minegocio_current_turn_id'); localStorage.removeItem('minegocio_turn_opened_at'); }} />
 
       <StockAlertsModal stockAlerts={backend.stockAlerts} setStockAlerts={backend.setStockAlerts} />

@@ -673,6 +673,15 @@ async def init_pg() -> None:
             ALTER TABLE business_config ADD COLUMN IF NOT EXISTS mp_external_pos_id TEXT DEFAULT '';
             ALTER TABLE business_config ADD COLUMN IF NOT EXISTS mp_qr_pos_url TEXT DEFAULT '';
 
+            -- Monto fijo de caja inicial (opt-in por negocio). Si el dueño lo
+            -- configura, todo turno nuevo abre siempre con este monto en vez de
+            -- heredar el counted_cash del último cierre (evita la confusión de
+            -- "te dejé / no me dejaste" entre empleados en el cambio de turno).
+            -- TEXT (mismo patrón que iva_rate/margen_estimado) para evitar líos de
+            -- tipo con asyncpg al guardar strings del formulario. Vacío/NULL/0 =
+            -- comportamiento histórico (sugerir el último arqueo).
+            ALTER TABLE business_config ADD COLUMN IF NOT EXISTS caja_inicial_fija TEXT DEFAULT '';
+
             -- Resincronizar secuencias de las tablas con ids seriales: cargas
             -- masivas con ids explícitos (p.ej. simulaciones o migraciones)
             -- dejan la secuencia atrás y el próximo INSERT choca con un id

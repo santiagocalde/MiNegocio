@@ -15,6 +15,7 @@ const FIELDS = [
   { key: 'propietario',         label: 'Propietario / Responsable',   placeholder: 'De López Juan Manuel', section: 'Negocio' },
   { key: 'numero_caja',         label: 'Nombre de la caja',           placeholder: 'CAJA 1', section: 'Negocio' },
   { key: 'logo_url',            label: 'Logo del negocio',            placeholder: 'https://ejemplo.com/logo.png', isLogo: true, section: 'Negocio' },
+  { key: 'caja_inicial_fija',   label: 'Monto fijo de caja inicial',  placeholder: '10000', isCajaFija: true, section: 'Caja y Turnos' },
   { key: 'cuit',                label: 'CUIT / CUIL',                 placeholder: '20-12345678-9', section: 'Fiscal' },
   { key: 'ing_brutos',          label: 'Ing. Brutos (Nº)',            placeholder: '(902)-20-18423262-7', section: 'Fiscal' },
   { key: 'inicio_actividades',  label: 'Inicio de Actividades',       placeholder: '01/07/2025', section: 'Fiscal' },
@@ -29,7 +30,7 @@ const FIELDS = [
   { key: 'margen_estimado',     label: 'Margen de ganancia estimado (%)', placeholder: '35', section: 'Análisis' },
 ];
 
-const SECTIONS = ['Negocio', 'Fiscal', 'Medios de Pago', 'Ticket', 'Análisis'];
+const SECTIONS = ['Negocio', 'Caja y Turnos', 'Fiscal', 'Medios de Pago', 'Ticket', 'Análisis'];
 
 const inputStyle = {
   width: '100%', background: 'var(--bg-main)', border: '1px solid var(--border-color)',
@@ -281,6 +282,23 @@ export default function ConfigPage() {
               </p>
             </div>
           )}
+        </div>
+      ) : f.isCajaFija ? (
+        <div>
+          <input
+            type="number"
+            min="0"
+            step="1"
+            value={config.caja_inicial_fija || ''}
+            placeholder={f.placeholder}
+            onChange={e => setConfig(prev => ({ ...prev, caja_inicial_fija: e.target.value }))}
+            style={inputStyle}
+          />
+          <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: '6px 0 0' }}>
+            Si lo dejás vacío, cada turno arranca con lo que contó el empleado anterior al cerrar (como hoy).
+            Si ponés un monto, <strong>todos los turnos arrancan siempre con ese número fijo</strong> — vos administrás
+            el resto por afuera (al cerrar, se te va a sugerir retirar el excedente para dejar siempre este monto en el cajón).
+          </p>
         </div>
       ) : f.options ? (
         <select

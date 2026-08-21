@@ -6,7 +6,7 @@ import useIsMobile from '../../hooks/useIsMobile';
 import useModalExit from '../../hooks/useModalExit';
 import { Icons } from '../ui/Icons';
 
-export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, currentOperator, todaySalesTotal, countedCash, setCountedCash, closeCajaPin, setCloseCajaPin, cashRef, addToast, currentTurnId, onTurnClosed }) {
+export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, currentOperator, todaySalesTotal, countedCash, setCountedCash, closeCajaPin, setCloseCajaPin, cashRef, addToast, currentTurnId, onTurnClosed, businessConfig, setShowEgreso, setEgresoType, setEgresoMonto, setEgresoMotivo }) {
   const isMobile = useIsMobile();
   const [closing, setClosing] = useState(false);
   const [pendingRemitos, setPendingRemitos] = useState([]);
@@ -229,6 +229,23 @@ export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, curren
   const diff = cajaDiff();
   const sobrante_de_turno_anterior = diff !== null && diff > 0 && diff > (turnEfectivo || 0) * 0.5;
 
+  // Monto fijo de caja inicial (Ajustes -> Caja y Turnos, opt-in por negocio).
+  // Si está configurado, sugerimos en vivo cuánto retirar para dejar siempre
+  // ese número en el cajón — se calcula contra lo que el empleado YA tipeó en
+  // "¿Cuánto contás en el cajón ahora?", no algo a futuro.
+  const cajaInicialFija = parseFloat(businessConfig?.caja_inicial_fija) || 0;
+  const retiroSugerido = cajaInicialFija > 0 && countedCash !== ''
+    ? Math.round((parseFloat(countedCash) || 0) - cajaInicialFija)
+    : null;
+
+  const handleQuickWithdraw = () => {
+    if (!retiroSugerido || retiroSugerido <= 0) return;
+    setEgresoType?.('retiro');
+    setEgresoMonto?.(String(retiroSugerido));
+    setEgresoMotivo?.(`Dejar caja en $${cajaInicialFija.toLocaleString('es-AR')} para el próximo turno`);
+    setShowEgreso?.(true);
+  };
+
   // Cuánto debería haber en el cajón (lo que el backend va a calcular al cierre)
   const expectedCash = turnResumen
     ? (turnResumen.initial_cash || 0) + (turnResumen.efectivo || 0) - (turnResumen.egresos || 0)
@@ -333,6 +350,17 @@ export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, curren
         <input ref={cashRef} type="number" value={countedCash} onChange={e => setCountedCash(e.target.value)} autoFocus placeholder="0" onWheel={e => e.currentTarget.blur()} style={{ fontSize: '1.3rem', padding: '11px 14px', fontFamily: 'var(--font-mono)', maxWidth: '240px', textAlign: 'center', marginLeft: 'auto', marginRight: 'auto', display: 'block' }} />
         <p style={{ margin: '6px 2px 0', fontSize: '0.78rem', color: 'var(--text-faint)' }}>Abrí el cajón, contá los billetes y escribí el total.</p>
       </div>
+      {retiroSugerido !== null && retiroSugerido > 0 && (
+        <div style={{ background: 'rgba(20,187,166,0.08)', border: '1px solid rgba(20,187,166,0.3)', borderRadius: 10, padding: '12px 16px', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
+          <span style={{ color: 'var(--text-primary)', fontSize: '0.9rem', fontWeight: 600, textAlign: 'center' }}>
+            Retirá <strong style={{ color: 'var(--accent-primary)', fontFamily: 'var(--font-mono)' }}>${retiroSugerido.toLocaleString('es-AR')}</strong> y dejá <strong style={{ fontFamily: 'var(--font-mono)' }}>${cajaInicialFija.toLocaleString('es-AR')}</strong> en el cajón para el próximo turno.
+          </span>
+          <button type="button" onClick={handleQuickWithdraw}
+            style={{ background: 'var(--accent-primary)', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: 8, fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+            Registrar retiro
+          </button>
+        </div>
+      )}
       {countedCash !== '' && parseFloat(countedCash) === 0 && (
         <div style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.4)', borderRadius: 10, padding: '12px 16px', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 10 }}>
           <Icons.Alert style={{ width: 18, height: 18, flexShrink: 0, color: 'var(--accent-warning)' }} />
