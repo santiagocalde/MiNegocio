@@ -10,6 +10,7 @@ import useSortable from '../hooks/useSortable.jsx';
 import ConfirmModal from '../components/ui/ConfirmModal';
 import ProductThumb from '../components/ui/ProductThumb';
 import CameraBarcodeScanner from '../components/ui/CameraBarcodeScanner';
+import useModalExit, { overlayAnim, contentAnim } from '../hooks/useModalExit';
 
 const Icons = {
   Search: () => <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>,
@@ -582,6 +583,20 @@ export default function StockModule() {
     setOpenAccordion(openAccordion === name ? null : name);
   };
 
+  const nuevoProductoExit = useModalExit(showNuevoProducto);
+  const aumentoMasivoExit = useModalExit(showAumentoMasivo);
+  const newCategoryExit = useModalExit(showNewCategory);
+  const csvHelpExit = useModalExit(showCsvHelp);
+  const variantParentExit = useModalExit(!!variantParent);
+  const variantParentRef = useRef(null);
+  if (variantParent) variantParentRef.current = variantParent;
+  const variantParentData = variantParent || variantParentRef.current;
+  const importResultExit = useModalExit(!!(importResult && importResult.errors?.length > 0));
+  const importResultRef = useRef(null);
+  if (importResult) importResultRef.current = importResult;
+  const importResultData = importResult || importResultRef.current;
+  const promptExit = useModalExit(promptState.isOpen);
+
   return (
     <div style={{ padding: isMobile ? '12px 14px' : '12px 20px', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflowY: 'auto', overflowX: 'hidden' }}>
 
@@ -878,9 +893,9 @@ export default function StockModule() {
       </div>
 
       {/* MODAL NUEVO PRODUCTO */}
-      {showNuevoProducto && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(30,58,95,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '32px', width: '480px', maxWidth: '92vw', boxSizing: 'border-box', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 10px 25px rgba(30,58,95,0.5)' }}>
+      {nuevoProductoExit.rendered && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(30,58,95,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, ...overlayAnim(nuevoProductoExit.closing) }} onClick={() => setShowNuevoProducto(false)}>
+          <div onClick={e => e.stopPropagation()} style={{ background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '32px', width: '480px', maxWidth: '92vw', boxSizing: 'border-box', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 10px 25px rgba(30,58,95,0.5)', ...contentAnim(nuevoProductoExit.closing) }}>
             <h2 style={{ fontSize: '1.5rem', fontWeight: 800, margin: '0 0 24px 0', color: 'var(--text-primary)' }}>Nuevo Producto</h2>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
               {[{ label: 'Código', key: 'code', type: 'text' }, { label: 'Nombre', key: 'name', type: 'text' },
@@ -949,9 +964,9 @@ export default function StockModule() {
       )}
 
       {/* MODAL AUMENTO MASIVO */}
-      {showAumentoMasivo && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(30,58,95,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '32px', width: '400px', maxWidth: '92vw', boxSizing: 'border-box', boxShadow: '0 10px 25px rgba(30,58,95,0.5)' }}>
+      {aumentoMasivoExit.rendered && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(30,58,95,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, ...overlayAnim(aumentoMasivoExit.closing) }} onClick={() => setShowAumentoMasivo(false)}>
+          <div onClick={e => e.stopPropagation()} style={{ background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '32px', width: '400px', maxWidth: '92vw', boxSizing: 'border-box', boxShadow: '0 10px 25px rgba(30,58,95,0.5)', ...contentAnim(aumentoMasivoExit.closing) }}>
             <h2 style={{ fontSize: '1.5rem', fontWeight: 800, margin: '0 0 16px 0', color: 'var(--text-primary)' }}>Aumento Masivo de Precios</h2>
             <p style={{ color: 'var(--text-secondary)', marginBottom: '24px', fontSize: '0.95rem' }}>
               Ingresa el porcentaje de inflación para actualizar todos los precios de venta automáticamente.
@@ -994,9 +1009,9 @@ export default function StockModule() {
         variant={confirmState.variant}
       />
 
-      {showNewCategory && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(30,58,95,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100 }}>
-          <div style={{ background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '24px', width: '300px', maxWidth: '92vw', boxSizing: 'border-box' }}>
+      {newCategoryExit.rendered && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(30,58,95,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, ...overlayAnim(newCategoryExit.closing) }} onClick={() => setShowNewCategory(false)}>
+          <div onClick={e => e.stopPropagation()} style={{ background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '24px', width: '300px', maxWidth: '92vw', boxSizing: 'border-box', ...contentAnim(newCategoryExit.closing) }}>
             <h3 style={{ margin: '0 0 16px 0', color: 'var(--text-primary)' }}>Nueva Categoría</h3>
             <input type="text" value={newCategoryName} onChange={e => setNewCategoryName(e.target.value)} autoFocus
                    placeholder="Nombre de categoría"
@@ -1013,10 +1028,10 @@ export default function StockModule() {
       )}
 
       {/* Modal: Ayuda formato CSV */}
-      {showCsvHelp && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(30,58,95,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1200, padding: 20 }}
+      {csvHelpExit.rendered && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(30,58,95,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1200, padding: 20, ...overlayAnim(csvHelpExit.closing) }}
           onClick={e => { if (e.target === e.currentTarget) setShowCsvHelp(false); }}>
-          <div style={{ background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: 16, padding: 28, width: '100%', maxWidth: 480, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 40px rgba(0,0,0,0.5)', boxSizing: 'border-box' }}>
+          <div style={{ background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: 16, padding: 28, width: '100%', maxWidth: 480, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 40px rgba(0,0,0,0.5)', boxSizing: 'border-box', ...contentAnim(csvHelpExit.closing) }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <h3 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '1.1rem', fontWeight: 800 }}>Formato del CSV</h3>
               <button onClick={() => setShowCsvHelp(false)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1.3rem' }}>✕</button>
@@ -1078,36 +1093,36 @@ export default function StockModule() {
       )}
 
       {/* Modal: Resultado de importación */}
-      {importResult && importResult.errors?.length > 0 && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(30,58,95,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1200, padding: 20 }}
+      {importResultExit.rendered && importResultData && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(30,58,95,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1200, padding: 20, ...overlayAnim(importResultExit.closing) }}
           onClick={e => { if (e.target === e.currentTarget) setImportResult(null); }}>
-          <div style={{ background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: 16, padding: 24, width: '100%', maxWidth: 440, maxHeight: '80vh', overflowY: 'auto', boxSizing: 'border-box' }}>
+          <div style={{ background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: 16, padding: 24, width: '100%', maxWidth: 440, maxHeight: '80vh', overflowY: 'auto', boxSizing: 'border-box', ...contentAnim(importResultExit.closing) }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <h3 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '1rem', fontWeight: 800 }}>
                 Resultado de importación
               </h3>
               <button onClick={() => setImportResult(null)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1.3rem' }}>✕</button>
             </div>
-            {importResult.imported > 0 && (
+            {importResultData.imported > 0 && (
               <div style={{ padding: '10px 14px', background: 'rgba(20,187,166,0.08)', border: '1px solid var(--accent-primary)', borderRadius: 8, marginBottom: 14, fontSize: '0.9rem', color: 'var(--accent-primary)', fontWeight: 700 }}>
-                ✅ {importResult.imported} producto{importResult.imported !== 1 ? 's' : ''} importado{importResult.imported !== 1 ? 's' : ''}
-                {importResult.categories_created?.length > 0 && ` · ${importResult.categories_created.length} categoría${importResult.categories_created.length !== 1 ? 's' : ''} nueva${importResult.categories_created.length !== 1 ? 's' : ''}`}
+                ✅ {importResultData.imported} producto{importResultData.imported !== 1 ? 's' : ''} importado{importResultData.imported !== 1 ? 's' : ''}
+                {importResultData.categories_created?.length > 0 && ` · ${importResultData.categories_created.length} categoría${importResultData.categories_created.length !== 1 ? 's' : ''} nueva${importResultData.categories_created.length !== 1 ? 's' : ''}`}
               </div>
             )}
-            {importResult.errors?.length > 0 && (
+            {importResultData.errors?.length > 0 && (
               <>
                 <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--accent-danger)', marginBottom: 8 }}>
-                  ⚠️ {importResult.errors.length} fila{importResult.errors.length !== 1 ? 's' : ''} con error:
+                  ⚠️ {importResultData.errors.length} fila{importResultData.errors.length !== 1 ? 's' : ''} con error:
                 </div>
                 <div style={{ background: 'var(--bg-card)', borderRadius: 8, padding: '10px 12px', maxHeight: 220, overflowY: 'auto' }}>
-                  {importResult.errors.slice(0, 20).map((err, i) => (
-                    <div key={i} style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', padding: '3px 0', borderBottom: i < importResult.errors.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
+                  {importResultData.errors.slice(0, 20).map((err, i) => (
+                    <div key={i} style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', padding: '3px 0', borderBottom: i < importResultData.errors.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
                       {err}
                     </div>
                   ))}
-                  {importResult.errors.length > 20 && (
+                  {importResultData.errors.length > 20 && (
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', padding: '6px 0', fontStyle: 'italic' }}>
-                      … y {importResult.errors.length - 20} más
+                      … y {importResultData.errors.length - 20} más
                     </div>
                   )}
                 </div>
@@ -1123,9 +1138,9 @@ export default function StockModule() {
           </div>
         </div>
       )}
-      {promptState.isOpen && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(30,58,95,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100 }}>
-          <div style={{ background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '24px', width: '320px', maxWidth: '92vw', boxSizing: 'border-box', boxShadow: '0 10px 25px rgba(0,0,0,0.5)' }}>
+      {promptExit.rendered && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(30,58,95,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, ...overlayAnim(promptExit.closing) }} onClick={() => setPromptState({ ...promptState, isOpen: false })}>
+          <div onClick={e => e.stopPropagation()} style={{ background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '24px', width: '320px', maxWidth: '92vw', boxSizing: 'border-box', boxShadow: '0 10px 25px rgba(0,0,0,0.5)', ...contentAnim(promptExit.closing) }}>
             <h3 style={{ margin: '0 0 16px 0', color: 'var(--text-primary)', fontSize: '1.1rem', fontWeight: 700 }}>{promptState.title}</h3>
             {promptState.hint && <p style={{ margin: '0 0 12px 0', color: 'var(--text-secondary)', fontSize: '0.85rem', textAlign: 'center' }}>{promptState.hint}</p>}
             <input 
@@ -1149,12 +1164,12 @@ export default function StockModule() {
       )}
 
       {/* Modal de gestión de variantes */}
-      {variantParent && (
-        <div onClick={() => setVariantParent(null)} style={{ position: 'fixed', inset: 0, zIndex: 2000, background: 'rgba(0,0,0,0.65)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 12, width: '100%', maxWidth: 460, padding: 24, boxShadow: 'var(--shadow-lg)', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
+      {variantParentExit.rendered && variantParentData && (
+        <div onClick={() => setVariantParent(null)} style={{ position: 'fixed', inset: 0, zIndex: 2000, background: 'rgba(0,0,0,0.65)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, ...overlayAnim(variantParentExit.closing) }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 12, width: '100%', maxWidth: 460, padding: 24, boxShadow: 'var(--shadow-lg)', maxHeight: '80vh', display: 'flex', flexDirection: 'column', ...contentAnim(variantParentExit.closing) }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
               <div>
-                <h3 style={{ margin: 0, fontWeight: 800, fontSize: '1rem', color: 'var(--text-primary)' }}>Variantes — {variantParent.name}</h3>
+                <h3 style={{ margin: 0, fontWeight: 800, fontSize: '1rem', color: 'var(--text-primary)' }}>Variantes — {variantParentData.name}</h3>
                 <p style={{ margin: '4px 0 0', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>Ej: 25 kg, 50 kg, Rojo, Grande</p>
               </div>
               <button onClick={() => setVariantParent(null)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1.2rem' }}>✕</button>
