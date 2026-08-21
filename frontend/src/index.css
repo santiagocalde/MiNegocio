@@ -567,6 +567,12 @@ svg {
    scrollea por su cuenta si es más alto que la pantalla. */
 body.modal-open { overflow: hidden; }
 body.modal-open .layout > main { overflow: hidden !important; }
+/* Inputs numéricos sin las flechitas de spin (arriba/abajo). En el POS el monto
+   se escribe; esas flechas solo estorban y, con la rueda del mouse encima,
+   cambian el valor sin querer (aparte del onWheel/blur que ya ponemos por JS). */
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+input[type=number] { -moz-appearance: textfield; appearance: textfield; }
 .modal-title {
   font-size: 1.6rem;
   font-weight: 800;

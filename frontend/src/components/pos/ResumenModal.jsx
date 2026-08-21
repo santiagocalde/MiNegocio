@@ -242,7 +242,7 @@ function ResumenModal({ showResumen, setShowResumen, resumenData, businessConfig
 
         {/* Más vendidos + Ventas por categoría — lado a lado, cada uno con su propio tope de altura */}
         {(topProducts.length > 0 || (resumenData?.por_categoria || []).length > 0) && (
-          <div style={{ display: 'grid', gridTemplateColumns: topProducts.length === 0 || (resumenData?.por_categoria || []).length === 0 ? '1fr' : '1fr 1fr', gap: '20px', marginTop: '18px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: topProducts.length === 0 || (resumenData?.por_categoria || []).length === 0 ? '1fr' : '1fr 1fr', gap: '12px', marginTop: '14px' }}>
             <TopProductsList items={topProducts} compact />
             <CategoryBreakdown items={resumenData?.por_categoria} compact />
           </div>

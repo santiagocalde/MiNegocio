@@ -5,10 +5,9 @@ export default function EgresoModal({ showEgreso, setShowEgreso, egresoType, set
   const { rendered, closing } = useModalExit(showEgreso);
   if (!rendered) return null;
   const isIngreso = egresoType === 'ingreso';
-  // 'gasto' y 'retiro' son las dos variantes de "saqué efectivo": gasto resta
-  // de la ganancia en Reportes (luz, insumos...), retiro es plata que ya era
-  // tuya y solo sale del cajón. El toggle grande no distingue esto — aparece
-  // como un paso secundario chico solo cuando elegís "Saqué efectivo".
+  // "Retirar efectivo" registra un 'gasto' (resta de la ganancia en Reportes).
+  // Mantenemos también 'retiro' como saque válido por compatibilidad con
+  // egresos viejos y otros orígenes, aunque este modal ya no lo genera.
   const isSaque = egresoType === 'gasto' || egresoType === 'retiro';
   const montoNum = parseFloat(egresoMonto) || 0;
   // Solo advertimos cuando sale plata (gasto/retiro) y supera lo que debería haber
@@ -26,7 +25,7 @@ export default function EgresoModal({ showEgreso, setShowEgreso, egresoType, set
         {/* Toggle principal — simple, dos opciones. Icono y texto en fila
             (no apilados) para que entren en un solo renglón parejo. */}
         <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
-          <button onClick={() => setEgresoType('retiro')}
+          <button onClick={() => setEgresoType('gasto')}
             style={{ flex: 1, padding: '15px 8px', borderRadius: '12px', border: '2px solid', borderColor: isSaque ? 'var(--accent-danger)' : 'var(--border-color)', background: isSaque ? 'rgba(239,68,68,0.12)' : 'transparent', color: 'var(--text-primary)', fontWeight: 700, fontSize: '0.92rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px', whiteSpace: 'nowrap' }}>
             <Icons.Minus style={{ width: 15, height: 15, color: 'var(--accent-danger)', flexShrink: 0 }} />
             Retirar efectivo
@@ -37,20 +36,6 @@ export default function EgresoModal({ showEgreso, setShowEgreso, egresoType, set
             Ingresar efectivo
           </button>
         </div>
-
-        {/* Sub-elección compacta — solo al retirar, para que Reportes calcule bien la ganancia */}
-        {isSaque && (
-          <div style={{ display: 'flex', gap: '8px', marginBottom: '18px' }}>
-            <button onClick={() => setEgresoType('gasto')}
-              style={{ flex: 1, padding: '8px 10px', borderRadius: '8px', border: '1px solid', borderColor: egresoType === 'gasto' ? 'var(--accent-warning)' : 'var(--border-color)', background: egresoType === 'gasto' ? 'rgba(245,158,11,0.12)' : 'transparent', color: 'var(--text-secondary)', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer' }}>
-              Fue un gasto (luz, insumos...)
-            </button>
-            <button onClick={() => setEgresoType('retiro')}
-              style={{ flex: 1, padding: '8px 10px', borderRadius: '8px', border: '1px solid', borderColor: egresoType === 'retiro' ? 'var(--accent-primary)' : 'var(--border-color)', background: egresoType === 'retiro' ? 'rgba(20,187,166,0.12)' : 'transparent', color: 'var(--text-secondary)', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer' }}>
-              Fue para mí
-            </button>
-          </div>
-        )}
 
         <div className="input-group" style={{ marginBottom: 16 }}><label>{isIngreso ? 'Monto que agregaste ($)' : 'Monto a retirar ($)'}</label>
           <input type="text" inputMode="numeric" value={egresoMonto} onChange={e => setEgresoMonto(e.target.value.replace(/[^0-9]/g, ''))}

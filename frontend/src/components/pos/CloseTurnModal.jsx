@@ -299,7 +299,7 @@ export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, curren
 
       {/* Más vendidos + Ventas por categoría — lado a lado en desktop, cada uno con su propio tope de altura */}
       {(turnTop.length > 0 || turnCats.length > 0) && (
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile || turnTop.length === 0 || turnCats.length === 0 ? '1fr' : '1fr 1fr', gap: '20px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile || turnTop.length === 0 || turnCats.length === 0 ? '1fr' : '1fr 1fr', gap: '12px' }}>
           <TopProductsList items={turnTop} compact />
           <CategoryBreakdown items={turnCats} compact />
         </div>
@@ -331,7 +331,7 @@ export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, curren
 
       <div className="input-group" style={{ marginBottom: 12 }}>
         <label style={{ fontSize: '1.1rem', color: 'var(--accent-primary)', fontWeight: 600 }}>¿Cuánto contás en el cajón ahora?</label>
-        <input ref={cashRef} type="number" value={countedCash} onChange={e => setCountedCash(e.target.value)} autoFocus placeholder="0" onWheel={e => e.currentTarget.blur()} />
+        <input ref={cashRef} type="number" value={countedCash} onChange={e => setCountedCash(e.target.value)} autoFocus placeholder="0" onWheel={e => e.currentTarget.blur()} style={{ fontSize: '1.4rem', padding: '12px 14px' }} />
         <p style={{ margin: '6px 2px 0', fontSize: '0.78rem', color: 'var(--text-faint)' }}>Abrí el cajón, contá los billetes y escribí el total.</p>
       </div>
       {countedCash !== '' && parseFloat(countedCash) === 0 && (

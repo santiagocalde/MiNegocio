@@ -225,7 +225,7 @@ export default function CatalogoModule() {
                  <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.88rem' }}>{isActive ? 'Tu catálogo está público y aceptando pedidos.' : 'El catálogo está desactivado.'}</p>
                </div>
              </div>
-              <button onClick={toggleCatalogo} disabled={saving} style={{ width: 'auto', flexShrink: 0, background: isActive ? 'var(--accent-danger)' : 'var(--accent-success)', color: 'white', border: 'none', padding: '10px 18px', borderRadius: '8px', fontWeight: 700, fontSize: '0.9rem', cursor: saving ? 'not-allowed' : 'pointer', transition: 'all 0.15s', boxShadow: '0 4px 12px rgba(30,58,95,0.2)', opacity: saving ? 0.7 : 1, whiteSpace: 'nowrap' }}>
+              <button onClick={toggleCatalogo} disabled={saving} style={{ width: 'auto', flex: '0 0 auto', alignSelf: isMobile ? 'flex-start' : 'center', background: isActive ? 'var(--accent-danger)' : 'var(--accent-success)', color: 'white', border: 'none', padding: '9px 16px', borderRadius: '999px', fontWeight: 700, fontSize: '0.85rem', cursor: saving ? 'not-allowed' : 'pointer', transition: 'all 0.15s', boxShadow: '0 4px 12px rgba(30,58,95,0.2)', opacity: saving ? 0.7 : 1, whiteSpace: 'nowrap' }}>
                 {saving ? '...' : (isActive ? 'Desactivar' : 'Activar catálogo')}
               </button>
           </div>

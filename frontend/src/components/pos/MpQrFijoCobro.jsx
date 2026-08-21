@@ -12,7 +12,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { apiPost, apiGet } from '../../services/apiClient';
 
-export default function MpQrFijoCobro({ total, onPaid, addToast }) {
+export default function MpQrFijoCobro({ total, onPaid, onError, addToast }) {
   const [qrSrc, setQrSrc] = useState('');
   const [status, setStatus] = useState('loading'); // loading | waiting | paid | error
   const intentRef = useRef(null);
@@ -27,15 +27,19 @@ export default function MpQrFijoCobro({ total, onPaid, addToast }) {
         const d = await r.json().catch(() => ({}));
         if (!alive) return;
         if (!r.ok) {
+          // La caja QR automática no está configurada (o falló el armado). En vez
+          // de bloquear la venta con una alerta, avisamos al padre para caer al
+          // QR manual: se cobra igual mostrando el QR del celular. Configurar la
+          // caja automática es OPCIONAL, nunca una traba para cobrar.
           setStatus('error');
-          addToast?.(d.detail || 'No se pudo armar el cobro con QR.', 'error');
+          onError?.(d.detail);
           return;
         }
         intentRef.current = d.intent_id;
         if (d.qr_pos_url) setQrSrc(d.qr_pos_url);
         setStatus('waiting');
       } catch {
-        if (alive) setStatus('error');
+        if (alive) { setStatus('error'); onError?.(); }
       }
     })();
     return () => { alive = false; };

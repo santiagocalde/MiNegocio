@@ -43,7 +43,10 @@ export default function ChargeModal({
   // Con MP auto-confirmado, "Procesar Venta" queda BLOQUEADO hasta que el pago
   // entre; la alerta de MpQrCobro (onPaid) lo desbloquea (setMpPaid).
   const [mpPaid, setMpPaid] = useState(false);
-  const mpWaiting = !useSplitPayment && paymentMethod === 'mercadopago' && mpAutoConfirm && !mpPaid;
+  // La caja QR automática puede no estar configurada: en ese caso caemos al QR
+  // manual y NO bloqueamos "Procesar Venta" (configurarla es opcional).
+  const [mpFijoError, setMpFijoError] = useState(false);
+  const mpWaiting = !useSplitPayment && paymentMethod === 'mercadopago' && mpAutoConfirm && !mpFijoError && !mpPaid;
 
   const isConfirmDisabled =
     (!useSplitPayment && paymentMethod === 'efectivo' && (payment === '' || change < 0)) ||
@@ -76,7 +79,7 @@ export default function ChargeModal({
   // Ref con el estado más reciente para que el listener global lea siempre
   // valores frescos sin tener que re-suscribirse en cada render.
   const kbRef = useRef({});
-  kbRef.current = { paymentMethod, useSplitPayment, isConfirmDisabled, confirmCharge, cancelCharge, selectPaymentMethod, mpPaid };
+  kbRef.current = { paymentMethod, useSplitPayment, isConfirmDisabled, confirmCharge, cancelCharge, selectPaymentMethod, mpPaid, isMobile };
 
   // Un único listener de teclado para todo el modal (Reglas de Hooks: se
   // llama SIEMPRE, antes de cualquier return).
@@ -100,9 +103,11 @@ export default function ChargeModal({
         return;
       }
 
-      // Flechas → cambian el método de pago desde cualquier parte del modal.
-      // Excepciones: dentro del área de pago mixto (el <select> navega solo),
-      // y sobre los botones de billete (su propio handler mueve el foco ahí).
+      // Flechas → cambian el método de pago respetando la GRILLA en la que se
+      // ven los botones (2 columnas en desktop, 1 en mobile): ← → se mueven de a
+      // uno dentro de la fila, ↑ ↓ saltan de fila. Así "bajar" de Efectivo lleva
+      // a Transferencia (el de abajo), no a Tarjeta (el de al lado).
+      // Excepciones: pago mixto (el <select> navega solo) y los botones de billete.
       if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
         if (inSplitArea || onBillBtn) return;
         // En un campo de texto distinto al de efectivo, dejar el cursor. En el
@@ -111,10 +116,18 @@ export default function ChargeModal({
         if (inTextField && active !== paymentRef?.current) return;
         if (s.mpPaid) return; // método bloqueado tras cobrar QR
         e.preventDefault();
-        const dir = (e.key === 'ArrowRight' || e.key === 'ArrowDown') ? 1 : -1;
+        const cols = s.isMobile ? 1 : 2;
         const idx = PAYMENT_METHODS.findIndex(m => m.key === s.paymentMethod);
-        const next = PAYMENT_METHODS[(idx + dir + PAYMENT_METHODS.length) % PAYMENT_METHODS.length];
-        s.selectPaymentMethod(next.key);
+        if (idx === -1) return;
+        let next = idx;
+        if (e.key === 'ArrowRight') next = idx + 1;
+        else if (e.key === 'ArrowLeft') next = idx - 1;
+        else if (e.key === 'ArrowDown') next = idx + cols;
+        else if (e.key === 'ArrowUp') next = idx - cols;
+        if (next < 0 || next >= PAYMENT_METHODS.length) return; // fuera de la grilla
+        // ← → no deben saltar de fila (en 2 columnas): si cambia la fila, no move.
+        if ((e.key === 'ArrowRight' || e.key === 'ArrowLeft') && Math.floor(next / cols) !== Math.floor(idx / cols)) return;
+        s.selectPaymentMethod(PAYMENT_METHODS[next].key);
       }
     };
     window.addEventListener('keydown', handler);
@@ -141,7 +154,7 @@ export default function ChargeModal({
   // arranca sin pago). El método queda bloqueado una vez pagado, así que no hace
   // falta resetear al cambiarlo.
   // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => { setMpPaid(false); }, [isCharging]);
+  useEffect(() => { setMpPaid(false); setMpFijoError(false); }, [isCharging]);
 
   const { rendered, closing } = useModalExit(isCharging);
   if (!rendered) return null;
@@ -352,13 +365,15 @@ export default function ChargeModal({
               </div>
             )}
 
-            {/* Mercado Pago con auto-confirmación: QR fijo del mostrador que se confirma solo */}
-            {!useSplitPayment && paymentMethod === 'mercadopago' && mpAutoConfirm && (
-              <MpQrFijoCobro total={finalTotal} onPaid={() => setMpPaid(true)} addToast={addToast} />
+            {/* Mercado Pago con auto-confirmación: QR fijo del mostrador que se confirma solo.
+                Si la caja QR no está configurada, cae al modo manual de abajo (mpFijoError). */}
+            {!useSplitPayment && paymentMethod === 'mercadopago' && mpAutoConfirm && !mpFijoError && (
+              <MpQrFijoCobro total={finalTotal} onPaid={() => setMpPaid(true)} onError={() => setMpFijoError(true)} addToast={addToast} />
             )}
 
-            {/* Mercado Pago simple - QR del comercio (el cajero confirma a mano) */}
-            {!useSplitPayment && paymentMethod === 'mercadopago' && !mpAutoConfirm && (
+            {/* Mercado Pago simple - QR del comercio (el cajero confirma a mano).
+                También es el fallback cuando la caja QR automática no está lista. */}
+            {!useSplitPayment && paymentMethod === 'mercadopago' && (!mpAutoConfirm || mpFijoError) && (
               <div style={{ background: 'var(--bg-card)', padding: isMobile ? '16px' : '24px', borderRadius: '16px', border: '1px solid rgba(20,187,166,0.3)', textAlign: 'center' }}>
                 <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '12px' }}>Pago con Mercado Pago</div>
                 {businessConfig?.mp_qr_url ? (
