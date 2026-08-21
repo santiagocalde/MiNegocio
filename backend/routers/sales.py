@@ -357,10 +357,11 @@ async def update_turn_initial_cash(turn_id: int, body: dict = Body(...)) -> dict
     """Permite corregir el monto con el que se abrió la caja (solo turno abierto).
     El arqueo del cierre usa este valor, así que ajustarlo evita sobrantes/faltantes falsos.
 
-    Solo admin/manager: un cajero editando este número podría maquillar un
-    faltante (o inventar un sobrante) en el arqueo del cierre sin dejar rastro.
-    Se valida el rol server-side (no solo ocultando el botón en el front) y se
-    audita el cambio, mismo criterio que la corrección de un turno ya cerrado."""
+    Reglas de acceso:
+    - Admin/manager: puede editar siempre (con audit log).
+    - Cualquier otro rol: puede editar SOLO si el turno no tiene ventas registradas aún.
+      Esto permite corregir el vuelto inicial al abrir, pero impide maquillar un faltante
+      una vez que ya se vendió algo. Igualmente se audita."""
     b_id = _biz_id()
     try:
         monto = round(float(body.get("initial_cash")), 2)
@@ -376,8 +377,16 @@ async def update_turn_initial_cash(turn_id: int, body: dict = Body(...)) -> dict
             op_row = await conn.fetchrow(
                 "SELECT name, role FROM operators WHERE id = $1 AND business_id = $2", operator_id, b_id
             )
-            if not op_row or op_row["role"] not in ("admin", "manager"):
-                raise HTTPException(403, detail="Solo un admin o manager puede corregir la caja inicial.")
+            if not op_row:
+                raise HTTPException(403, detail="Operador no encontrado.")
+            is_privileged = op_row["role"] in ("admin", "manager")
+            if not is_privileged:
+                # Verificar que el turno no tenga ventas
+                sales_count = await conn.fetchval(
+                    "SELECT COUNT(*) FROM sales WHERE turn_id = $1 AND business_id = $2", turn_id, b_id
+                )
+                if sales_count and sales_count > 0:
+                    raise HTTPException(403, detail="No podés editar la caja inicial una vez que ya hay ventas registradas en el turno.")
             old_row = await conn.fetchrow("SELECT initial_cash FROM turns WHERE id = $1 AND business_id = $2", turn_id, b_id)
             res = await conn.execute(
                 "UPDATE turns SET initial_cash = $1 WHERE id = $2 AND business_id = $3 AND closed_at IS NULL",
@@ -387,7 +396,7 @@ async def update_turn_initial_cash(turn_id: int, body: dict = Body(...)) -> dict
                 raise HTTPException(400, detail="Turno no encontrado o ya cerrado")
             await conn.execute(
                 "INSERT INTO audit_log (business_id, action, operator, details) VALUES ($1,$2,$3,$4)",
-                b_id, "caja_inicial_corregida", op_row["name"] or "admin",
+                b_id, "caja_inicial_corregida", op_row["name"] or "operador",
                 f"Turno {turn_id}: caja inicial corregida de ${(old_row['initial_cash'] if old_row else 0) or 0:.0f} a ${monto:.0f}"
             )
     else:
@@ -395,8 +404,14 @@ async def update_turn_initial_cash(turn_id: int, body: dict = Body(...)) -> dict
         async with aiosqlite.connect(main.DB_PATH) as db:
             cur_op = await db.execute("SELECT name, role FROM operators WHERE id = ?", (operator_id,))
             op_row = await cur_op.fetchone()
-            if not op_row or op_row[1] not in ("admin", "manager"):
-                raise HTTPException(403, detail="Solo un admin o manager puede corregir la caja inicial.")
+            if not op_row:
+                raise HTTPException(403, detail="Operador no encontrado.")
+            is_privileged = op_row[1] in ("admin", "manager")
+            if not is_privileged:
+                cur_sc = await db.execute("SELECT COUNT(*) FROM sales WHERE turn_id = ?", (turn_id,))
+                sales_count_row = await cur_sc.fetchone()
+                if sales_count_row and sales_count_row[0] > 0:
+                    raise HTTPException(403, detail="No podés editar la caja inicial una vez que ya hay ventas registradas en el turno.")
             cur_old = await db.execute("SELECT initial_cash FROM turns WHERE id = ?", (turn_id,))
             old_row = await cur_old.fetchone()
             cur = await db.execute(
@@ -407,7 +422,7 @@ async def update_turn_initial_cash(turn_id: int, body: dict = Body(...)) -> dict
                 raise HTTPException(400, detail="Turno no encontrado o ya cerrado")
             await db.execute(
                 "INSERT INTO audit_log (action, operator, details) VALUES (?,?,?)",
-                ("caja_inicial_corregida", op_row[0] or "admin",
+                ("caja_inicial_corregida", op_row[0] or "operador",
                  f"Turno {turn_id}: caja inicial corregida de ${(old_row[0] if old_row else 0) or 0:.0f} a ${monto:.0f}")
             )
             await db.commit()

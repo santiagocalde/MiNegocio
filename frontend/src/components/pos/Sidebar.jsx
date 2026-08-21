@@ -384,10 +384,10 @@ export default function Sidebar({
                   <span style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', fontFamily: 'var(--font-mono)' }}>
                     ${(initialCash || 0).toLocaleString('es-AR')}
                   </span>
-                  {/* Solo admin/manager puede corregir la caja inicial de un turno abierto.
-                      Un cajero editando este número podría maquillar un faltante (o inventar
-                      un sobrante) sin dejar rastro — por eso también se audita en el backend. */}
-                  {(currentOperator?.role === 'admin' || currentOperator?.role === 'manager') && (
+                  {/* Admin/manager: puede editar siempre.
+                      Otros roles: pueden editar solo si aún no hay ventas en el turno
+                      (para corregir el vuelto inicial al abrir, sin poder maquillar faltantes). */}
+                  {(currentOperator?.role === 'admin' || currentOperator?.role === 'manager' || !turnCashSalesTotal) && (
                     <button
                       onClick={() => { setInitialEditVal(String(initialCash || 0)); setEditingInitial(true); }}
                       title="Editar caja inicial"
