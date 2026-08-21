@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { usePanelContext } from '../context/PanelContext';
 import { apiGet, apiPost, SERVER_URL } from '../services/apiClient';
@@ -7,6 +7,7 @@ import EmptyState from '../components/ui/EmptyState';
 import useSortable from '../hooks/useSortable.jsx';
 import { Icons } from '../components/ui/Icons';
 import useIsMobile from '../hooks/useIsMobile';
+import useModalExit from '../hooks/useModalExit';
 
 function formatPesos(n) {
   return '$ ' + (n || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -280,6 +281,18 @@ export default function ReportsModule() {
     }
   };
 
+  // Hooks incondicionales — renderReports/renderGate son funciones que
+  // devuelven JSX pero se invocan condicionalmente al final del componente,
+  // así que estos hooks NO pueden ir adentro de ellas.
+  const methodExit = useModalExit(!!methodModal);
+  const methodDataRef = useRef(null);
+  if (methodModal) methodDataRef.current = methodModal;
+  const methodData = methodModal || methodDataRef.current;
+  const cancelExit = useModalExit(!!cancelModal);
+  const cancelDataRef = useRef(null);
+  if (cancelModal) cancelDataRef.current = cancelModal;
+  const cancelData = cancelModal || cancelDataRef.current;
+
   const renderReports = () => (
     <div style={{ padding: isMobile ? '12px 14px' : '12px 20px', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflowY: 'auto', overflowX: 'hidden' }}>
 
@@ -534,12 +547,12 @@ export default function ReportsModule() {
         document.body
       )}
 
-      {methodModal && (
-        <div className="modal-overlay" onClick={() => setMethodModal(null)}>
-          <div className="modal-content" style={{ maxWidth: 400 }} onClick={e => e.stopPropagation()}>
+      {methodExit.rendered && methodData && (
+        <div className={`modal-overlay${methodExit.closing ? ' closing' : ''}`} onClick={() => setMethodModal(null)}>
+          <div className={`modal-content${methodExit.closing ? ' closing' : ''}`} style={{ maxWidth: 400 }} onClick={e => e.stopPropagation()}>
             <h3 className="modal-title" style={{ margin: '0 0 12px 0' }}>Modificar método de pago</h3>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0 0 16px 0' }}>
-              Venta #{String(methodModal.id ?? '').padStart(8, '0')} · {formatPesos(methodModal.total)} · {METHOD_LABEL[methodModal.payment_method] || methodModal.payment_method?.toUpperCase() || '—'}
+              Venta #{String(methodData.id ?? '').padStart(8, '0')} · {formatPesos(methodData.total)} · {METHOD_LABEL[methodData.payment_method] || methodData.payment_method?.toUpperCase() || '—'}
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
               {METHOD_OPTIONS.map(opt => (
@@ -559,12 +572,12 @@ export default function ReportsModule() {
         </div>
       )}
 
-      {cancelModal && (
-        <div className="modal-overlay" onClick={() => setCancelModal(null)}>
-          <div className="modal-content" style={{ maxWidth: 420 }} onClick={e => e.stopPropagation()}>
+      {cancelExit.rendered && cancelData && (
+        <div className={`modal-overlay${cancelExit.closing ? ' closing' : ''}`} onClick={() => setCancelModal(null)}>
+          <div className={`modal-content${cancelExit.closing ? ' closing' : ''}`} style={{ maxWidth: 420 }} onClick={e => e.stopPropagation()}>
             <h3 className="modal-title" style={{ margin: '0 0 12px 0' }}>Cancelar venta</h3>
             <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', margin: '0 0 16px 0', lineHeight: 1.5 }}>
-              Vas a anular la venta #{String(cancelModal.id ?? '').padStart(8, '0')} por <b style={{ color: 'var(--text-primary)' }}>{formatPesos(cancelModal.total)}</b>.
+              Vas a anular la venta #{String(cancelData.id ?? '').padStart(8, '0')} por <b style={{ color: 'var(--text-primary)' }}>{formatPesos(cancelData.total)}</b>.
               El stock vuelve al inventario y la venta se descuenta de los totales.
             </p>
             <input type="password" inputMode="numeric" maxLength={6} placeholder="PIN de administrador (solo si hay más de un usuario)"
