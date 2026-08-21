@@ -4,6 +4,8 @@ import { apiGet, apiPost, apiPatch } from '../services/apiClient';
 import ClientePicker from '../components/corralon/ClientePicker';
 import useModalExit, { overlayAnim, contentAnim } from '../hooks/useModalExit';
 
+const COBRAR_METHODS = [['efectivo','Efectivo'],['tarjeta','Tarjeta'],['transferencia','Transferencia'],['cc','Cuenta corriente']];
+
 // ── Comprobante imprimible ────────────────────────────────────
 function imprimirComprobante({ acopio, items, withdrawalType, withdrawalAddress, businessConfig }) {
   const negocio = businessConfig?.nombre || 'MiNegocio';
@@ -664,8 +666,16 @@ export default function AcopiosModule() {
                 Forma de cobro
               </label>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                {[['efectivo','Efectivo'],['tarjeta','Tarjeta'],['transferencia','Transferencia'],['cc','Cuenta corriente']].map(([val, lbl]) => (
-                  <button key={val} onClick={() => setCobrarMethod(val)}
+                {COBRAR_METHODS.map(([val, lbl], i) => (
+                  <button key={val} id={`cobrar-method-${val}`} onClick={() => setCobrarMethod(val)}
+                    onKeyDown={e => {
+                      if (!['ArrowRight', 'ArrowLeft'].includes(e.key)) return;
+                      e.preventDefault();
+                      const dir = e.key === 'ArrowRight' ? 1 : -1;
+                      const next = COBRAR_METHODS[(i + dir + COBRAR_METHODS.length) % COBRAR_METHODS.length];
+                      setCobrarMethod(next[0]);
+                      document.getElementById(`cobrar-method-${next[0]}`)?.focus();
+                    }}
                     style={{ padding: '6px 12px', fontSize: '0.8rem', fontWeight: 700, borderRadius: 8, cursor: 'pointer', transition: 'all 0.15s',
                       border: cobrarMethod === val ? '2px solid var(--lp-primary)' : '1.5px solid var(--lp-line-strong)',
                       background: cobrarMethod === val ? 'rgba(20,187,166,0.12)' : 'transparent',
@@ -674,6 +684,7 @@ export default function AcopiosModule() {
                   </button>
                 ))}
               </div>
+              <p style={{ margin: '5px 2px 0', fontSize: '0.7rem', color: 'var(--lp-ink-faint)' }}>← → para cambiar</p>
             </div>
             <div style={{ marginBottom: 18 }}>
               <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--lp-ink-faint)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>
