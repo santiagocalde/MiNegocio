@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { usePanelContext } from '../context/PanelContext';
 import { apiGet, apiPost } from '../services/apiClient';
+import useModalExit, { overlayAnim, contentAnim } from '../hooks/useModalExit';
 
 export default function ObrasModule() {
   const { addToast } = usePanelContext();
@@ -29,6 +30,8 @@ export default function ObrasModule() {
     const res = await apiPost(`/obras/${id}/update`, { status });
     if (res.ok) { addToast?.('Actualizado.', 'success'); fetchObras(); }
   };
+
+  const formExit = useModalExit(showForm);
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', gap: '10px', overflow: 'hidden', padding: '12px 20px' }}>
@@ -71,10 +74,10 @@ export default function ObrasModule() {
         )}
       </div>
 
-      {showForm && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(11,19,43,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+      {formExit.rendered && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(11,19,43,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, ...overlayAnim(formExit.closing) }}
           onMouseDown={e => { if (e.target === e.currentTarget) setShowForm(false); }}>
-          <div onMouseDown={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 400, background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line-strong)', borderRadius: 12, padding: 24, boxShadow: 'var(--lp-shadow-lg)' }}>
+          <div onMouseDown={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 400, background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line-strong)', borderRadius: 12, padding: 24, boxShadow: 'var(--lp-shadow-lg)', ...contentAnim(formExit.closing) }}>
             <h3 style={{ fontFamily: 'var(--lp-font-display)', fontSize: '1.1rem', fontWeight: 700, color: 'var(--lp-ink)', margin: '0 0 16px' }}>Nueva obra</h3>
             <input value={formName} onChange={e => setFormName(e.target.value)} placeholder="Nombre de la obra"
               style={{ width: '100%', padding: '10px', background: 'var(--lp-paper-sunken)', border: '1px solid var(--lp-line-strong)', borderRadius: 6, color: 'var(--lp-ink)', marginBottom: 10, outline: 'none' }} autoFocus />

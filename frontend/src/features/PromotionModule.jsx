@@ -4,6 +4,7 @@ import { usePanelContext } from '../context/PanelContext';
 import useIsMobile from '../hooks/useIsMobile';
 import { apiGet, apiPost, apiPut, apiDelete } from '../services/apiClient';
 import FeatureGate from '../components/ui/FeatureGate';
+import useModalExit, { overlayAnim, contentAnim } from '../hooks/useModalExit';
 
 const Icons = {
   Plus: () => <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>,
@@ -186,6 +187,8 @@ export default function PromotionModule() {
     return type;
   };
 
+  const modalExit = useModalExit(showModal);
+
   return (
     <FeatureGate isLocked={isLocked} requiredPlan="Simple">
     <div style={{ padding: isMobile ? '12px 14px' : '12px 20px', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflowY: 'auto', overflowX: 'hidden' }}>
@@ -263,9 +266,9 @@ export default function PromotionModule() {
         </div>
       </div>
 
-      {showModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(30,58,95,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div className="ledger-sheet" style={{ padding: '32px', width: '600px', maxWidth: '90vw', maxHeight: '85vh', overflowY: 'auto', boxShadow: 'var(--shadow-lg)' }}>
+      {modalExit.rendered && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(30,58,95,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, ...overlayAnim(modalExit.closing) }} onClick={() => setShowModal(false)}>
+          <div onClick={e => e.stopPropagation()} className="ledger-sheet" style={{ padding: '32px', width: '600px', maxWidth: '90vw', maxHeight: '85vh', overflowY: 'auto', boxShadow: 'var(--shadow-lg)', ...contentAnim(modalExit.closing) }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
               <h2 style={{ fontSize: '1.5rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>Nueva Promoción</h2>
               <button onClick={() => setShowModal(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '4px' }}><Icons.X /></button>
