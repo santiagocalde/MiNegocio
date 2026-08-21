@@ -52,8 +52,9 @@ export default function AddAmountModal({ show, setShow, handleQuickAdd }) {
               placeholder="Ej: Caramelos sueltos"
               autoFocus
             />
+            <p style={{ margin: '5px 0 0', fontSize: '0.72rem', color: 'var(--text-faint)' }}>Enter pasa al precio</p>
           </div>
-          
+
           <div>
             <label style={{ display: 'block', marginBottom: '6px', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Precio ($)</label>
             <input
@@ -66,6 +67,7 @@ export default function AddAmountModal({ show, setShow, handleQuickAdd }) {
               step="any"
               min="0"
             />
+            <p style={{ margin: '5px 0 0', fontSize: '0.72rem', color: 'var(--text-faint)' }}>Enter agrega directo</p>
           </div>
 
           <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>

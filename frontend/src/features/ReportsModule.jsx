@@ -95,12 +95,18 @@ export default function ReportsModule() {
       const res = await apiGet(path);
       const data = await res.json();
       if (Array.isArray(data)) {
+        // La tabla muestra TODAS las ventas (incluidas las anuladas, marcadas
+        // visualmente) para no perder el rastro auditable. Pero los totales
+        // del resumen (ingresos, método más usado, producto popular) deben
+        // calcularse SOLO con ventas vigentes — si no, una venta anulada
+        // sigue sumando plata que en realidad se revirtió.
         setSalesData(data);
-        const ingresos = data.reduce((acc, s) => acc + (s.total || 0), 0);
-        
+        const activas = data.filter(s => !s.reverted);
+        const ingresos = activas.reduce((acc, s) => acc + (s.total || 0), 0);
+
         const metodos = {};
         const productos = {};
-        data.forEach(s => {
+        activas.forEach(s => {
           metodos[s.payment_method] = (metodos[s.payment_method] || 0) + 1;
           if (s.items && Array.isArray(s.items)) s.items.forEach(i => {
             productos[i.product_name] = (productos[i.product_name] || 0) + i.quantity;
@@ -110,20 +116,20 @@ export default function ReportsModule() {
         const bestMetodoEntries = Object.entries(metodos).sort((a,b)=>b[1]-a[1]);
         const bestMetodo = bestMetodoEntries[0]?.[0] || 'Efectivo';
         const bestMetodoCount = bestMetodoEntries[0]?.[1] || 0;
-        const pctMetodo = data.length > 0 ? Math.round((bestMetodoCount / data.length) * 100) : 0;
+        const pctMetodo = activas.length > 0 ? Math.round((bestMetodoCount / activas.length) * 100) : 0;
 
         const bestProductoEntries = Object.entries(productos).sort((a,b)=>b[1]-a[1]);
         const bestProducto = bestProductoEntries[0]?.[0] || 'Varios';
         const bestProductoCount = bestProductoEntries[0]?.[1] || 0;
 
         const metodosLabel = { mercadopago: 'QR', tarjeta: 'Tarjeta', transferencia: 'Transferencia', efectivo: 'Efectivo', mixto: 'Pago Mixto' };
-        setSummary({ 
-          totalVentas: data.length, 
-          ingresos, 
-          metodoUsado: metodosLabel[bestMetodo] || bestMetodo || 'Efectivo', 
-          pctMetodo, 
-          productoPopular: bestProducto, 
-          pctProducto: bestProductoCount 
+        setSummary({
+          totalVentas: activas.length,
+          ingresos,
+          metodoUsado: metodosLabel[bestMetodo] || bestMetodo || 'Efectivo',
+          pctMetodo,
+          productoPopular: bestProducto,
+          pctProducto: bestProductoCount
         });
       }
       setFetchError('');
@@ -498,7 +504,7 @@ export default function ReportsModule() {
                     </thead>
                     <tbody>
                       {sortedSales.map((sale) => (
-                        <tr key={sale.id} style={{ borderBottom: '1px solid var(--rule)', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background='var(--surface-veil)'} onMouseLeave={e => e.currentTarget.style.background='transparent'}>
+                        <tr key={sale.id} style={{ borderBottom: '1px solid var(--rule)', transition: 'background 0.2s', opacity: sale.reverted ? 0.55 : 1 }} onMouseEnter={e => e.currentTarget.style.background='var(--surface-veil)'} onMouseLeave={e => e.currentTarget.style.background='transparent'}>
                           <td style={{ padding: '16px', fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>{(sale.id ?? '').toString().padStart(8, '0') || '---'}</td>
                           <td style={{ padding: '16px', fontSize: '0.85rem' }}>{sale.timestamp ? new Date(sale.timestamp).toLocaleString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '---'}</td>
                           <td style={{ padding: '16px', fontSize: '0.85rem' }}>{sale.operator}</td>
@@ -506,16 +512,24 @@ export default function ReportsModule() {
                             {sale.items?.map(i => `${i.product_name} x${i.quantity}`).join(', ') || 'Varios'}
                           </td>
                           <td style={{ padding: '16px' }}>
-                            <span style={{ background: 'var(--surface-veil)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', padding: '3px 9px', borderRadius: '3px', fontSize: '0.75rem', fontWeight: 600 }}>
-                              {sale.payment_method === 'efectivo' ? 'Efectivo' : sale.payment_method === 'transferencia' ? 'Transferencia' : sale.payment_method === 'tarjeta' ? 'Tarjeta' : sale.payment_method?.toUpperCase()}
-                            </span>
+                            {sale.reverted ? (
+                              <span style={{ background: 'var(--wash-danger)', border: '1px solid var(--accent-danger)', color: 'var(--accent-danger)', padding: '3px 9px', borderRadius: '3px', fontSize: '0.75rem', fontWeight: 700 }}>
+                                ANULADA
+                              </span>
+                            ) : (
+                              <span style={{ background: 'var(--surface-veil)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', padding: '3px 9px', borderRadius: '3px', fontSize: '0.75rem', fontWeight: 600 }}>
+                                {sale.payment_method === 'efectivo' ? 'Efectivo' : sale.payment_method === 'transferencia' ? 'Transferencia' : sale.payment_method === 'tarjeta' ? 'Tarjeta' : sale.payment_method?.toUpperCase()}
+                              </span>
+                            )}
                           </td>
-                          <td style={{ padding: '16px', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{formatPesos(sale.total)}</td>
+                          <td style={{ padding: '16px', fontWeight: 700, fontFamily: 'var(--font-mono)', textDecoration: sale.reverted ? 'line-through' : 'none' }}>{formatPesos(sale.total)}</td>
                           <td style={{ padding: '8px 16px', textAlign: 'right', whiteSpace: 'nowrap' }}>
-                            <button onClick={(e) => openRowMenu(e, sale)} title="Acciones"
-                              style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '6px', borderRadius: 6, display: 'inline-flex', alignItems: 'center' }}>
-                              <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="12" cy="19" r="1.7"/></svg>
-                            </button>
+                            {!sale.reverted && (
+                              <button onClick={(e) => openRowMenu(e, sale)} title="Acciones"
+                                style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '6px', borderRadius: 6, display: 'inline-flex', alignItems: 'center' }}>
+                                <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="12" cy="19" r="1.7"/></svg>
+                              </button>
+                            )}
                           </td>
                         </tr>
                       ))}

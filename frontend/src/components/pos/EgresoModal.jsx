@@ -56,6 +56,7 @@ export default function EgresoModal({ showEgreso, setShowEgreso, egresoType, set
           <input type="text" value={egresoMonto} onChange={e => setEgresoMonto(e.target.value.replace(/[^0-9]/g, ''))}
             onKeyDown={e => { if (e.key === 'Escape') closeAndReset(); if (e.key === 'Enter') document.getElementById('egresoMotivoInput')?.focus(); }}
             placeholder="0" style={{ fontSize: '2rem', padding: '16px' }} autoFocus />
+          <p style={{ margin: '5px 0 0', fontSize: '0.72rem', color: 'var(--text-faint)' }}>Enter pasa al motivo</p>
         </div>
         {excedeCajon && (
           <div style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.4)', borderRadius: 10, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -70,6 +71,7 @@ export default function EgresoModal({ showEgreso, setShowEgreso, egresoType, set
             onKeyDown={e => { if (e.key === 'Enter' && egresoMonto && egresoMotivo) submitEgreso(); }}
             placeholder={isIngreso ? "Ej: Fondo de cambio..." : "Ej: Pago de luz, retiro para vos..."}
             style={{ fontSize: '1.25rem', fontFamily: 'var(--font-main)', padding: '16px' }} />
+          <p style={{ margin: '5px 0 0', fontSize: '0.72rem', color: 'var(--text-faint)' }}>Enter confirma</p>
         </div>
         <div className="modal-actions">
           <button className="btn btn-modal-cancel" onClick={closeAndReset}>Cancelar (Esc)</button>
