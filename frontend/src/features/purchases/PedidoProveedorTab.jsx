@@ -86,12 +86,12 @@ function PedidoModal({ proveedor, onClose, addToast }) {
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 1200, background: 'rgba(11,19,43,0.78)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, animation: 'modalOverlayIn 0.16s ease-out' }}
       onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div onMouseDown={e => e.stopPropagation()}
         style={{ width: '100%', maxWidth: 480, maxHeight: '90vh', overflow: 'auto',
           background: 'var(--sheet)', border: '1px solid var(--border-color)',
-          borderRadius: 12, padding: 24, boxShadow: '0 24px 64px rgba(0,0,0,0.35)' }}>
+          borderRadius: 12, padding: 24, boxShadow: '0 24px 64px rgba(0,0,0,0.35)', animation: 'modalContentIn 0.2s cubic-bezier(0.16, 1, 0.3, 1)' }}>
 
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>

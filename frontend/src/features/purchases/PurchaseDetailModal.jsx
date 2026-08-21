@@ -6,8 +6,8 @@ export default function PurchaseDetailModal({ purchase, onClose }) {
   const items = purchase.items || [];
   const total = items.reduce((acc, i) => acc + (i.unit_cost || 0) * (i.quantity || 0), 0);
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(30,58,95,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }} onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} className="ledger-sheet" style={{ padding: '32px', width: '550px', maxWidth: '92vw', boxSizing: 'border-box', maxHeight: '80vh', overflow: 'auto', boxShadow: 'var(--shadow-lg)' }}>
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(30,58,95,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, animation: 'modalOverlayIn 0.16s ease-out' }} onClick={onClose}>
+      <div onClick={e => e.stopPropagation()} className="ledger-sheet" style={{ padding: '32px', width: '550px', maxWidth: '92vw', boxSizing: 'border-box', maxHeight: '80vh', overflow: 'auto', boxShadow: 'var(--shadow-lg)', animation: 'modalContentIn 0.2s cubic-bezier(0.16, 1, 0.3, 1)' }}>
         <h2 style={{ fontSize: '1.5rem', fontWeight: 800, margin: '0 0 20px 0', color: 'var(--text-primary)' }}>Detalle de Compra</h2>
         <div style={{ display: 'flex', gap: 32, marginBottom: 20 }}>
           <div>

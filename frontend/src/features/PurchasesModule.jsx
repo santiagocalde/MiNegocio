@@ -9,6 +9,7 @@ import PurchaseDetailModal from './purchases/PurchaseDetailModal';
 import PurchasesHistory from './purchases/PurchasesHistory';
 import NewInvoiceForm from './purchases/NewInvoiceForm';
 import PedidoProveedorTab from './purchases/PedidoProveedorTab';
+import useModalExit, { overlayAnim, contentAnim } from '../hooks/useModalExit';
 
 const PLAN_WEIGHT = { trial: 1, simple: 1, pro: 2, ia: 3 };
 
@@ -227,6 +228,11 @@ export default function PurchasesModule() {
     addToast?.("Factura procesada con éxito por la IA.");
   };
 
+  const confirmExit = useModalExit(!!confirmModal);
+  const confirmDataRef = useRef(null);
+  if (confirmModal) confirmDataRef.current = confirmModal;
+  const confirmData = confirmModal || confirmDataRef.current;
+
   return (
     <FeatureGate isLocked={isLocked} requiredPlan="Simple">
       <div style={{ padding: '12px 20px', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
@@ -395,10 +401,10 @@ export default function PurchasesModule() {
       )}
 
       {/* Modal: confirmar entrada de pedido pendiente (F6) */}
-      {confirmModal && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 1100, background: 'rgba(11,19,43,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+      {confirmExit.rendered && confirmData && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1100, background: 'rgba(11,19,43,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, ...overlayAnim(confirmExit.closing) }}
           onMouseDown={e => { if (e.target === e.currentTarget) setConfirmModal(null); }}>
-          <div onMouseDown={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 500, maxHeight: '90vh', overflow: 'auto', background: 'var(--sheet)', border: '1px solid var(--border-color)', borderRadius: 12, padding: 24, boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+          <div onMouseDown={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 500, maxHeight: '90vh', overflow: 'auto', background: 'var(--sheet)', border: '1px solid var(--border-color)', borderRadius: 12, padding: 24, boxShadow: '0 20px 60px rgba(0,0,0,0.3)', ...contentAnim(confirmExit.closing) }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
               <h3 style={{ margin: 0, fontWeight: 800, color: 'var(--text-primary)', fontSize: '1.05rem' }}>
                 ✓ Confirmar entrada de mercadería
@@ -406,13 +412,13 @@ export default function PurchasesModule() {
               <button onClick={() => setConfirmModal(null)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1.3rem' }}>✕</button>
             </div>
             <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: 16 }}>
-              <strong style={{ color: 'var(--text-primary)' }}>{confirmModal.purchase.supplier_name || 'Sin proveedor'}</strong>
-              {' — '}Pedido #{confirmModal.purchase.id}
+              <strong style={{ color: 'var(--text-primary)' }}>{confirmData.purchase.supplier_name || 'Sin proveedor'}</strong>
+              {' — '}Pedido #{confirmData.purchase.id}
             </div>
             <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
               Revisá cantidades y costos recibidos:
             </div>
-            {confirmModal.editItems.map((it, idx) => (
+            {confirmData.editItems.map((it, idx) => (
               <div key={it.product_id || idx} style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '7px 0', borderBottom: '1px solid var(--border-color)' }}>
                 <div style={{ flex: 1, fontSize: '0.85rem', color: 'var(--text-primary)', fontWeight: 600 }}>{it.product_name}</div>
                 <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>

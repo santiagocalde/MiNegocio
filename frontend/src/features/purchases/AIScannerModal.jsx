@@ -66,8 +66,8 @@ export default function AIScannerModal({ onClose, onScanSuccess }) {
   };
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(11, 19, 43, 0.8)', backdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-       <div style={{ background: 'var(--bg-main)', border: '1px solid rgba(20, 187, 166, 0.3)', borderRadius: '24px', width: '600px', maxWidth: '90vw', padding: '40px', position: 'relative', boxShadow: '0 24px 48px rgba(0,0,0,0.5)' }}>
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(11, 19, 43, 0.8)', backdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, animation: 'modalOverlayIn 0.16s ease-out' }}>
+       <div onClick={e => e.stopPropagation()} style={{ background: 'var(--bg-main)', border: '1px solid rgba(20, 187, 166, 0.3)', borderRadius: '24px', width: '600px', maxWidth: '90vw', padding: '40px', position: 'relative', boxShadow: '0 24px 48px rgba(0,0,0,0.5)', animation: 'modalContentIn 0.2s cubic-bezier(0.16, 1, 0.3, 1)' }}>
           <button onClick={onClose} style={{ position: 'absolute', top: '24px', right: '24px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '50%', width: '32px', height: '32px', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icons.X /></button>
 
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
