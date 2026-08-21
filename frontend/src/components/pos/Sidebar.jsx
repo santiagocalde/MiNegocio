@@ -106,7 +106,7 @@ export default function Sidebar({
     if (isNaN(v) || v < 0) return;
     const monto = Math.round(v);
     try {
-      const res = await apiPatch(`/turns/${currentTurnId}/initial-cash`, { initial_cash: monto });
+      const res = await apiPatch(`/turns/${currentTurnId}/initial-cash`, { initial_cash: monto, operator_id: currentOperator?.id });
       if (res.ok) {
         auth.setInitialCash(monto);
         if (addToast) addToast('Caja inicial actualizada.', 'success');
@@ -384,12 +384,17 @@ export default function Sidebar({
                   <span style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', fontFamily: 'var(--font-mono)' }}>
                     ${(initialCash || 0).toLocaleString('es-AR')}
                   </span>
-                  <button
-                    onClick={() => { setInitialEditVal(String(initialCash || 0)); setEditingInitial(true); }}
-                    title="Editar caja inicial"
-                    aria-label="Editar caja inicial"
-                    style={{ background: 'transparent', border: 'none', color: 'var(--text-faint)', cursor: 'pointer', fontSize: '0.7rem', padding: '0 2px', lineHeight: 1 }}
-                  >✎</button>
+                  {/* Solo admin/manager puede corregir la caja inicial de un turno abierto.
+                      Un cajero editando este número podría maquillar un faltante (o inventar
+                      un sobrante) sin dejar rastro — por eso también se audita en el backend. */}
+                  {(currentOperator?.role === 'admin' || currentOperator?.role === 'manager') && (
+                    <button
+                      onClick={() => { setInitialEditVal(String(initialCash || 0)); setEditingInitial(true); }}
+                      title="Editar caja inicial"
+                      aria-label="Editar caja inicial"
+                      style={{ background: 'transparent', border: 'none', color: 'var(--text-faint)', cursor: 'pointer', fontSize: '0.7rem', padding: '0 2px', lineHeight: 1 }}
+                    >✎</button>
+                  )}
                 </span>
               )}
             </div>
