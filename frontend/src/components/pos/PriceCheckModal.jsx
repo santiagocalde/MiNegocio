@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import CameraBarcodeScanner from '../ui/CameraBarcodeScanner';
+import useModalExit from '../../hooks/useModalExit';
 
 function PriceCheckModal({ showPriceCheck, setShowPriceCheck, priceCheckQuery, setPriceCheckQuery, priceCheckResults, setPriceCheckResults, productsDB, onAddToCart }) {
   const [showScanner, setShowScanner] = useState(false);
@@ -22,10 +23,11 @@ function PriceCheckModal({ showPriceCheck, setShowPriceCheck, priceCheckQuery, s
 
   const closeModal = () => { setShowPriceCheck(false); setPriceCheckQuery(''); setPriceCheckResults([]); };
 
-  if (!showPriceCheck) return null;
+  const { rendered, closing } = useModalExit(showPriceCheck);
+  if (!rendered) return null;
   return (
-    <div className="modal-overlay" onClick={closeModal}>
-      <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '520px', maxHeight: '80vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+    <div className={`modal-overlay${closing ? ' closing' : ''}`} onClick={closeModal}>
+      <div className={`modal-content${closing ? ' closing' : ''}`} onClick={e => e.stopPropagation()} style={{ maxWidth: '520px', maxHeight: '80vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
         <h2 className="modal-title" style={{ fontSize: '1.5rem' }}>Consultar Precio</h2>
         <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
           <input type="text" value={priceCheckQuery} onChange={e => setPriceCheckQuery(e.target.value)}

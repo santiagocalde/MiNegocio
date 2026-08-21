@@ -1,10 +1,11 @@
-
+import useModalExit from '../../hooks/useModalExit';
 
 function ExpiryAlertsModal({ showExpiryAlerts, setShowExpiryAlerts, expiryAlerts }) {
-  if (!showExpiryAlerts || !expiryAlerts) return null;
+  const { rendered, closing } = useModalExit(showExpiryAlerts);
+  if (!rendered || !expiryAlerts) return null;
   return (
-    <div className="modal-overlay" onClick={() => setShowExpiryAlerts(false)}>
-      <div className="modal-content" onClick={e => e.stopPropagation()}>
+    <div className={`modal-overlay${closing ? ' closing' : ''}`} onClick={() => setShowExpiryAlerts(false)}>
+      <div className={`modal-content${closing ? ' closing' : ''}`} onClick={e => e.stopPropagation()}>
         <h2 className="modal-title" style={{ color: 'var(--accent-danger)' }}>📅 ¡Alerta de Vencimiento!</h2>
         <p style={{ color: 'var(--text-secondary)', marginBottom: '16px' }}>Productos próximos a vencer o ya vencidos:</p>
         <div style={{ maxHeight: '200px', overflowY: 'auto', background: 'rgba(30,58,95,0.2)', padding: '12px', borderRadius: '8px' }}>

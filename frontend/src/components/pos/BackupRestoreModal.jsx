@@ -1,11 +1,13 @@
 
 import { apiPost } from '../../services/apiClient';
+import useModalExit from '../../hooks/useModalExit';
 
 function BackupRestoreModal({ showBackupRestore, setShowBackupRestore, backupList, restoring, setRestoring, addToast }) {
-  if (!showBackupRestore) return null;
+  const { rendered, closing } = useModalExit(showBackupRestore);
+  if (!rendered) return null;
   return (
-    <div className="modal-overlay" onClick={() => setShowBackupRestore(false)}>
-      <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '600px', maxHeight: '80vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+    <div className={`modal-overlay${closing ? ' closing' : ''}`} onClick={() => setShowBackupRestore(false)}>
+      <div className={`modal-content${closing ? ' closing' : ''}`} onClick={e => e.stopPropagation()} style={{ maxWidth: '600px', maxHeight: '80vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
         <h2 className="modal-title" style={{ fontSize: '1.5rem', color: 'var(--accent-danger)' }}>⚠️ Restaurar Backup</h2>
         <div style={{ background: 'rgba(239,68,68,0.1)', borderLeft: '4px solid var(--accent-danger)', padding: '16px', borderRadius: '4px', marginBottom: '16px', fontSize: '0.9rem' }}>
           <strong>¡ATENCIÓN! SOLO USAR EN CASO DE EMERGENCIA</strong>

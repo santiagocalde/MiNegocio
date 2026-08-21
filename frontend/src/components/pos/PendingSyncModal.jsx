@@ -1,14 +1,16 @@
 import { useState } from 'react';
 import ConfirmModal from '../ui/ConfirmModal';
+import useModalExit from '../../hooks/useModalExit';
 
 function PendingSyncModal({ showPendingModal, setShowPendingModal, getPendingData, handleManualSync, setPendingSync, addToast }) {
   const [showConfirm, setShowConfirm] = useState(false);
-  if (!showPendingModal) return null;
+  const { rendered, closing } = useModalExit(showPendingModal);
+  if (!rendered) return null;
   const data = getPendingData();
   return (
     <>
-      <div className="modal-overlay" onClick={() => setShowPendingModal(false)}>
-        <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px' }}>
+      <div className={`modal-overlay${closing ? ' closing' : ''}`} onClick={() => setShowPendingModal(false)}>
+        <div className={`modal-content${closing ? ' closing' : ''}`} onClick={e => e.stopPropagation()} style={{ maxWidth: '400px' }}>
           <h2 className="modal-title" style={{ fontSize: '1.5rem' }}>⏳ Ventas pendientes de enviar</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '16px 0' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 16px', background: 'var(--bg-main)', borderRadius: '8px' }}><span> Cantidad</span><span style={{ fontWeight: 800, fontSize: '1.5rem' }}>{data.count}</span></div>

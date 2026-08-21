@@ -1,10 +1,11 @@
-
+import useModalExit from '../../hooks/useModalExit';
 
 export default function HelpModal({ showHelp, setShowHelp, setShowTour }) {
-  if (!showHelp) return null;
+  const { rendered, closing } = useModalExit(showHelp);
+  if (!rendered) return null;
   return (
-    <div className="modal-overlay" onClick={() => setShowHelp(false)}>
-      <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '600px', maxHeight: '85vh', overflowY: 'auto' }}>
+    <div className={`modal-overlay${closing ? ' closing' : ''}`} onClick={() => setShowHelp(false)}>
+      <div className={`modal-content${closing ? ' closing' : ''}`} onClick={e => e.stopPropagation()} style={{ maxWidth: '600px', maxHeight: '85vh', overflowY: 'auto' }}>
         <h2 className="modal-title" style={{ fontSize: '1.8rem' }}>⌨️ Ayuda Rápida</h2>
         <div style={{ marginBottom: '24px' }}>
           <h3 style={{ fontSize: '1.2rem', marginBottom: '12px', color: 'var(--text-primary)' }}>&#x1F3AB; ¿Primera vez?</h3>

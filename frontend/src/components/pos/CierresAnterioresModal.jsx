@@ -1,11 +1,13 @@
 
 import { Icons } from '../ui/Icons';
+import useModalExit from '../../hooks/useModalExit';
 
 function CierresAnterioresModal({ showCierres, setShowCierres, cierresData }) {
-  if (!showCierres) return null;
+  const { rendered, closing } = useModalExit(showCierres);
+  if (!rendered) return null;
   return (
-    <div className="modal-overlay" onClick={() => setShowCierres(false)}>
-      <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '800px', maxHeight: '80vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+    <div className={`modal-overlay${closing ? ' closing' : ''}`} onClick={() => setShowCierres(false)}>
+      <div className={`modal-content${closing ? ' closing' : ''}`} onClick={e => e.stopPropagation()} style={{ maxWidth: '800px', maxHeight: '80vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
         <h2 className="modal-title" style={{ fontSize: '1.5rem' }}><Icons.Clipboard /> Cierres Anteriores</h2>
         {cierresData.length === 0 ? <p style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '24px' }}>No hay cierres registrados.</p> : (
           <div style={{ flex: 1, overflowY: 'auto' }}>

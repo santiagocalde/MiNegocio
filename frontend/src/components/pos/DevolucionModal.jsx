@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import ConfirmModal from '../ui/ConfirmModal';
 import SupervisorPinModal from './SupervisorPinModal';
+import useModalExit from '../../hooks/useModalExit';
 
 export default function DevolucionModal({ showDevolucionItems, setShowDevolucionItems, lastSale, lastSaleId, devolucionQtys, setDevolucionQtys, handleDevolucionItem, handleDevolucion, singleUser = false }) {
   const [showVoidConfirm, setShowVoidConfirm] = useState(false);
   // Acción pendiente de autorización por PIN: { type: 'item', item } | { type: 'void' }
   const [pendingAction, setPendingAction] = useState(null);
-  if (!showDevolucionItems || !lastSale?.cart) return null;
+  const { rendered, closing } = useModalExit(showDevolucionItems);
+  if (!rendered || !lastSale?.cart) return null;
 
   // Ejecuta la devolución/anulación. El PIN puede ir vacío: el backend no lo
   // exige si el negocio tiene un solo usuario (no hay supervisor que autorizar).
@@ -37,8 +39,8 @@ export default function DevolucionModal({ showDevolucionItems, setShowDevolucion
 
   return (
     <>
-      <div className="modal-overlay" onClick={() => setShowDevolucionItems(false)}>
-        <div className="modal-content" onClick={e => e.stopPropagation()} style={{ width: '500px' }}>
+      <div className={`modal-overlay${closing ? ' closing' : ''}`} onClick={() => setShowDevolucionItems(false)}>
+        <div className={`modal-content${closing ? ' closing' : ''}`} onClick={e => e.stopPropagation()} style={{ width: '500px' }}>
           <h2 className="modal-title" style={{ color: 'var(--accent-warning)' }}>↩ Devolver Ítems</h2>
           <p style={{ textAlign: 'center', color: 'var(--text-secondary)', marginBottom: '16px' }}>Última venta — Seleccioná qué productos devolver y la cantidad</p>
           <div style={{ marginBottom: '16px' }}>

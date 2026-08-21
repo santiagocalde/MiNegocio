@@ -1,10 +1,12 @@
-
+import useModalExit from '../../hooks/useModalExit';
 
 export default function StockAlertsModal({ stockAlerts, setStockAlerts }) {
-  if (!stockAlerts || !((stockAlerts.stock?.total > 0 || stockAlerts.margin?.total > 0))) return null;
+  const isOpen = !!(stockAlerts && (stockAlerts.stock?.total > 0 || stockAlerts.margin?.total > 0));
+  const { rendered, closing } = useModalExit(isOpen);
+  if (!rendered) return null;
   return (
-    <div className="modal-overlay" onClick={() => setStockAlerts(null)}>
-      <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '600px' }}>
+    <div className={`modal-overlay${closing ? ' closing' : ''}`} onClick={() => setStockAlerts(null)}>
+      <div className={`modal-content${closing ? ' closing' : ''}`} onClick={e => e.stopPropagation()} style={{ maxWidth: '600px' }}>
         <h2 className="modal-title" style={{ color: 'var(--accent-warning)' }}>Alertas del Negocio</h2>
         <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
           {stockAlerts.stock?.total > 0 && (<div style={{ marginBottom: '24px' }}>

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import useModalExit from '../../hooks/useModalExit';
 
 export default function AddAmountModal({ show, setShow, handleQuickAdd }) {
   const [name, setName] = useState('');
@@ -15,21 +16,22 @@ export default function AddAmountModal({ show, setShow, handleQuickAdd }) {
     }
   }, [show]);
 
-  if (!show) return null;
+  const { rendered, closing } = useModalExit(show);
+  if (!rendered) return null;
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!name.trim()) return;
     const finalPrice = parseFloat(price);
     if (isNaN(finalPrice) || finalPrice < 0) return;
-    
+
     handleQuickAdd('VIRTUAL_' + Date.now(), name.trim(), finalPrice, { is_virtual: true });
     setShow(false);
   };
 
   return (
-    <div className="modal-overlay" onClick={() => setShow(false)}>
-      <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px' }}>
+    <div className={`modal-overlay${closing ? ' closing' : ''}`} onClick={() => setShow(false)}>
+      <div className={`modal-content${closing ? ' closing' : ''}`} onClick={e => e.stopPropagation()} style={{ maxWidth: '400px' }}>
         <h2 className="modal-title" style={{ fontSize: '1.4rem' }}>Agregar Producto Manual</h2>
         
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
