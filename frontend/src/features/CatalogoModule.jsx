@@ -3,6 +3,7 @@ import { usePanelContext } from '../context/PanelContext';
 import { apiGet, apiPut, apiPost } from '../services/apiClient';
 import FeatureGate from '../components/ui/FeatureGate';
 import useIsMobile from '../hooks/useIsMobile';
+import HelpButton from '../components/ui/HelpButton';
 
 const Icons = {
   Check: () => <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/></svg>,
@@ -211,13 +212,21 @@ export default function CatalogoModule() {
     <div style={{ padding: '12px 20px', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
       <div style={{ marginBottom: '16px', flexShrink: 0 }}>
         <div className="ledger-label">Tu tienda online</div>
-        <h1 className="ledger-title" style={{ fontSize: '1.6rem', marginTop: 4 }}>Catálogo web</h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 }}>
+          <h1 className="ledger-title" style={{ fontSize: '1.6rem', margin: 0 }}>Catálogo web</h1>
+          <HelpButton title="el Catálogo web" intro="Tu tienda online: publicás tus productos y recibís pedidos por WhatsApp, sin comisiones." steps={[
+            { title: 'Cargá los datos de la tienda', desc: 'Nombre, dirección y el WhatsApp donde querés recibir los pedidos.' },
+            { title: 'Elegí qué productos se muestran', desc: 'Activá o desactivá cada producto en la lista. No afecta tu stock ni tus ventas.' },
+            { title: 'Generá tu enlace y activá el catálogo', desc: 'Tocá "Generar" para crear tu link único y después "Activar catálogo" para publicarlo.' },
+            { title: 'Compartilo', desc: 'Pasá el link por Instagram, WhatsApp o Facebook, o mandá la lista de precios armada por WhatsApp.' },
+          ]} />
+        </div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 350px', gap: isMobile ? '16px' : '32px', flex: 1 }}>
         <div className="ledger-sheet" style={{ padding: isMobile ? '16px' : '32px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
-          <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? '14px' : 16, maxWidth: '640px', background: isActive ? 'var(--wash-success)' : 'var(--surface-veil)', padding: isMobile ? '14px 16px' : '16px 20px', borderRadius: 'var(--radius-sm)', border: `1px solid ${isActive ? 'var(--accent-success)' : 'var(--border-color)'}` }}>
+          <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? '14px' : 16, maxWidth: '480px', background: isActive ? 'var(--wash-success)' : 'var(--surface-veil)', padding: isMobile ? '14px 16px' : '14px 18px', borderRadius: 'var(--radius-sm)', border: `1px solid ${isActive ? 'var(--accent-success)' : 'var(--border-color)'}` }}>
              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', minWidth: 0 }}>
                <div style={{ color: isActive ? 'var(--accent-success)' : 'var(--text-secondary)', flexShrink: 0 }}><Icons.Globe /></div>
                <div style={{ minWidth: 0 }}>

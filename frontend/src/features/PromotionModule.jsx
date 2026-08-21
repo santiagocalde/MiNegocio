@@ -4,6 +4,7 @@ import { usePanelContext } from '../context/PanelContext';
 import useIsMobile from '../hooks/useIsMobile';
 import { apiGet, apiPost, apiPut, apiDelete } from '../services/apiClient';
 import FeatureGate from '../components/ui/FeatureGate';
+import HelpButton from '../components/ui/HelpButton';
 import useModalExit, { overlayAnim, contentAnim } from '../hooks/useModalExit';
 
 const Icons = {
@@ -195,7 +196,16 @@ export default function PromotionModule() {
       <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'stretch' : 'flex-end', gap: isMobile ? '10px' : '0', marginBottom: '16px', flexShrink: 0 }}>
         <div>
           <div className="ledger-label">Combos y descuentos</div>
-          <h1 className="ledger-title" style={{ fontSize: '1.6rem', marginTop: 4 }}>Promociones</h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 }}>
+            <h1 className="ledger-title" style={{ fontSize: '1.6rem', margin: 0 }}>Promociones</h1>
+            <HelpButton title="Promociones" intro="Creá promos y descuentos que se aplican solos al cobrar, sin que tengas que acordarte." steps={[
+              { title: 'Creá una promoción', desc: 'Tocá "Nueva promoción" y elegí el tipo: 2x1, porcentaje de descuento, combo, precio especial, etc.' },
+              { title: 'Elegí a qué aplica', desc: 'Seleccioná los productos o las categorías que participan de la promo.' },
+              { title: 'Poné la vigencia', desc: 'Si querés que dure un tiempo (ej. el finde), definí desde y hasta cuándo vale.' },
+              { title: 'Activala', desc: 'Con la promo activa, el descuento se aplica automáticamente en el Punto de venta al cargar esos productos.' },
+              { title: 'Prendé y apagá cuando quieras', desc: 'Podés desactivar una promo sin borrarla y volver a usarla más adelante.' },
+            ]} />
+          </div>
         </div>
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
           <button onClick={handleOpenModal} style={{ flex: isMobile ? 1 : undefined, background: 'var(--accent-primary)', border: 'none', color: 'var(--sheet)', padding: '11px 20px', borderRadius: 'var(--radius-sm)', fontSize: '0.9rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer', transition: 'filter 0.15s' }}

@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { apiGet } from '../services/apiClient';
+import HelpButton from '../components/ui/HelpButton';
 
 const formatPesos = (v) => (v ?? 0).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 
@@ -156,7 +157,15 @@ export default function EtiquetasModule() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px', flexShrink: 0 }}>
         <div>
           <div className="ledger-label">Para la góndola</div>
-          <h1 className="ledger-title" style={{ fontSize: '1.5rem', marginTop: 2 }}>Etiquetas</h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 2 }}>
+            <h1 className="ledger-title" style={{ fontSize: '1.5rem', margin: 0 }}>Etiquetas</h1>
+            <HelpButton title="Etiquetas" intro="Imprimí etiquetas de precio para la góndola, en hoja A4 o en impresora térmica." steps={[
+              { title: 'Elegí el papel', desc: 'Arriba a la derecha seleccioná A4 (hoja común) o Térmico (impresora de tickets).' },
+              { title: 'Seleccioná los productos', desc: 'Buscá y marcá los productos que querés etiquetar.' },
+              { title: 'Ajustá la cantidad', desc: 'Indicá cuántas etiquetas por producto si necesitás más de una.' },
+              { title: 'Imprimí', desc: 'Tocá Imprimir: se abre la hoja lista para tu impresora, con nombre y precio actualizado.' },
+            ]} />
+          </div>
         </div>
         <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
           <span style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase', marginRight: 4 }}>Papel</span>

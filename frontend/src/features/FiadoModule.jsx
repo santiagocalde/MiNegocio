@@ -4,6 +4,7 @@ import { usePanelContext } from '../context/PanelContext';
 import { apiGet, apiPost, apiDelete } from '../services/apiClient';
 import { SkeletonCard } from '../components/ui/Skeleton';
 import useIsMobile from '../hooks/useIsMobile';
+import HelpButton from '../components/ui/HelpButton';
 import useModalExit, { overlayAnim, contentAnim } from '../hooks/useModalExit';
 
 const Icons = {
@@ -276,7 +277,15 @@ export default function FiadoModule() {
       {/* HEADER editorial */}
       <div style={{ marginBottom: '16px', flexShrink: 0 }}>
         <div className="ledger-label">Cuaderno de fiados</div>
-        <h1 className="ledger-title" style={{ fontSize: '1.6rem', marginTop: 4 }}>Quién te debe</h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 }}>
+          <h1 className="ledger-title" style={{ fontSize: '1.6rem', margin: 0 }}>Quién te debe</h1>
+          <HelpButton title="las Cuentas corrientes (Fiados)" intro="El cuaderno de fiados: quién te debe, cuánto, y el registro de cada pago." steps={[
+            { title: 'Anotá una deuda', desc: 'Desde el Punto de venta con "Anotar Fiado", o acá con "Cargar fiado" eligiendo el cliente y el monto.' },
+            { title: 'Mirá los saldos', desc: 'Cada cliente muestra cuánto te debe. Tocalo para ver el detalle de sus movimientos.' },
+            { title: 'Recibí un pago', desc: 'Cuando te abonan, tocá "Recibir pago" y cargá el monto (total o parcial). El saldo baja solo.' },
+            { title: 'Cobrá por WhatsApp', desc: 'Podés mandarle al cliente un mensaje de cobranza con el saldo, listo para enviar.' },
+          ]} />
+        </div>
       </div>
 
       {/* METRICAS — hoja reglada de dos columnas (deuda | clientes) */}

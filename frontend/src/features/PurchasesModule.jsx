@@ -9,6 +9,7 @@ import PurchaseDetailModal from './purchases/PurchaseDetailModal';
 import PurchasesHistory from './purchases/PurchasesHistory';
 import NewInvoiceForm from './purchases/NewInvoiceForm';
 import PedidoProveedorTab from './purchases/PedidoProveedorTab';
+import HelpButton from '../components/ui/HelpButton';
 import useModalExit, { overlayAnim, contentAnim } from '../hooks/useModalExit';
 
 const PLAN_WEIGHT = { trial: 1, simple: 1, pro: 2, ia: 3 };
@@ -241,7 +242,16 @@ export default function PurchasesModule() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: '12px', flexWrap: 'wrap', marginBottom: '16px', flexShrink: 0 }}>
         <div>
           <div className="ledger-label">Libro de compras</div>
-          <h1 className="ledger-title" style={{ fontSize: '1.6rem', marginTop: 4 }}>Lo que entró</h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 }}>
+            <h1 className="ledger-title" style={{ fontSize: '1.6rem', margin: 0 }}>Lo que entró</h1>
+            <HelpButton title="Compras" intro="Registrá la mercadería que comprás y armá pedidos a tus proveedores." steps={[
+              { title: 'Cargá una compra', desc: 'Con "Nueva compra" elegí el proveedor y agregá los productos con su costo y cantidad.' },
+              { title: 'El stock sube solo', desc: 'Al guardar la compra, el stock de esos productos se actualiza automáticamente.' },
+              { title: 'Usá el escáner con IA', desc: 'Podés sacarle una foto a la factura del proveedor y que el sistema cargue los ítems.' },
+              { title: 'Armá pedidos', desc: 'En la pestaña "Hacer pedido" preparás lo que le vas a pedir a un proveedor.' },
+              { title: 'Revisá el historial', desc: 'Todas las compras quedan listadas; tocá una para ver su detalle.' },
+            ]} />
+          </div>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>

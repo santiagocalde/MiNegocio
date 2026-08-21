@@ -4,6 +4,7 @@ import { usePanelContext } from '../context/PanelContext';
 import { apiGet, apiPost } from '../services/apiClient';
 import { SkeletonTable } from '../components/ui/Skeleton';
 import EmptyState from '../components/ui/EmptyState';
+import HelpButton from '../components/ui/HelpButton';
 import useModalExit, { overlayAnim, contentAnim } from '../hooks/useModalExit';
 import FeatureGate from '../components/ui/FeatureGate';
 import useIsMobile from '../hooks/useIsMobile';
@@ -136,7 +137,15 @@ export default function ProveedoresModule() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: '10px', marginBottom: '16px', flexShrink: 0, flexWrap: 'wrap' }}>
         <div>
           <div className="ledger-label">Libro de proveedores</div>
-          <h1 className="ledger-title" style={{ fontSize: '1.6rem', marginTop: 4 }}>A quién le comprás</h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 }}>
+            <h1 className="ledger-title" style={{ fontSize: '1.6rem', margin: 0 }}>A quién le comprás</h1>
+            <HelpButton title="Proveedores" intro="Acá llevás el registro de tus proveedores y de lo que les debés." steps={[
+              { title: 'Agregá un proveedor', desc: 'Tocá "Nuevo proveedor" y cargá el nombre; opcionalmente teléfono y qué te vende.' },
+              { title: 'Mirá cuánto le debés', desc: 'Cada proveedor muestra su deuda actual. Sube cuando cargás una compra a crédito desde Compras.' },
+              { title: 'Registrá un pago', desc: 'Tocá "Abonar", poné el monto y el motivo (Enter pasa de campo en campo) y confirmá. La deuda baja al instante.' },
+              { title: 'Hacé pedidos', desc: 'Los pedidos a proveedores se arman desde Compras → "Hacer pedido".' },
+            ]} />
+          </div>
         </div>
         <button onClick={() => setShowModal(true)} style={{ background: 'var(--accent-primary)', border: 'none', color: 'var(--sheet)', padding: '11px 20px', borderRadius: 'var(--radius-sm)', fontSize: '0.9rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', transition: 'filter 0.15s' }}
           onMouseEnter={e => e.currentTarget.style.filter = 'brightness(1.08)'}

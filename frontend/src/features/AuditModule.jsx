@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { usePanelContext } from '../context/PanelContext';
 import { apiGet } from '../services/apiClient';
 import FeatureGate from '../components/ui/FeatureGate';
+import HelpButton from '../components/ui/HelpButton';
 
 const PLAN_WEIGHT = { trial: 1, simple: 1, pro: 2, ia: 3 };
 
@@ -146,7 +147,14 @@ export default function AuditModule() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '16px', flexShrink: 0 }}>
         <div>
           <div className="ledger-label">Todo lo que pasó</div>
-          <h1 className="ledger-title" style={{ fontSize: '1.6rem', marginTop: 4 }}>Historial</h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 }}>
+            <h1 className="ledger-title" style={{ fontSize: '1.6rem', margin: 0 }}>Historial</h1>
+            <HelpButton title="el Historial" intro="El registro de todo lo que pasó en el sistema: quién hizo qué y cuándo. Ideal para controlar al personal." steps={[
+              { title: 'Mirá cada operación', desc: 'Ventas, anulaciones, cambios de precio, retiros de caja, cierres y más quedan registrados con fecha y hora.' },
+              { title: 'Filtrá por operador o tipo', desc: 'Buscá qué hizo un empleado en particular o filtrá por tipo de acción.' },
+              { title: 'Controlá los movimientos sensibles', desc: 'Sirve para detectar anulaciones raras, descuentos grandes o retiros que no cuadran.' },
+            ]} />
+          </div>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>

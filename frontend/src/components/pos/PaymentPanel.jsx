@@ -109,7 +109,16 @@ export default function PaymentPanel({
 
       <div className="ledger-sheet" style={{ marginTop: '0', padding: isMobile ? '10px 12px' : '14px 18px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-          <h3 className="ledger-label" style={{ fontSize: '0.72rem' }}>Accesos rápidos</h3>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h3 className="ledger-label" style={{ fontSize: '0.72rem', margin: 0 }}>Accesos rápidos</h3>
+            {/* Pista de que son navegables con las flechas (sin texto: las flechitas se explican solas) */}
+            <span title="Navegá con las flechas del teclado y Enter para agregar" style={{ display: 'inline-flex', gap: '2px', color: 'var(--text-faint)' }}>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 15l-6-6-6 6" /></svg>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+            </span>
+          </div>
           <button onClick={() => setIsEditingQuick(!isEditingQuick)} style={{ background: isEditingQuick ? 'var(--accent-primary)' : 'var(--surface-veil)', color: isEditingQuick ? 'var(--bg-card)' : 'var(--text-secondary)', border: 'none', borderRadius: '6px', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s' }}>
             <Icons.Edit style={{ width: '16px', height: '16px' }} />
           </button>

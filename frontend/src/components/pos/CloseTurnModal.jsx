@@ -235,7 +235,7 @@ export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, curren
     : null;
 
   return (
-    <div className={`modal-overlay${exiting ? ' closing' : ''}`} onClick={() => setIsClosingCaja(false)}><div className={`modal-content${exiting ? ' closing' : ''}`} onClick={e => e.stopPropagation()} style={{ width: '640px', maxWidth: '95vw', maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+    <div className={`modal-overlay${exiting ? ' closing' : ''}`} onClick={() => setIsClosingCaja(false)}><div className={`modal-content${exiting ? ' closing' : ''}`} onClick={e => e.stopPropagation()} style={{ width: '940px', maxWidth: '95vw', maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <h2 className="modal-title" style={{ color: 'var(--text-primary)', flexShrink: 0 }}>Cierre de Turno</h2>
 
       {/* ── Zona de resumen — scroll propio, no arrastra la zona de acción ── */}
@@ -252,8 +252,10 @@ export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, curren
           )}
         </div>
 
-        {/* Ventas por método + Caja del turno — lado a lado en desktop para ahorrar altura */}
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+        {/* Método, Caja, Más vendidos y Categoría — todo en UNA fila para aprovechar
+            el ancho (en desktop). En mobile se apilan. Las columnas se ajustan a
+            cuántas tarjetas hay con datos. */}
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : `repeat(${2 + (turnTop.length > 0 ? 1 : 0) + (turnCats.length > 0 ? 1 : 0)}, minmax(0, 1fr))`, gap: '12px', marginBottom: '12px', alignItems: 'start' }}>
           <div style={{ border: '1px solid var(--border-color)', borderRadius: '10px', overflow: 'hidden', background: 'var(--bg-main)' }}>
             <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px', padding: '10px 14px', background: 'var(--bg-card)', borderBottom: '1px solid var(--border-color)' }}>Ventas por método</div>
             {[
@@ -284,6 +286,9 @@ export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, curren
               </span>
             </div>
           </div>
+
+          {turnTop.length > 0 && <TopProductsList items={turnTop} compact />}
+          {turnCats.length > 0 && <CategoryBreakdown items={turnCats} compact />}
         </div>
 
         <p style={{ textAlign: 'center', color: 'var(--text-secondary)', marginBottom: '16px', fontSize: '0.8rem' }}>
@@ -297,21 +302,15 @@ export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, curren
         </>
       )}
 
-      {/* Más vendidos + Ventas por categoría — lado a lado en desktop, cada uno con su propio tope de altura */}
-      {(turnTop.length > 0 || turnCats.length > 0) && (
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile || turnTop.length === 0 || turnCats.length === 0 ? '1fr' : '1fr 1fr', gap: '12px' }}>
-          <TopProductsList items={turnTop} compact />
-          <CategoryBreakdown items={turnCats} compact />
-        </div>
-      )}
       </div>
       {/* ── Fin zona de resumen ── */}
 
       {/* ── Zona de acción — siempre visible, no scrollea con el resumen ── */}
       <div style={{ flexShrink: 0, overflowY: 'auto' }}>
+      {/* Bloque de arqueo centrado — es el foco de la acción de cerrar caja */}
       {/* Cuánto debería haber — el operador lo ve ANTES de contar, no después */}
       {expectedCash !== null && (
-        <div style={{ background: 'rgba(20,187,166,0.08)', border: '1px solid rgba(20,187,166,0.25)', borderRadius: 12, padding: '14px 18px', marginBottom: 14 }}>
+        <div style={{ background: 'rgba(20,187,166,0.08)', border: '1px solid rgba(20,187,166,0.25)', borderRadius: 12, padding: '14px 18px', marginBottom: 14, maxWidth: 420, marginLeft: 'auto', marginRight: 'auto', textAlign: 'center' }}>
           <div style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 6 }}>
             El cajón debería tener
           </div>
@@ -329,9 +328,9 @@ export default function CloseTurnModal({ isClosingCaja, setIsClosingCaja, curren
         </div>
       )}
 
-      <div className="input-group" style={{ marginBottom: 12 }}>
+      <div className="input-group" style={{ marginBottom: 12, textAlign: 'center' }}>
         <label style={{ fontSize: '1.1rem', color: 'var(--accent-primary)', fontWeight: 600 }}>¿Cuánto contás en el cajón ahora?</label>
-        <input ref={cashRef} type="number" value={countedCash} onChange={e => setCountedCash(e.target.value)} autoFocus placeholder="0" onWheel={e => e.currentTarget.blur()} style={{ fontSize: '1.15rem', padding: '11px 14px', fontFamily: 'var(--font-mono)', maxWidth: '220px' }} />
+        <input ref={cashRef} type="number" value={countedCash} onChange={e => setCountedCash(e.target.value)} autoFocus placeholder="0" onWheel={e => e.currentTarget.blur()} style={{ fontSize: '1.3rem', padding: '11px 14px', fontFamily: 'var(--font-mono)', maxWidth: '240px', textAlign: 'center', marginLeft: 'auto', marginRight: 'auto', display: 'block' }} />
         <p style={{ margin: '6px 2px 0', fontSize: '0.78rem', color: 'var(--text-faint)' }}>Abrí el cajón, contá los billetes y escribí el total.</p>
       </div>
       {countedCash !== '' && parseFloat(countedCash) === 0 && (

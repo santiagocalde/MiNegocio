@@ -9,6 +9,7 @@ import { createPortal } from 'react-dom';
 import { usePanelContext } from '../context/PanelContext';
 import { apiGet, apiPost, apiDelete, apiPatch } from '../services/apiClient';
 import { Icons } from '../components/ui/Icons';
+import HelpButton from '../components/ui/HelpButton';
 import useModalExit, { overlayAnim, contentAnim } from '../hooks/useModalExit';
 
 const formatPesos = (v) => (v ?? 0).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
@@ -195,9 +196,17 @@ export default function ClientesModule() {
 
       {/* ── Header ── */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0, gap: 10 }}>
-        <h2 style={{ fontFamily: 'var(--lp-font-display)', fontSize: '1.3rem', fontWeight: 700, color: 'var(--lp-ink)', margin: 0, letterSpacing: '-0.02em' }}>
-          Lista de clientes
-        </h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <h2 style={{ fontFamily: 'var(--lp-font-display)', fontSize: '1.3rem', fontWeight: 700, color: 'var(--lp-ink)', margin: 0, letterSpacing: '-0.02em' }}>
+            Lista de clientes
+          </h2>
+          <HelpButton title="la Lista de clientes" intro="El directorio de todos tus clientes con sus datos de contacto. Las deudas se manejan en Cuentas corrientes (Fiados)." steps={[
+            { title: 'Agregá un cliente', desc: 'Tocá "Nuevo cliente" y cargá nombre, teléfono y dirección(es).' },
+            { title: 'Buscá rápido', desc: 'Escribí el nombre en el buscador para encontrarlo en el listado.' },
+            { title: 'Editá o borrá', desc: 'Desde las opciones de cada cliente podés actualizar sus datos o eliminarlo.' },
+            { title: 'Para las deudas', desc: 'Anotar fiado y registrar pagos se hace en el módulo de Cuentas corrientes (Fiados).' },
+          ]} />
+        </div>
         <button onClick={() => { setShowForm(true); resetForm(); }} className="lp-btn lp-btn--primary" style={{ padding: '8px 18px', fontSize: '0.85rem' }}>
           + Nuevo cliente
         </button>

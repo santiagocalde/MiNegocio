@@ -7,6 +7,7 @@ import EmptyState from '../components/ui/EmptyState';
 import useSortable from '../hooks/useSortable.jsx';
 import { Icons } from '../components/ui/Icons';
 import useIsMobile from '../hooks/useIsMobile';
+import HelpButton from '../components/ui/HelpButton';
 import useModalExit from '../hooks/useModalExit';
 
 function formatPesos(n) {
@@ -305,7 +306,16 @@ export default function ReportsModule() {
       <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'stretch' : 'flex-end', gap: isMobile ? '10px' : '12px', marginBottom: '18px', flexShrink: 0 }}>
         <div>
           <div className="ledger-label">Libro de ventas</div>
-          <h1 className="ledger-title" style={{ fontSize: isMobile ? '1.3rem' : '1.6rem', marginTop: 4 }}>Cómo venís</h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 }}>
+            <h1 className="ledger-title" style={{ fontSize: isMobile ? '1.3rem' : '1.6rem', margin: 0 }}>Cómo venís</h1>
+            <HelpButton title="Reportes" intro="Los números de tu negocio: cuánto vendiste, con qué ganás y qué se vende más." steps={[
+              { title: 'Elegí el período', desc: 'Filtrá por día, semana, mes o el rango de fechas que quieras analizar.' },
+              { title: 'Mirá tus ventas', desc: 'Total vendido, cantidad de tickets, ticket promedio y desglose por medio de pago.' },
+              { title: 'Descubrí lo que más sale', desc: 'Ranking de productos y categorías más vendidas para saber qué reponer.' },
+              { title: 'Revisá una venta', desc: 'Podés ver el detalle de cada venta, cambiar su medio de pago o anularla si hubo un error.' },
+              { title: 'Pedí un análisis con IA', desc: 'Según tu plan, obtené un resumen en lenguaje simple con recomendaciones.' },
+            ]} />
+          </div>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', flexWrap: 'wrap' }}>

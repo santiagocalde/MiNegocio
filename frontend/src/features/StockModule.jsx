@@ -10,6 +10,7 @@ import useSortable from '../hooks/useSortable.jsx';
 import ConfirmModal from '../components/ui/ConfirmModal';
 import ProductThumb from '../components/ui/ProductThumb';
 import CameraBarcodeScanner from '../components/ui/CameraBarcodeScanner';
+import HelpButton from '../components/ui/HelpButton';
 import useModalExit, { overlayAnim, contentAnim } from '../hooks/useModalExit';
 
 const Icons = {
@@ -604,7 +605,16 @@ export default function StockModule() {
       <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'stretch' : 'flex-end', gap: '10px', marginBottom: '16px', flexShrink: 0 }}>
         <div>
           <div className="ledger-label">Libro de inventario</div>
-          <h1 className="ledger-title" style={{ fontSize: isMobile ? '1.3rem' : '1.6rem', marginTop: 4 }}>Lo que tenés</h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 }}>
+            <h1 className="ledger-title" style={{ fontSize: isMobile ? '1.3rem' : '1.6rem', margin: 0 }}>Lo que tenés</h1>
+            <HelpButton title="el Inventario" intro="Tu lista de productos: precios, stock y códigos de barra. Es la base de todo el sistema." steps={[
+              { title: 'Agregá productos', desc: 'Con "Nuevo producto" cargá nombre, precio, código de barras y stock inicial.' },
+              { title: 'Editá precio o stock', desc: 'Tocá un producto para modificar su precio, stock o datos cuando quieras.' },
+              { title: 'Buscá y escaneá', desc: 'Encontrá por nombre o código; también podés escanear con la cámara.' },
+              { title: 'Cargá de a muchos', desc: 'Importá productos desde un CSV o hacé un aumento masivo de precios por categoría.' },
+              { title: 'El stock se ajusta solo', desc: 'Baja con cada venta y sube con cada compra. Igual podés corregirlo a mano.' },
+            ]} />
+          </div>
         </div>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
            <button onClick={() => setShowNuevoProducto(true)} style={{ flex: isMobile ? 1 : undefined, background: 'var(--accent-primary)', color: 'var(--sheet)', border: 'none', borderRadius: 'var(--radius-sm)', padding: '10px 18px', fontSize: '0.9rem', fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap', transition: 'filter 0.15s', textAlign: 'center' }}
