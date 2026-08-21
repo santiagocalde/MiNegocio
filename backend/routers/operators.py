@@ -52,6 +52,30 @@ async def _ultimo_cierre_sqlite(db):
     return row[0] if row else None
 
 
+async def _caja_inicial_fija_pg(conn, b_id):
+    """Monto fijo de caja inicial configurado por el dueño (opt-in, Ajustes ->
+    Caja y Turnos). Si está seteado (>0), todo turno nuevo arranca siempre con
+    este valor en vez de heredar el arqueo del cierre anterior."""
+    val = await conn.fetchval(
+        "SELECT caja_inicial_fija FROM business_config WHERE business_id = $1", b_id
+    )
+    try:
+        parsed = float(val) if val not in (None, "") else None
+    except (ValueError, TypeError):
+        parsed = None
+    return parsed if parsed and parsed > 0 else None
+
+
+async def _caja_inicial_fija_sqlite(db):
+    cur = await db.execute("SELECT value FROM business_config WHERE key = 'caja_inicial_fija'")
+    row = await cur.fetchone()
+    try:
+        val = float(row[0]) if row and row[0] not in (None, "") else None
+    except (ValueError, TypeError):
+        val = None
+    return val if val and val > 0 else None
+
+
 async def _ensure_open_turn_pg(conn, operator: str, b_id: str) -> dict:
     row = await conn.fetchrow(
         "SELECT id, opened_at FROM turns WHERE closed_at IS NULL AND business_id = $1 ORDER BY opened_at DESC LIMIT 1",
@@ -71,10 +95,17 @@ async def _ensure_open_turn_pg(conn, operator: str, b_id: str) -> dict:
             )
         else:
             return {"turn_id": row["id"], "turn_auto_opened": False, "turn_opened_at": str(row["opened_at"])}
-    # Caja inicial sugerida: el conteo del último cierre con arqueo (ej. los $25.000
-    # que quedaron en el cajón ayer). Si no hay cierres previos, queda en 0.
-    suggested = await _ultimo_cierre_pg(conn, b_id)
-    initial = float(suggested or 0)
+    # Caja inicial: si el dueño configuró un monto fijo (Ajustes -> Caja y Turnos),
+    # SIEMPRE se usa ese valor, sin importar lo que contó el turno anterior al
+    # cerrar. Evita el "te dejé / no me dejaste" entre empleados en el cambio de
+    # turno. Si no hay monto fijo, se mantiene el comportamiento histórico:
+    # sugerir el conteo del último cierre con arqueo (o 0 si no hay cierres previos).
+    fija = await _caja_inicial_fija_pg(conn, b_id)
+    if fija is not None:
+        initial = fija
+    else:
+        suggested = await _ultimo_cierre_pg(conn, b_id)
+        initial = float(suggested or 0)
     new_row = await conn.fetchrow(
         "INSERT INTO turns (business_id, operator, initial_cash) VALUES ($1, $2, $3) RETURNING id, opened_at, initial_cash",
         b_id, operator, initial,
@@ -108,8 +139,12 @@ async def _ensure_open_turn(operator: str) -> dict:
                     await db.commit()
                 else:
                     return {"turn_id": row[0], "turn_auto_opened": False, "turn_opened_at": row[1]}
-        suggested = await _ultimo_cierre_sqlite(db)
-        initial = float(suggested or 0)
+        fija = await _caja_inicial_fija_sqlite(db)
+        if fija is not None:
+            initial = fija
+        else:
+            suggested = await _ultimo_cierre_sqlite(db)
+            initial = float(suggested or 0)
         cur = await db.execute(
             "INSERT INTO turns (operator, opened_at, initial_cash) VALUES (?, datetime('now','localtime'), ?)",
             (operator, initial),
