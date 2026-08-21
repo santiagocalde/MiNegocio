@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { usePanelContext } from '../context/PanelContext';
 import { apiGet, apiPost, apiDelete } from '../services/apiClient';
 import { SkeletonCard } from '../components/ui/Skeleton';
 import useIsMobile from '../hooks/useIsMobile';
+import useModalExit, { overlayAnim, contentAnim } from '../hooks/useModalExit';
 
 const Icons = {
   Search: () => <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>,
@@ -244,6 +245,31 @@ export default function FiadoModule() {
   const filteredCustomers = customers.filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase()));
   const totalDeuda = customers.reduce((acc, c) => acc + c.balance, 0);
 
+  // Animación de entrada/salida de los modales de este módulo. Los que
+  // llevan datos (objeto, no boolean) guardan el último valor en un ref
+  // para poder seguir mostrando el contenido mientras se desvanecen.
+  const cobranzaExit = useModalExit(!!cobranza);
+  const cobranzaDataRef = useRef(null);
+  if (cobranza) cobranzaDataRef.current = cobranza;
+  const cobranzaData = cobranza || cobranzaDataRef.current;
+
+  const abonoExit = useModalExit(!!abonoModal);
+  const abonoDataRef = useRef(null);
+  if (abonoModal) abonoDataRef.current = abonoModal;
+  const abonoData = abonoModal || abonoDataRef.current;
+
+  const cargarExit = useModalExit(!!cargarModal);
+  const cargarDataRef = useRef(null);
+  if (cargarModal) cargarDataRef.current = cargarModal;
+  const cargarData = cargarModal || cargarDataRef.current;
+
+  const deleteExit = useModalExit(!!deleteModal);
+  const deleteDataRef = useRef(null);
+  if (deleteModal) deleteDataRef.current = deleteModal;
+  const deleteData = deleteModal || deleteDataRef.current;
+
+  const newClientExit = useModalExit(newClientModal);
+
   return (
     <div style={{ padding: '12px 20px', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflowY: 'auto' }}>
 
@@ -446,27 +472,27 @@ export default function FiadoModule() {
       </div>
 
       {/* MODAL COBRANZA IA */}
-      {cobranza && (
-        <div className="modal-overlay" onClick={() => setCobranza(null)}>
-          <div onClick={e => e.stopPropagation()} className="ledger-sheet" style={{ padding: '28px', width: '460px', maxWidth: '92vw', boxShadow: 'var(--shadow-lg)' }}>
+      {cobranzaExit.rendered && cobranzaData && (
+        <div className={`modal-overlay${cobranzaExit.closing ? ' closing' : ''}`} onClick={() => setCobranza(null)}>
+          <div onClick={e => e.stopPropagation()} className="ledger-sheet" style={{ padding: '28px', width: '460px', maxWidth: '92vw', boxShadow: 'var(--shadow-lg)', ...contentAnim(cobranzaExit.closing) }}>
             <div className="ledger-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <span style={{ background: 'var(--accent-primary)', color: 'var(--sheet)', padding: '1px 6px', borderRadius: 3, fontSize: '0.62rem', fontWeight: 800 }}>IA</span> Cobranza
             </div>
             <h3 className="ledger-title" style={{ margin: '6px 0 4px', fontSize: '1.4rem' }}>Mensaje de cobranza</h3>
             <p style={{ color: 'var(--text-secondary)', marginBottom: '20px', fontSize: '0.9rem' }}>
-              Para <strong>{cobranza.nombre}</strong>. Escrito por IA, podés editarlo antes de enviar.
+              Para <strong>{cobranzaData.nombre}</strong>. Escrito por IA, podés editarlo antes de enviar.
             </p>
-            {cobranza.loading ? (
+            {cobranzaData.loading ? (
               <div style={{ padding: '32px', textAlign: 'center', color: 'var(--text-secondary)' }}>Generando el mensaje con IA…</div>
             ) : (
               <>
                 <textarea
-                  value={cobranza.texto}
+                  value={cobranzaData.texto}
                   onChange={e => setCobranza(prev => ({ ...prev, texto: e.target.value }))}
                   rows={5}
                   style={{ width: '100%', background: 'var(--bg-main)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '14px', borderRadius: '12px', fontSize: '1rem', lineHeight: 1.5, outline: 'none', resize: 'vertical', boxSizing: 'border-box' }}
                 />
-                {!cobranza.telefono && (
+                {!cobranzaData.telefono && (
                   <p style={{ color: 'var(--accent-warning)', fontSize: '0.82rem', margin: '8px 0 0' }}>
                     Este cliente no tiene teléfono cargado: se abrirá WhatsApp para que elijas el contacto.
                   </p>
@@ -484,11 +510,11 @@ export default function FiadoModule() {
       )}
 
       {/* MODAL ABONO */}
-      {abonoModal && (
-        <div className="modal-overlay" onClick={() => setAbonoModal(null)}>
-          <div onClick={e => e.stopPropagation()} className="ledger-sheet" style={{ padding: '28px', width: '400px', maxWidth: '90vw', boxShadow: 'var(--shadow-lg)' }}>
+      {abonoExit.rendered && abonoData && (
+        <div className={`modal-overlay${abonoExit.closing ? ' closing' : ''}`} onClick={() => setAbonoModal(null)}>
+          <div onClick={e => e.stopPropagation()} className="ledger-sheet" style={{ padding: '28px', width: '400px', maxWidth: '90vw', boxShadow: 'var(--shadow-lg)', ...contentAnim(abonoExit.closing) }}>
             <h3 className="ledger-title" style={{ margin: '0 0 8px 0', fontSize: '1.5rem' }}>Recibir pago</h3>
-            <p style={{ color: 'var(--text-secondary)', marginBottom: '24px' }}>Cliente: <strong>{abonoModal.name}</strong><br/>Deuda Total: <strong style={{color: 'var(--accent-warning)'}}>${(abonoModal.balance ?? 0).toLocaleString('es-AR')}</strong></p>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '24px' }}>Cliente: <strong>{abonoData.name}</strong><br/>Deuda Total: <strong style={{color: 'var(--accent-warning)'}}>${(abonoData.balance ?? 0).toLocaleString('es-AR')}</strong></p>
             
             <div style={{ marginBottom: '24px' }}>
               <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Monto que entrega ($)</label>
@@ -501,7 +527,7 @@ export default function FiadoModule() {
                 style={{ width: '100%', background: 'var(--bg-main)', border: '2px solid var(--accent-primary)', color: 'var(--text-primary)', padding: '16px', borderRadius: '12px', fontSize: '1.5rem', fontFamily: 'var(--font-mono)', textAlign: 'center', outline: 'none' }}
               />
               <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
-                <button onClick={() => setAbonoAmount(String(abonoModal.balance))} style={{ flex: 1, padding: '9px', background: 'var(--surface-veil)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontWeight: 700, transition: 'all 0.15s' }}>Saldar todo</button>
+                <button onClick={() => setAbonoAmount(String(abonoData.balance))} style={{ flex: 1, padding: '9px', background: 'var(--surface-veil)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontWeight: 700, transition: 'all 0.15s' }}>Saldar todo</button>
               </div>
             </div>
 
@@ -513,11 +539,11 @@ export default function FiadoModule() {
         </div>
       )}
       {/* MODAL CARGAR FIADO */}
-      {cargarModal && (
-        <div className="modal-overlay" onClick={() => setCargarModal(null)}>
-          <div onClick={e => e.stopPropagation()} className="ledger-sheet" style={{ padding: '28px', width: '400px', maxWidth: '90vw', boxShadow: 'var(--shadow-lg)' }}>
+      {cargarExit.rendered && cargarData && (
+        <div className={`modal-overlay${cargarExit.closing ? ' closing' : ''}`} onClick={() => setCargarModal(null)}>
+          <div onClick={e => e.stopPropagation()} className="ledger-sheet" style={{ padding: '28px', width: '400px', maxWidth: '90vw', boxShadow: 'var(--shadow-lg)', ...contentAnim(cargarExit.closing) }}>
             <h3 className="ledger-title" style={{ margin: '0 0 8px 0', fontSize: '1.5rem' }}>Cargar fiado</h3>
-            <p style={{ color: 'var(--text-secondary)', marginBottom: '24px' }}>Cliente: <strong>{cargarModal.name}</strong><br/>Deuda actual: <strong style={{ color: 'var(--accent-warning)' }}>${(cargarModal.balance ?? 0).toLocaleString('es-AR')}</strong></p>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '24px' }}>Cliente: <strong>{cargarData.name}</strong><br/>Deuda actual: <strong style={{ color: 'var(--accent-warning)' }}>${(cargarData.balance ?? 0).toLocaleString('es-AR')}</strong></p>
 
             <div style={{ marginBottom: '16px' }}>
               <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>¿Cuánto se lleva? ($)</label>
@@ -567,13 +593,13 @@ export default function FiadoModule() {
       )}
 
       {/* MODAL: Confirmar eliminar cliente */}
-      {deleteModal && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 1100, background: 'rgba(11,19,43,0.72)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+      {deleteExit.rendered && deleteData && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1100, background: 'rgba(11,19,43,0.72)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, ...overlayAnim(deleteExit.closing) }}
           onClick={() => setDeleteModal(null)}>
-          <div onClick={e => e.stopPropagation()} className="ledger-sheet" style={{ width: '100%', maxWidth: 400, padding: 28, boxShadow: 'var(--shadow-lg)' }}>
+          <div onClick={e => e.stopPropagation()} className="ledger-sheet" style={{ width: '100%', maxWidth: 400, padding: 28, boxShadow: 'var(--shadow-lg)', ...contentAnim(deleteExit.closing) }}>
             <h3 className="ledger-title" style={{ margin: '0 0 10px', fontSize: '1.3rem' }}>Eliminar cliente</h3>
             <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', margin: '0 0 24px', lineHeight: 1.5 }}>
-              ¿Eliminás a <strong style={{ color: 'var(--text-primary)' }}>{deleteModal.name}</strong>? Se borrarán sus transacciones y todo el historial de fiado. Esta acción no se puede deshacer.
+              ¿Eliminás a <strong style={{ color: 'var(--text-primary)' }}>{deleteData.name}</strong>? Se borrarán sus transacciones y todo el historial de fiado. Esta acción no se puede deshacer.
             </p>
             <div style={{ display: 'flex', gap: 12 }}>
               <button onClick={() => setDeleteModal(null)} style={{ flex: 1, padding: '14px', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', borderRadius: 'var(--radius-sm)', fontWeight: 700, cursor: 'pointer' }}>Cancelar</button>
@@ -587,9 +613,9 @@ export default function FiadoModule() {
       )}
 
       {/* MODAL NUEVO CLIENTE */}
-      {newClientModal && (
-        <div className="modal-overlay" onClick={() => setNewClientModal(false)}>
-          <div onClick={e => e.stopPropagation()} className="ledger-sheet" style={{ width: '400px', maxWidth: '90vw', padding: '28px', boxShadow: 'var(--shadow-lg)' }}>
+      {newClientExit.rendered && (
+        <div className={`modal-overlay${newClientExit.closing ? ' closing' : ''}`} onClick={() => setNewClientModal(false)}>
+          <div onClick={e => e.stopPropagation()} className="ledger-sheet" style={{ width: '400px', maxWidth: '90vw', padding: '28px', boxShadow: 'var(--shadow-lg)', ...contentAnim(newClientExit.closing) }}>
             <h3 className="ledger-title" style={{ margin: '0 0 8px 0', fontSize: '1.5rem' }}>Nuevo cliente</h3>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '24px' }}>Registre un nuevo cliente en el sistema.</p>
             
