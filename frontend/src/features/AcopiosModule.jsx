@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { usePanelContext } from '../context/PanelContext';
 import { apiGet, apiPost, apiPatch } from '../services/apiClient';
 import ClientePicker from '../components/corralon/ClientePicker';
+import useModalExit, { overlayAnim, contentAnim } from '../hooks/useModalExit';
 
 // ── Comprobante imprimible ────────────────────────────────────
 function imprimirComprobante({ acopio, items, withdrawalType, withdrawalAddress, businessConfig }) {
@@ -283,6 +284,21 @@ export default function AcopiosModule() {
     } else { addToast?.('Error al registrar.', 'error'); }
   };
 
+  // Animación de entrada/salida de los modales de este módulo.
+  const formExit = useModalExit(showForm);
+  const rescheduleExit = useModalExit(!!rescheduleModal);
+  const rescheduleDataRef = useRef(null);
+  if (rescheduleModal) rescheduleDataRef.current = rescheduleModal;
+  const rescheduleData = rescheduleModal || rescheduleDataRef.current;
+  const detailExit = useModalExit(!!detail);
+  const detailDataRef = useRef(null);
+  if (detail) detailDataRef.current = detail;
+  const detailData = detail || detailDataRef.current;
+  const cobrarExit = useModalExit(!!cobrarModal);
+  const cobrarDataRef = useRef(null);
+  if (cobrarModal) cobrarDataRef.current = cobrarModal;
+  const cobrarData = cobrarModal || cobrarDataRef.current;
+
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', gap: '10px', overflow: 'hidden', padding: '12px 20px' }}>
       {/* Header */}
@@ -350,9 +366,9 @@ export default function AcopiosModule() {
       </div>
 
       {/* Form modal */}
-      {showForm && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(11,19,43,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} onMouseDown={e => { if (e.target === e.currentTarget) { setShowForm(false); setFormCustomer(null); } }}>
-          <div onMouseDown={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 500, maxHeight: '90vh', overflow: 'auto', background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line-strong)', borderRadius: 12, padding: 24, boxShadow: 'var(--lp-shadow-lg)' }}>
+      {formExit.rendered && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(11,19,43,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, ...overlayAnim(formExit.closing) }} onMouseDown={e => { if (e.target === e.currentTarget) { setShowForm(false); setFormCustomer(null); } }}>
+          <div onMouseDown={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 500, maxHeight: '90vh', overflow: 'auto', background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line-strong)', borderRadius: 12, padding: 24, boxShadow: 'var(--lp-shadow-lg)', ...contentAnim(formExit.closing) }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <h3 style={{ fontFamily: 'var(--lp-font-display)', fontSize: '1.1rem', fontWeight: 700, color: 'var(--lp-ink)', margin: 0 }}>Nuevo acopio</h3>
               <button onClick={() => { setShowForm(false); setFormCustomer(null); setFormAddress(''); setFormItems([]); setFormCobraAhora(false); }} style={{ background: 'none', border: 'none', color: 'var(--lp-ink-faint)', cursor: 'pointer', fontSize: '1.3rem' }}>✕</button>
@@ -464,16 +480,16 @@ export default function AcopiosModule() {
       )}
 
       {/* Modal: Reprogramar entrega */}
-      {rescheduleModal && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 1100, background: 'rgba(11,19,43,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+      {rescheduleExit.rendered && rescheduleData && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1100, background: 'rgba(11,19,43,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, ...overlayAnim(rescheduleExit.closing) }}
           onMouseDown={e => { if (e.target === e.currentTarget) { setRescheduleModal(null); setRescheduleDate(''); } }}>
           <div onMouseDown={e => e.stopPropagation()}
-            style={{ width: '100%', maxWidth: 360, background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line-strong)', borderRadius: 12, padding: 24, boxShadow: 'var(--lp-shadow-lg)' }}>
+            style={{ width: '100%', maxWidth: 360, background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line-strong)', borderRadius: 12, padding: 24, boxShadow: 'var(--lp-shadow-lg)', ...contentAnim(rescheduleExit.closing) }}>
             <h3 style={{ fontFamily: 'var(--lp-font-display)', fontSize: '1rem', fontWeight: 700, color: 'var(--lp-ink)', margin: '0 0 6px' }}>
               Reprogramar entrega
             </h3>
             <div style={{ fontSize: '0.82rem', color: 'var(--lp-ink-faint)', marginBottom: 16 }}>
-              {rescheduleModal.customerName || 'Sin cliente'}
+              {rescheduleData.customerName || 'Sin cliente'}
             </div>
             <label style={{ fontSize: '0.75rem', color: 'var(--lp-ink-faint)', fontWeight: 600, display: 'block', marginBottom: 6 }}>
               Nueva fecha de entrega
@@ -499,19 +515,19 @@ export default function AcopiosModule() {
       )}
 
       {/* Detail modal */}
-      {detail && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(11,19,43,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} onMouseDown={e => { if (e.target === e.currentTarget) setDetail(null); }}>
-          <div onMouseDown={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 500, maxHeight: '90vh', overflow: 'auto', background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line-strong)', borderRadius: 12, padding: 24, boxShadow: 'var(--lp-shadow-lg)' }}>
+      {detailExit.rendered && detailData && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(11,19,43,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, ...overlayAnim(detailExit.closing) }} onMouseDown={e => { if (e.target === e.currentTarget) setDetail(null); }}>
+          <div onMouseDown={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 500, maxHeight: '90vh', overflow: 'auto', background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line-strong)', borderRadius: 12, padding: 24, boxShadow: 'var(--lp-shadow-lg)', ...contentAnim(detailExit.closing) }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
-              <h3 style={{ fontFamily: 'var(--lp-font-display)', fontSize: '1.1rem', fontWeight: 700, color: 'var(--lp-ink)', margin: 0 }}>Acopio #{detail.acopio.id}</h3>
+              <h3 style={{ fontFamily: 'var(--lp-font-display)', fontSize: '1.1rem', fontWeight: 700, color: 'var(--lp-ink)', margin: 0 }}>Acopio #{detailData.acopio.id}</h3>
               <button onClick={() => setDetail(null)} style={{ background: 'none', border: 'none', color: 'var(--lp-ink-faint)', cursor: 'pointer', fontSize: '1.3rem' }}>✕</button>
             </div>
             <div style={{ fontSize: '0.82rem', color: 'var(--lp-ink-faint)', marginBottom: 12 }}>
-              {detail.acopio.customer_name && <div>Cliente: {detail.acopio.customer_name}</div>}
-              <div>Estado: {detail.acopio.status === 'active' ? 'Activo' : 'Completado'}</div>
+              {detailData.acopio.customer_name && <div>Cliente: {detailData.acopio.customer_name}</div>}
+              <div>Estado: {detailData.acopio.status === 'active' ? 'Activo' : 'Completado'}</div>
             </div>
             <div style={{ borderTop: '1px solid var(--lp-line)', paddingTop: 10, marginBottom: 12 }}>
-              {detail.items.map(it => {
+              {detailData.items.map(it => {
                 const pct = it.quantity_retirada / Math.max(1, it.quantity_total) * 100;
                 const remaining = it.quantity_total - it.quantity_retirada;
                 return (
@@ -530,12 +546,12 @@ export default function AcopiosModule() {
             </div>
             {/* Cobro */}
             {(() => {
-              const ps = detail.acopio.payment_status;
+              const ps = detailData.acopio.payment_status;
               const isPaid = ps === 'paid' || ps === 'cc';
-              const total = (detail.items || []).reduce((s, it) => s + (it.unit_price || 0) * (it.quantity_total || 0), 0);
-              return !isPaid && detail.acopio.status === 'active' ? (
+              const total = (detailData.items || []).reduce((s, it) => s + (it.unit_price || 0) * (it.quantity_total || 0), 0);
+              return !isPaid && detailData.acopio.status === 'active' ? (
                 <button
-                  onClick={e => { e.stopPropagation(); setCobrarModal({ id: detail.acopio.id, customerName: detail.acopio.customer_name, customerId: detail.acopio.customer_id, total }); setCobrarAmount(String(total)); setCobrarMethod('efectivo'); }}
+                  onClick={e => { e.stopPropagation(); setCobrarModal({ id: detailData.acopio.id, customerName: detailData.acopio.customer_name, customerId: detailData.acopio.customer_id, total }); setCobrarAmount(String(total)); setCobrarMethod('efectivo'); }}
                   className="lp-btn lp-btn--ghost"
                   style={{ width: '100%', marginBottom: 8, color: 'var(--lp-green)', borderColor: 'var(--lp-green)' }}>
                   💰 Cobrar acopio
@@ -543,12 +559,12 @@ export default function AcopiosModule() {
               ) : isPaid ? (
                 <div style={{ fontSize: '0.8rem', color: ps === 'paid' ? 'var(--lp-green)' : 'var(--lp-primary)', fontWeight: 700, marginBottom: 8, textAlign: 'center' }}>
                   {ps === 'paid' ? '✓ Cobrado' : '✓ Registrado en cuenta corriente'}
-                  {detail.acopio.paid_amount > 0 && ` — $${formatPesos(detail.acopio.paid_amount)}`}
+                  {detailData.acopio.paid_amount > 0 && ` — $${formatPesos(detailData.acopio.paid_amount)}`}
                 </div>
               ) : null;
             })()}
 
-            {showWithdrawal === detail.acopio.id ? (
+            {showWithdrawal === detailData.acopio.id ? (
               <div>
                 {/* Selector retiro / entrega */}
                 <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
@@ -556,8 +572,8 @@ export default function AcopiosModule() {
                     <button key={val} onClick={() => {
                       setWithdrawalType(val);
                       // Auto-completar dirección del cliente al seleccionar entrega
-                      if (val === 'entrega' && detail.acopio.customer_address && !withdrawalAddress) {
-                        setWithdrawalAddress(detail.acopio.customer_address);
+                      if (val === 'entrega' && detailData.acopio.customer_address && !withdrawalAddress) {
+                        setWithdrawalAddress(detailData.acopio.customer_address);
                       }
                     }}
                       style={{ flex: 1, padding: '8px 4px', fontSize: '0.8rem', fontWeight: 700, borderRadius: 8, cursor: 'pointer',
@@ -574,16 +590,16 @@ export default function AcopiosModule() {
                     <input value={withdrawalAddress} onChange={e => setWithdrawalAddress(e.target.value)}
                       placeholder="Dirección de entrega"
                       style={{ width: '100%', padding: '7px 10px', background: 'var(--lp-paper-sunken)', border: '1px solid var(--lp-line-strong)', borderRadius: 6, color: 'var(--lp-ink)', fontSize: '0.85rem', outline: 'none' }} />
-                    {detail.acopio.customer_address && !withdrawalAddress && (
-                      <button onClick={() => setWithdrawalAddress(detail.acopio.customer_address)}
+                    {detailData.acopio.customer_address && !withdrawalAddress && (
+                      <button onClick={() => setWithdrawalAddress(detailData.acopio.customer_address)}
                         style={{ marginTop: 4, fontSize: '0.73rem', color: 'var(--accent-primary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontWeight: 600 }}>
-                        Usar: {detail.acopio.customer_address}
+                        Usar: {detailData.acopio.customer_address}
                       </button>
                     )}
                   </div>
                 )}
                 {/* Cantidades — pre-llenadas con el disponible */}
-                {detail.items.filter(it => it.quantity_retirada < it.quantity_total).map(it => {
+                {detailData.items.filter(it => it.quantity_retirada < it.quantity_total).map(it => {
                   const disponible = it.quantity_total - it.quantity_retirada;
                   return (
                     <div key={it.id} style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '5px 0', fontSize: '0.83rem' }}>
@@ -607,17 +623,17 @@ export default function AcopiosModule() {
                 </div>
               </div>
             ) : (
-              detail.acopio.status === 'active' && (
+              detailData.acopio.status === 'active' && (
                 <button onClick={() => {
                   // Pre-llenar con disponible al abrir
                   const preloaded = {};
-                  detail.items.filter(it => it.quantity_retirada < it.quantity_total).forEach(it => {
+                  detailData.items.filter(it => it.quantity_retirada < it.quantity_total).forEach(it => {
                     preloaded[it.id] = it.quantity_total - it.quantity_retirada;
                   });
                   setWithdrawalItems(preloaded);
                   setWithdrawalType('retiro');
                   setWithdrawalAddress('');
-                  setShowWithdrawal(detail.acopio.id);
+                  setShowWithdrawal(detailData.acopio.id);
                 }} className="lp-btn lp-btn--primary" style={{ width: '100%' }}>
                   Registrar retiro / entrega
                 </button>
@@ -628,19 +644,19 @@ export default function AcopiosModule() {
       )}
 
       {/* Modal: cobrar acopio (F5) */}
-      {cobrarModal && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 1100, background: 'rgba(11,19,43,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+      {cobrarExit.rendered && cobrarData && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1100, background: 'rgba(11,19,43,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, ...overlayAnim(cobrarExit.closing) }}
           onMouseDown={e => { if (e.target === e.currentTarget) setCobrarModal(null); }}>
-          <div onMouseDown={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 380, background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line-strong)', borderRadius: 12, padding: 24, boxShadow: 'var(--lp-shadow-lg)' }}>
+          <div onMouseDown={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 380, background: 'var(--lp-paper-raised)', border: '1px solid var(--lp-line-strong)', borderRadius: 12, padding: 24, boxShadow: 'var(--lp-shadow-lg)', ...contentAnim(cobrarExit.closing) }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
               <h3 style={{ fontFamily: 'var(--lp-font-display)', fontSize: '1rem', fontWeight: 700, color: 'var(--lp-ink)', margin: 0 }}>
                 💰 Cobrar acopio
               </h3>
               <button onClick={() => setCobrarModal(null)} style={{ background: 'none', border: 'none', color: 'var(--lp-ink-faint)', cursor: 'pointer', fontSize: '1.2rem' }}>✕</button>
             </div>
-            {cobrarModal.customerName && (
+            {cobrarData.customerName && (
               <div style={{ fontSize: '0.82rem', color: 'var(--lp-ink-faint)', marginBottom: 12 }}>
-                Cliente: <strong style={{ color: 'var(--lp-ink)' }}>{cobrarModal.customerName}</strong>
+                Cliente: <strong style={{ color: 'var(--lp-ink)' }}>{cobrarData.customerName}</strong>
               </div>
             )}
             <div style={{ marginBottom: 14 }}>
@@ -665,11 +681,11 @@ export default function AcopiosModule() {
               </label>
               <input type="number" value={cobrarAmount} onChange={e => setCobrarAmount(e.target.value)} min={0} step={1}
                 style={{ width: '100%', padding: '9px 12px', background: 'var(--lp-paper-sunken)', border: '1px solid var(--lp-line-strong)', borderRadius: 8, color: 'var(--lp-ink)', fontSize: '1.1rem', fontFamily: 'var(--lp-font-mono)', outline: 'none', boxSizing: 'border-box' }} />
-              {cobrarModal.total > 0 && (
+              {cobrarData.total > 0 && (
                 <div style={{ fontSize: '0.72rem', color: 'var(--lp-ink-faint)', marginTop: 4 }}>
-                  Total del acopio: ${formatPesos(cobrarModal.total)}
-                  {parseFloat(cobrarAmount) !== cobrarModal.total && (
-                    <button onClick={() => setCobrarAmount(String(cobrarModal.total))}
+                  Total del acopio: ${formatPesos(cobrarData.total)}
+                  {parseFloat(cobrarAmount) !== cobrarData.total && (
+                    <button onClick={() => setCobrarAmount(String(cobrarData.total))}
                       style={{ marginLeft: 8, fontSize: '0.72rem', color: 'var(--lp-primary)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700, padding: 0 }}>
                       Usar total
                     </button>
@@ -677,14 +693,14 @@ export default function AcopiosModule() {
                 </div>
               )}
             </div>
-            {cobrarMethod === 'cc' && !cobrarModal.customerId && (
+            {cobrarMethod === 'cc' && !cobrarData.customerId && (
               <div style={{ padding: '10px 14px', background: 'rgba(251,191,36,0.12)', border: '1px solid rgba(251,191,36,0.4)', borderRadius: 8, marginBottom: 12, fontSize: '0.85rem', color: 'var(--lp-ink)', lineHeight: 1.4 }}>
                 ⚠️ Este acopio no tiene cliente asignado. Para cobrar en cuenta corriente necesitás asociarlo a un cliente.
               </div>
             )}
             <div style={{ display: 'flex', gap: 8 }}>
               <button onClick={() => setCobrarModal(null)} className="lp-btn lp-btn--ghost" style={{ flex: 1 }}>Cancelar</button>
-              <button onClick={handleCobrar} disabled={cobrarSaving || (cobrarMethod === 'cc' && !cobrarModal.customerId)} className="lp-btn lp-btn--primary" style={{ flex: 2, background: cobrarMethod === 'cc' && !cobrarModal.customerId ? 'var(--lp-ink-faint)' : 'var(--lp-green)', borderColor: 'var(--lp-green)', cursor: cobrarMethod === 'cc' && !cobrarModal.customerId ? 'not-allowed' : 'pointer' }}>
+              <button onClick={handleCobrar} disabled={cobrarSaving || (cobrarMethod === 'cc' && !cobrarData.customerId)} className="lp-btn lp-btn--primary" style={{ flex: 2, background: cobrarMethod === 'cc' && !cobrarData.customerId ? 'var(--lp-ink-faint)' : 'var(--lp-green)', borderColor: 'var(--lp-green)', cursor: cobrarMethod === 'cc' && !cobrarData.customerId ? 'not-allowed' : 'pointer' }}>
                 {cobrarSaving ? 'Guardando...' : cobrarMethod === 'cc' ? 'Pasar a cuenta corriente' : 'Confirmar cobro'}
               </button>
             </div>
