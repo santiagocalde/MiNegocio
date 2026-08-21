@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { API_BASE } from '../config';
+import useModalExit, { overlayAnim, contentAnim } from '../hooks/useModalExit';
 
 const API = `${API_BASE}/admin`;
 
@@ -474,6 +475,10 @@ function Businesses({ token, toast }) {
   const [page, setPage] = useState(1); const [sFilter, setSFilter] = useState(''); const [pFilter, setPFilter] = useState('');
   const [detail, setDetail] = useState(null); const [del, setDel] = useState(null); const [planDays, setPlanDays] = useState(null);
   const [exporting, setExporting] = useState(false);
+  const detailExit = useModalExit(!!detail);
+  const detailDataRef = useRef(null);
+  if (detail) detailDataRef.current = detail;
+  const detailData = detail || detailDataRef.current;
 
   const load = useCallback(async () => {
     const q = new URLSearchParams({ page, limit: 15 }); if (search) q.set('search', search); if (sFilter) q.set('status', sFilter); if (pFilter) q.set('plan', pFilter);
@@ -589,14 +594,14 @@ function Businesses({ token, toast }) {
         </div>
       )}
 
-      {detail && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }} onClick={() => setDetail(null)}>
-          <div onClick={e => e.stopPropagation()} style={{ width: 460, background: CARD, border: `1px solid rgba(20,187,166,0.12)`, borderRadius: 16, padding: 28, boxShadow: '0 24px 60px rgba(0,0,0,0.5)' }}>
+      {detailExit.rendered && detailData && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20, ...overlayAnim(detailExit.closing) }} onClick={() => setDetail(null)}>
+          <div onClick={e => e.stopPropagation()} style={{ width: 460, background: CARD, border: `1px solid rgba(20,187,166,0.12)`, borderRadius: 16, padding: 28, boxShadow: '0 24px 60px rgba(0,0,0,0.5)', ...contentAnim(detailExit.closing) }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
               <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(20,187,166,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(20,187,166,0.15)' }}>
                 <svg width="18" height="18" fill="none" stroke={ACCENT} viewBox="0 0 24 24" strokeWidth="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
               </div>
-              <div><h2 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#F1F5F9', margin: 0 }}>{detail.business_name}</h2><span style={{ color: MUTED, fontSize: '0.8rem' }}>{detail.owner_name ? `${detail.owner_name} · ` : ''}{detail.email}</span></div>
+              <div><h2 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#F1F5F9', margin: 0 }}>{detailData.business_name}</h2><span style={{ color: MUTED, fontSize: '0.8rem' }}>{detailData.owner_name ? `${detailData.owner_name} · ` : ''}{detailData.email}</span></div>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
               {[['Plan','plan','plan'],['Estado','status','status'],['WhatsApp','phone','phone'],['Productos','products_count'],['Ventas','sales_count'],['Operadores','operators_count'],['Creado','created_at','date'],['Ultima venta','last_sale','date']].map(([l,k,t]) => (
@@ -611,11 +616,11 @@ function Businesses({ token, toast }) {
                 </div>
               ))}
             </div>
-            {(detail.business_type || detail.objective || detail.needs_arca || detail.prior_pos || detail.source) && (
+            {(detailData.business_type || detailData.objective || detailData.needs_arca || detailData.prior_pos || detailData.source) && (
               <div style={{ marginTop: 16, padding: '14px 16px', background: 'rgba(96,165,250,0.04)', borderRadius: 10, border: '1px solid rgba(96,165,250,0.12)' }}>
                 <div style={{ color: '#94A3B8', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 10 }}>Qué dijo en el onboarding</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-                  {[['Rubro', detail.business_type], ['Quiere resolver', detail.objective], ['Facturación', detail.needs_arca], ['Experiencia previa', detail.prior_pos], ['Cómo llegó', detail.source]].filter(([, v]) => v).map(([l, v]) => (
+                  {[['Rubro', detailData.business_type], ['Quiere resolver', detailData.objective], ['Facturación', detailData.needs_arca], ['Experiencia previa', detailData.prior_pos], ['Cómo llegó', detailData.source]].filter(([, v]) => v).map(([l, v]) => (
                     <div key={l} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: '0.8rem' }}>
                       <span style={{ color: MUTED, flexShrink: 0 }}>{l}</span>
                       <span style={{ color: TEXT, fontWeight: 600, textAlign: 'right' }}>{v}</span>
@@ -628,7 +633,7 @@ function Businesses({ token, toast }) {
               <div style={{ color: '#94A3B8', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 10 }}>Cambiar plan y duración</div>
               <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
                 {['trial','simple','pro','ia'].map(p => (
-                  <button key={p} onClick={() => { setPlanDays(null); chPlan(detail.id, p, 30); }} style={{ ...S.ghostBtn, flex: 1, justifyContent: 'center', fontWeight: 700, background: detail.plan === p ? 'rgba(20,187,166,0.12)' : 'rgba(255,255,255,0.02)', borderColor: detail.plan === p ? 'rgba(20,187,166,0.4)' : 'rgba(255,255,255,0.08)', color: detail.plan === p ? '#14BBA6' : '#94A3B8' }}>{PLAN[p]?.label || p}</button>
+                  <button key={p} onClick={() => { setPlanDays(null); chPlan(detailData.id, p, 30); }} style={{ ...S.ghostBtn, flex: 1, justifyContent: 'center', fontWeight: 700, background: detailData.plan === p ? 'rgba(20,187,166,0.12)' : 'rgba(255,255,255,0.02)', borderColor: detailData.plan === p ? 'rgba(20,187,166,0.4)' : 'rgba(255,255,255,0.08)', color: detailData.plan === p ? '#14BBA6' : '#94A3B8' }}>{PLAN[p]?.label || p}</button>
                 ))}
               </div>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -641,7 +646,7 @@ function Businesses({ token, toast }) {
                   placeholder="Días (ej. 7)"
                   style={{ width: 90, padding: '8px 10px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)', color: TEXT, outline: 'none', fontSize: '0.82rem' }}
                 />
-                <button onClick={() => { if (!planDays) { toast('Poné una cantidad de días'); return; } chPlan(detail.id, detail.plan, planDays); }} style={{ ...S.ghostBtn, flex: 1, justifyContent: 'center', color: ACCENT, background: 'rgba(20,187,166,0.06)', borderColor: 'rgba(20,187,166,0.18)', fontWeight: 700 }}>Ajustar a {planDays || '…'} días</button>
+                <button onClick={() => { if (!planDays) { toast('Poné una cantidad de días'); return; } chPlan(detailData.id, detailData.plan, planDays); }} style={{ ...S.ghostBtn, flex: 1, justifyContent: 'center', color: ACCENT, background: 'rgba(20,187,166,0.06)', borderColor: 'rgba(20,187,166,0.18)', fontWeight: 700 }}>Ajustar a {planDays || '…'} días</button>
               </div>
               <div style={{ color: MUTED, fontSize: '0.72rem', marginTop: 8 }}>Por defecto el cambio de plan habilita 30 días. Con "Ajustar" fijás exactamente la duración (ej. IA 1 semana).</div>
             </div>
@@ -649,7 +654,7 @@ function Businesses({ token, toast }) {
               <div style={{ color: '#94A3B8', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 10 }}>Extender prueba / plan</div>
               <div style={{ display: 'flex', gap: 8 }}>
                 {[7, 15, 30].map(d => (
-                  <button key={d} onClick={() => extendPlan(detail.id, d)} style={{ ...S.ghostBtn, flex: 1, justifyContent: 'center', color: ACCENT, background: 'rgba(20,187,166,0.06)', borderColor: 'rgba(20,187,166,0.18)', fontWeight: 700 }}>+{d} días</button>
+                  <button key={d} onClick={() => extendPlan(detailData.id, d)} style={{ ...S.ghostBtn, flex: 1, justifyContent: 'center', color: ACCENT, background: 'rgba(20,187,166,0.06)', borderColor: 'rgba(20,187,166,0.18)', fontWeight: 700 }}>+{d} días</button>
                 ))}
               </div>
             </div>
