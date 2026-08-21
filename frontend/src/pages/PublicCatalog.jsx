@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { API_ROOT } from '../config';
+import useModalExit from '../hooks/useModalExit';
 
 const Icons = {
   Search: () => <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>,
@@ -25,6 +26,7 @@ export default function PublicCatalog() {
   const [searchTerm, setSearchTerm] = useState('');
   const [cart, setCart] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const cartExit = useModalExit(isCartOpen);
   const [whatsapp, setWhatsapp] = useState('');
   const [storeName, setStoreName] = useState('Mi Tienda');
   const [subtitulo, setSubtitulo] = useState('');
@@ -256,9 +258,9 @@ export default function PublicCatalog() {
       </div>
 
       {/* CART DRAWER */}
-      {isCartOpen && (
-        <div style={{ position: 'fixed', inset: 0, background: 'var(--cat-overlay)', backdropFilter: 'blur(8px)', zIndex: 100, display: 'flex', justifyContent: 'flex-end' }}>
-          <div style={{ background: 'var(--bg-main)', width: '100%', maxWidth: '450px', height: '100%', display: 'flex', flexDirection: 'column', borderLeft: '1px solid var(--border-color)', boxShadow: '-10px 0 30px rgba(0,0,0,0.5)', animation: 'slideIn 0.3s ease-out' }}>
+      {cartExit.rendered && (
+        <div style={{ position: 'fixed', inset: 0, background: 'var(--cat-overlay)', backdropFilter: 'blur(8px)', zIndex: 100, display: 'flex', justifyContent: 'flex-end', animation: cartExit.closing ? 'catOverlayOut 0.2s ease-in forwards' : 'catOverlayIn 0.2s ease-out' }} onClick={() => setIsCartOpen(false)}>
+          <div onClick={e => e.stopPropagation()} style={{ background: 'var(--bg-main)', width: '100%', maxWidth: '450px', height: '100%', display: 'flex', flexDirection: 'column', borderLeft: '1px solid var(--border-color)', boxShadow: '-10px 0 30px rgba(0,0,0,0.5)', animation: cartExit.closing ? 'slideOut 0.2s ease-in forwards' : 'slideIn 0.3s ease-out' }}>
 
              <div style={{ padding: '24px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -444,6 +446,12 @@ export default function PublicCatalog() {
           from { transform: translateX(100%); }
           to { transform: translateX(0); }
         }
+        @keyframes slideOut {
+          from { transform: translateX(0); }
+          to { transform: translateX(100%); }
+        }
+        @keyframes catOverlayIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes catOverlayOut { from { opacity: 1; } to { opacity: 0; } }
         @media (max-width: 640px) {
           .catalog-header { padding: 16px !important; }
           .catalog-logo { width: 40px !important; height: 40px !important; }

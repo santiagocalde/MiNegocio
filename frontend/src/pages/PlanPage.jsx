@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { usePanelContext } from '../context/PanelContext';
 import { Icons } from '../components/ui/Icons';
 import { apiPost, apiGet } from '../services/apiClient';
+import useModalExit, { overlayAnim, contentAnim } from '../hooks/useModalExit';
 
 const FALLBACK_PLANS = [
   {
@@ -162,6 +163,7 @@ export default function PlanPage() {
   const [planPageLoading, setPlanPageLoading] = useState(false);
   const [planPageError, setPlanPageError] = useState('');
   const [showCancel, setShowCancel] = useState(false);
+  const cancelExit = useModalExit(showCancel);
   const [cancelReason, setCancelReason] = useState('');
   const [cancelDetail, setCancelDetail] = useState('');
   const [cancelling, setCancelling] = useState(false);
@@ -290,11 +292,11 @@ export default function PlanPage() {
         </div>
       )}
 
-      {showCancel && (
+      {cancelExit.rendered && (
         <div onClick={() => !cancelling && setShowCancel(false)}
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }}>
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20, ...overlayAnim(cancelExit.closing) }}>
           <div onClick={e => e.stopPropagation()}
-            style={{ background: '#0F1A30', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: 28, maxWidth: 440, width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.5)' }}>
+            style={{ background: '#0F1A30', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: 28, maxWidth: 440, width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.5)', ...contentAnim(cancelExit.closing) }}>
             {cancelDone ? (
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: '2.4rem', marginBottom: 8 }}>👋</div>
