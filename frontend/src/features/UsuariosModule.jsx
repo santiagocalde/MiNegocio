@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { usePanelContext } from '../context/PanelContext';
 import { apiGet, apiPost, apiDelete } from '../services/apiClient';
 import EmptyState from '../components/ui/EmptyState';
 import useSortable from '../hooks/useSortable.jsx';
+import useModalExit, { overlayAnim, contentAnim } from '../hooks/useModalExit';
 
 const Icons = {
   User: () => <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>,
@@ -158,6 +159,12 @@ export default function UsuariosModule() {
     }
   };
 
+  const modalExit = useModalExit(showModal);
+  const deleteExit = useModalExit(!!deleteConfirm);
+  const deleteDataRef = useRef(null);
+  if (deleteConfirm) deleteDataRef.current = deleteConfirm;
+  const deleteData = deleteConfirm || deleteDataRef.current;
+
   return (
     <div style={{ padding: '12px 20px', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '16px', flexShrink: 0 }}>
@@ -215,13 +222,13 @@ export default function UsuariosModule() {
         </table>
       </div>
 
-      {deleteConfirm && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(30,58,95,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100 }}>
-          <div className="ledger-sheet" style={{ padding: '32px', width: '380px', maxWidth: '92vw', boxSizing: 'border-box', boxShadow: 'var(--shadow-lg)' }}>
+      {deleteExit.rendered && deleteData && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(30,58,95,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, ...overlayAnim(deleteExit.closing) }} onClick={() => setDeleteConfirm(null)}>
+          <div onClick={e => e.stopPropagation()} className="ledger-sheet" style={{ padding: '32px', width: '380px', maxWidth: '92vw', boxSizing: 'border-box', boxShadow: 'var(--shadow-lg)', ...contentAnim(deleteExit.closing) }}>
             <div style={{ fontSize: '2.5rem', textAlign: 'center', marginBottom: '16px' }}>⚠️</div>
             <h2 style={{ fontSize: '1.3rem', fontWeight: 800, margin: '0 0 12px 0', color: 'var(--text-primary)', textAlign: 'center' }}>Eliminar usuario</h2>
             <p style={{ color: 'var(--text-secondary)', textAlign: 'center', margin: '0 0 24px 0' }}>
-              ¿Eliminar a <strong style={{ color: 'var(--text-primary)' }}>{deleteConfirm.name}</strong>? Esta acción no se puede deshacer.
+              ¿Eliminar a <strong style={{ color: 'var(--text-primary)' }}>{deleteData.name}</strong>? Esta acción no se puede deshacer.
             </p>
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
               <button onClick={() => setDeleteConfirm(null)} style={{ background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Cancelar</button>
@@ -231,9 +238,9 @@ export default function UsuariosModule() {
         </div>
       )}
 
-      {showModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(30,58,95,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div className="ledger-sheet" style={{ padding: '32px', width: '400px', maxWidth: '92vw', boxSizing: 'border-box', boxShadow: 'var(--shadow-lg)' }}>
+      {modalExit.rendered && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(30,58,95,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, ...overlayAnim(modalExit.closing) }} onClick={() => setShowModal(false)}>
+          <div onClick={e => e.stopPropagation()} className="ledger-sheet" style={{ padding: '32px', width: '400px', maxWidth: '92vw', boxSizing: 'border-box', boxShadow: 'var(--shadow-lg)', ...contentAnim(modalExit.closing) }}>
             <h2 style={{ fontSize: '1.5rem', fontWeight: 800, margin: '0 0 24px 0', color: 'var(--text-primary)' }}>
               {editIndex !== null ? 'Editar Usuario' : 'Nuevo Usuario'}
             </h2>
