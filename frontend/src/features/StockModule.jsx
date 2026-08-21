@@ -107,6 +107,8 @@ export default function StockModule() {
   const [products, setProducts] = useState([]);
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
+  const [openPriceMenu, setOpenPriceMenu] = useState(null); // id del producto con menú de listas abierto (desktop)
+  const searchDebounceRef = useRef(null);
   const [openAccordion, setOpenAccordion] = useState(null);
   const [deadStock, setDeadStock] = useState([]);
   const [offline, setOffline] = useState(false);
@@ -393,6 +395,8 @@ export default function StockModule() {
     const actions = [
       { label: '$ Precio', tone: 'default', onClick: () => setPromptState({ isOpen: true, title: `Nuevo precio para ${p.name} (actual: $${p.price})`, value: p.price ?? '', onConfirm: async (newPrice) => { setPromptState(prev => ({...prev, isOpen: false})); if (newPrice !== null && newPrice !== '' && !isNaN(newPrice) && parseFloat(newPrice) >= 0) { try { const res = await apiPost(`/products/${p.id}/price`, { price: parseFloat(newPrice) }); if (res.ok) { addToast?.(`Precio de ${p.name} actualizado.`, 'success'); fetchProducts(); onProductsUpdated?.(); } else addToast?.('No se pudo actualizar el precio. Reintentá o revisá tu conexión.', 'error'); } catch { addToast?.('Sin internet. Revisá tu conexión.', 'error'); } } } }) },
       { label: `$ ${lbB}`, tone: 'warning', onClick: () => setPromptState({ isOpen: true, title: `${lbB} para ${p.name} (actual: ${p.price_b ? '$' + p.price_b : 'sin cargar'})`, value: p.price_b ?? '', onConfirm: async (val) => { setPromptState(prev => ({...prev, isOpen: false})); if (val !== null && val !== '' && !isNaN(val) && parseFloat(val) >= 0) { try { const res = await apiPut(`/products/${p.id}`, { price_b: parseFloat(val) }); if (res.ok) { addToast?.(`${lbB} de ${p.name} actualizado.`, 'success'); fetchProducts(); onProductsUpdated?.(); } else addToast?.('No se pudo actualizar.', 'error'); } catch { addToast?.('Sin internet.', 'error'); } } } }) },
+      { label: `$ ${cfg.price_list_c_name || 'Lista C'}`, tone: 'warning', onClick: () => setPromptState({ isOpen: true, title: `${cfg.price_list_c_name || 'Lista C'} para ${p.name} (actual: ${p.price_c ? '$' + p.price_c : 'sin cargar'})`, value: p.price_c ?? '', onConfirm: async (val) => { setPromptState(prev => ({...prev, isOpen: false})); if (val !== null && val !== '' && !isNaN(val) && parseFloat(val) >= 0) { try { const res = await apiPut(`/products/${p.id}`, { price_c: parseFloat(val) }); if (res.ok) { addToast?.(`${cfg.price_list_c_name || 'Lista C'} de ${p.name} actualizado.`, 'success'); fetchProducts(); onProductsUpdated?.(); } else addToast?.('No se pudo actualizar.', 'error'); } catch { addToast?.('Sin internet.', 'error'); } } } }) },
+      { label: `$ ${cfg.price_list_d_name || 'Lista D'}`, tone: 'warning', onClick: () => setPromptState({ isOpen: true, title: `${cfg.price_list_d_name || 'Lista D'} para ${p.name} (actual: ${p.price_d ? '$' + p.price_d : 'sin cargar'})`, value: p.price_d ?? '', onConfirm: async (val) => { setPromptState(prev => ({...prev, isOpen: false})); if (val !== null && val !== '' && !isNaN(val) && parseFloat(val) >= 0) { try { const res = await apiPut(`/products/${p.id}`, { price_d: parseFloat(val) }); if (res.ok) { addToast?.(`${cfg.price_list_d_name || 'Lista D'} de ${p.name} actualizado.`, 'success'); fetchProducts(); onProductsUpdated?.(); } else addToast?.('No se pudo actualizar.', 'error'); } catch { addToast?.('Sin internet.', 'error'); } } } }) },
       { label: 'Stock', tone: 'default', onClick: () => setPromptState({ isOpen: true, title: `Nuevo stock para ${p.name} (actual: ${p.stock})`, value: p.stock ?? '', onConfirm: async (newStock) => { setPromptState(prev => ({...prev, isOpen: false})); if (newStock !== null && newStock !== '' && !isNaN(newStock) && parseInt(newStock) >= 0) { try { const res = await apiPost(`/products/${p.id}/stock`, { stock: parseInt(newStock) }); if (res.ok) { addToast?.(`Stock de ${p.name} actualizado.`, 'success'); fetchProducts(); onProductsUpdated?.(); } else addToast?.('No se pudo actualizar el stock. Reintentá o revisá tu conexión.', 'error'); } catch { addToast?.('Sin internet. Revisá tu conexión.', 'error'); } } } }) },
       { label: 'Nombre', tone: 'default', onClick: () => setPromptState({ isOpen: true, title: `Nuevo nombre para ${p.name}`, value: p.name, text: true, onConfirm: async (newName) => { setPromptState(prev => ({...prev, isOpen: false})); if (newName !== null && newName.trim()) { try { const res = await apiPut(`/products/${p.id}`, { name: newName.trim() }); if (res.ok) { addToast?.(`Nombre de ${p.name} actualizado.`, 'success'); fetchProducts(); onProductsUpdated?.(); } else addToast?.('No se pudo actualizar el nombre. Reintentá o revisá tu conexión.', 'error'); } catch { addToast?.('Sin internet. Revisá tu conexión.', 'error'); } } } }) },
       { label: 'Costo', tone: 'default', onClick: () => setPromptState({ isOpen: true, title: `Costo de ${p.name} (actual: ${p.cost_price ? '$' + p.cost_price : 'sin cargar'})`, value: p.cost_price ?? '', onConfirm: async (newCost) => { setPromptState(prev => ({...prev, isOpen: false})); if (newCost !== null && newCost !== '' && !isNaN(newCost) && parseFloat(newCost) >= 0) { try { const res = await apiPut(`/products/${p.id}`, { cost_price: parseFloat(newCost) }); if (res.ok) { addToast?.(`Costo de ${p.name} actualizado.`, 'success'); fetchProducts(); onProductsUpdated?.(); } else addToast?.('No se pudo actualizar el costo. Reintentá o revisá tu conexión.', 'error'); } catch { addToast?.('Sin internet. Revisá tu conexión.', 'error'); } } } }) },
@@ -491,7 +495,9 @@ export default function StockModule() {
     a.click(); URL.revokeObjectURL(url);
   };
 
-  const fetchProducts = async (q = '') => {
+  const fetchProducts = async (q) => {
+    // Si no se pasa q explícitamente, preservar la búsqueda activa
+    if (q === undefined) q = query;
     setLoading(true);
     setOffline(false);
 
@@ -572,6 +578,15 @@ export default function StockModule() {
       }
       fetchProducts(query);
     }
+  };
+
+  const handleSearchChange = (e) => {
+    const val = e.target.value;
+    setQuery(val);
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    searchDebounceRef.current = setTimeout(() => {
+      fetchProducts(val);
+    }, 300);
   };
 
   // derived data
@@ -661,7 +676,7 @@ export default function StockModule() {
             type="text" 
             placeholder="Buscar por nombre o código..." 
             value={query}
-            onChange={e => { setQuery(e.target.value); if(e.target.value==='') fetchProducts(''); }}
+            onChange={handleSearchChange}
             onKeyDown={handleSearch}
             style={{ width: '100%', background: 'var(--sheet)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '12px 16px 12px 48px', borderRadius: 'var(--radius-sm)', fontSize: '0.95rem', outline: 'none' }}
           />
@@ -806,10 +821,40 @@ export default function StockModule() {
                         )}
                       </>
                     ) : (
-                      <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                        {productActions(p).map((a, i) => (
-                          <button key={i} onClick={a.onClick} className="stock-act" style={{ background: a.tone === 'danger' ? 'rgba(239, 68, 68, 0.08)' : 'transparent', color: a.tone === 'danger' ? 'var(--accent-danger)' : a.tone === 'warning' ? 'var(--accent-warning)' : a.tone === 'primary' ? 'var(--accent-primary)' : a.tone === 'blue' ? 'var(--accent-primary)' : 'var(--text-primary)', border: a.tone === 'danger' ? '1px solid rgba(239, 68, 68, 0.2)' : a.tone === 'warning' ? '1px solid rgba(245,158,11,0.3)' : a.tone === 'primary' ? '1px solid rgba(20,187,166,0.3)' : a.tone === 'blue' ? '1px solid rgba(59, 130, 246, 0.2)' : '1px solid var(--border-color)', padding: '6px 12px', borderRadius: 'var(--radius-sm)', fontSize: '0.82rem', cursor: 'pointer', fontWeight: 700, whiteSpace: 'nowrap' }}>{a.label}</button>
+                      <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap' }}>
+                        {/* Botones principales: todo excepto listas de precio B/C/D */}
+                        {productActions(p).filter(a => !['$ Lista B', `$ ${(JSON.parse(localStorage.getItem('minegocio_config')||'{}').price_list_b_name||'Lista B')}`, `$ ${(JSON.parse(localStorage.getItem('minegocio_config')||'{}').price_list_c_name||'Lista C')}`, `$ ${(JSON.parse(localStorage.getItem('minegocio_config')||'{}').price_list_d_name||'Lista D')}`].includes(a.label)).map((a, i) => (
+                          <button key={i} onClick={a.onClick} className="stock-act" style={{ background: a.tone === 'danger' ? 'rgba(239, 68, 68, 0.08)' : 'transparent', color: a.tone === 'danger' ? 'var(--accent-danger)' : a.tone === 'primary' ? 'var(--accent-primary)' : a.tone === 'blue' ? 'var(--accent-primary)' : 'var(--text-primary)', border: a.tone === 'danger' ? '1px solid rgba(239, 68, 68, 0.2)' : a.tone === 'primary' ? '1px solid rgba(20,187,166,0.3)' : a.tone === 'blue' ? '1px solid rgba(59, 130, 246, 0.2)' : '1px solid var(--border-color)', padding: '6px 12px', borderRadius: 'var(--radius-sm)', fontSize: '0.82rem', cursor: 'pointer', fontWeight: 700, whiteSpace: 'nowrap' }}>{a.label}</button>
                         ))}
+                        {/* Botón ⋯ para listas de precio B / C / D */}
+                        {(() => {
+                          const cfg = JSON.parse(localStorage.getItem('minegocio_config') || '{}');
+                          const priceListActions = productActions(p).filter(a => [
+                            `$ ${cfg.price_list_b_name || 'Lista B'}`,
+                            `$ ${cfg.price_list_c_name || 'Lista C'}`,
+                            `$ ${cfg.price_list_d_name || 'Lista D'}`,
+                          ].includes(a.label));
+                          if (!priceListActions.length) return null;
+                          return (
+                            <div style={{ position: 'relative' }}>
+                              <button
+                                onClick={e => { e.stopPropagation(); setOpenPriceMenu(openPriceMenu === p.id ? null : p.id); }}
+                                title="Listas de precio"
+                                style={{ background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', borderRadius: 'var(--radius-sm)', padding: '5px 10px', fontSize: '0.9rem', fontWeight: 800, cursor: 'pointer', letterSpacing: '1px', lineHeight: 1 }}>⋯</button>
+                              {openPriceMenu === p.id && createPortal(
+                                <div style={{ position: 'fixed', inset: 0, zIndex: 1200 }} onClick={() => setOpenPriceMenu(null)}>
+                                  <div onClick={e => e.stopPropagation()} style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 12, padding: '16px', minWidth: 200, boxShadow: '0 8px 32px rgba(0,0,0,0.4)', zIndex: 1 }}>
+                                    <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 10, textAlign: 'center' }}>Listas de precio — {p.name}</div>
+                                    {priceListActions.map((a, i) => (
+                                      <button key={i} onClick={() => { setOpenPriceMenu(null); a.onClick(); }} style={{ display: 'block', width: '100%', textAlign: 'left', background: 'transparent', border: 'none', borderTop: i > 0 ? '1px solid var(--border-color)' : 'none', color: 'var(--accent-warning)', padding: '11px 8px', fontSize: '0.88rem', fontWeight: 700, cursor: 'pointer' }}>{a.label}</button>
+                                    ))}
+                                  </div>
+                                </div>,
+                                document.body
+                              )}
+                            </div>
+                          );
+                        })()}
                       </div>
                     )}
                   </td>
