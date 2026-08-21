@@ -33,7 +33,7 @@ export default function ChargeModal({
 }) {
   const finalTotal = adjustedTotal ?? total;
   const splitSum = splitPayments.reduce((s, p) => s + (parseFloat(p.amount) || 0), 0);
-  const transferAlias = businessConfig?.catalogo_whatsapp || businessConfig?.mp_collector_id || null;
+  const transferAlias = businessConfig?.mp_collector_id || businessConfig?.catalogo_whatsapp || null;
   const isMobile = useIsMobile();
 
   // Auto-confirmación de MP: solo si el negocio la activó y cargó su token.
