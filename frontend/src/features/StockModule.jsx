@@ -613,8 +613,12 @@ export default function StockModule() {
   const importResultData = importResult || importResultRef.current;
   const promptExit = useModalExit(promptState.isOpen);
 
+  // overflowY:auto SOLO en mobile. En desktop el root queda 'hidden' y bounded:
+  // así TableVirtuoso (height:100%) tiene un viewport estable y NO entra en el
+  // loop de ResizeObserver (main scroll + este scroll anidados) que hacía
+  // "temblar" el menú al entrar a Inventario hasta que uno scrolleaba.
   return (
-    <div style={{ padding: isMobile ? '12px 14px' : '12px 20px', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflowY: 'auto', overflowX: 'hidden' }}>
+    <div style={{ padding: isMobile ? '12px 14px' : '12px 20px', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflowY: isMobile ? 'auto' : 'hidden', overflowX: 'hidden' }}>
 
       {/* HEADER */}
       <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'stretch' : 'flex-end', gap: '10px', marginBottom: '16px', flexShrink: 0 }}>
@@ -733,7 +737,7 @@ export default function StockModule() {
       )}
 
       {/* MAIN TABLE */}
-      <div className="ledger-sheet" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div className="ledger-sheet" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         <div style={{ padding: '11px 20px', borderBottom: '1px solid var(--rule-strong)', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           <span className="ledger-label">Productos</span>
           <span style={{ fontSize: '0.75rem', color: 'var(--text-faint)' }}>· {filteredProducts.length} resultados</span>
@@ -742,7 +746,7 @@ export default function StockModule() {
           <span className="ledger-num" style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--accent-primary)' }}>{formatMoney(totalValorizado)}</span>
         </div>
 
-        <div style={{ flex: 1 }}>
+        <div style={{ flex: 1, minHeight: 0 }}>
           {filteredProducts.length > 0 ? (
             <TableVirtuoso
               data={filteredProducts}
