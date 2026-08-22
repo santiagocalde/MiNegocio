@@ -31,7 +31,7 @@ export default function useCart(productsDB, ivaRate, playBeep, cartKey = 'minego
   // (ej: price_b es null/undefined) se queda con su precio actual.
   const setListType = useCallback((newList) => {
     setListTypeRaw(newList);
-    const listKey = { a: 'price_a', b: 'price_b', c: 'price_c', d: 'price_d', e: 'price_e' }[newList];
+    const listKey = { a: 'price_a', b: 'price_b', c: 'price_c', d: 'price_d' }[newList];
     if (!listKey) return;
     setCart(prev => prev.map(item => {
       const newPrice = item[listKey];
@@ -155,9 +155,9 @@ export default function useCart(productsDB, ivaRate, playBeep, cartKey = 'minego
       // Inferir la lista activa comparando el precio final contra las listas cargadas
       // (el precio puede venir de la lista global A/B/C, de balanza o de un manual).
       const finalPrice = Math.round(parseFloat(item.price) || 0);
-      const listKeys = { a: 'price_a', b: 'price_b', c: 'price_c', d: 'price_d', e: 'price_e' };
+      const listKeys = { a: 'price_a', b: 'price_b', c: 'price_c', d: 'price_d' };
       let appliedList = 'a';
-      for (const k of ['a', 'b', 'c', 'd', 'e']) {
+      for (const k of ['a', 'b', 'c', 'd']) {
         const v = item[listKeys[k]];
         if (v !== undefined && v !== null && v !== '' && Math.round(parseFloat(v)) === finalPrice) { appliedList = k; break; }
       }

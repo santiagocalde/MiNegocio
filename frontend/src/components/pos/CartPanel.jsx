@@ -53,7 +53,6 @@ export default function CartPanel({ cart, total, adjustedTotal, updateQty, setIt
       { v: 'b', key: 'price_b', label: priceLists?.[1]?.label || 'Lista B — Mayorista' },
       { v: 'c', key: 'price_c', label: priceLists?.[2]?.label || 'Lista C' },
       { v: 'd', key: 'price_d', label: priceLists?.[3]?.label || 'Lista D' },
-      { v: 'e', key: 'price_e', label: priceLists?.[4]?.label || 'Lista E' },
     ];
     return defs.filter(l => {
       const val = item[l.key];
