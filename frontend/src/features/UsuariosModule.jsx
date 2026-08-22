@@ -3,6 +3,7 @@ import { usePanelContext } from '../context/PanelContext';
 import { apiGet, apiPost, apiDelete } from '../services/apiClient';
 import EmptyState from '../components/ui/EmptyState';
 import useSortable from '../hooks/useSortable.jsx';
+import useIsMobile from '../hooks/useIsMobile';
 import useModalExit, { overlayAnim, contentAnim } from '../hooks/useModalExit';
 
 const Icons = {
@@ -13,6 +14,7 @@ const Icons = {
 };
 
 export default function UsuariosModule() {
+  const isMobile = useIsMobile();
   const { backend, addToast, businessType } = usePanelContext();
   const operators = backend.operators;
   const onOperatorsUpdate = backend.setOperators;
@@ -179,8 +181,9 @@ export default function UsuariosModule() {
         </button>
       </div>
 
-      <div className="ledger-sheet" style={{ flex: 1, overflowY: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+      <div className="ledger-sheet" style={{ flex: 1, overflowY: 'auto', overflowX: 'auto' }}>
+        {/* minWidth en mobile: la tabla scrollea de costado en vez de romper el layout */}
+        <table style={{ width: '100%', minWidth: isMobile ? 560 : undefined, borderCollapse: 'collapse', textAlign: 'left' }}>
           <thead style={{ position: 'sticky', top: 0, background: 'var(--bg-main)', zIndex: 1 }}>
             <tr style={{ color: 'var(--text-primary)', fontSize: '0.85rem', fontWeight: 700, borderBottom: '1px solid var(--border-color)' }}>
               <th style={{ padding: '16px', cursor: 'pointer' }} onClick={() => toggleSort('name')}>Nombre<SortIcon columnKey="name" /></th>

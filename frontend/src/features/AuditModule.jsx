@@ -3,6 +3,7 @@ import { usePanelContext } from '../context/PanelContext';
 import { apiGet } from '../services/apiClient';
 import FeatureGate from '../components/ui/FeatureGate';
 import HelpButton from '../components/ui/HelpButton';
+import useIsMobile from '../hooks/useIsMobile';
 
 const PLAN_WEIGHT = { trial: 1, simple: 1, pro: 2, ia: 3 };
 
@@ -13,6 +14,7 @@ const Icons = {
 };
 
 export default function AuditModule() {
+  const isMobile = useIsMobile();
   const { addToast, currentPlan, plan } = usePanelContext();
   // Esperar a que el plan esté cargado antes de bloquear (evita falso-positivo con caché vieja)
   const planLoaded = plan?.planLoaded ?? true;
@@ -165,8 +167,8 @@ export default function AuditModule() {
       </div>
 
       {/* SEARCH BAR FULL WIDTH */}
-      <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexShrink: 0 }}>
-        <div style={{ width: '250px' }}>
+      <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '12px', marginBottom: isMobile ? '14px' : '24px', flexShrink: 0 }}>
+        <div style={{ width: isMobile ? '100%' : '250px' }}>
           <select
             value={filterType}
             onChange={e => setFilterType(e.target.value)}
@@ -194,13 +196,13 @@ export default function AuditModule() {
       </div>
 
       {/* MAIN TABLE */}
-      <div className="ledger-sheet" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        <div style={{ padding: '24px', borderBottom: '1px solid var(--border-color)' }}>
-          <h3 style={{ fontSize: '1.2rem', fontWeight: 700, margin: '0 0 4px 0', color: 'var(--text-primary)' }}>Registro de Actividad</h3>
+      <div className="ledger-sheet" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <div style={{ padding: isMobile ? '14px 16px' : '24px', borderBottom: '1px solid var(--border-color)' }}>
+          <h3 style={{ fontSize: isMobile ? '1.05rem' : '1.2rem', fontWeight: 700, margin: '0 0 4px 0', color: 'var(--text-primary)' }}>Registro de Actividad</h3>
           <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>Listado cronológico de acciones en el sistema</p>
         </div>
 
-        <div style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '10px' : '16px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {filtered.map(m => {
               const isExpanded = expandedId === m.id;
@@ -209,17 +211,17 @@ export default function AuditModule() {
               return (
               <div key={m.id} style={{ borderRadius: '12px', border: '1px solid var(--border-color)', overflow: 'hidden', transition: 'transform 0.2s' }} onMouseEnter={e => e.currentTarget.style.transform='translateX(4px)'} onMouseLeave={e => e.currentTarget.style.transform='none'}>
                 <div
-                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-main)', padding: '16px 24px', cursor: clickable ? 'pointer' : 'default' }}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-main)', padding: isMobile ? '12px 14px' : '16px 24px', cursor: clickable ? 'pointer' : 'default' }}
                   onClick={() => clickable && setExpandedId(isExpanded ? null : m.id)}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '24px', flex: 1 }}>
-                    <div style={{ width: '130px', flexShrink: 0 }}>
-                      <span style={{ padding: '6px 12px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', ...getBadgeStyle(m.movement_type, m.tone) }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '10px' : '24px', flex: 1, minWidth: 0 }}>
+                    <div style={{ width: isMobile ? 'auto' : '130px', flexShrink: 0 }}>
+                      <span style={{ display: 'inline-block', padding: '6px 12px', borderRadius: '8px', fontSize: isMobile ? '0.68rem' : '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap', ...getBadgeStyle(m.movement_type, m.tone) }}>
                         {translateType(m.movement_type)}
                       </span>
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '1.05rem', marginBottom: '2px' }}>
+                      <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: isMobile ? '0.92rem' : '1.05rem', marginBottom: '2px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {m.product_name}
                       </div>
                       <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: detail ? '4px' : 0 }}>
@@ -232,10 +234,10 @@ export default function AuditModule() {
                       )}
                     </div>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
-                    <div style={{ width: '120px', textAlign: 'right' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '6px' : '12px', flexShrink: 0 }}>
+                    <div style={{ width: isMobile ? 'auto' : '120px', textAlign: 'right' }}>
                       {m.movement_type !== 'event' && (
-                        <span style={{ fontSize: '1.2rem', fontWeight: 800, fontFamily: 'var(--font-mono)', color: m.movement_type === 'entrada' ? 'var(--accent-success)' : (m.movement_type === 'salida' || m.movement_type === 'egreso' ? 'var(--accent-danger)' : 'var(--text-primary)') }}>
+                        <span style={{ fontSize: isMobile ? '1rem' : '1.2rem', fontWeight: 800, fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap', color: m.movement_type === 'entrada' ? 'var(--accent-success)' : (m.movement_type === 'salida' || m.movement_type === 'egreso' ? 'var(--accent-danger)' : 'var(--text-primary)') }}>
                           {m.movement_type === 'price_change' ? '—' : (m.movement_type === 'entrada' ? `+${m.quantity ?? 0}` : (m.movement_type === 'egreso' ? (m.quantity != null ? `-$${Math.abs(Number(m.quantity)).toLocaleString('es-AR')}` : '—') : `-${m.quantity ?? 0}`))}
                         </span>
                       )}
@@ -247,7 +249,7 @@ export default function AuditModule() {
                 </div>
                 {/* Detalle expandido — cualquier tipo con datos */}
                 {isExpanded && detail && (
-                  <div style={{ background: m.movement_type === 'egreso' ? 'rgba(245,158,11,0.06)' : 'rgba(20,187,166,0.04)', borderTop: '1px solid var(--border-color)', padding: '14px 24px 14px 174px', display: 'flex', gap: '32px', flexWrap: 'wrap' }}>
+                  <div style={{ background: m.movement_type === 'egreso' ? 'rgba(245,158,11,0.06)' : 'rgba(20,187,166,0.04)', borderTop: '1px solid var(--border-color)', padding: isMobile ? '12px 14px' : '14px 24px 14px 174px', display: 'flex', gap: isMobile ? '16px' : '32px', flexWrap: 'wrap' }}>
                     {m.movement_type === 'egreso' && (
                       <div>
                         <div style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-secondary)', marginBottom: 4 }}>Monto retirado</div>
