@@ -56,6 +56,17 @@ export default function VentasPage() {
     { v: 'd', label: cfg.price_list_d_name || 'Lista D' },
     { v: 'e', label: cfg.price_list_e_name || 'Lista E' },
   ];
+  // Botones del selector global de lista del carrito: A/B/C siempre (comportamiento
+  // histórico), D y E solo si el negocio les puso nombre en Configuración — así los
+  // negocios que usan Lista D pueden vender todo el carrito con esa lista, sin
+  // ensuciar la barra para los kioscos que sólo usan A/B.
+  const globalListOptions = [
+    { v: 'a', label: 'A' },
+    { v: 'b', label: 'B' },
+    { v: 'c', label: 'C' },
+    ...(cfg.price_list_d_name ? [{ v: 'd', label: 'D' }] : []),
+    ...(cfg.price_list_e_name ? [{ v: 'e', label: 'E' }] : []),
+  ];
 
   useEffect(() => { cart.setPromotionSavings(promos.promotionSavings); // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [promos.promotionSavings]);
@@ -288,6 +299,8 @@ export default function VentasPage() {
             setItemPrice={cart.setItemPrice}
             setItemList={cart.setItemList}
             priceLists={priceLists}
+            listOptions={globalListOptions}
+            cartDiscountPct={cart.cartDiscountPct} setCartDiscountPct={cart.setCartDiscountPct}
             canEditPrice={true}
             listType={cart.listType} setListType={cart.setListType} />
           </div>
