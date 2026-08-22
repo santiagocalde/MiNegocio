@@ -265,7 +265,7 @@ async def complete_onboarding(body: CompleteOnboarding, business: dict = Depends
     async with pool.acquire() as conn:
         await conn.execute(
             """UPDATE businesses SET business_name = $1,
-                   phone = CASE WHEN $2 = '' THEN phone ELSE pgp_sym_encrypt($2, $8) END,
+                   phone = CASE WHEN $2 = '' THEN phone ELSE pgp_sym_encrypt($2, $8)::text END,
                    business_type = $3, prior_pos = $4, needs_arca = $5, objective = $6
                WHERE id = $7""",
             body.business_name.strip(), body.phone.strip(),
