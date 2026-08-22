@@ -40,6 +40,10 @@ export default function useCart(productsDB, ivaRate, playBeep, cartKey = 'minego
   const [autoPrint, setAutoPrint] = useState(false);
   const [isCancelConfirm, setIsCancelConfirm] = useState(false);
   const [promotionSavings, setPromotionSavings] = useState(0);
+  // Producto en espera de que el cajero ingrese el peso/volumen/longitud.
+  // Se activa cuando handleQuickAdd detecta unit_label fraccionario (kg, g, l, etc.).
+  // Mientras está seteado, el modal de peso bloquea el POS hasta que confirmen o cancelen.
+  const [pendingWeightProduct, setPendingWeightProduct] = useState(null);
   const addLockRef = useRef(false);
   const debounceRef = useRef(null);
   // Un único BroadcastChannel compartido para leer y escribir: el propio objeto nunca
@@ -82,12 +86,39 @@ export default function useCart(productsDB, ivaRate, playBeep, cartKey = 'minego
     return () => { bcRef.current = null; bc.close(); };
   }, []);
 
+  // Unidades que requieren ingresar cantidad decimal al vender (precio es "por unidad de medida").
+  const FRAC_UNITS = ['kg', 'g', 'l', 'ml', 'm', 'm2', 'm²', 'cm', 'cc'];
+
   const handleQuickAdd = useCallback((code, name, price, extra) => {
     if (addLockRef.current) return;
     addLockRef.current = true;
     const product = findProductByAnyCode(productsDB, code);
     const canonicalCode = product?.code || code;
     if (!product && !extra) { addLockRef.current = false; return; }
+
+    // Si el producto se vende por peso/volumen/longitud, pausar y pedir la cantidad.
+    // La excepción es si viene con qty ya seteado en extra (ej: balanza que envía gramos).
+    const unitLabel = product?.unit_label || extra?.unit_label || 'unidad';
+    const hasExtraQty = extra?.qty != null && extra.qty !== 1;
+    if (FRAC_UNITS.includes(unitLabel) && !hasExtraQty) {
+      const src = product || extra || {};
+      setPendingWeightProduct({
+        id: product?.id || extra?.id || canonicalCode,
+        code: canonicalCode,
+        name, price,
+        unit_label: unitLabel,
+        stock: product?.stock || 0,
+        price_a: src.price ?? price,
+        price_b: src.price_b,
+        price_c: src.price_c,
+        price_d: src.price_d,
+        price_e: src.price_e,
+        ...extra,
+      });
+      addLockRef.current = false;
+      return;
+    }
+
     setCart(prev => {
       // Merge por ID de variante cuando existe (dos variantes pueden compartir código).
       const ex = extra?.id
@@ -99,6 +130,7 @@ export default function useCart(productsDB, ivaRate, playBeep, cartKey = 'minego
       const item = {
         id: itemId, code: canonicalCode, name, price,
         stock: product?.stock || 0, qty: 1,
+        unit_label: product?.unit_label || 'unidad',
         price_a: src.price != null ? src.price : price,
         price_b: src.price_b,
         price_c: src.price_c,
@@ -122,6 +154,22 @@ export default function useCart(productsDB, ivaRate, playBeep, cartKey = 'minego
     if (playBeep) playBeep();
   }, [productsDB, playBeep]);
 
+  // Confirma la cantidad fraccionaria y agrega el pendingWeightProduct al carrito.
+  const confirmWeight = useCallback((qty) => {
+    if (!pendingWeightProduct) return;
+    const item = { ...pendingWeightProduct, qty };
+    setCart(prev => {
+      const ex = prev.find(i => i.id === item.id);
+      // Para productos fraccionarios cada venta es un ítem separado (un pollo de 1.2 kg
+      // y otro de 0.8 kg son dos líneas distintas — no se acumulan).
+      return [...prev, { ...item }];
+    });
+    setPendingWeightProduct(null);
+    if (playBeep) playBeep();
+  }, [pendingWeightProduct, playBeep]);
+
+  const cancelWeight = useCallback(() => setPendingWeightProduct(null), []);
+
   // Repone el carrito completo con los items de una venta anterior (ej. "repetir última venta").
   // Usa setCart directo en vez de handleQuickAdd: handleQuickAdd tiene un lock de 300ms pensado
   // para evitar dobles-escaneos accidentales, que bloquearía agregar varios items distintos en loop.
@@ -131,7 +179,11 @@ export default function useCart(productsDB, ivaRate, playBeep, cartKey = 'minego
   }, []);
 
   const updateQty = useCallback((id, delta) => {
-    setCart(prev => prev.map(item => item.id === id ? { ...item, qty: Math.max(1, item.qty + delta) } : item));
+    setCart(prev => prev.map(item => {
+      if (item.id !== id) return item;
+      const isFrac = item.unit_label && ['kg', 'g', 'l', 'ml', 'm', 'm2', 'm²', 'cm', 'cc'].includes(item.unit_label);
+      return { ...item, qty: Math.max(isFrac ? 0.001 : 1, item.qty + delta) };
+    }));
     // Beep al sumar una unidad con el boton "+", mismo feedback que al escanear. El "-" no suena.
     if (delta > 0 && playBeep) playBeep();
   }, [playBeep]);
@@ -224,6 +276,7 @@ export default function useCart(productsDB, ivaRate, playBeep, cartKey = 'minego
     promotionSavings, setPromotionSavings,
     listType, setListType,
     cartDiscountPct, setCartDiscountPct,
+    pendingWeightProduct, confirmWeight, cancelWeight,
     handleQuickAdd,
     handleRepeatSale,
     updateQty,
