@@ -24,7 +24,7 @@ async def list_credit_notes(request: Request) -> list:
     else:
         import aiosqlite
         async with aiosqlite.connect(main.DB_PATH) as db:
-            cur = await db.execute("SELECT cn.*, c.name as customer_name FROM credit_notes cn LEFT JOIN customers c ON c.id = cn.customer_id ORDER BY cn.created_at DESC LIMIT 200")
+            cur = await db.execute("SELECT cn.*, c.name as customer_name FROM credit_notes cn LEFT JOIN customers c ON c.id = cn.customer_id WHERE cn.business_id = ? ORDER BY cn.created_at DESC LIMIT 200", (b_id,))
             return [row_to_dict(r, cur.description) for r in await cur.fetchall()]
 
 @router.post("/api/credit-notes", summary="Crear nota de crédito (devolución)")
@@ -72,19 +72,19 @@ async def create_credit_note(request: Request, body: dict = Body(...)) -> dict:
 @router.get("/api/credit-notes/{note_id}", summary="Detalle de nota de crédito")
 @limiter.limit("30/minute")
 async def get_credit_note(request: Request, note_id: int) -> dict:
-    from main import USE_PG, row_to_dict; import main
+    from main import USE_PG, row_to_dict; import main; b_id = _biz_id()
     if USE_PG:
         from db_helpers import get_pg_pool
         pool = await get_pg_pool()
         async with pool.acquire() as conn:
-            cn = await conn.fetchrow("SELECT cn.*, c.name as customer_name FROM credit_notes cn LEFT JOIN customers c ON c.id = cn.customer_id WHERE cn.id = $1", note_id)
+            cn = await conn.fetchrow("SELECT cn.*, c.name as customer_name FROM credit_notes cn LEFT JOIN customers c ON c.id = cn.customer_id WHERE cn.id = $1 AND cn.business_id = $2", note_id, b_id)
             if not cn: raise HTTPException(404)
             items = await conn.fetch("SELECT * FROM credit_note_items WHERE credit_note_id = $1", note_id)
             return {"credit_note": dict(cn), "items": [dict(i) for i in items]}
     else:
         import aiosqlite
         async with aiosqlite.connect(main.DB_PATH) as db:
-            cn = await db.execute("SELECT cn.*, c.name as customer_name FROM credit_notes cn LEFT JOIN customers c ON c.id = cn.customer_id WHERE cn.id = ?", (note_id,)); cn = await cn.fetchone()
+            cn = await db.execute("SELECT cn.*, c.name as customer_name FROM credit_notes cn LEFT JOIN customers c ON c.id = cn.customer_id WHERE cn.id = ? AND cn.business_id = ?", (note_id, b_id)); cn = await cn.fetchone()
             if not cn: raise HTTPException(404)
             items = await db.execute("SELECT * FROM credit_note_items WHERE credit_note_id = ?", (note_id,))
             return {"credit_note": row_to_dict(cn, cn.description), "items": [row_to_dict(i, items.description) for i in await items.fetchall()]}
