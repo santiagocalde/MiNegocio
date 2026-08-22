@@ -441,7 +441,7 @@ export default function VentasPage() {
                   return (
                     <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: 'rgba(255,255,255,0.04)', borderRadius: 8, gap: 12 }}>
                       <span style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.85)', flex: 1 }}>
-                        {it.name} <span style={{ color: 'rgba(255,255,255,0.4)' }}>× {it.qty || it.quantity || 1}</span>
+                        {it.name} <span style={{ color: 'rgba(255,255,255,0.4)' }}>× {it.qty || it.quantity || 1}{it.unit_label && it.unit_label !== 'unidad' ? ' ' + it.unit_label : ''}</span>
                       </span>
                       <div style={{ display: 'flex', gap: 0, borderRadius: 6, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.15)', flexShrink: 0 }}>
                         <button onClick={() => esEnvio && toggleShipItem(i)} style={{ padding: '5px 12px', fontSize: '0.78rem', fontWeight: 700, background: !esEnvio ? '#14BBA6' : 'transparent', color: !esEnvio ? '#fff' : 'rgba(255,255,255,0.4)', border: 'none', cursor: 'pointer', transition: 'all 0.15s' }}>
@@ -493,6 +493,154 @@ export default function VentasPage() {
           </div>
         </div>
       )}
+      {/* ── Modal de peso/volumen ─────────────────────────────────────────────────
+          Aparece automáticamente cuando el cajero escanea/agrega un producto cuya
+          unidad de medida es fraccionaria (kg, g, l, ml, m, etc.). Pide la cantidad
+          antes de sumar el ítem al carrito.
+      ──────────────────────────────────────────────────────────────────────────── */}
+      {cart.pendingWeightProduct && (
+        <WeightInputModal
+          product={cart.pendingWeightProduct}
+          onConfirm={cart.confirmWeight}
+          onCancel={cart.cancelWeight}
+        />
+      )}
     </>
+  );
+}
+
+// ── Modal de ingreso de peso/volumen ──────────────────────────────────────────
+// Se monta vía portal para quedar siempre encima de todo. El input tiene
+// autoFocus y acepta Enter para confirmar y Escape para cancelar.
+function WeightInputModal({ product, onConfirm, onCancel }) {
+  const [value, setValue] = useState('');
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    // Pequeño delay para que el portal esté en el DOM antes del focus
+    const t = setTimeout(() => inputRef.current?.focus(), 50);
+    return () => clearTimeout(t);
+  }, []);
+
+  const unit = product.unit_label || 'u';
+
+  // Paso de los botones + / − según unidad
+  const step = unit === 'g' || unit === 'ml' || unit === 'cc' ? 1
+    : unit === 'cm' ? 1
+    : 0.1; // kg, l, m, m2 → de 100g / 100ml / 10cm en 10cm
+
+  const numVal = parseFloat(value) || 0;
+  const subtotal = Math.round(numVal * product.price);
+
+  const handleConfirm = () => {
+    const qty = parseFloat(value);
+    if (!qty || qty <= 0) return;
+    onConfirm(qty);
+  };
+
+  const handleKey = (e) => {
+    if (e.key === 'Enter') handleConfirm();
+    if (e.key === 'Escape') onCancel();
+  };
+
+  const adjustValue = (delta) => {
+    setValue(prev => {
+      const cur = parseFloat(prev) || 0;
+      const next = Math.max(step, Math.round((cur + delta) * 1000) / 1000);
+      return String(next);
+    });
+  };
+
+  return createPortal(
+    <div
+      className="modal-overlay"
+      style={{
+        position: 'fixed', inset: 0, zIndex: 9999,
+        background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}
+      onClick={e => { if (e.target === e.currentTarget) onCancel(); }}
+    >
+      <div style={{
+        background: 'var(--bg-card)', borderRadius: '16px',
+        border: '1px solid var(--border-color)',
+        padding: '28px 32px', maxWidth: '360px', width: '90%',
+        boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
+      }}>
+        {/* Encabezado */}
+        <div style={{ marginBottom: '20px' }}>
+          <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-secondary)', fontWeight: 700, marginBottom: '4px' }}>
+            ¿Cuántos {unit}?
+          </div>
+          <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {product.name}
+          </div>
+          <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+            ${product.price.toLocaleString('es-AR')} / {unit}
+          </div>
+        </div>
+
+        {/* Input grande con botones */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+          <button
+            onClick={() => adjustValue(-step)}
+            style={{ width: '44px', height: '44px', borderRadius: '10px', border: '1px solid var(--border-color)', background: 'var(--bg-main)', color: 'var(--text-primary)', fontSize: '1.4rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          >−</button>
+
+          <div style={{ flex: 1, position: 'relative' }}>
+            <input
+              ref={inputRef}
+              type="number"
+              step={step}
+              min={step}
+              value={value}
+              onChange={e => setValue(e.target.value)}
+              onKeyDown={handleKey}
+              placeholder="0"
+              style={{
+                width: '100%', boxSizing: 'border-box',
+                padding: '12px 44px 12px 16px',
+                background: 'var(--bg-main)', border: '2px solid var(--accent-primary)',
+                borderRadius: '10px', color: 'var(--text-primary)',
+                fontSize: '1.5rem', fontWeight: 700, textAlign: 'center', outline: 'none',
+                fontVariantNumeric: 'tabular-nums',
+              }}
+            />
+            <span style={{
+              position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)',
+              color: 'var(--text-secondary)', fontWeight: 700, fontSize: '0.9rem', pointerEvents: 'none',
+            }}>{unit}</span>
+          </div>
+
+          <button
+            onClick={() => adjustValue(step)}
+            style={{ width: '44px', height: '44px', borderRadius: '10px', border: '1px solid var(--border-color)', background: 'var(--bg-main)', color: 'var(--text-primary)', fontSize: '1.4rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          >+</button>
+        </div>
+
+        {/* Subtotal en tiempo real */}
+        <div style={{ textAlign: 'center', marginBottom: '20px', minHeight: '24px' }}>
+          {numVal > 0 && (
+            <span style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--accent-primary)', fontVariantNumeric: 'tabular-nums' }}>
+              = ${subtotal.toLocaleString('es-AR')}
+            </span>
+          )}
+        </div>
+
+        {/* Botones */}
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button
+            onClick={onCancel}
+            style={{ flex: 1, padding: '11px', borderRadius: '10px', border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--text-secondary)', fontWeight: 700, cursor: 'pointer', fontSize: '0.95rem' }}
+          >Cancelar</button>
+          <button
+            onClick={handleConfirm}
+            disabled={!numVal || numVal <= 0}
+            style={{ flex: 2, padding: '11px', borderRadius: '10px', border: 'none', background: numVal > 0 ? 'var(--accent-primary)' : 'rgba(20,187,166,0.2)', color: numVal > 0 ? '#fff' : 'rgba(20,187,166,0.4)', fontWeight: 800, cursor: numVal > 0 ? 'pointer' : 'default', fontSize: '0.95rem' }}
+          >Agregar al carrito</button>
+        </div>
+      </div>
+    </div>,
+    document.body
   );
 }
