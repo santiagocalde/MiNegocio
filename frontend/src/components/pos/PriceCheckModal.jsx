@@ -23,6 +23,14 @@ function PriceCheckModal({ showPriceCheck, setShowPriceCheck, priceCheckQuery, s
 
   const closeModal = () => { setShowPriceCheck(false); setPriceCheckQuery(''); setPriceCheckResults([]); };
 
+  React.useEffect(() => {
+    if (!showPriceCheck) return;
+    const handler = (e) => { if (e.key === 'Escape') closeModal(); };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showPriceCheck]);
+
   const { rendered, closing } = useModalExit(showPriceCheck);
   if (!rendered) return null;
   return (

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import useIsMobile from '../../hooks/useIsMobile';
 import useModalExit, { overlayAnim, contentAnim } from '../../hooks/useModalExit';
 
@@ -21,6 +21,13 @@ export default function CatalogModal({ open = true, products = [], onSelect, onC
   const [search, setSearch] = useState('');
 
   const price = (p) => getPrice ? getPrice(p) : (p.price || 0);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e) => { if (e.key === 'Escape') onClose?.(); };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [open, onClose]);
 
   // Categorías únicas, ordenadas
   const categories = useMemo(() => {

@@ -16,6 +16,13 @@ export default function AddAmountModal({ show, setShow, handleQuickAdd }) {
     }
   }, [show]);
 
+  useEffect(() => {
+    if (!show) return;
+    const handler = (e) => { if (e.key === 'Escape') setShow(false); };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [show, setShow]);
+
   const { rendered, closing } = useModalExit(show);
   if (!rendered) return null;
 

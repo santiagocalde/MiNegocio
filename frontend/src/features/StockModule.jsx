@@ -129,7 +129,7 @@ export default function StockModule() {
   const [showNuevoProducto, setShowNuevoProducto] = useState(false);
   const [categories, setCategories] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
-  const [newProduct, setNewProduct] = useState({ code: '', name: '', price: '', cost_price: '', price_b: '', price_c: '', price_d: '', price_e: '', stock: '', min_stock: '5', iva: '21%', category_id: '', supplier_id: '', unit_label: 'unidad', codigos_extra: '' });
+  const [newProduct, setNewProduct] = useState({ code: '', name: '', price: '', cost_price: '', price_b: '', price_c: '', price_d: '', stock: '', min_stock: '5', iva: '21%', category_id: '', supplier_id: '', unit_label: 'unidad', codigos_extra: '' });
   const [confirmState, setConfirmState] = useState({ isOpen: false, title: '', message: '', onConfirm: null, confirmLabel: 'Confirmar', variant: 'danger' });
   const [showNewCategory, setShowNewCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -352,7 +352,6 @@ export default function StockModule() {
         price_b: newProduct.price_b ? parseFloat(newProduct.price_b) : null,
         price_c: newProduct.price_c ? parseFloat(newProduct.price_c) : null,
         price_d: newProduct.price_d ? parseFloat(newProduct.price_d) : null,
-        price_e: newProduct.price_e ? parseFloat(newProduct.price_e) : null,
         unit_label: newProduct.unit_label || 'unidad',
         supplier_id: newProduct.supplier_id ? parseInt(newProduct.supplier_id) : null,
         extra_codes: (newProduct.codigos_extra || '').split(',').map(c => c.trim()).filter(Boolean),
@@ -360,7 +359,7 @@ export default function StockModule() {
       if (res.ok) {
         if (addToast) addToast('Producto creado exitosamente.', 'success');
         setShowNuevoProducto(false);
-        setNewProduct({ code: '', name: '', price: '', cost_price: '', price_b: '', price_c: '', price_d: '', price_e: '', stock: '', min_stock: '5', iva: '21%', category_id: '', supplier_id: '', unit_label: 'unidad', codigos_extra: '' });
+        setNewProduct({ code: '', name: '', price: '', cost_price: '', price_b: '', price_c: '', price_d: '', stock: '', min_stock: '5', iva: '21%', category_id: '', supplier_id: '', unit_label: 'unidad', codigos_extra: '' });
         fetchProducts();
         if (onProductsUpdated) onProductsUpdated();
       } else {
