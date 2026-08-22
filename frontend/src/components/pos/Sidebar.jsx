@@ -229,24 +229,27 @@ export default function Sidebar({
   // En mobile colapsado: el sidebar desaparece por completo.
   // Solo queda un botón flotante desvanecido en el borde izquierdo de la pantalla.
   if (isMobile && collapsed) {
+    // Tirador de menú en el borde izquierdo, centrado verticalmente: color de acento
+    // y con ícono de hamburguesa para que se lea claramente como "menú". Centrado en
+    // vertical para no chocar nunca con los headers superiores de cada página.
     return (
       <button
         onClick={() => setCollapsed(false)}
         aria-label="Abrir menú"
         style={{
-          position: 'fixed', top: 12, left: 0,
-          zIndex: 310, background: 'var(--bg-card)', border: '1px solid var(--border-color)',
-          borderLeft: 'none', borderRadius: '0 8px 8px 0',
-          width: 20, height: 44,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          cursor: 'pointer', opacity: 0.6,
-          color: 'var(--text-secondary)', fontSize: '0.75rem', lineHeight: 1,
-          transition: 'opacity 0.2s',
+          position: 'fixed', top: '50%', left: 0, transform: 'translateY(-50%)',
+          zIndex: 310, background: 'var(--accent-primary)', border: 'none',
+          borderRadius: '0 12px 12px 0',
+          width: 30, height: 60,
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 5,
+          cursor: 'pointer',
+          boxShadow: '2px 0 12px rgba(0,0,0,0.35)',
+          padding: 0,
         }}
-        onTouchStart={e => e.currentTarget.style.opacity = '1'}
-        onTouchEnd={e => e.currentTarget.style.opacity = '0.6'}
       >
-        ›
+        <span style={{ display: 'block', width: 16, height: 2, background: '#fff', borderRadius: 2 }} />
+        <span style={{ display: 'block', width: 16, height: 2, background: '#fff', borderRadius: 2 }} />
+        <span style={{ display: 'block', width: 16, height: 2, background: '#fff', borderRadius: 2 }} />
       </button>
     );
   }
