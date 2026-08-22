@@ -115,12 +115,12 @@ async def list_despachos(request: Request, fecha: Optional[str] = Query(None)) -
 @router.get("/api/acopios/{acopio_id}", summary="Detalle de acopio")
 @limiter.limit("30/minute")
 async def get_acopio(request: Request, acopio_id: int) -> dict:
-    from main import USE_PG, row_to_dict; import main
+    from main import USE_PG, row_to_dict; import main; b_id = _biz_id()
     if USE_PG:
         from db_helpers import get_pg_pool
         pool = await get_pg_pool()
         async with pool.acquire() as conn:
-            a = await conn.fetchrow("SELECT a.*, (SELECT name FROM customers WHERE id = a.customer_id) as customer_name, (SELECT address FROM customers WHERE id = a.customer_id) as customer_address FROM acopios a WHERE id = $1", acopio_id)
+            a = await conn.fetchrow("SELECT a.*, (SELECT name FROM customers WHERE id = a.customer_id) as customer_name, (SELECT address FROM customers WHERE id = a.customer_id) as customer_address FROM acopios a WHERE id = $1 AND a.business_id = $2", acopio_id, b_id)
             if not a: raise HTTPException(404)
             items = await conn.fetch("SELECT ai.*, p.name as product_name FROM acopio_items ai JOIN products p ON p.id = ai.product_id WHERE ai.acopio_id = $1", acopio_id)
             wdraws = await conn.fetch("SELECT aw.*, (SELECT COUNT(*) FROM acopio_withdrawal_items WHERE withdrawal_id = aw.id) as item_count FROM acopio_withdrawals aw WHERE aw.acopio_id = $1 ORDER BY aw.created_at DESC", acopio_id)
@@ -128,7 +128,7 @@ async def get_acopio(request: Request, acopio_id: int) -> dict:
     else:
         import aiosqlite
         async with aiosqlite.connect(main.DB_PATH) as db:
-            cur_a = await db.execute("SELECT a.*, (SELECT name FROM customers WHERE id = a.customer_id) as customer_name, (SELECT address FROM customers WHERE id = a.customer_id) as customer_address FROM acopios a WHERE id = ?", (acopio_id,))
+            cur_a = await db.execute("SELECT a.*, (SELECT name FROM customers WHERE id = a.customer_id) as customer_name, (SELECT address FROM customers WHERE id = a.customer_id) as customer_address FROM acopios a WHERE id = ? AND a.business_id = ?", (acopio_id, b_id))
             a = await cur_a.fetchone()
             if not a: raise HTTPException(404)
             cur_items = await db.execute("SELECT ai.*, p.name as product_name FROM acopio_items ai JOIN products p ON p.id = ai.product_id WHERE ai.acopio_id = ?", (acopio_id,))
