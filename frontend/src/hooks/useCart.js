@@ -25,6 +25,7 @@ export default function useCart(productsDB, ivaRate, playBeep, cartKey = 'minego
   const [itemDiscounts, setItemDiscounts] = useState({});
   const [discountInputActive, setDiscountInputActive] = useState(null);
   const [listType, setListType] = useState('a'); // a = público, b = mayorista/contratista
+  const [cartDiscountPct, setCartDiscountPct] = useState(0); // descuento % sobre TODO el carrito
   const [adjustedTotal, setAdjustedTotal] = useState(null);
   const [editingTotal, setEditingTotal] = useState(false);
   const [payment, setPayment] = useState('');
@@ -171,6 +172,7 @@ export default function useCart(productsDB, ivaRate, playBeep, cartKey = 'minego
     setEmitirFactura(false);
     setTipoFactura('C');
     setListType('a');
+    setCartDiscountPct(0);
   }, []);
 
   const ivaMultiplier = 1 + ivaRate / 100;
@@ -179,12 +181,18 @@ export default function useCart(productsDB, ivaRate, playBeep, cartKey = 'minego
     const rawTotal = cart.reduce((acc, item) => acc + (item.price * item.qty), 0);
     const totalItemDiscount = Object.values(itemDiscounts).reduce((acc, d) => acc + (parseFloat(d) || 0), 0);
     const totalBeforePromo = Math.max(0, rawTotal - totalItemDiscount);
-    const total = Math.max(0, totalBeforePromo - promotionSavings);
+    const totalAfterPromo = Math.max(0, totalBeforePromo - promotionSavings);
+    // Descuento porcentual general: se aplica sobre el total ya neto de descuentos
+    // por ítem y promociones. Queda plegado en `total`, así subtotal/iva/effectiveTotal
+    // y el importe cobrado/registrado lo reflejan sin tocar nada más.
+    const pct = (cartDiscountPct > 0 && cartDiscountPct < 100) ? cartDiscountPct : 0;
+    const pctDiscount = pct ? totalAfterPromo * (pct / 100) : 0;
+    const total = Math.max(0, totalAfterPromo - pctDiscount);
     const subtotal = Math.round((total / ivaMultiplier) * 100) / 100;
     const iva = Math.round((total - subtotal) * 100) / 100;
-    const discount = Math.round((totalItemDiscount + promotionSavings) * 100) / 100;
+    const discount = Math.round((totalItemDiscount + promotionSavings + pctDiscount) * 100) / 100;
     return { rawTotal: Math.round(rawTotal * 100) / 100, total: Math.round(total * 100) / 100, subtotal, iva, discount };
-  }, [cart, itemDiscounts, promotionSavings, ivaMultiplier]);
+  }, [cart, itemDiscounts, promotionSavings, ivaMultiplier, cartDiscountPct]);
 
   const totals = useMemo(() => calculateTotals(), [calculateTotals]);
   const { rawTotal, total, subtotal, iva, discount } = totals;
@@ -215,6 +223,7 @@ export default function useCart(productsDB, ivaRate, playBeep, cartKey = 'minego
     isCancelConfirm, setIsCancelConfirm,
     promotionSavings, setPromotionSavings,
     listType, setListType,
+    cartDiscountPct, setCartDiscountPct,
     handleQuickAdd,
     handleRepeatSale,
     updateQty,
