@@ -314,34 +314,7 @@ function Dashboard({ token }) {
       )}
 
       {atRisk && (atRisk.expiring?.length > 0 || atRisk.inactive?.length > 0) && (
-        <div style={{ ...S.card, marginBottom: 24, border: '1px solid rgba(245,158,11,0.15)', background: 'linear-gradient(135deg, #0B1120, rgba(245,158,11,0.03))' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-            <svg width="16" height="16" fill="none" stroke="#F59E0B" viewBox="0 0 24 24" strokeWidth="2.2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-            <h3 style={{ color: '#F59E0B', fontSize: '0.78rem', fontWeight: 700, margin: 0, textTransform: 'uppercase', letterSpacing: '0.6px' }}>Atención requerida</h3>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
-            <div>
-              <div style={{ color: MUTED, fontSize: '0.72rem', fontWeight: 600, marginBottom: 8 }}>⏰ Prueba/plan por vencer ({atRisk.expiring.length})</div>
-              {atRisk.expiring.length === 0 ? <div style={{ color: MUTED, fontSize: '0.78rem', opacity: 0.6 }}>Ninguno</div> :
-                atRisk.expiring.slice(0, 5).map(b => (
-                  <div key={b.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.02)' }}>
-                    <span style={{ color: TEXT, fontSize: '0.8rem', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 180 }}>{b.business_name}</span>
-                    <span style={{ ...S.pill(b.days_left <= 1 ? '#EF4444' : '#F59E0B'), fontSize: '0.66rem' }}>{b.days_left <= 0 ? 'Hoy' : `${b.days_left}d`}</span>
-                  </div>
-                ))}
-            </div>
-            <div>
-              <div style={{ color: MUTED, fontSize: '0.72rem', fontWeight: 600, marginBottom: 8 }}>💤 Inactivos (sin ventas 14d) ({atRisk.inactive.length})</div>
-              {atRisk.inactive.length === 0 ? <div style={{ color: MUTED, fontSize: '0.78rem', opacity: 0.6 }}>Ninguno</div> :
-                atRisk.inactive.slice(0, 5).map(b => (
-                  <div key={b.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.02)' }}>
-                    <span style={{ color: TEXT, fontSize: '0.8rem', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 180 }}>{b.business_name}</span>
-                    <span style={{ color: MUTED, fontSize: '0.7rem' }}>{b.last_sale ? fmtDate(b.last_sale) : 'Nunca'}</span>
-                  </div>
-                ))}
-            </div>
-          </div>
-        </div>
+        <AtRiskCard atRisk={atRisk} />
       )}
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
@@ -395,6 +368,73 @@ function StatCard({ color, label, value, sub }) {
       <div style={{ color: MUTED, fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 6 }}>{label}</div>
       <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#F1F5F9', letterSpacing: '-0.3px', lineHeight: 1, marginBottom: 2 }}>{value}</div>
       {sub && <div style={{ color: MUTED, fontSize: '0.72rem', fontWeight: 500 }}>{sub}</div>}
+    </div>
+  );
+}
+
+/* ─── At-Risk Card (expandible) ─── */
+function AtRiskCard({ atRisk }) {
+  const [expExpanded, setExpExpanded] = useState(false);
+  const [inactExpanded, setInactExpanded] = useState(false);
+
+  const expiring = atRisk.expiring || [];
+  const inactive = atRisk.inactive || [];
+  const PREVIEW = 5;
+
+  return (
+    <div style={{ ...S.card, marginBottom: 24, border: '1px solid rgba(245,158,11,0.15)', background: 'linear-gradient(135deg, #0B1120, rgba(245,158,11,0.03))' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+        <svg width="16" height="16" fill="none" stroke="#F59E0B" viewBox="0 0 24 24" strokeWidth="2.2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <h3 style={{ color: '#F59E0B', fontSize: '0.78rem', fontWeight: 700, margin: 0, textTransform: 'uppercase', letterSpacing: '0.6px' }}>Atención requerida</h3>
+        <span style={{ ...S.pill('#F59E0B'), fontSize: '0.64rem', marginLeft: 4 }}>{expiring.length + inactive.length} total</span>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
+        {/* Por vencer */}
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <span style={{ color: MUTED, fontSize: '0.72rem', fontWeight: 600 }}>⏰ Por vencer ({expiring.length})</span>
+            {expiring.length > PREVIEW && (
+              <button onClick={() => setExpExpanded(v => !v)} style={{ background: 'none', border: 'none', color: ACCENT, fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer', padding: 0 }}>
+                {expExpanded ? 'ver menos ▲' : `+${expiring.length - PREVIEW} más ▼`}
+              </button>
+            )}
+          </div>
+          {expiring.length === 0
+            ? <div style={{ color: MUTED, fontSize: '0.78rem', opacity: 0.6 }}>Ninguno</div>
+            : (expExpanded ? expiring : expiring.slice(0, PREVIEW)).map(b => (
+              <div key={b.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.02)' }}>
+                <span style={{ color: TEXT, fontSize: '0.8rem', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 160 }}>{b.business_name}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                  <span style={{ color: MUTED, fontSize: '0.68rem' }}>{PLAN[b.plan]?.label || b.plan}</span>
+                  <span style={{ ...S.pill(b.days_left <= 1 ? '#EF4444' : '#F59E0B'), fontSize: '0.64rem' }}>{b.days_left <= 0 ? 'Hoy' : `${b.days_left}d`}</span>
+                </div>
+              </div>
+            ))
+          }
+        </div>
+        {/* Inactivos */}
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <span style={{ color: MUTED, fontSize: '0.72rem', fontWeight: 600 }}>💤 Inactivos 14d ({inactive.length})</span>
+            {inactive.length > PREVIEW && (
+              <button onClick={() => setInactExpanded(v => !v)} style={{ background: 'none', border: 'none', color: ACCENT, fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer', padding: 0 }}>
+                {inactExpanded ? 'ver menos ▲' : `+${inactive.length - PREVIEW} más ▼`}
+              </button>
+            )}
+          </div>
+          {inactive.length === 0
+            ? <div style={{ color: MUTED, fontSize: '0.78rem', opacity: 0.6 }}>Ninguno</div>
+            : (inactExpanded ? inactive : inactive.slice(0, PREVIEW)).map(b => (
+              <div key={b.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.02)' }}>
+                <span style={{ color: TEXT, fontSize: '0.8rem', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 160 }}>{b.business_name}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                  <span style={{ color: MUTED, fontSize: '0.7rem' }}>{b.last_sale ? fmtDate(b.last_sale) : 'Nunca'}</span>
+                </div>
+              </div>
+            ))
+          }
+        </div>
+      </div>
     </div>
   );
 }
@@ -608,10 +648,10 @@ function Businesses({ token, toast }) {
                 <div key={k} style={{ padding: '10px 14px', background: 'rgba(255,255,255,0.01)', borderRadius: 8, border: '1px solid rgba(255,255,255,0.025)' }}>
                   <div style={{ color: MUTED, fontSize: '0.65rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.4px', marginBottom: 3 }}>{l}</div>
                   <div style={{ color: TEXT, fontWeight: 600, fontSize: '0.86rem' }}>
-                    {t === 'plan' ? <span style={S.pill(PLAN[detail[k]]?.color || '#666')}>{PLAN[detail[k]]?.label || detail[k]}</span> :
-                     t === 'status' ? <span style={S.pill(STATUS[detail[k]]?.color || '#666')}>{STATUS[detail[k]]?.label || detail[k]}</span> :
-                     t === 'phone' ? (detail[k] ? <a href={`https://wa.me/${detail[k].replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" style={{ color: '#25D366', textDecoration: 'none', fontWeight: 600 }}>{detail[k]}</a> : '—') :
-                     t === 'date' ? fmtDate(detail[k]) : detail[k] || '—'}
+                    {t === 'plan' ? <span style={S.pill(PLAN[detailData[k]]?.color || '#666')}>{PLAN[detailData[k]]?.label || detailData[k]}</span> :
+                     t === 'status' ? <span style={S.pill(STATUS[detailData[k]]?.color || '#666')}>{STATUS[detailData[k]]?.label || detailData[k]}</span> :
+                     t === 'phone' ? (detailData[k] ? <a href={`https://wa.me/${detailData[k].replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" style={{ color: '#25D366', textDecoration: 'none', fontWeight: 600 }}>{detailData[k]}</a> : '—') :
+                     t === 'date' ? fmtDate(detailData[k]) : detailData[k] || '—'}
                   </div>
                 </div>
               ))}
@@ -800,6 +840,81 @@ function Audit({ token }) {
   );
 }
 
+/* ─── Alertas agrupadas por severidad ─── */
+function AlertsPanel({ alerts, online, onSelect }) {
+  const [expanded, setExpanded] = useState({ critical: true, warning: false, info: false });
+
+  if (!alerts || alerts.length === 0) {
+    return (
+      <div style={{ marginBottom: 22 }}>
+        <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#F1F5F9', margin: '0 0 12px' }}>Alertas de los negocios</h3>
+        <div style={{ ...S.card, textAlign: 'center', padding: 34, color: MUTED }}>
+          <div style={{ fontSize: '1.8rem', marginBottom: 8 }}>✅</div>
+          <div style={{ fontSize: '0.88rem', fontWeight: 600, color: '#10B981' }}>Sin alertas pendientes</div>
+          <div style={{ fontSize: '0.76rem', marginTop: 4 }}>Ningún negocio tiene problemas detectados</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Agrupar por severidad manteniendo orden: critical → warning → info
+  const groups = ['critical', 'warning', 'info']
+    .map(sev => ({ sev, items: alerts.filter(a => a.severity === sev) }))
+    .filter(g => g.items.length > 0);
+
+  return (
+    <div style={{ marginBottom: 22 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+        <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#F1F5F9', margin: 0 }}>Alertas de los negocios</h3>
+        <span style={{ ...S.pill('#EF4444'), fontSize: '0.68rem' }}>{alerts.length}</span>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {groups.map(({ sev, items }) => {
+          const cfg = SEVITY[sev] || SEVITY.info;
+          const isOpen = expanded[sev];
+          return (
+            <div key={sev} style={{ borderRadius: 12, border: `1px solid ${cfg.color}18`, overflow: 'hidden' }}>
+              {/* Cabecera del grupo — clicable */}
+              <button
+                onClick={() => setExpanded(prev => ({ ...prev, [sev]: !prev[sev] }))}
+                style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: cfg.bg, border: 'none', cursor: 'pointer', textAlign: 'left' }}
+              >
+                <span style={{ color: cfg.color, fontWeight: 800, fontSize: '0.72rem' }}>{LIVE_ICONS[sev] || '●'}</span>
+                <span style={{ color: cfg.color, fontWeight: 700, fontSize: '0.82rem', flex: 1 }}>{cfg.label}</span>
+                <span style={{ ...S.pill(cfg.color), fontSize: '0.64rem' }}>{items.length}</span>
+                <span style={{ color: cfg.color, fontSize: '0.7rem', marginLeft: 4 }}>{isOpen ? '▲' : '▼'}</span>
+              </button>
+              {/* Items del grupo */}
+              {isOpen && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                  {items.map((a, i) => (
+                    <div
+                      key={`${a.business_id}-${i}`}
+                      style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', borderTop: `1px solid rgba(255,255,255,0.03)`, cursor: 'pointer', transition: 'background 0.1s', background: cfg.row }}
+                      onClick={() => { const b = online.find(x => x.business_id === a.business_id); onSelect(b || { name: a.name, email: a.email, plan: a.plan }); }}
+                      onMouseEnter={e => e.currentTarget.style.background = `${cfg.color}08`}
+                      onMouseLeave={e => e.currentTarget.style.background = cfg.row}
+                    >
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                          <span style={{ color: TEXT, fontWeight: 700, fontSize: '0.86rem' }}>{a.name}</span>
+                          <span style={{ color: MUTED, fontSize: '0.7rem' }}>{a.email}</span>
+                        </div>
+                        <div style={{ color: '#CBD5E1', fontSize: '0.76rem', marginTop: 3, lineHeight: 1.4 }}>{a.msg}</div>
+                      </div>
+                      <span style={{ color: MUTED, fontSize: '0.7rem', flexShrink: 0 }}>ver →</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 /* ─── Live / Alertas (tiempo real) ─── */
 const SEVITY = {
   critical: { label: 'Crítica', color: '#EF4444', bg: 'rgba(239,68,68,0.08)', row: 'rgba(239,68,68,0.05)' },
@@ -870,40 +985,8 @@ function LiveMonitor({ token }) {
 
           {err && <div style={{ padding: '10px 14px', borderRadius: 8, background: 'rgba(239,68,68,0.06)', color: '#F87171', fontSize: '0.78rem', marginBottom: 18 }}>{err}</div>}
 
-          {/* Alertas */}
-          <div style={{ marginBottom: 22 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-              <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#F1F5F9', margin: 0 }}>Alertas de los negocios</h3>
-              {(data.alerts || []).length > 0 && <span style={{ ...S.pill('#EF4444'), fontSize: '0.68rem' }}>{data.alerts.length}</span>}
-            </div>
-            {(!data.alerts || data.alerts.length === 0) ? (
-              <div style={{ ...S.card, textAlign: 'center', padding: 34, color: MUTED }}>
-                <div style={{ fontSize: '1.8rem', marginBottom: 8 }}>✅</div>
-                <div style={{ fontSize: '0.88rem', fontWeight: 600, color: '#10B981' }}>Sin alertas pendientes</div>
-                <div style={{ fontSize: '0.76rem', marginTop: 4 }}>Ningun negocio tiene problemas detectados en este momento</div>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {(data.alerts || []).map((a, i) => {
-                  const sev = SEVITY[a.severity] || SEVITY.info;
-                  return (
-                    <div key={`${a.business_id}-${i}`} style={{ ...S.card, padding: '13px 16px', display: 'flex', alignItems: 'center', gap: 12, background: sev.row, borderLeft: `3px solid ${sev.color}`, cursor: 'pointer' }}
-                      onClick={() => { const b = (data.online || []).find(x => x.business_id === a.business_id); setSelected(b || { name: a.name, email: a.email, plan: a.plan }); }}>
-                      <div style={{ width: 34, height: 34, borderRadius: 9, background: sev.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: sev.color, fontWeight: 800, fontSize: '0.72rem' }}>{LIVE_ICONS[a.severity] || '●'}</div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                          <span style={{ color: TEXT, fontWeight: 700, fontSize: '0.88rem' }}>{a.name}</span>
-                          <span style={{ ...S.pill(sev.color), fontSize: '0.64rem' }}>{sev.label}</span>
-                          <span style={{ color: MUTED, fontSize: '0.7rem' }}>{a.email}</span>
-                        </div>
-                        <div style={{ color: '#E2E8F0', fontSize: '0.78rem', marginTop: 4, lineHeight: 1.4 }}>{a.msg}</div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+          {/* Alertas agrupadas por severidad */}
+          <AlertsPanel alerts={data.alerts || []} online={data.online || []} onSelect={setSelected} />
 
           {/* Negocios en línea */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
