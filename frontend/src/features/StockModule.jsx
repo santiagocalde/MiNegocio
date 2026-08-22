@@ -1038,6 +1038,25 @@ export default function StockModule() {
                   </select>
                 </div>
               )}
+
+              <div>
+                <label style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '6px', fontWeight: 600 }}>Unidad de medida</label>
+                <select value={newProduct.unit_label} onChange={e => setNewProduct({ ...newProduct, unit_label: e.target.value })}
+                  style={{ width: '100%', padding: '10px 12px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '8px', outline: 'none', fontSize: '0.95rem', boxSizing: 'border-box' }}>
+                  <option value="unidad">Unidad</option>
+                  <option value="kg">Kilogramo (kg)</option>
+                  <option value="g">Gramo (g)</option>
+                  <option value="l">Litro (l)</option>
+                  <option value="ml">Mililitro (ml)</option>
+                  <option value="m">Metro (m)</option>
+                  <option value="m2">m²</option>
+                  <option value="docena">Docena</option>
+                  <option value="bandeja">Bandeja</option>
+                  <option value="atado">Atado</option>
+                  <option value="bolsa">Bolsa</option>
+                  <option value="paquete">Paquete</option>
+                </select>
+              </div>
             </div>
             <div style={{ marginTop: '16px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>

@@ -532,6 +532,7 @@ svg {
   backdrop-filter: blur(8px);
   display: flex;
   justify-content: center;
+  align-items: center;
   z-index: 50;
   padding: 24px;
   cursor: pointer;
@@ -1576,7 +1577,11 @@ main > * {
 }
 
 
-/* Mobile: los modales con clase .modal-content no se salen de la pantalla */
+/* Mobile: los modales con clase .modal-content no se salen de la pantalla.
+   Antes usaba width:92vw sumado al padding de 24px del overlay, lo que los
+   desfasaba (desbordaba el viewport y se veían corridos). Ahora ocupan el
+   100% del ancho disponible y se alinean arriba para no cortar modales altos. */
 @media (max-width: 640px) {
-  .modal-content { width: 92vw !important; max-width: 92vw !important; padding: 24px !important; }
+  .modal-overlay { padding: 16px; align-items: flex-start; }
+  .modal-content { width: 100% !important; max-width: 100% !important; padding: 20px !important; }
 }

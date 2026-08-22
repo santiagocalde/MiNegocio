@@ -57,6 +57,7 @@ class SaleItem(BaseModel):
     unit_price: float = Field(gt=0)
     item_discount: float = 0
     is_virtual: bool = False
+    unit_label: Optional[str] = None
 
 class SalePayment(BaseModel):
     method: str

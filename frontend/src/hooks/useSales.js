@@ -28,7 +28,8 @@ export default function useSales(cart, effectiveTotal, payment, paymentMethod, u
     }
     text += '-'.repeat(32) + '\n';
     saleCart.forEach(item => {
-      text += item.qty + 'x ' + item.name.substring(0, 20).padEnd(20) + ' $' + (item.price * item.qty).toFixed(2) + '\n';
+      const _u = (item.unit_label && item.unit_label !== 'unidad') ? ' ' + item.unit_label : 'x';
+      text += item.qty + _u + ' ' + item.name.substring(0, 20).padEnd(20) + ' $' + (item.price * item.qty).toFixed(2) + '\n';
     });
     text += '-'.repeat(32) + '\n';
     text += 'TOTAL: $' + saleTotal.toFixed(2) + '\n';
@@ -72,6 +73,7 @@ export default function useSales(cart, effectiveTotal, payment, paymentMethod, u
         unit_price: i.price,
         is_virtual: i.is_virtual || typeof i.id !== 'number',
         item_discount: 0,
+        unit_label: i.unit_label,
       })),
     };
 

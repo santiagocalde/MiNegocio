@@ -14,6 +14,10 @@ const stockTone = (stock, min) => {
   return { bg: 'var(--wash-success)', bd: 'var(--border-color)', fg: 'var(--accent-success)' };
 };
 
+// Unidades fraccionarias: admiten cantidades decimales en el POS (ej. 1.250 kg de pollo).
+const FRACTIONAL_UNITS = ['kg', 'g', 'l', 'ml', 'm', 'm2', 'm²', 'cm', 'cc'];
+const isFractionalUnit = (u) => !!(u && FRACTIONAL_UNITS.includes(u));
+
 export default function CartPanel({ cart, total, adjustedTotal, updateQty, setItemQty, removeItem, listType, setListType, canEditPrice, setItemPrice, setItemList, priceLists, listOptions, cartDiscountPct, setCartDiscountPct }) {
   const isMobile = useIsMobile();
   const displayTotal = adjustedTotal ?? total;
@@ -302,7 +306,7 @@ export default function CartPanel({ cart, total, adjustedTotal, updateQty, setIt
                     {/* Badge de stock */}
                     {!item.is_virtual && (() => {
                       const tone = stockTone(item.stock, item.min_stock);
-                      return <span style={{ background: tone.bg, border: `1px solid ${tone.bd}`, color: tone.fg, padding: '2px 4px', borderRadius: '4px', fontSize: '0.78rem', fontWeight: 800 }}>Stock: {item.stock} u</span>;
+                      return <span style={{ background: tone.bg, border: `1px solid ${tone.bd}`, color: tone.fg, padding: '2px 4px', borderRadius: '4px', fontSize: '0.78rem', fontWeight: 800 }}>Stock: {item.stock} {item.unit_label && item.unit_label !== 'unidad' ? item.unit_label : 'u'}</span>;
                     })()}
                   </div>
                 </div>
@@ -317,7 +321,7 @@ export default function CartPanel({ cart, total, adjustedTotal, updateQty, setIt
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '2px 6px' }}>
                     <button
-                      onClick={() => updateQty(item.id, -1)}
+                      onClick={() => updateQty(item.id, isFractionalUnit(item.unit_label) ? -0.1 : -1)}
                       style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1.2rem', borderRadius: '4px', padding: '2px 6px', transition: 'background 0.15s' }}
                       onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-hover)'}
                       onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
@@ -325,17 +329,20 @@ export default function CartPanel({ cart, total, adjustedTotal, updateQty, setIt
                     <input
                       id={`qty-input-${item.id}`}
                       type="number"
-                      step="1"
-                      min="1"
+                      step={isFractionalUnit(item.unit_label) ? '0.001' : '1'}
+                      min={isFractionalUnit(item.unit_label) ? '0.001' : '1'}
                       value={item.qty}
                       onChange={e => {
-                        const v = parseInt(e.target.value, 10);
-                        if (!isNaN(v) && v >= 1) setItemQty(item.id, v);
+                        const v = parseFloat(e.target.value);
+                        if (!isNaN(v) && v > 0) setItemQty(item.id, v);
                       }}
-                      style={{ width: '40px', textAlign: 'center', background: 'transparent', border: 'none', color: 'var(--text-primary)', outline: 'none', fontWeight: 600, fontSize: '0.9rem' }}
+                      style={{ width: '52px', textAlign: 'center', background: 'transparent', border: 'none', color: 'var(--text-primary)', outline: 'none', fontWeight: 600, fontSize: '0.9rem' }}
                     />
+                    {item.unit_label && item.unit_label !== 'unidad' && (
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>{item.unit_label}</span>
+                    )}
                     <button
-                      onClick={() => updateQty(item.id, 1)}
+                      onClick={() => updateQty(item.id, isFractionalUnit(item.unit_label) ? 0.1 : 1)}
                       style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1.2rem', borderRadius: '4px', padding: '2px 6px', transition: 'background 0.15s' }}
                       onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-hover)'}
                       onMouseLeave={e => e.currentTarget.style.background = 'transparent'}

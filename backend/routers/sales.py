@@ -656,13 +656,13 @@ async def create_sale(request: Request, body: SaleCreate, idempotency_key: Optio
                         db_price = round(item.unit_price, 2)
                         db_total += db_price * item.quantity
                         await conn.execute(
-                            "INSERT INTO sale_items (business_id, sale_id, product_id, product_name, quantity, unit_price, item_discount) VALUES ($1,$2,$3,$4,$5,$6,$7)",
-                            b_id, sale_id, None, item.product_name, item.quantity, db_price, item.item_discount
+                            "INSERT INTO sale_items (business_id, sale_id, product_id, product_name, quantity, unit_price, item_discount, unit_label) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)",
+                            b_id, sale_id, None, item.product_name, item.quantity, db_price, item.item_discount, item.unit_label or ''
                         )
                         continue
 
                     prod = await conn.fetchrow(
-                        "SELECT id, price, stock, is_virtual, parent_id, pack_size, cost_price FROM products WHERE id = $1 AND business_id = $2",
+                        "SELECT id, price, stock, is_virtual, parent_id, pack_size, cost_price, unit_label FROM products WHERE id = $1 AND business_id = $2",
                         item.product_id, b_id
                     )
                     if not prod:
@@ -675,8 +675,8 @@ async def create_sale(request: Request, body: SaleCreate, idempotency_key: Optio
                     db_name = prod.get("name") or item.product_name
 
                     await conn.execute(
-                        "INSERT INTO sale_items (business_id, sale_id, product_id, product_name, quantity, unit_price, item_discount, unit_cost) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)",
-                        b_id, sale_id, item.product_id, db_name, item.quantity, db_price, item.item_discount, db_cost
+                        "INSERT INTO sale_items (business_id, sale_id, product_id, product_name, quantity, unit_price, item_discount, unit_cost, unit_label) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)",
+                        b_id, sale_id, item.product_id, db_name, item.quantity, db_price, item.item_discount, db_cost, prod["unit_label"] or ''
                     )
 
                     if prod["is_virtual"] == 1 and prod["parent_id"]:
@@ -787,13 +787,13 @@ async def create_sale(request: Request, body: SaleCreate, idempotency_key: Optio
                         db_price = round(item.unit_price, 2)
                         db_total_sql += db_price * item.quantity
                         await db.execute(
-                            "INSERT INTO sale_items (sale_id,product_id,product_name,quantity,unit_price,item_discount) VALUES (?,?,?,?,?,?)",
-                            (sale_id, None, item.product_name, item.quantity, db_price, item.item_discount)
+                            "INSERT INTO sale_items (sale_id,product_id,product_name,quantity,unit_price,item_discount,unit_label) VALUES (?,?,?,?,?,?,?)",
+                            (sale_id, None, item.product_name, item.quantity, db_price, item.item_discount, item.unit_label or '')
                         )
                         continue
 
                     p_cur = await db.execute(
-                        "SELECT id, price, stock, is_virtual, parent_id, pack_size, cost_price FROM products WHERE id = ?",
+                        "SELECT id, price, stock, is_virtual, parent_id, pack_size, cost_price, unit_label FROM products WHERE id = ?",
                         (item.product_id,)
                     )
                     prod = await p_cur.fetchone()
@@ -805,8 +805,8 @@ async def create_sale(request: Request, body: SaleCreate, idempotency_key: Optio
                     db_total_sql += db_price * item.quantity
 
                     await db.execute(
-                        "INSERT INTO sale_items (sale_id,product_id,product_name,quantity,unit_price,item_discount,unit_cost) VALUES (?,?,?,?,?,?,?)",
-                        (sale_id, item.product_id, item.product_name, item.quantity, db_price, item.item_discount, db_cost)
+                        "INSERT INTO sale_items (sale_id,product_id,product_name,quantity,unit_price,item_discount,unit_cost,unit_label) VALUES (?,?,?,?,?,?,?,?)",
+                        (sale_id, item.product_id, item.product_name, item.quantity, db_price, item.item_discount, db_cost, prod[7] if len(prod) > 7 else '')
                     )
 
                     p_stock, p_is_virtual, p_parent_id, p_pack_size = prod[2], prod[3], prod[4], prod[5]

@@ -414,6 +414,7 @@ async def init_db(DB_PATH: str, logger) -> None:
         await add_column_if_not_exists(db, "sales", "client_cuit", "TEXT", default="''")
         await add_column_if_not_exists(db, "sale_items", "item_discount", "REAL", default="0")
         await add_column_if_not_exists(db, "sale_items", "unit_cost", "REAL", default="0")
+        await add_column_if_not_exists(db, "sale_items", "unit_label", "TEXT", default="''")
         await add_column_if_not_exists(db, "products", "sucursal_id", "INTEGER", "sucursales(id)", "1")
         await add_column_if_not_exists(db, "sales", "sucursal_id", "INTEGER", "sucursales(id)", "1")
 

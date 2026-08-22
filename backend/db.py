@@ -639,6 +639,7 @@ async def init_pg() -> None:
             ALTER TABLE products ADD COLUMN IF NOT EXISTS image_url TEXT DEFAULT '';
             ALTER TABLE sale_items ALTER COLUMN product_id DROP NOT NULL;
             ALTER TABLE sale_items ADD COLUMN IF NOT EXISTS unit_cost NUMERIC(12,2) DEFAULT 0;
+            ALTER TABLE sale_items ADD COLUMN IF NOT EXISTS unit_label VARCHAR(20) DEFAULT '';
             ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS debt NUMERIC(12,2) DEFAULT 0;
             -- Proveedor de cada producto (para JOINs en compras y aumento masivo por
             -- proveedor). Ya existia en produccion, faltaba versionarlo aca.

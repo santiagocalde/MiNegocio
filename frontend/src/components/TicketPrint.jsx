@@ -13,7 +13,7 @@ function ItemRow({ item }) {
   const lineTotal = item.price * (item.qty || 1);
   return (
     <tr className="t-row">
-      <td className="t-qty">{item.qty || 1}x</td>
+      <td className="t-qty">{item.qty || 1}{item.unit_label && item.unit_label !== 'unidad' ? ' ' + item.unit_label : 'x'}</td>
       <td className="t-name">{item.name}</td>
       <td className="t-price">{F(item.price)}</td>
       <td className="t-ltotal">{F(lineTotal)}</td>
