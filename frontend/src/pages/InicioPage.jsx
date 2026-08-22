@@ -4,6 +4,7 @@ import { usePanelContext } from '../context/PanelContext';
 import { Icons } from '../components/ui/Icons';
 import { formatMoney } from '../utils/format';
 import { apiGet } from '../services/apiClient';
+import useIsMobile from '../hooks/useIsMobile';
 
 function ResumenIA() {
   const [texto, setTexto] = React.useState('');
@@ -192,6 +193,7 @@ function ActividadReciente() {
 
 export default function InicioPage() {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const { backend, auth, currentPlan, businessType } = usePanelContext();
 
   const [now, setNow] = React.useState(() => new Date());
@@ -232,8 +234,9 @@ export default function InicioPage() {
 
       {currentPlan === 'ia' && <ResumenIA />}
 
-      {/* Cuerpo: dos columnas — el libro del día + acciones/stock */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.5fr) minmax(0, 1fr)', gap: 18, alignItems: 'start' }}>
+      {/* Cuerpo: dos columnas — el libro del día + acciones/stock.
+          En mobile se apila en una sola columna para no quedar apretado. */}
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 1.5fr) minmax(0, 1fr)', gap: 18, alignItems: 'start' }}>
         {/* Hoja: Movimiento de hoy */}
         <div className="ledger-sheet" style={{ boxShadow: 'var(--shadow-sm)' }}>
           {/* Cabecera con la cifra protagonista */}
