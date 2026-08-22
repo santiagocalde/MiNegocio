@@ -833,25 +833,67 @@ export default function StockModule() {
                         {/* Botón ⋯ para listas de precio B / C / D */}
                         {(() => {
                           const cfg = JSON.parse(localStorage.getItem('minegocio_config') || '{}');
+                          // Definiciones alineadas 1:1 con el orden del filtro (B, C, D):
+                          // nos dan nombre configurable + el precio actual de cada lista.
+                          const priceListDefs = [
+                            { key: 'price_b', name: cfg.price_list_b_name || 'Lista B' },
+                            { key: 'price_c', name: cfg.price_list_c_name || 'Lista C' },
+                            { key: 'price_d', name: cfg.price_list_d_name || 'Lista D' },
+                          ];
                           const priceListActions = productActions(p).filter(a => [
                             `$ ${cfg.price_list_b_name || 'Lista B'}`,
                             `$ ${cfg.price_list_c_name || 'Lista C'}`,
                             `$ ${cfg.price_list_d_name || 'Lista D'}`,
                           ].includes(a.label));
                           if (!priceListActions.length) return null;
+                          const open = openPriceMenu && openPriceMenu.id === p.id;
                           return (
                             <div style={{ position: 'relative' }}>
                               <button
-                                onClick={e => { e.stopPropagation(); setOpenPriceMenu(openPriceMenu === p.id ? null : p.id); }}
+                                onClick={e => {
+                                  e.stopPropagation();
+                                  if (open) { setOpenPriceMenu(null); return; }
+                                  // Anclar el menú al botón: sale justo debajo (o arriba si no
+                                  // hay espacio), alineado por el borde derecho para no salirse.
+                                  const r = e.currentTarget.getBoundingClientRect();
+                                  const menuH = 210;
+                                  const openUp = (window.innerHeight - r.bottom) < menuH;
+                                  setOpenPriceMenu({
+                                    id: p.id,
+                                    right: Math.max(8, window.innerWidth - r.right),
+                                    top: openUp ? undefined : r.bottom + 8,
+                                    bottom: openUp ? (window.innerHeight - r.top + 8) : undefined,
+                                    up: openUp,
+                                  });
+                                }}
                                 title="Listas de precio"
-                                style={{ background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', borderRadius: 'var(--radius-sm)', padding: '5px 10px', fontSize: '0.9rem', fontWeight: 800, cursor: 'pointer', letterSpacing: '1px', lineHeight: 1 }}>⋯</button>
-                              {openPriceMenu === p.id && createPortal(
+                                style={{ background: open ? 'var(--bg-hover)' : 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', borderRadius: 'var(--radius-sm)', padding: '5px 10px', fontSize: '0.9rem', fontWeight: 800, cursor: 'pointer', letterSpacing: '1px', lineHeight: 1 }}>⋯</button>
+                              {open && createPortal(
                                 <div style={{ position: 'fixed', inset: 0, zIndex: 1200 }} onClick={() => setOpenPriceMenu(null)}>
-                                  <div onClick={e => e.stopPropagation()} style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 12, padding: '16px', minWidth: 200, boxShadow: '0 8px 32px rgba(0,0,0,0.4)', zIndex: 1 }}>
-                                    <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 10, textAlign: 'center' }}>Listas de precio — {p.name}</div>
-                                    {priceListActions.map((a, i) => (
-                                      <button key={i} onClick={() => { setOpenPriceMenu(null); a.onClick(); }} style={{ display: 'block', width: '100%', textAlign: 'left', background: 'transparent', border: 'none', borderTop: i > 0 ? '1px solid var(--border-color)' : 'none', color: 'var(--accent-warning)', padding: '11px 8px', fontSize: '0.88rem', fontWeight: 700, cursor: 'pointer' }}>{a.label}</button>
-                                    ))}
+                                  <div onClick={e => e.stopPropagation()} style={{ position: 'fixed', top: openPriceMenu.top, bottom: openPriceMenu.bottom, right: openPriceMenu.right, background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 12, padding: 6, minWidth: 244, boxShadow: '0 12px 34px rgba(0,0,0,0.28)', zIndex: 1 }}>
+                                    {/* Flechita apuntando al botón, para que se lea como parte de él */}
+                                    <div style={{ position: 'absolute', [openPriceMenu.up ? 'bottom' : 'top']: -5, right: 14, width: 10, height: 10, background: 'var(--bg-card)', borderLeft: openPriceMenu.up ? 'none' : '1px solid var(--border-color)', borderTop: openPriceMenu.up ? 'none' : '1px solid var(--border-color)', borderRight: openPriceMenu.up ? '1px solid var(--border-color)' : 'none', borderBottom: openPriceMenu.up ? '1px solid var(--border-color)' : 'none', transform: 'rotate(45deg)' }} />
+                                    <div style={{ padding: '8px 10px 2px', fontSize: '0.68rem', fontWeight: 800, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>Listas de precio</div>
+                                    <div style={{ padding: '0 10px 8px', fontSize: '0.74rem', color: 'var(--text-faint)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 260 }}>{p.name}</div>
+                                    {priceListActions.map((a, i) => {
+                                      const def = priceListDefs[i];
+                                      const val = def ? p[def.key] : null;
+                                      const has = val !== undefined && val !== null && val !== '' && !isNaN(parseFloat(val));
+                                      return (
+                                        <button
+                                          key={i}
+                                          onClick={() => { setOpenPriceMenu(null); a.onClick(); }}
+                                          style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, width: '100%', textAlign: 'left', background: 'transparent', border: 'none', borderRadius: 8, color: 'var(--text-primary)', padding: '10px', fontSize: '0.86rem', fontWeight: 600, cursor: 'pointer', transition: 'background 0.12s' }}
+                                          onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-hover)'}
+                                          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                                        >
+                                          <span>{def ? def.name : a.label}</span>
+                                          <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 800, color: has ? 'var(--accent-primary)' : 'var(--text-faint)' }}>
+                                            {has ? formatMoney(parseFloat(val)) : 'cargar'}
+                                          </span>
+                                        </button>
+                                      );
+                                    })}
                                   </div>
                                 </div>,
                                 document.body
